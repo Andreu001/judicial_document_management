@@ -65,7 +65,7 @@ class DecisionsAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     '''Модель категории дела'''
     list_display = (
-        'title',
+        'title_category',
         'description',
     )
     search_fields = ('title',)

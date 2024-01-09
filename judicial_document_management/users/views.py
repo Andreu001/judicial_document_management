@@ -1,20 +1,25 @@
-# users/views.py
-from django.views.generic import CreateView
-from django.urls import reverse_lazy
-from .forms import CreationForm
-from django.core.mail import send_mail
+
+from django.shortcuts import render
+from django.contrib.auth import authenticate, login
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 
-send_mail(
-    'Тема письма',
-    'Текст письма.',
-    'from@example.com',
-    ['to@example.com'],
-    fail_silently=False,
-)
-
-
-class SignUp(CreateView):
-    form_class = CreationForm
-    success_url = reverse_lazy('business_card:index')
-    template_name = 'users/signup.html'
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            # Перенаправление на страницу после успешной авторизации
+            return HttpResponseRedirect(reverse('user-profile'))
+        else:
+            # Логика для обработки ошибки входа
+            return render(
+                request,
+                'login.html',
+                {'error_message': 'Invalid credentials'}
+                )
+    else:
+        return render(request, 'login.html')

@@ -1,0 +1,15 @@
+.outline-3 {
+    width: 32%; /* Ширина слоя */ 
+    max-width: 32%; /* Максимальная Ширина слоя */ 
+    min-width: 370px;/* Минимальная ширина слоя */ 
+	/* float: left;  Выравнивание блока слева */ 
+	background: #E6EEDE; /* Цвет фона */
+	box-shadow: 7px 7px 10px rgba(0,0,0,0.6), /* Наружняя тень */
+	            0 5px 10px rgba(0, 0, 0, 0.6) inset, /* Наружняя вертикальная тень */
+				0 0 40px rgba(0, 0, 0, 0.5) inset; /* Внутренняя тень */
+	border: 1px solid #000000; /* Рамка */
+	border-radius: 0px 0px 10px 10px;
+    padding: 0px 5px 0px 5px; /* Отступы */
+  
+  text-align: center; /* Выравнивание содержимого по-центру */
+}

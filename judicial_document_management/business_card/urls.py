@@ -4,7 +4,7 @@ from .views import (FamiliarizationCaseViewSet, SidesCaseViewSet,
                     PetitionsViewSet, DecisionsViewSet,
                     ConsideredCaseViewSet, CategoryViewSet,
                     BusinessCardViewSet, AppealViewSet,
-                    BusinessMovementViewSet
+                    BusinessMovementViewSet, SidesCaseInCaseViewSet
                     )
 
 
@@ -16,6 +16,12 @@ router.register(r'familiarization',
                 FamiliarizationCaseViewSet,
                 basename='familiarization')
 router.register(r'sides', SidesCaseViewSet, basename='sides')
+router.register(
+    r'businesscard/(?P<businesscard_pk>\d+)/sidescaseincase',
+    SidesCaseInCaseViewSet,
+    basename='sidescaseincase'
+    )
+# router.register(r'sidescaseincase', SidesCaseInCaseViewSet, basename='sides')
 router.register(r'petitions', PetitionsViewSet, basename='petitions')
 router.register(r'decisions', DecisionsViewSet, basename='decisions')
 router.register(r'considered', ConsideredCaseViewSet, basename='considered')
@@ -28,36 +34,4 @@ router.register(r'businessmovement',
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('auth/', include('djoser.urls.authtoken')),
-    path('', include('djoser.urls')),
-
 ]
-
-
-'''
-'business_card'
-
-'profile'
-'card_create'
-'business_card_detail'
-
-'card_edit'
-
-'add_side'
-
-'edit_side'
-
-'delete_side'
-
-'add_movement'
-
-'edit_movement'
-
-'delete_movement'
-
-'add_petition'
-
-'edit_petition'
-
-'delete_petition'
-'''
