@@ -8,6 +8,7 @@ __pycache__/
 
 # REACT
 frontend/node_modules/
+node_modules/
 
 # Distribution / packaging
 .Python
