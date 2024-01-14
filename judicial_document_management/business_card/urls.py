@@ -16,12 +16,12 @@ router.register(r'familiarization',
                 FamiliarizationCaseViewSet,
                 basename='familiarization')
 router.register(r'sides', SidesCaseViewSet, basename='sides')
+
 router.register(
-    r'businesscard/(?P<businesscard_pk>\d+)/sidescaseincase',
+    r'businesscard/(?P<businesscard_id>\d+)/sidescaseincase',
     SidesCaseInCaseViewSet,
     basename='sidescaseincase'
     )
-# router.register(r'sidescaseincase', SidesCaseInCaseViewSet, basename='sides')
 router.register(r'petitions', PetitionsViewSet, basename='petitions')
 router.register(r'decisions', DecisionsViewSet, basename='decisions')
 router.register(r'considered', ConsideredCaseViewSet, basename='considered')

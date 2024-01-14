@@ -18,53 +18,43 @@ export const handleAddSide = (newSide, setGlobalSide) => {
 };
 
 export const handleEditSide = (isEditing, setIsEditing) => {
-  setIsEditing(!isEditing);
+  setIsEditing(isEditing);
 };
 
-export const handleDeleteSide = async (id, setSide) => {
+export const handleDeleteSide = async (sideId, cardId, setSide) => {
   try {
-    if (!id) {
-      console.error('ID стороны не определен');
+    console.log('sideId:', sideId);
+    console.log('cardId:', cardId);
+
+    if (!sideId || !cardId) {
+      console.error('ID стороны или карточки не определены');
       return;
     }
 
-    const sideId = String(id);
-    await SideService.remove(sideId);
-    console.log('Удаляется сторона с ID:', sideId);
+    const sideIdString = String(sideId);
+    const cardIdString = String(cardId);
 
-    setSide((prevSide) => prevSide.filter((item) => String(item.id) !== sideId));
+    await SideService.remove(cardIdString, sideIdString);
+    console.log('Удаляется сторона с ID:', sideIdString);
+
+    setSide((prevSide) => prevSide.filter((item) => String(item.id) !== sideIdString));
+
   } catch (error) {
     console.error('Ошибка удаления:', error);
   }
 };
 
 const Sides = (props) => {
-  const [modal, setModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedSideData, setEditedSideData] = useState({ ...props.sides });
+  const [editedSideDataState, setEditedSideDataState] = useState({ ...props.sides });
   const [sides, setSide] = useState([]);
-  const [showSideForm, setShowSideForm] = useState(false);
-
-  const fetchSides = async () => {
-    try {
-      const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
-      console.log('Response:', response);
-      setSide(response.data);
-    } catch (error) {
-      console.error('Error fetching sides:', error);
-    }
-  };
-  
-  useEffect(() => {
-    fetchSides();
-  }, []);
 
   const handleSave = async (editedSideData) => {
     try {
-      const sideId = String(props.sides.id);
+      const sideId = String(editedSideData.id);
       const updatedSide = await updateSide(sideId, editedSideData);
   
-      setEditedSideData(updatedSide);
+      setEditedSideDataState(updatedSide);
       setIsEditing(false);
   
       handleAddSide(updatedSide, setSide);
@@ -75,15 +65,24 @@ const Sides = (props) => {
     }
   };
   
+  useEffect(() => {
+    const fetchSides = async () => {
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
+        console.log('Response:', response);
+        setSide(response.data);
+      } catch (error) {
+        console.error('Error fetching sides:', error);
+      }
+    };
+    
+    fetchSides();
+  }, []);
 
   const handleCancel = () => {
-    setEditedSideData({ ...props.side });
+    setEditedSideDataState({ ...props.side });
     setIsEditing(false);
-    console.log('Отменено. Состояние side:', props.sides);
-  };
-
-  const handleCreateCardClick = () => {
-    setShowSideForm(true);
+    console.log('Отменено. Состояние side:', sides);
   };
 
   return (
@@ -91,7 +90,7 @@ const Sides = (props) => {
       {isEditing ? (
         <SidesForm
           create={props.create}
-          editSideData={editedSideData}
+          editSideData={editedSideDataState}
           onSave={handleSave}
           onCancel={handleCancel}
           setSide={props.setSide}

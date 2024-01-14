@@ -141,7 +141,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 X_FRAME_OPTIONS = 'ALLOWALL'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "http://localhost:3000",  # Замените этот URL на ваш фронтенд URL
+    # Другие разрешенные источники...
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Временно разрешаем все источники.
@@ -168,3 +169,5 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CSRF_USE_SESSIONS = False  # Необходимо, чтобы дать
+
+APPEND_SLASH = True

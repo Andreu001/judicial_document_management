@@ -9,7 +9,6 @@ const BASE_URL = 'http://localhost:8000/business_card/businesscard/';
 export const updateCard = async (id, updatedData) => {
   try {
     const response = await axios.patch(`${BASE_URL}${id}/`, updatedData);
-    console.log('Данные карточки обновлены:CardService', updatedData);
     return response.data;
   } catch (error) {
     throw error;

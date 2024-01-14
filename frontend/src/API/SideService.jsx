@@ -3,9 +3,10 @@ import axios from 'axios';
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
+
 export const updateSide = async (cardId, sideId, updatedData) => {
   try {
-    const response = await axios.patch(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/`, updatedData);
+    const response = await axios.patch(`http://localhost:8000/business_card/${cardId}/sidescaseincase/${sideId}/`, updatedData);
     return response.data;
   } catch (error) {
     throw error;
@@ -14,13 +15,11 @@ export const updateSide = async (cardId, sideId, updatedData) => {
 
 export default class SideService {
   static async getAllSide(cardId) {
-    try {
-      const response = await axios.get(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`);
-      return response.data;
-    } catch (error) {
-      console.error('Ошибка при выполнении запроса getAllSide:', error);
-      throw error; // Выбрасываем ошибку дальше
-    }
+    const response = await axios.get(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`);
+    return response;
+  } catch (error) {
+    console.error('Ошибка при выполнении запроса getAllSide:', error);
+    throw error; // Выбрасываем ошибку дальше
   }
 
 
@@ -36,7 +35,7 @@ export default class SideService {
         return response.data;
     } catch (error) {
         console.error(error);
-        throw new Error(`Ошибка удаления карточки: ${error}`);
+        throw new Error(`Ошибка удаления стороны: ${error}`);
     }
 }
 }

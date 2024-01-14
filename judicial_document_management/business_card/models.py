@@ -179,53 +179,18 @@ class BusinessCard(models.Model):
         return self.original_name
 
 
-class SidesCaseInCase(models.Model):
-    '''9. Модель добавления сторон по делу сторон по делу'''
-    name = models.CharField(
-        max_length=150,
-        verbose_name='ФИО'
-    )
-    sides_case = models.ManyToManyField(
-        SidesCase,
-        verbose_name='Стороны по делу',
-    )
-    under_arrest = models.BooleanField(
-        blank=True,
-        null=True,
-        verbose_name='под стражей'
-        )
-    date_sending_agenda = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Дата направления повестки'
-    )
-    business_card = models.ForeignKey(
-        BusinessCard,
-        on_delete=models.DO_NOTHING,
-        related_name='sidescaseincase',
-        verbose_name='Карточка на дело',
-    )
-
-    class Meta:
-        verbose_name = 'Новое дело'
-        verbose_name_plural = 'Новое дело'
-
-    def __str__(self):
-        return f'{self.sides_case} {self.name}'
-
-
 class PetitionsInCase(models.Model):
     '''8. Промежуточная таблица для ходатайств'''
     petitions = models.ForeignKey(
         Petitions,
         on_delete=models.DO_NOTHING,
         verbose_name='ходатайства по делу',
-        related_name='sidescaseincase',
+        related_name='SidesCaseInCase',
         null=True,
         blank=True,
     )
     sides_case = models.ManyToManyField(
-        SidesCaseInCase,
+        SidesCase,
         verbose_name='Кто заявил ходатайство'
     )
     date_application = models.DateField(
@@ -259,8 +224,43 @@ class PetitionsInCase(models.Model):
     def __str__(self):
         return (
             f'{self.sides_case} {self.date_application} '
-            f'заявил ходатайство о {self.sides_case}'
+            f'заявил ходатайство о {self.name_petition}'
             )
+
+
+class SidesCaseInCase(models.Model):
+    '''9. Модель добавления сторон по делу сторон по делу'''
+    name = models.CharField(
+        max_length=150,
+        verbose_name='ФИО'
+    )
+    sides_case = models.ManyToManyField(
+        SidesCase,
+        verbose_name='Стороны по делу',
+    )
+    under_arrest = models.BooleanField(
+        blank=True,
+        null=True,
+        verbose_name='под стражей'
+        )
+    date_sending_agenda = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата направления повестки'
+    )
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.DO_NOTHING,
+        related_name='sidescaseincase',
+        verbose_name='Карточка на дело',
+    )
+
+    class Meta:
+        verbose_name = 'Новое лицо'
+        verbose_name_plural = 'Новое лицо'
+
+    def __str__(self):
+        return f'{self.sides_case} {self.name}'
 
 
 class Appeal(models.Model):

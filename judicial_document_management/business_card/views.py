@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 # from django.contrib.auth.decorators import login_required
-# from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404
 # from django.http import HttpResponseBadRequest
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -16,7 +16,7 @@ from rest_framework import status
 from .models import (FamiliarizationCase, SidesCase,
                      Petitions, Decisions, ConsideredCase,
                      Category, BusinessCard, PetitionsInCase,
-                     SidesCaseInCase, Appeal, BusinessMovement)
+                     Appeal, BusinessMovement)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           DecisionsSerializer,
@@ -89,7 +89,7 @@ class BusinessCardViewSet(viewsets.ModelViewSet):
     queryset = BusinessCard.objects.all()
     serializer_class = BusinessCardSerializer
 
-    def remove(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -105,43 +105,44 @@ class PetitionsInCaseViewSet(viewsets.ModelViewSet):
 
 class SidesCaseInCaseViewSet(viewsets.ModelViewSet):
     """
-    Модель добавления сторон по делу сторон по делу
+
     """
-    queryset = SidesCaseInCase.objects.all()
     serializer_class = SidesCaseInCaseSerializer
 
+    def get_queryset(self):
+        businesscard = get_object_or_404(
+            BusinessCard, pk=self.kwargs.get('businesscard_id')
+            )
+        new_queryset = businesscard.sidescaseincase.all()
+        return new_queryset
+
     def perform_create(self, serializer):
-        # Извлечение id дела из URL запроса
-        business_card_id = self.kwargs.get('businesscard_pk')
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        # Получение объекта дела
-        business_card = BusinessCard.objects.get(id=business_card_id)
+        sides_case_data = self.request.data.get('sides_case', [])
+        sides_case_ids = [
+            int(side_id) for side_id in sides_case_data if isinstance(
+                side_id, (int, str)
+                )]
+        sides_case = SidesCase.objects.filter(id__in=sides_case_ids)
 
-        # Извлечение данных о сторонах из входных данных сериализатора
-        sides_data = self.request.data.get('sides_case', [])
-
-        # Создание объекта SidesCaseInCase
-        instance = serializer.save(business_card=business_card)
-
-        # Добавление связанных сторон по делу
-        for side_data in sides_data:
-            side_serializer = SidesCaseSerializer(data=side_data)
-            if side_serializer.is_valid():
-                side_serializer.save(sides_case_in_case=instance)
-            else:
-                # Обработка случая, если данные стороны недействительны
-                # Здесь можно добавить нужную обработку ошибок
-                pass
+        instance = serializer.save(business_card=businesscard)
+        instance.sides_case.set(sides_case)
 
     def perform_update(self, serializer):
-        # Извлечение id дела из URL запроса
-        business_card_id = self.kwargs.get('businesscard_pk')
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        # Получение объекта дела
-        business_card = BusinessCard.objects.get(id=business_card_id)
-
-        # Сохранение сторон по делу, привязанных к делу
-        instance = serializer.save(business_card=business_card)
+        sides_case_data = self.request.data.get('sides_case', [])
+        sides_case_ids = [
+            int(side_id) for side_id in sides_case_data if isinstance(
+                side_id, (int, str)
+                )
+            ]
+        sides_case = SidesCase.objects.filter(id__in=sides_case_ids)
+        instance = serializer.save(business_card=businesscard)
+        instance.sides_case.set(sides_case)
 
 
 class AppealViewSet(viewsets.ModelViewSet):

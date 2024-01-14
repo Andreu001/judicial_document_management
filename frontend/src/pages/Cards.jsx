@@ -10,10 +10,12 @@ import CardFilter from '../components/CardFilter';
 import { useFetching } from '../hooks/useFetching';
 import { useCard } from '../hooks/useCard';
 import CardForm from '../components/CardForm';
+import SideService from '../API/SideService';
 
 function Cards() {
   const [cards, setCards] = useState([]);
-   const [filter, setFilter] = useState({ sort: '', query: '' });
+  const [sides, setSides] = useState([]);
+  const [filter, setFilter] = useState({ sort: '', query: '' });
   const [modal, setModal] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
@@ -36,6 +38,10 @@ function Cards() {
     });
 
   }, []);
+
+  async function fetchSide() {
+    const response = await SideService.getAllSide();
+  }
 
   useEffect(() => {
     fetchCards(limit, page);
@@ -80,6 +86,9 @@ function Cards() {
     <div className='App'>
       <MyButton style={{ marginTop: 30 }} onClick={handleCreateCardClick}>
         Создать карточку
+      </MyButton>
+      <MyButton onClick={fetchSide}>
+        Стороны
       </MyButton>
       <Modal visible={modal} setVisible={setModal}>
         {showForm ? ( // Показать форму, если showForm === true

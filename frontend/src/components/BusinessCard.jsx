@@ -9,9 +9,12 @@ import CardForm from './CardForm';
 import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/Sides';
 import SidesForm from '../pages/SidesForm';
 import SideService from '../API/SideService';
+import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
+  const { card } = props;
+  const cardId = card.id;
   const [newside, setNewSide] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [isEditingCard, setIsEditingCard] = useState(false);
@@ -19,40 +22,26 @@ const BusinessCard = (props) => {
   const [editedSideData, setEditedSideData] = useState({ ...props.side });
   const [showSideForm, setShowSideForm] = useState(false);
   const [isEditingSide, setIsEditingSide] = useState(false);
-  const [sides, setSides] = useState([]);
+  const [sides, setSide] = useState([]);
   const [newCard, setNewCard] = useState([]);
-  const [showCardForm, setShowCardForm] = useState(false);
+  const [editedSideId, setEditedSideId] = useState(null);
   
   useEffect(() => {
-    SideService.getAllSide(props.card.id).then((response) =>  {
-      if (Array.isArray(response)) {
-        setSides(response);
+    SideService.getAllSide(cardId).then((response) =>  {
+      if (Array.isArray(response.data)) {
+        setSide(response.data);
       } else {
-        console.error('Неверный тип данных в ответе:', response);
+        console.error('Неверный тип данных в ответе:', response.data);
       }
     });
-  }, [props.card.id]);
+  }, [cardId]);
 
   const handleEditToggle = () => {
     setIsEditingCard(!isEditingCard);
+    setEditedCardData({ ...props.card });
+    setEditedSideId(null);
   };
 
-  const handleSaveSide = async () => {
-    try {
-      const sideId = String(editedSideData.id);
-      const updatedSide = await SideService.updateSide(sideId, editedSideData);
-  
-      setEditedSideData(updatedSide);
-      setIsEditingSide(false);
-  
-      handleAddSide(updatedSide, setNewSide);
-  
-      console.log('Состояние side после сохранения:', updatedSide);
-    } catch (error) {
-      console.error('Ошибка при обновлении стороны:', error);
-    }
-  };
-  
   const handleSaveCard = async (updatedCardData) => {
     try {
         const cardId = String(updatedCardData.id);
@@ -76,6 +65,16 @@ const BusinessCard = (props) => {
   const handleCancel = () => {
     setEditedCardData({ ...props.card });
     setIsEditingCard(false);
+    setEditedSideId(null);
+  };
+
+  const handleEditSideForm = (sideId) => {
+    const editedSide = sides.find((side) => side.id === sideId);
+
+    setEditedSideId(sideId);
+    setIsEditingSide(true);
+    setShowSideForm(true);
+    setEditedSideData({ ...editedSide });
   };
 
   const handleRemove = async () => {
@@ -102,11 +101,6 @@ const BusinessCard = (props) => {
     setShowSideForm(true);
   };
 
-  const handleAddCardToState = () => {
-    setIsEditingCard(true);
-    setShowCardForm(true);
-  };
-
   const createSide = (newSide) => {
     handleAddSide(newSide, setNewSide);
   };
@@ -115,12 +109,9 @@ const BusinessCard = (props) => {
     if (activeTab === 1) {
       return (
         <>
-          <MyButton onClick={handleShowDetails}>Показать детали</MyButton>
           <MyButton onClick={handleAddSideToState}>
             Добавить сторону
           </MyButton>
-          <MyButton onClick={handleDeleteSide}>Удалить сторону</MyButton>
-          <MyButton onClick={handleEditSide}>Редактировать сторону</MyButton>
         </>
       );
     } else {
@@ -143,16 +134,22 @@ const BusinessCard = (props) => {
           create={createSide}
           editSideData={editedSideData}
           onSave={async (newSide) => {
-            const updatedSide = await SideService.updateSide(newSide.id, setNewSide);
-            handleAddSide(updatedSide, setNewSide);
-            setShowSideForm(false);
-            setIsEditingSide(false);
+            if (editedSideId) {
+              const updatedSide = await SideService.updateSide(cardId, editedSideId, newSide);
+              setEditedSideData(updatedSide);
+              setIsEditingSide(false);
+              setEditedSideId(null);
+            } else {
+              // Добавьте обработчик для создания новой стороны
+            }
           }}
           onCancel={() => {
             setShowSideForm(false);
             setIsEditingSide(false);
+            setEditedSideId(null);
           }}
           setNewSide={setNewSide}
+          cardId={cardId}
         />
       ) : null}
       {isEditingCard ? (
@@ -191,25 +188,45 @@ const BusinessCard = (props) => {
                 </>
               )}
 
-                {activeTab === 1 && sides ? (
-                  <>
-                    {sides.map((sides, index) => (
-                      <div key={index}>
-                        <strong>ФИО {sides.name}.</strong>
-                        <div>Под стражей: {sides.under_arrest}</div>
+              {activeTab === 1 && sides ? (
+                <>
+                  {sides.map((sides, index) => (
+                    <div key={index} style={{ marginBottom: '15px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong>ФИО {sides.name}.</strong>
+                          <div>Под стражей: {sides.under_arrest}</div>
                           {sides.sides_case ? (
-                          sides.sides_case.map((sideCase, index) => (
-                            <div  key={index}>Сторона по делу:{sideCase.sides_case}</div>
-                          ))
-                        ) : (
-                          <div>Нет данных по сторонам дела</div>
-                        )}
-                        <div>Дата направления повестки: {sides.date_sending_agenda}</div>
+                            sides.sides_case.map((sideCase, idx) => (
+                              <div key={idx}>Сторона по делу: {sideCase.sides_case}</div>
+                            ))
+                          ) : (
+                            <div>Нет данных по сторонам дела</div>
+                          )}
+                          <div>Дата направления повестки: {sides.date_sending_agenda}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <IoMdEye onClick={() => handleShowDetails({ side: sides }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
+                          <IoMdTrash
+                            onClick={() => {
+                              const currentSideId = sides.id; // или нужный вам способ получения id
+                              console.log('currentSideId:', currentSideId);
+                              console.log('props.card.id:', props.card.id);
+                              handleDeleteSide(currentSideId, props.card.id, setSide);
+                            }}
+                            style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
+                          />
+                          <IoMdCreate
+                              onClick={() => handleEditSideForm(sides.id)}
+                              style={{ cursor: 'pointer', color: 'green' }}
+                            />
+                        </div>
                       </div>
-                    ))}
-                  </>
-                ) : null}
-
+                      <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
+                    </div>
+                  ))}
+                </>
+              ) : null}
 
               {activeTab === 2 && (
                 <div>

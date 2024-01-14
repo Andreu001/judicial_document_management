@@ -71,21 +71,6 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('id', 'title_category', 'description', 'slug')
 
 
-class SidesCaseInCaseSerializer(serializers.ModelSerializer):
-    """
-    Модель добавления сторон по делу сторон по делу
-    """
-    sides_case = SidesCaseSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = SidesCaseInCase
-        fields = ('name', 'id',
-                  'sides_case',
-                  'under_arrest',
-                  'date_sending_agenda'
-                  )
-
-
 class BusinessCardSerializer(serializers.ModelSerializer):
     """
     Модель карточки по делу
@@ -94,8 +79,6 @@ class BusinessCardSerializer(serializers.ModelSerializer):
     case_category_title = serializers.CharField(
         source='case_category.title_category', read_only=True
         )
-
-    sides_case_in_case = SidesCaseInCaseSerializer(many=True, read_only=True)
 
     class Meta:
         model = BusinessCard
@@ -106,15 +89,13 @@ class BusinessCardSerializer(serializers.ModelSerializer):
                   'case_category_title',
                   'article',
                   'pub_date',
-                  'preliminary_hearing',
-                  'sides_case_in_case')
+                  'preliminary_hearing')
 
 
 class PetitionsInCaseSerializer(serializers.ModelSerializer):
     """
     Промежуточная таблица для ходатайств
     """
-    
     class Meta:
         model = PetitionsInCase
         fields = ('petitions',
@@ -124,6 +105,21 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
                   'decision_rendered',
                   'date_decision',
                   'business_card')
+
+
+class SidesCaseInCaseSerializer(serializers.ModelSerializer):
+    """
+    Модель добавления сторон по делу
+    """
+    sides_case = SidesCaseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SidesCaseInCase
+        fields = ('name', 'id',
+                  'sides_case',
+                  'under_arrest',
+                  'date_sending_agenda'
+                  )
 
 
 class AppealSerializer(serializers.ModelSerializer):
