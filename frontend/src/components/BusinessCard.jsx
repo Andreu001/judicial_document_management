@@ -6,8 +6,8 @@ import { updateCard } from '../API/CardService';
 import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
 import CardForm from './CardForm';
-import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/Sides';
-import SidesForm from '../pages/SidesForm';
+import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/sides/Sides';
+import SidesForm from '../pages/sides/SidesForm';
 import SideService from '../API/SideService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 
@@ -23,7 +23,6 @@ const BusinessCard = (props) => {
   const [showSideForm, setShowSideForm] = useState(false);
   const [isEditingSide, setIsEditingSide] = useState(false);
   const [sides, setSide] = useState([]);
-  const [newCard, setNewCard] = useState([]);
   const [editedSideId, setEditedSideId] = useState(null);
   
   useEffect(() => {
@@ -44,23 +43,17 @@ const BusinessCard = (props) => {
 
   const handleSaveCard = async (updatedCardData) => {
     try {
-        const cardId = String(updatedCardData.id);
-        const updatedCard = await updateCard(cardId, updatedCardData);
-
-        setEditedCardData(updatedCard);
-        setIsEditingCard(false);
-
-        handleAddCard(updatedCard, setNewCard);
-
-        console.log('Состояние карточки после сохранения:', updatedCard);
+      const cardId = String(updatedCardData.id);
+      const updatedCard = await updateCard(cardId, updatedCardData);
+  
+      setEditedCardData(updatedCard);
+      setIsEditingCard(false);
+  
+      console.log('Состояние карточки после сохранения:', updatedCard);
     } catch (error) {
-        console.error('Ошибка при обновлении карточки:', error);
+      console.error('Ошибка при обновлении карточки:', error);
     }
-};
-
-  const handleAddCard = (newCardData) => {
-    setNewCard([...newCard, newCardData]);
-  };
+  };  
 
   const handleCancel = () => {
     setEditedCardData({ ...props.card });
@@ -140,7 +133,6 @@ const BusinessCard = (props) => {
               setIsEditingSide(false);
               setEditedSideId(null);
             } else {
-              // Добавьте обработчик для создания новой стороны
             }
           }}
           onCancel={() => {
@@ -198,7 +190,7 @@ const BusinessCard = (props) => {
                           <div>Под стражей: {sides.under_arrest}</div>
                           {sides.sides_case ? (
                             sides.sides_case.map((sideCase, idx) => (
-                              <div key={idx}>Сторона по делу: {sideCase.sides_case}</div>
+                              <div key={idx}>Статус стороны: {sideCase.sides_case}</div>
                             ))
                           ) : (
                             <div>Нет данных по сторонам дела</div>

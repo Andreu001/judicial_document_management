@@ -304,10 +304,14 @@ class BusinessMovement(models.Model):
         verbose_name='Время заседания'
     )
     decision_case = models.CharField(
+        blank=True,
+        null=True,
         max_length=50,  # Так же в дальнейшем выбор из мэнитумэни
         verbose_name='Решение по поступившему делу'
     )
     composition_colleges = models.CharField(
+        blank=True,
+        null=True,
         max_length=50,
         verbose_name='Состав коллегии'  # далее сделать мэнитумэни
     )
@@ -330,6 +334,7 @@ class BusinessMovement(models.Model):
     business_card = models.ForeignKey(
         BusinessCard,
         on_delete=models.DO_NOTHING,
+        related_name='businessmovement',
         verbose_name='Карточка на дело',
     )
     notation = models.TextField(

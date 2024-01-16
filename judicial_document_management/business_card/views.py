@@ -16,7 +16,7 @@ from rest_framework import status
 from .models import (FamiliarizationCase, SidesCase,
                      Petitions, Decisions, ConsideredCase,
                      Category, BusinessCard, PetitionsInCase,
-                     Appeal, BusinessMovement)
+                     Appeal)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           DecisionsSerializer,
@@ -157,5 +157,39 @@ class BusinessMovementViewSet(viewsets.ModelViewSet):
     """
 
     """
-    queryset = BusinessMovement.objects.all()
     serializer_class = BusinessMovementSerializer
+
+    def get_queryset(self):
+        businesscard = get_object_or_404(
+            BusinessCard, pk=self.kwargs.get('businesscard_id')
+            )
+        new_queryset = businesscard.businessmovement.all()
+        return new_queryset
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        movement_data = self.request.data.get('sides_case', [])
+        movement_ids = [
+            int(movement_id) for movement_id in movement_data if isinstance(
+                movement_id, (int, str)
+                )]
+        sides_case = SidesCase.objects.filter(id__in=movement_ids)
+
+        instance = serializer.save(business_card=businesscard)
+        instance.sides_case.set(sides_case)
+
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        movement_data = self.request.data.get('sides_case', [])
+        movement_ids = [
+            int(side_id) for side_id in movement_data if isinstance(
+                side_id, (int, str)
+                )
+            ]
+        sides_case = SidesCase.objects.filter(id__in=movement_ids)
+        instance = serializer.save(business_card=businesscard)
+        instance.sides_case.set(sides_case)

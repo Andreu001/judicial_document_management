@@ -1,10 +1,10 @@
 import React from "react";
 import {Routes, Route} from "react-router-dom";
 import About from "../pages/About";
-import Cards from "../pages/Cards";
-import CardIdPage from "../pages/CardIdPage";
 import CardList from "./CardList";
 import CardForm from "./CardForm";
+import Cards from "../pages/cards/Cards";
+import CardIdPage from "../pages/cards/CardIdPage";
 
 const AppRouter = () => {
     return (

@@ -4,9 +4,9 @@ axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
 
-export const updateSide = async (cardId, sideId, updatedData) => {
+export const updateMove = async (cardId, moveId, updatedData) => {
   try {
-    const response = await axios.patch(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/`, updatedData);
+    const response = await axios.patch(`http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/${moveId}/`, updatedData);
     return response.data;
   } catch (error) {
     throw error;
@@ -14,9 +14,9 @@ export const updateSide = async (cardId, sideId, updatedData) => {
 };
 
 
-export default class SideService {
-  static async getAllSide(cardId) {
-    const response = await axios.get(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`);
+export default class MovementService {
+  static async getAllMove(cardId) {
+    const response = await axios.get(`http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`);
     return response;
   } catch (error) {
     console.error('Ошибка при выполнении запроса getAllSide:', error);
@@ -24,9 +24,9 @@ export default class SideService {
   }
 
 
-  static async remove(cardId, sideId) {
+  static async remove(cardId, moveId) {
     try {
-        const response = await axios.delete(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/`, {
+        const response = await axios.delete(`http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/${moveId}/`, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -36,7 +36,7 @@ export default class SideService {
         return response.data;
     } catch (error) {
         console.error(error);
-        throw new Error(`Ошибка удаления стороны: ${error}`);
+        throw new Error(`Ошибка удаления движения: ${error}`);
     }
 }
 }

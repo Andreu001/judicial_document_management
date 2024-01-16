@@ -79,6 +79,10 @@ WSGI_APPLICATION = 'judicial_document_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+DATE_INPUT_FORMATS = [
+    '%d/%m/%Y',
+]
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

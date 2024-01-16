@@ -140,6 +140,9 @@ class BusinessMovementSerializer(serializers.ModelSerializer):
     """
     Движение дела
     """
+
+    sides_case = SidesCaseSerializer(many=True, read_only=True)
+
     class Meta:
         model = BusinessMovement
         fields = ('date_meeting',
@@ -150,4 +153,4 @@ class BusinessMovementSerializer(serializers.ModelSerializer):
                   'result_court_session',
                   'reason_deposition',
                   'sides_case',
-                  'business_card')
+                  )

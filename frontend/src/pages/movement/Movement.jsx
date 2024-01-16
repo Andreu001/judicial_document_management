@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import SideService from '../API/SideService';
+import MovementService from '../../API/MovementService';
 import SidesForm from './SidesForm';
-import { updateSide } from '../API/SideService';
-import SideList from '../components/SideList';
+import  { updateMove } from '../../API/MovementService';
+import SideList from '../../components/SideList';
 import axios from 'axios';
 
 export const handleShowDetails = (props, router) => {
-  router(`/cards/details/${props.side.id}`);
-  console.log( "Передается в САЙДДДД!!!!", props.side);
+  router(`/cards/details/${props.move.id}`);
+  console.log( "Передается в МУВВВВ!!!!", props.move);
 };
 
 export const handleAddSide = (newSide, setGlobalSide) => {

@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {useParams} from 'react-router-dom';
-import {useFetching} from "../hooks/useFetching";
-import CardService from "../API/CardService";
-import Loader from "../components/UI/loader/Loader";
+import {useFetching} from "../../hooks/useFetching";
+import CardService from "../../API/CardService";
+import Loader from "../../components/UI/loader/Loader";
 
 const CardIdPage = () => {
     const params = useParams()
