@@ -1,104 +1,104 @@
 import React, { useState, useEffect } from 'react';
 import MovementService from '../../API/MovementService';
-import SidesForm from './SidesForm';
+import MovementForm from './MovementForm';
 import  { updateMove } from '../../API/MovementService';
-import SideList from '../../components/SideList';
+import MovementList from '../../components/MovementList';
 import axios from 'axios';
 
 export const handleShowDetails = (props, router) => {
-  router(`/cards/details/${props.move.id}`);
-  console.log( "Передается в МУВВВВ!!!!", props.move);
+  router(`/cards/details/${props.movements.id}`);
+  console.log( "Передается в МУВВВВ!!!!", props.movements);
 };
 
-export const handleAddSide = (newSide, setGlobalSide) => {
-  console.log('Добавляется сторона:', newSide);
-  if (newSide && Object.keys(newSide).length > 0) {
-    setGlobalSide((prevSide) => [...prevSide, newSide]);
+export const handleAddSide = (newMove, setGlobalMove) => {
+  console.log('Добавляется сторона:', newMove);
+  if (newMove && Object.keys(newMove).length > 0) {
+    setGlobalMove((prevMove) => [...prevMove, newMove]);
   }
 };
 
-export const handleEditSide = (isEditing, setIsEditing) => {
+export const handleEditMove = (isEditing, setIsEditing) => {
   setIsEditing(isEditing);
 };
 
-export const handleDeleteSide = async (sideId, cardId, setSide) => {
+export const handleDeleteMove = async (moveId, cardId, setMove) => {
   try {
-    console.log('sideId:', sideId);
+    console.log('moveId:', moveId);
     console.log('cardId:', cardId);
 
-    if (!sideId || !cardId) {
+    if (!moveId || !cardId) {
       console.error('ID стороны или карточки не определены');
       return;
     }
 
-    const sideIdString = String(sideId);
+    const moveIdString = String(moveId);
     const cardIdString = String(cardId);
 
-    await SideService.remove(cardIdString, sideIdString);
-    console.log('Удаляется сторона с ID:', sideIdString);
+    await MovementService.remove(cardIdString, moveIdString);
+    console.log('Удаляется сторона с ID:', moveIdString);
 
-    setSide((prevSide) => prevSide.filter((item) => String(item.id) !== sideIdString));
+    setMove((prevMove) => prevMove.filter((item) => String(item.id) !== moveIdString));
 
   } catch (error) {
     console.error('Ошибка удаления:', error);
   }
 };
 
-const Sides = (props) => {
+const Movement = (props) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedSideDataState, setEditedSideDataState] = useState({ ...props.sides });
-  const [sides, setSide] = useState([]);
+  const [editedMoveDataState, setEditedMoveDataState] = useState({ ...props.movements });
+  const [movements, setMovements] = useState([]);
 
-  const handleSave = async (editedSideData) => {
+  const handleSave = async (editedMoveData) => {
     try {
-      const sideId = String(editedSideData.id);
-      const updatedSide = await updateSide(sideId, editedSideData);
+      const moveId = String(editedMoveData.id);
+      const updatedMove = await updateSide(moveId, editedMoveData);
   
-      setEditedSideDataState(updatedSide);
+      setEditedMoveDataState(updatedMove);
       setIsEditing(false);
   
-      handleAddSide(updatedSide, setSide);
+      handleAddSMove(updatedMove, setMovements);
   
-      console.log('Состояние side после сохранения:', updatedSide);
+      console.log('Состояние movements после сохранения:', updatedMove);
     } catch (error) {
-      console.error('Ошибка при обновлении стороны:', error);
+      console.error('Ошибка при обновлении движения:', error);
     }
   };
   
   useEffect(() => {
-    const fetchSides = async () => {
+    const fetchMove = async () => {
       try {
         const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
         console.log('Response:', response);
-        setSide(response.data);
+        setMovements(response.data);
       } catch (error) {
-        console.error('Error fetching sides:', error);
+        console.error('Error fetching Movements:', error);
       }
     };
     
-    fetchSides();
+    fetchMove();
   }, []);
 
   const handleCancel = () => {
-    setEditedSideDataState({ ...props.side });
+    setEditedMoveDataState({ ...props.movements });
     setIsEditing(false);
-    console.log('Отменено. Состояние side:', sides);
+    console.log('Отменено. Состояние movements:', movements);
   };
 
   return (
     <div className='App'>
       {isEditing ? (
-        <SidesForm
+        <MovementForm
           create={props.create}
-          editSideData={editedSideDataState}
+          editMoveData={editedMoveDataState}
           onSave={handleSave}
           onCancel={handleCancel}
-          setSide={props.setSide}
+          setMovements={props.setMovements}
         />
-      ) : (<SideList remove={handleDeleteSide} />)
+      ) : (<MovementList remove={handleDeleteMove} />)
       }
     </div>
   );
 };
 
-export default Sides;
+export default Movement;

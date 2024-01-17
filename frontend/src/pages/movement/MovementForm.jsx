@@ -5,7 +5,7 @@ import MyButton from '../../components/UI/button/MyButton';
 import { updateSide } from '../../API/SideService';
 
 
-const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
+const MovementForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingSideId, setEditingSideId] = useState(null);
 
@@ -158,4 +158,4 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     );
   };
   
-  export default SidesForm;
+  export default MovementForm;
