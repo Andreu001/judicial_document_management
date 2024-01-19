@@ -138,7 +138,7 @@ class AppealSerializer(serializers.ModelSerializer):
 
 class BusinessMovementSerializer(serializers.ModelSerializer):
     """
-    Движение дела
+    Движение по делу
     """
 
     sides_case = SidesCaseSerializer(many=True, read_only=True)
@@ -152,5 +152,4 @@ class BusinessMovementSerializer(serializers.ModelSerializer):
                   'composition_colleges',
                   'result_court_session',
                   'reason_deposition',
-                  'sides_case',
                   )

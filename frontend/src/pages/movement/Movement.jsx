@@ -5,12 +5,12 @@ import  { updateMove } from '../../API/MovementService';
 import MovementList from '../../components/MovementList';
 import axios from 'axios';
 
-export const handleShowDetails = (props, router) => {
+export const handleShowDetailsMovement = (props, router) => {
   router(`/cards/details/${props.movements.id}`);
   console.log( "Передается в МУВВВВ!!!!", props.movements);
 };
 
-export const handleAddSide = (newMove, setGlobalMove) => {
+export const handleAddMove = (newMove, setGlobalMove) => {
   console.log('Добавляется сторона:', newMove);
   if (newMove && Object.keys(newMove).length > 0) {
     setGlobalMove((prevMove) => [...prevMove, newMove]);
@@ -47,17 +47,17 @@ export const handleDeleteMove = async (moveId, cardId, setMove) => {
 const Movement = (props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedMoveDataState, setEditedMoveDataState] = useState({ ...props.movements });
-  const [movements, setMovements] = useState([]);
+  const [movements, setMovements] = useState();
 
   const handleSave = async (editedMoveData) => {
     try {
       const moveId = String(editedMoveData.id);
-      const updatedMove = await updateSide(moveId, editedMoveData);
+      const updatedMove = await updateMove(moveId, editedMoveData);
   
       setEditedMoveDataState(updatedMove);
       setIsEditing(false);
   
-      handleAddSMove(updatedMove, setMovements);
+      handleAddMove(updatedMove, setMovements);
   
       console.log('Состояние movements после сохранения:', updatedMove);
     } catch (error) {

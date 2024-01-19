@@ -7,23 +7,30 @@ import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
 import CardForm from './CardForm';
 import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/sides/Sides';
+import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, handleEditMove } from '../pages/movement/Movement';
 import SidesForm from '../pages/sides/SidesForm';
 import SideService from '../API/SideService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
+import MovementForm from '../pages/movement/MovementForm';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
   const { card } = props;
   const cardId = card.id;
   const [newside, setNewSide] = useState([]);
+  const [newMove, setNewMove] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [isEditingCard, setIsEditingCard] = useState(false);
+  const [isEditingMove, setIsEditingMove] = useState(false);
+  const [showMovementForm, setShowMovementForm] = useState(false);
   const [editedCardData, setEditedCardData] = useState({ ...props.card });
   const [editedSideData, setEditedSideData] = useState({ ...props.side });
+  const [editedMoveData, setEditedMoveData] = useState({ ...props.move });
   const [showSideForm, setShowSideForm] = useState(false);
   const [isEditingSide, setIsEditingSide] = useState(false);
   const [sides, setSide] = useState([]);
   const [editedSideId, setEditedSideId] = useState(null);
+  const [movements, setMovements] = useState();
   
   useEffect(() => {
     SideService.getAllSide(cardId).then((response) =>  {
@@ -53,7 +60,25 @@ const BusinessCard = (props) => {
     } catch (error) {
       console.error('Ошибка при обновлении карточки:', error);
     }
-  };  
+  };
+
+  const handleAddMovementToState = () => {
+    setShowMovementForm(true);
+  };
+
+  const handleSaveMove = async (updatedMoveData) => {
+    try {
+      const moveId = String(updatedMoveData.id);
+      const updateMove = await updateMove(moveId, updatedMoveData);
+  
+      setEditedMoveData(updateMove);
+      setIsEditingMove(false);
+  
+      console.log('Состояние карточки после сохранения:', updateMove);
+    } catch (error) {
+      console.error('Ошибка при обновлении карточки:', error);
+    }
+  };
 
   const handleCancel = () => {
     setEditedCardData({ ...props.card });
@@ -98,12 +123,24 @@ const BusinessCard = (props) => {
     handleAddSide(newSide, setNewSide);
   };
 
+  const createMove = (newMove) => {
+    handleAddMove(newMove, setNewMove);
+  };
+
   const renderButtons = () => {
     if (activeTab === 1) {
       return (
         <>
           <MyButton onClick={handleAddSideToState}>
             Добавить сторону
+          </MyButton>
+        </>
+      );
+    } else if (activeTab === 2) {
+      return (
+        <>
+          <MyButton onClick={handleAddMovementToState}>
+            Добавить движение по делу
           </MyButton>
         </>
       );
@@ -122,6 +159,15 @@ const BusinessCard = (props) => {
 
   return (
     <div className="post">
+      {showMovementForm && activeTab === 2 ? (
+        <MovementForm
+          create={createMove}
+          editMovementData={editedMoveData}
+          onSave={handleSaveMove}
+          onCancel={() => setShowMovementForm(false)}
+          cardId={cardId}
+        />
+      ) : null}
       {showSideForm && isEditingSide ? (
         <SidesForm
           create={createSide}
@@ -220,11 +266,41 @@ const BusinessCard = (props) => {
                 </>
               ) : null}
 
-              {activeTab === 2 && (
-                <div>
-                  Третий текст Третий текст Третий текст Третий текст
-                </div>
-              )}
+              {activeTab === 2 && movements ? (
+                <>
+                {movements.map((movements, index) => (
+                  <div key={index} style={{ marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong>ФИО {movements.date_meeting}.</strong>
+                        <div>Под стражей: {movements.meeting_time}</div>                        
+                        <div>Решение по поступившему делу: {movements.decision_case}</div>
+                        <div>Состав коллегии: {movements.composition_colleges}</div>
+                        <div>Результат судебного заседания: {movements.result_court_session}</div>
+                        <div>причина отложения: {movements.reason_deposition}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <IoMdEye onClick={() => handleShowDetails({ move: movements }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
+                        <IoMdTrash
+                          onClick={() => {
+                            const currentSideId = sides.id; // или нужный вам способ получения id
+                            console.log('currentSideId:', currentSideId);
+                            console.log('props.card.id:', props.card.id);
+                            handleDeleteSide(currentSideId, props.card.id, setSide);
+                          }}
+                          style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
+                        />
+                        <IoMdCreate
+                            onClick={() => handleEditSideForm(movements.id)}
+                            style={{ cursor: 'pointer', color: 'green' }}
+                          />
+                      </div>
+                    </div>
+                    <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
+                  </div>
+                ))}
+              </>
+            ) : null}
 
               {activeTab === 3 && (
                 <div>

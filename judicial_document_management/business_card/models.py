@@ -296,7 +296,7 @@ class Appeal(models.Model):
 
 
 class BusinessMovement(models.Model):
-    '''11. Движение дела'''
+    '''11. Движение по делу'''
     date_meeting = models.DateField(
         verbose_name='Дата заседания'
         )
@@ -326,10 +326,6 @@ class BusinessMovement(models.Model):
         null=True,
         max_length=200,  # В дальнейшем выбор из мэнитумэни
         verbose_name='причина отложения'
-    )
-    sides_case = models.ManyToManyField(
-        SidesCase,  # класс стороны по делу
-        verbose_name='Стороны по делу',
     )
     business_card = models.ForeignKey(
         BusinessCard,
