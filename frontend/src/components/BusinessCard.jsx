@@ -33,14 +33,19 @@ const BusinessCard = (props) => {
   const [movements, setMovements] = useState();
   
   useEffect(() => {
-    SideService.getAllSide(cardId).then((response) =>  {
-      if (Array.isArray(response.data)) {
-        setSide(response.data);
-      } else {
-        console.error('Неверный тип данных в ответе:', response.data);
-      }
-    });
+    SideService.getAllSide(cardId)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setSide(response.data);
+        } else {
+          console.error('Неверный тип данных в ответе:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке сторон:', error);
+      });
   }, [cardId]);
+  
 
   const handleEditToggle = () => {
     setIsEditingCard(!isEditingCard);
@@ -144,8 +149,16 @@ const BusinessCard = (props) => {
           </MyButton>
         </>
       );
-    } else {
+    } else if (activeTab === 3) {
       return (
+        <>
+          <MyButton onClick={handleAddMovementToState}>
+            Добавить ходатайство по делу
+          </MyButton>
+        </>
+      );
+    }
+    { return (
         <>
           <MyButton onClick={() => router(`/cards/${props.card.id}`)}>
             Подробнее
@@ -272,8 +285,8 @@ const BusinessCard = (props) => {
                   <div key={index} style={{ marginBottom: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <strong>ФИО {movements.date_meeting}.</strong>
-                        <div>Под стражей: {movements.meeting_time}</div>                        
+                        <strong>Дата заседания: {movements.date_meeting}.</strong>
+                        <div>Время заседания: {movements.meeting_time}</div>                        
                         <div>Решение по поступившему делу: {movements.decision_case}</div>
                         <div>Состав коллегии: {movements.composition_colleges}</div>
                         <div>Результат судебного заседания: {movements.result_court_session}</div>

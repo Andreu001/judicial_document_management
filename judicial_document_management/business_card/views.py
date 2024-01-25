@@ -175,10 +175,8 @@ class BusinessMovementViewSet(viewsets.ModelViewSet):
             int(movement_id) for movement_id in movement_data if isinstance(
                 movement_id, (int, str)
                 )]
-        sides_case = SidesCase.objects.filter(id__in=movement_ids)
 
         instance = serializer.save(business_card=businesscard)
-        instance.sides_case.set(sides_case)
 
     def perform_update(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')

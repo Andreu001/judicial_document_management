@@ -19,7 +19,7 @@ const MovementForm = ({ create, editBusinessMovementData = {}, onSave, onCancel,
   });
 
   useEffect(() => {
-    if (editBusinessMovementData) {
+    if (editBusinessMovementData && !isEditing) {
       setIsEditing(true);
       setBusinessMovement((prevBusinessMovement) => ({
         ...prevBusinessMovement,
@@ -27,7 +27,8 @@ const MovementForm = ({ create, editBusinessMovementData = {}, onSave, onCancel,
       }));
       setEditingBusinessMovementId(editBusinessMovementData.id);
     }
-  }, [editBusinessMovementData]);
+  }, [editBusinessMovementData, isEditing]);
+  
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -41,6 +42,7 @@ const MovementForm = ({ create, editBusinessMovementData = {}, onSave, onCancel,
       ...prevBusinessMovement,
       [name]: value,
     }));
+    
   };
 
   const handleAddNewBusinessMovement = async (e) => {
@@ -56,7 +58,7 @@ const MovementForm = ({ create, editBusinessMovementData = {}, onSave, onCancel,
         onSave(response.data);
       } else {
         // Создание нового "Движения по делу"
-        const response = await axios.post('http://localhost:8000/business_card/businessmovement/', newBusinessMovementData);
+        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`, newBusinessMovementData);
         console.log('Движение по делу создано:', response.data);
         create(response.data);
       }
@@ -93,28 +95,28 @@ const MovementForm = ({ create, editBusinessMovementData = {}, onSave, onCancel,
         placeholder="Время заседания"
       />
         <MyInput
-        type="time"
+        type="text"
         name="decision_case"
         value={businessMovement.decision_case || editBusinessMovementData.decision_case}
         onChange={handleChange}
         placeholder="Решение по поступившему делу"
       />
         <MyInput
-        type="time"
+        type="text"
         name="composition_colleges"
         value={businessMovement.composition_colleges || editBusinessMovementData.composition_colleges}
         onChange={handleChange}
         placeholder="Состав коллегии"
       />
         <MyInput
-        type="time"
+        type="text"
         name="result_court_session"
         value={businessMovement.result_court_session || editBusinessMovementData.result_court_session}
         onChange={handleChange}
         placeholder="Результат судебного заседания"
       />
         <MyInput
-        type="time"
+        type="text"
         name="reason_deposition"
         value={businessMovement.reason_deposition || editBusinessMovementData.reason_deposition}
         onChange={handleChange}

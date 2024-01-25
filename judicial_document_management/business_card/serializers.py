@@ -141,8 +141,6 @@ class BusinessMovementSerializer(serializers.ModelSerializer):
     Движение по делу
     """
 
-    sides_case = SidesCaseSerializer(many=True, read_only=True)
-
     class Meta:
         model = BusinessMovement
         fields = ('date_meeting',
