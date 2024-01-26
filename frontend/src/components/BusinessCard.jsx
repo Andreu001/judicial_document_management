@@ -10,6 +10,7 @@ import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } fr
 import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, handleEditMove } from '../pages/movement/Movement';
 import SidesForm from '../pages/sides/SidesForm';
 import SideService from '../API/SideService';
+import MovementService from '../API/MovementService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 import MovementForm from '../pages/movement/MovementForm';
 
@@ -45,6 +46,20 @@ const BusinessCard = (props) => {
         console.error('Ошибка при загрузке сторон:', error);
       });
   }, [cardId]);
+
+  useEffect(() => {
+    MovementService.getAllMove(cardId)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setMovements(response.data);
+        } else {
+          console.error('Неверный тип данных в ответе:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке сторон:', error);
+      });
+  }, [cardId]);
   
 
   const handleEditToggle = () => {
@@ -71,17 +86,30 @@ const BusinessCard = (props) => {
     setShowMovementForm(true);
   };
 
+  const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
+    setIsEditingMove(isEditing);
+  
+    // Находим отредактированные данные движения по ID
+    const editedMove = movements.find((move) => move.id === moveId);
+  
+    setEditedMoveData({ ...editedMove });
+    setShowMovementForm(true);
+  };
+  
+
   const handleSaveMove = async (updatedMoveData) => {
     try {
       const moveId = String(updatedMoveData.id);
-      const updateMove = await updateMove(moveId, updatedMoveData);
-  
-      setEditedMoveData(updateMove);
+      const updatedMove = await MovementService.updateMove(cardId, moveId, updatedMoveData);
+
+      setMovements((prevMovements) =>
+        prevMovements.map((move) => (move.id === moveId ? updatedMove : move))
+      );
+
       setIsEditingMove(false);
-  
-      console.log('Состояние карточки после сохранения:', updateMove);
+      console.log('Состояние движения после сохранения:', updatedMove);
     } catch (error) {
-      console.error('Ошибка при обновлении карточки:', error);
+      console.error('Ошибка при обновлении движения:', error);
     }
   };
 
@@ -296,15 +324,15 @@ const BusinessCard = (props) => {
                         <IoMdEye onClick={() => handleShowDetails({ move: movements }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
                         <IoMdTrash
                           onClick={() => {
-                            const currentSideId = sides.id; // или нужный вам способ получения id
-                            console.log('currentSideId:', currentSideId);
+                            const currentMoveId = movements.id;
+                            console.log('currentMoveId:', currentMoveId);
                             console.log('props.card.id:', props.card.id);
-                            handleDeleteSide(currentSideId, props.card.id, setSide);
+                            handleDeleteMove(currentMoveId, props.card.id, setMovements);
                           }}
                           style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
                         />
                         <IoMdCreate
-                            onClick={() => handleEditSideForm(movements.id)}
+                            onClick={() => handleEditMoveForm(true, setIsEditingMove, setEditedMoveData, movements.id)}
                             style={{ cursor: 'pointer', color: 'green' }}
                           />
                       </div>
