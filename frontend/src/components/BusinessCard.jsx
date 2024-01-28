@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import MyButton from './UI/button/MyButton';
 import { useNavigate } from 'react-router-dom';
 import CardService from '../API/CardService';
+import PetitionService, { updatePetition } from '../API/PetitionService';
 import { updateCard } from '../API/CardService';
 import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
 import CardForm from './CardForm';
 import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/sides/Sides';
 import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, handleEditMove } from '../pages/movement/Movement';
+import { handleShowDetailsPetition, handleAddPetitions, handleDeletePetition } from '../pages/petition/Petition';
 import SidesForm from '../pages/sides/SidesForm';
+import PetitionForm from '../pages/petition/PetitionForm';
 import SideService from '../API/SideService';
+import MovementService from '../API/MovementService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 import MovementForm from '../pages/movement/MovementForm';
 
@@ -26,17 +30,47 @@ const BusinessCard = (props) => {
   const [editedCardData, setEditedCardData] = useState({ ...props.card });
   const [editedSideData, setEditedSideData] = useState({ ...props.side });
   const [editedMoveData, setEditedMoveData] = useState({ ...props.move });
+  const [editedPetitionsData, setEditedPetitionsData] = useState({ ...props.petition });
   const [showSideForm, setShowSideForm] = useState(false);
   const [isEditingSide, setIsEditingSide] = useState(false);
   const [sides, setSide] = useState([]);
   const [editedSideId, setEditedSideId] = useState(null);
   const [movements, setMovements] = useState();
+  const [petitions, setPetitions] = useState();
+
+  useEffect(() => {
+    PetitionService.getAllPetitions(cardId)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setPetitions(response.data);
+        } else {
+          console.error('Неверный тип данных в ответе:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке сторон:', error);
+      });
+  }, [cardId]);
   
   useEffect(() => {
     SideService.getAllSide(cardId)
       .then((response) => {
         if (Array.isArray(response.data)) {
           setSide(response.data);
+        } else {
+          console.error('Неверный тип данных в ответе:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке сторон:', error);
+      });
+  }, [cardId]);
+
+  useEffect(() => {
+    MovementService.getAllMove(cardId)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setMovements(response.data);
         } else {
           console.error('Неверный тип данных в ответе:', response.data);
         }
@@ -71,17 +105,30 @@ const BusinessCard = (props) => {
     setShowMovementForm(true);
   };
 
+  const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
+    setIsEditingMove(isEditing);
+  
+    // Находим отредактированные данные движения по ID
+    const editedMove = movements.find((move) => move.id === moveId);
+  
+    setEditedMoveData({ ...editedMove });
+    setShowMovementForm(true);
+  };
+  
+
   const handleSaveMove = async (updatedMoveData) => {
     try {
       const moveId = String(updatedMoveData.id);
-      const updateMove = await updateMove(moveId, updatedMoveData);
-  
-      setEditedMoveData(updateMove);
+      const updatedMove = await MovementService.updateMove(cardId, moveId, updatedMoveData);
+
+      setMovements((prevMovements) =>
+        prevMovements.map((move) => (move.id === moveId ? updatedMove : move))
+      );
+
       setIsEditingMove(false);
-  
-      console.log('Состояние карточки после сохранения:', updateMove);
+      console.log('Состояние движения после сохранения:', updatedMove);
     } catch (error) {
-      console.error('Ошибка при обновлении карточки:', error);
+      console.error('Ошибка при обновлении движения:', error);
     }
   };
 
@@ -119,9 +166,11 @@ const BusinessCard = (props) => {
     setActiveTab(tabIndex);
   };
 
-  const handleAddSideToState = () => {
+  const handleAddSideToState = (e) => {
+    e.preventDefault()
     setIsEditingSide(true);
     setShowSideForm(true);
+    setSide([...sides, newside])
   };
 
   const createSide = (newSide) => {
@@ -172,6 +221,29 @@ const BusinessCard = (props) => {
 
   return (
     <div className="post">
+            {showSideForm && isEditingSide ? (
+        <PetitionForm
+          create={createSide}
+          editSideData={editedSideData}
+          onSave={async (newSide) => {
+            if (editedSideId) {
+              const updatedSide = await PetitionService.updatePetition(cardId, editedSideId, newSide);
+              setEditedSideData(updatedSide);
+              setIsEditingSide(false);
+              setEditedSideId(null);
+            } else {
+            }
+          }}
+          onCancel={() => {
+            setShowSideForm(false);
+            setIsEditingSide(false);
+            setEditedSideId(null);
+          }}
+          setNewSide={setNewSide}
+          cardId={cardId}
+        />
+      ) : null}
+
       {showMovementForm && activeTab === 2 ? (
         <MovementForm
           create={createMove}
@@ -296,15 +368,15 @@ const BusinessCard = (props) => {
                         <IoMdEye onClick={() => handleShowDetails({ move: movements }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
                         <IoMdTrash
                           onClick={() => {
-                            const currentSideId = sides.id; // или нужный вам способ получения id
-                            console.log('currentSideId:', currentSideId);
+                            const currentMoveId = movements.id;
+                            console.log('currentMoveId:', currentMoveId);
                             console.log('props.card.id:', props.card.id);
-                            handleDeleteSide(currentSideId, props.card.id, setSide);
+                            handleDeleteMove(currentMoveId, props.card.id, setMovements);
                           }}
                           style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
                         />
                         <IoMdCreate
-                            onClick={() => handleEditSideForm(movements.id)}
+                            onClick={() => handleEditMoveForm(true, setIsEditingMove, setEditedMoveData, movements.id)}
                             style={{ cursor: 'pointer', color: 'green' }}
                           />
                       </div>

@@ -25,7 +25,10 @@ router.register(
     )
 # Заявленные ходатайства надо привязать
 # к делу и к лицу, которое заявило ходатайство
-router.register(r'petitions', PetitionsViewSet, basename='petitions')
+router.register(
+    r'businesscard/(?P<businesscard_id>\d+)/petitions',
+    PetitionsViewSet,
+    basename='petitions')
 
 # Вынесенные решения привязываются только к делу
 router.register(

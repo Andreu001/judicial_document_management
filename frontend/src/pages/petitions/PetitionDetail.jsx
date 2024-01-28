@@ -4,7 +4,7 @@ import {useFetching} from "../../hooks/useFetching";
 import CardService from "../../API/CardService";
 import Loader from "../../components/UI/loader/Loader";
 
-const CardIdPage = () => {
+const PetitionDetail = () => {
     const params = useParams()
     const [card, setCard] = useState({});
     const [comments, setComments] = useState([]);
@@ -47,4 +47,4 @@ const CardIdPage = () => {
     );
 };
 
-export default CardIdPage;
+export default PetitionDetail;

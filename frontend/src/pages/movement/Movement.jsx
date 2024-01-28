@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import MovementService from '../../API/MovementService';
 import MovementForm from './MovementForm';
 import  { updateMove } from '../../API/MovementService';
-import MovementList from '../../components/MovementList';
+import MovementList from './MovementList';
 import axios from 'axios';
 
 export const handleShowDetailsMovement = (props, router) => {
-  router(`/cards/details/${props.movements.id}`);
-  console.log( "Передается в МУВВВВ!!!!", props.movements);
+  router(`/cards/details/${props.move.id}`);
+  console.log( "Передается в МУВВВВ!!!!", props.move);
 };
 
 export const handleAddMove = (newMove, setGlobalMove) => {
@@ -15,10 +15,6 @@ export const handleAddMove = (newMove, setGlobalMove) => {
   if (newMove && Object.keys(newMove).length > 0) {
     setGlobalMove((prevMove) => [...prevMove, newMove]);
   }
-};
-
-export const handleEditMove = (isEditing, setIsEditing) => {
-  setIsEditing(isEditing);
 };
 
 export const handleDeleteMove = async (moveId, cardId, setMove) => {

@@ -191,6 +191,8 @@ class PetitionsInCase(models.Model):
     )
     sides_case = models.ManyToManyField(
         SidesCase,
+        null=True,
+        blank=True,
         verbose_name='Кто заявил ходатайство'
     )
     date_application = models.DateField(

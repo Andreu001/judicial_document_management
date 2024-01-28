@@ -74,12 +74,12 @@ function Cards() {
 
   const handleCreateCardClick = () => {
     setModal(true);
-    setShowForm(true); // Показать форму при нажатии на кнопку "Создать карточку"
+    setShowForm(true);
   };
 
   const handleCloseModal = () => {
     setModal(false);
-    setShowForm(false); // Скрыть форму при закрытии модального окна
+    setShowForm(false);
   };
 
   return (
