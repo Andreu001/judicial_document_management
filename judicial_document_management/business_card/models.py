@@ -51,18 +51,18 @@ class SidesCase(models.Model):
 
 class Petitions(models.Model):
     '''3. Модель заявленных ходатайств по делу'''
-    name_petition = models.CharField(
+    petitions = models.CharField(
         max_length=150,
         verbose_name='наименование ходатайства'
     )
 
     class Meta:
-        ordering = ('name_petition',)
+        ordering = ('petitions',)
         verbose_name = 'Ходатайство'
         verbose_name_plural = 'Ходатайства'
 
     def __str__(self):
-        return self.name_petition
+        return self.petitions
 
 
 class Decisions(models.Model):
@@ -181,18 +181,12 @@ class BusinessCard(models.Model):
 
 class PetitionsInCase(models.Model):
     '''8. Промежуточная таблица для ходатайств'''
-    petitions = models.ForeignKey(
+    petitions = models.ManyToManyField(
         Petitions,
-        on_delete=models.DO_NOTHING,
         verbose_name='ходатайства по делу',
-        related_name='SidesCaseInCase',
-        null=True,
-        blank=True,
     )
     sides_case = models.ManyToManyField(
         SidesCase,
-        null=True,
-        blank=True,
         verbose_name='Кто заявил ходатайство'
     )
     date_application = models.DateField(
@@ -215,6 +209,7 @@ class PetitionsInCase(models.Model):
     business_card = models.ForeignKey(
         BusinessCard,
         on_delete=models.DO_NOTHING,
+        related_name='petitionsincase',
         verbose_name='Карточка на дело',
     )
 
@@ -226,7 +221,7 @@ class PetitionsInCase(models.Model):
     def __str__(self):
         return (
             f'{self.sides_case} {self.date_application} '
-            f'заявил ходатайство о {self.name_petition}'
+            f'заявил ходатайство о {self.petitions}'
             )
 
 

@@ -99,8 +99,42 @@ class PetitionsInCaseViewSet(viewsets.ModelViewSet):
     """
 
     """
-    queryset = PetitionsInCase.objects.all()
     serializer_class = PetitionsInCaseSerializer
+
+    def get_queryset(self):
+        businesscard = get_object_or_404(
+            BusinessCard, pk=self.kwargs.get('businesscard_id')
+            )
+        new_queryset = businesscard.petitionsincase.all()
+        return new_queryset
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        petitions_data = self.request.data.get('petitions', [])
+        petitions_ids = [
+            int(petition_id) for petition_id in petitions_data if isinstance(
+                petition_id, (int, str)
+                )]
+        petitions = PetitionsInCase.objects.filter(id__in=petitions_ids)
+
+        instance = serializer.save(business_card=businesscard)
+        instance.petitions.set(petitions)
+
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        petitions_data = self.request.data.get('petitions', [])
+        petitions_ids = [
+            int(petition_id) for petition_id in petitions_data if isinstance(
+                petition_id, (int, str)
+                )
+            ]
+        petitions = PetitionsInCase.objects.filter(id__in=petitions_ids)
+        instance = serializer.save(business_card=businesscard)
+        instance.petitions.set(petitions)
 
 
 class SidesCaseInCaseViewSet(viewsets.ModelViewSet):

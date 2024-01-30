@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PetitionService from '../../API/PetitionService';
 import PetitionForm from './PetitionForm';
 import  { updatePetition } from '../../API/PetitionService';
-import PetitionList from '../movement/PetitionList';
+import PetitionList from './PetitionList';
 import axios from 'axios';
 
 export const handleShowDetailsPetition = (props, router) => {
@@ -15,6 +15,10 @@ export const handleAddPetitions = (newPetition, setGlobalPetition) => {
   if (newPetition && Object.keys(newPetition).length > 0) {
     setGlobalPetition((prevPetition) => [...prevPetition, newPetition]);
   }
+};
+
+export const handleEditPetition = (isEditing, setIsEditing) => {
+  setIsEditing(isEditing);
 };
 
 export const handleDeletePetition = async (petitionId, cardId, setPetition) => {
@@ -48,7 +52,7 @@ const Petition = (props) => {
   const handleSave = async (editedPetitionsData) => {
     try {
       const petitionId = String(editedPetitionsData.id);
-      const updatedPetitions = await updatePetitions(petitionId, editedPetitionsData);
+      const updatedPetitions = await updatedPetitions(petitionId, editedPetitionsData);
   
       setEditedPetitionsDataState(updatedPetitions);
       setIsEditing(false);
@@ -64,7 +68,7 @@ const Petition = (props) => {
   useEffect(() => {
     const fetchPetitions = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
+        const response = await axios.get(`http://127.0.0.1:8000/business_card/petitions/`);
         console.log('Response:', response);
         setPetitions(response.data);
       } catch (error) {

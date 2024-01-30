@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
-import { updateMove } from '../../API/PetitionService';
+import { updatedPetition } from '../../API/PetitionService';
 
 const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editingBusinessPetitionId, setEditingBusinessPetitionId] = useState(null);
+  const [editingPetitionId, setEditingPetitionId] = useState(null);
+  const [petitionsCaseList, setPetitionCaseList] = useState([]);
 
-  const [businessPetition, setBusinessPetition] = useState({
+  const [petition, setPetition] = useState({
     petitions: [],
     sides_case: [],
     date_application: '',
@@ -17,15 +18,23 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId 
     notation: '',
   });
 
+  const [side, setSide] = useState({
+    name: '',
+    sides_case: '',
+    under_arrest: '',
+    date_sending_agenda: '',
+    business_card: '',
+  });
+
   useEffect(() => {
     if (editPetitionData && !isEditing) {
       setIsEditing(true);
-      setBusinessPetition((prevBusinessPetition) => ({
+      setPetition((prevBusinessPetition) => ({
         ...prevBusinessPetition,
         ...editPetitionData.data,
       }));
       
-      setEditingBusinessPetitionId(editPetitionData.id);
+      setEditingPetitionId(editPetitionData.id);
     }
   }, [editPetitionData, isEditing]);
   
@@ -38,7 +47,7 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setBusinessPetition((prevBusinessPetition) => ({
+    setPetition((prevBusinessPetition) => ({
       ...prevBusinessPetition,
       [name]: value,
     }));
@@ -51,7 +60,7 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId 
     const newPetitionData = {
       petitions: petition.name,
       sides_case: petition.sides_case,
-      date_application: petition.date_sending_agenda ? formatDate(petition.date_sending_agenda) : null,
+      date_application: petition.date_sending_agenda,
       decision_rendered: petition.business_card,
       date_decision: petition.date_decision,
       notation: petition.notation,
@@ -62,16 +71,16 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId 
         delete newPetitionData.date_sending_agenda;
       }
   
-      if (editingSideId) {
+      if (editingPetitionId) {
         // Редактирование существующей стороны
-        const response = await updatePetition(cardId, editingPetitionId, newPetitionData);
+        const response = await updatedPetition(cardId, editingPetitionId, newPetitionData);
         console.log('Сторона cardId:', cardId);
         console.log('Сторона editingPetitionId:', editingPetitionId);
         console.log('Сторона обновлена:', response.data);
         onSave(response.data);
       } else {
         // Создание новой ходатайства
-        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/petitions/`, newSideData);
+        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/petitions/`, newPetitionData);
         console.log('Сторона создана:', response.data);
         console.log('Отправка данных:', newPetitionData);
         create(response.data);
@@ -95,7 +104,7 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId 
     <form>
         <select
           name="petitions"
-          value={side.petitions || (editSideData.petitions ? [editSideData.petitions.id] : '')}
+          value={petition.petitions || (editPetitionData.petitions ? [editPetitionData.petitions.id] : '')}
           onChange={handleChange}
         >
           <option value="">Выберите Ходатайство</option>
@@ -107,41 +116,41 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId 
         </select>
         <select
           name="sides_case"
-          value={side.sides_case || (editSideData.sides_case ? [editSideData.sides_case.id] : '')}
+          value={side.sides_case || (editPetitionData.sides_case ? [editPetitionData.sides_case.id] : '')}
           onChange={handleChange}
         >
           <option value="">Выберите Название стороны</option>
-          {sidesCaseList.map((sideCase, index) => (
-            <option key={index} value={sideCase.id}>
-              {sideCase.sides_case}
+          {petitionsCaseList.map((petitionCase, index) => (
+            <option key={index} value={petitionCase.id}>
+              {petitionCase.sides_case}
             </option>
           ))}
         </select>
         <MyInput
         type="date"
         name="date_application"
-        value={businessPetition.date_application || editPetitionData.date_application}
+        value={petition.date_application || editPetitionData.date_application}
         onChange={handleChange}
         placeholder="Дата ходатайства"
       />
         <MyInput
         type="text"
         name="decision_rendered"
-        value={businessPetition.decision_rendered || editPetitionData.decision_rendered}
+        value={petition.decision_rendered || editPetitionData.decision_rendered}
         onChange={handleChange}
         placeholder="наименование вынесенного решения"
       />
         <MyInput
         type="date"
         name="date_decision"
-        value={businessPetition.date_decision || editPetitionData.date_decision}
+        value={petition.date_decision || editPetitionData.date_decision}
         onChange={handleChange}
         placeholder="Дата решения по ходатайству"
       />
         <MyInput
         type="text"
         name="notation"
-        value={businessPetition.notation || editPetitionData.notation}
+        value={petition.notation || editPetitionData.notation}
         onChange={handleChange}
         placeholder="примечания"
       />

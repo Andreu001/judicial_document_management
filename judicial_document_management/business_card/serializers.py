@@ -103,8 +103,7 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
                   'sides_case',
                   'date_application',
                   'decision_rendered',
-                  'date_decision',
-                  'business_card')
+                  'date_decision')
 
 
 class SidesCaseInCaseSerializer(serializers.ModelSerializer):
