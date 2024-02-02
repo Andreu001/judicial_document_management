@@ -1,0 +1,11 @@
+
+{% extends "base.html" %}
+{% block title %}Главная страница{% endblock %}
+  <div>
+  {% block content %}
+  {% for card in page_obj %}
+    {% include 'includes/business_card.html' %}
+  {% endfor %}
+  {% include 'includes/paginator.html' with page_obj=page_obj %}
+  </div>
+{% endblock %}
