@@ -16,7 +16,7 @@ from rest_framework import status
 from .models import (FamiliarizationCase, SidesCase,
                      Petitions, Decisions, ConsideredCase,
                      Category, BusinessCard, PetitionsInCase,
-                     Appeal)
+                     Appeal, SidesCaseInCase)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           DecisionsSerializer,
@@ -99,13 +99,60 @@ class PetitionsInCaseViewSet(viewsets.ModelViewSet):
     """
 
     """
-    queryset = PetitionsInCase.objects.all()
     serializer_class = PetitionsInCaseSerializer
+
+    def get_queryset(self):
+        sidescaseincase_id = self.kwargs.get('sidescaseincase_id')
+
+        sidescaseincase = get_object_or_404(
+            SidesCaseInCase, pk=sidescaseincase_id
+            )
+
+        new_queryset = sidescaseincase.petitionsincase.all()
+        return new_queryset
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        sidescaseincase_id = self.kwargs.get('sidescaseincase_id')
+
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+        sidescaseincase = get_object_or_404(
+            SidesCaseInCase, pk=sidescaseincase_id
+            )
+        if sidescaseincase.business_card != businesscard:
+            return Response(
+                {'detail': 'Сторона не относится к этому делу'},
+                status=status.HTTP_400_BAD_REQUEST
+                )
+        petitions_data = self.request.data.get('petitions', [])
+        petitions = Petitions.objects.filter(id__in=petitions_data)
+
+        instance = serializer.save(business_card=businesscard)
+        instance.petitions.set(petitions)
+
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        sidescaseincase_id = self.kwargs.get('sidescaseincase_id')
+
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+        sidescaseincase = get_object_or_404(
+            SidesCaseInCase, pk=sidescaseincase_id
+            )
+        if sidescaseincase.business_card != businesscard:
+            return Response(
+                {'detail': 'Сторона не относится к этому делу'},
+                status=status.HTTP_400_BAD_REQUEST
+                )
+        petitions_data = self.request.data.get('petitions', [])
+        petitions = Petitions.objects.filter(id__in=petitions_data)
+
+        instance = serializer.save(business_card=businesscard)
+        instance.petitions.set(petitions)
 
 
 class SidesCaseInCaseViewSet(viewsets.ModelViewSet):
     """
-
+    API endpoint для работы с моделью SidesCaseInCase.
     """
     serializer_class = SidesCaseInCaseSerializer
 

@@ -20,7 +20,7 @@ export default class MovementService {
     return response;
   } catch (error) {
     console.error('Ошибка при выполнении запроса getAllSide:', error);
-    throw error;
+    throw error; // Выбрасываем ошибку дальше
   }
 
 

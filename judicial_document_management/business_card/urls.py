@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 from .views import (FamiliarizationCaseViewSet, SidesCaseViewSet,
-                    PetitionsViewSet, DecisionsViewSet,
+                    PetitionsViewSet, PetitionsInCaseViewSet, DecisionsViewSet,
                     ConsideredCaseViewSet, CategoryViewSet,
                     BusinessCardViewSet, AppealViewSet,
                     BusinessMovementViewSet, SidesCaseInCaseViewSet
@@ -23,10 +23,17 @@ router.register(
     SidesCaseInCaseViewSet,
     basename='sidescaseincase'
     )
-# Заявленные ходатайства надо привязать
-# к делу и к лицу, которое заявило ходатайство
-router.register(r'petitions', PetitionsViewSet, basename='petitions')
 
+router.register(r'petitions', PetitionsViewSet, basename='petitions')
+# Заявленные ходатайства надо привязать
+# к делу, и к лицу, и к движению дела
+router.register(
+    r'businesscard/(?P<businesscard_id>\d+)/'
+    r'sidescaseincase/(?P<sidescaseincase_id>\d+)/'
+    r'petitionsincase',
+    PetitionsInCaseViewSet,
+    basename='petitionsincase'
+)
 # Вынесенные решения привязываются только к делу
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/decisions',

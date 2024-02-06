@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import CardService from '../../API/CardService';
-import CardList from '../../components/CardList';
-import MyButton from '../../components/UI/button/MyButton';
-import Modal from '../../components/UI/Modal/Modal';
-import Loader from '../../components/UI/loader/Loader';
-import { getPageCount } from '../../utils/pages';
-import Pagination from '../../components/UI/pagination/Pagination';
-import CardFilter from '../../components/CardFilter';
-import { useFetching } from '../../hooks/useFetching';
-import { useCard } from '../../hooks/useCard';
-import CardForm from '../../components/CardForm';
-import SideService from '../../API/SideService';
+import CardService from '../API/CardService';
+import CardList from '../components/CardList';
+import MyButton from '../components/UI/button/MyButton';
+import Modal from '../components/UI/Modal/Modal';
+import Loader from '../components/UI/loader/Loader';
+import { getPageCount } from '../utils/pages';
+import Pagination from '../components/UI/pagination/Pagination';
+import CardFilter from '../components/CardFilter';
+import { useFetching } from '../hooks/useFetching';
+import { useCard } from '../hooks/useCard';
+import CardForm from '../components/CardForm';
+import SideService from '../API/SideService';
 
 function Cards() {
   const [cards, setCards] = useState([]);
@@ -74,12 +74,12 @@ function Cards() {
 
   const handleCreateCardClick = () => {
     setModal(true);
-    setShowForm(true);
+    setShowForm(true); // Показать форму при нажатии на кнопку "Создать карточку"
   };
 
   const handleCloseModal = () => {
     setModal(false);
-    setShowForm(false);
+    setShowForm(false); // Скрыть форму при закрытии модального окна
   };
 
   return (

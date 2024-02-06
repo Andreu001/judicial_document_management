@@ -38,7 +38,7 @@ class PetitionsSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Petitions
-        fields = ('id', 'name_petition',)
+        fields = ('id', 'petitions',)
 
 
 class DecisionsSerializer(serializers.ModelSerializer):
@@ -103,8 +103,7 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
                   'sides_case',
                   'date_application',
                   'decision_rendered',
-                  'date_decision',
-                  'business_card')
+                  'date_decision')
 
 
 class SidesCaseInCaseSerializer(serializers.ModelSerializer):

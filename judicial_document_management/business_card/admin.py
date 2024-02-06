@@ -30,9 +30,9 @@ class SidesCaseAdmin(admin.ModelAdmin):
 class PetitionsAdmin(admin.ModelAdmin):
     '''Модель заявленных ходатайств по делу'''
     list_display = (
-        'name_petition',
+        'petitions',
     )
-    search_fields = ('name_petition',)
+    search_fields = ('petitions',)
     empty_value_display = '-пусто-'
 
 
@@ -57,7 +57,7 @@ class DecisionsAdmin(admin.ModelAdmin):
         'name_case',
         'date_consideration',
     )
-    search_fields = ('name_petition',)
+    search_fields = ('petitions',)
     empty_value_display = '-пусто-'
 
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MovementService from '../../API/MovementService';
 import MovementForm from './MovementForm';
 import  { updateMove } from '../../API/MovementService';
-import MovementList from '../../components/MovementList';
+import MovementList from './MovementList';
 import axios from 'axios';
 
 export const handleShowDetailsMovement = (props, router) => {
@@ -44,8 +44,43 @@ const Movement = (props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedMoveDataState, setEditedMoveDataState] = useState({ ...props.movements });
   const [movements, setMovements] = useState();
+  const [showMovementForm, setShowMovementForm] = useState(false);
+  const [isEditingMove, setIsEditingMove] = useState(false);
+  const cardId = card.id;
+  const { card } = props;
 
-  const handleSave = async (editedMoveData) => {
+  const handleAddMovementToState = () => {
+    setShowMovementForm(true);
+  };
+
+  const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
+    setIsEditingMove(isEditing);
+  
+    // Находим отредактированные данные движения по ID
+    const editedMove = movements.find((move) => move.id === moveId);
+  
+    setEditedMoveData({ ...editedMove });
+    setShowMovementForm(true);
+  };
+  
+
+  const handleSaveMove = async (updatedMoveData) => {
+    try {
+      const moveId = String(updatedMoveData.id);
+      const updatedMove = await MovementService.updateMove(cardId, moveId, updatedMoveData);
+
+      setMovements((prevMovements) =>
+        prevMovements.map((move) => (move.id === moveId ? updatedMove : move))
+      );
+
+      setIsEditingMove(false);
+      console.log('Состояние движения после сохранения:', updatedMove);
+    } catch (error) {
+      console.error('Ошибка при обновлении движения:', error);
+    }
+  };
+
+  /*const handleSave = async (editedMoveData) => {
     try {
       const moveId = String(editedMoveData.id);
       const updatedMove = await updateMove(moveId, editedMoveData);
@@ -59,7 +94,7 @@ const Movement = (props) => {
     } catch (error) {
       console.error('Ошибка при обновлении движения:', error);
     }
-  };
+  };*/
   
   useEffect(() => {
     const fetchMove = async () => {
@@ -87,7 +122,7 @@ const Movement = (props) => {
         <MovementForm
           create={props.create}
           editMoveData={editedMoveDataState}
-          onSave={handleSave}
+          onSave={handleSaveMove}
           onCancel={handleCancel}
           setMovements={props.setMovements}
         />

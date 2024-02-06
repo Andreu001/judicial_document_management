@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import MyButton from './UI/button/MyButton';
 import { useNavigate } from 'react-router-dom';
 import CardService from '../API/CardService';
+import PetitionService, { updatePetition } from '../API/PetitionService';
 import { updateCard } from '../API/CardService';
 import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
 import CardForm from './CardForm';
 import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/sides/Sides';
 import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, handleEditMove } from '../pages/movement/Movement';
+import { handleShowDetailsPetition, handleEditPetition, handleAddPetitions, handleDeletePetition } from '../pages/petitions/Petition';
 import SidesForm from '../pages/sides/SidesForm';
+import PetitionForm from '../pages/petitions/PetitionForm';
 import SideService from '../API/SideService';
 import MovementService from '../API/MovementService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
@@ -27,11 +30,31 @@ const BusinessCard = (props) => {
   const [editedCardData, setEditedCardData] = useState({ ...props.card });
   const [editedSideData, setEditedSideData] = useState({ ...props.side });
   const [editedMoveData, setEditedMoveData] = useState({ ...props.move });
+  const [editedPetitionData, setEditedPetitionData] = useState({ ...props.petition });
   const [showSideForm, setShowSideForm] = useState(false);
   const [isEditingSide, setIsEditingSide] = useState(false);
   const [sides, setSide] = useState([]);
   const [editedSideId, setEditedSideId] = useState(null);
   const [movements, setMovements] = useState();
+  const [petitions, setPetitions] = useState();
+  const [isEditingPetition, setIsEditingPetition] = useState(false);
+  const [showPetitionForm, setShowPetitionForm] = useState(false);
+  const [newPetition, setNewPetition] = useState([]);
+  const [editedPetitionId, setEditedPetitionId] = useState(null);
+
+  useEffect(() => {
+    PetitionService.getAllPetitions(cardId)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setPetitions(response.data);
+        } else {
+          console.error('Неверный тип данных в ответе:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке сторон:', error);
+      });
+  }, [cardId]);
   
   useEffect(() => {
     SideService.getAllSide(cardId)
@@ -84,6 +107,13 @@ const BusinessCard = (props) => {
 
   const handleAddMovementToState = () => {
     setShowMovementForm(true);
+  };
+
+  const handleAddPetitionToState = () => {
+    console.log('Button Clicked');
+    setShowPetitionForm(true);
+    setIsEditingPetition(true); // Добавьте это
+    console.log('showPetitionForm:', showPetitionForm);
   };
 
   const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
@@ -147,9 +177,11 @@ const BusinessCard = (props) => {
     setActiveTab(tabIndex);
   };
 
-  const handleAddSideToState = () => {
+  const handleAddSideToState = (e) => {
+    e.preventDefault()
     setIsEditingSide(true);
     setShowSideForm(true);
+    setSide([...sides, newside])
   };
 
   const createSide = (newSide) => {
@@ -158,6 +190,10 @@ const BusinessCard = (props) => {
 
   const createMove = (newMove) => {
     handleAddMove(newMove, setNewMove);
+  };
+
+  const createPetition = (newPetition) => {
+    handleAddPetitions(newPetition, setNewPetition);
   };
 
   const renderButtons = () => {
@@ -180,7 +216,7 @@ const BusinessCard = (props) => {
     } else if (activeTab === 3) {
       return (
         <>
-          <MyButton onClick={handleAddMovementToState}>
+          <MyButton onClick={handleAddPetitionToState}>
             Добавить ходатайство по делу
           </MyButton>
         </>
@@ -200,6 +236,29 @@ const BusinessCard = (props) => {
 
   return (
     <div className="post">
+      {showPetitionForm && isEditingPetition ? (
+        <PetitionForm
+          create={createPetition}
+          editPetitionData={editedPetitionData}
+          onSave={async (newPetition) => {
+            if (editedPetitionId) {
+              const updatedPetition = await PetitionService.updatePetition(cardId, editedPetitionId, newPetition);
+              setEditedPetitionData(updatedPetition);
+              setIsEditingPetition(false);
+              setEditedPetitionId(null);
+            } else {
+            }
+          }}
+          onCancel={() => {
+            setShowPetitionForm(false);
+            setIsEditingPetition(false);
+            setEditedPetitionId(null);
+          }}
+          setNewPetition={setNewPetition}
+          cardId={cardId}
+        />
+      ) : null}
+
       {showMovementForm && activeTab === 2 ? (
         <MovementForm
           create={createMove}
@@ -343,11 +402,42 @@ const BusinessCard = (props) => {
               </>
             ) : null}
 
-              {activeTab === 3 && (
-                <div>
-                  Четвертый текст Четвертый текст Четвертый текст
-                </div>
-              )}
+              {activeTab === 3 && petitions ? (
+                <>
+                {petitions.map((petitions, index) => (
+                  <div key={index} style={{ marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong>ходатайства по делу: {petitions.petitions}.</strong>
+                        <div>Кто заявил ходатайство: {petitions.sides_case}</div>
+                        <div>Дата ходатайства: {petitions.date_application}</div>
+                        <div>наименование вынесенного решения: {petitions.decision_rendered}</div>
+                        <div>Дата решения по ходатайству: {petitions.date_decision}</div>
+                        <div>примечания: {petitions.notation}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <IoMdEye onClick={() => handleShowDetailsPetition({ petition: petitions }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
+                        <IoMdTrash
+                          onClick={() => {
+                            const currentPetitionId = petitions.id;
+                            console.log('currentPetitionId:', currentPetitionId);
+                            console.log('props.card.id:', props.card.id);
+                            handleDeletePetition(currentPetitionId, props.card.id, setPetitions);
+                          }}
+                          style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
+                        />
+                        <IoMdCreate
+                            onClick={() => handleEditPetition(true, setIsEditingPetition, setEditedPetitionData, petitions.id)}
+                            style={{ cursor: 'pointer', color: 'green' }}
+                          />
+                      </div>
+                    </div>
+                    <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
+                  </div>
+                ))}
+              </>
+            ) : null}
+
             </div>
           </div>
           <hr
