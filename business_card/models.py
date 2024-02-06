@@ -235,14 +235,6 @@ class SidesCaseInCase(models.Model):
         SidesCase,
         verbose_name='Стороны по делу',
     )
-    petitionsincase = models.ForeignKey(
-        PetitionsInCase,
-        on_delete=models.DO_NOTHING,
-        related_name='petitionsincase',
-        verbose_name='Карточка на дело',
-        blank=True,
-        null=True
-    )
     under_arrest = models.BooleanField(
         blank=True,
         null=True,

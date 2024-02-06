@@ -26,6 +26,5 @@ class Command(BaseCommand):
             ) as csv_file:
                 reader = csv.DictReader(csv_file)
                 model.objects.bulk_create(
-                    model(**{key: value for key, value in data.items() if key != 'id'}) for data in reader)
+                    model(**data) for data in reader)
         self.stdout.write(self.style.SUCCESS('Все данные загружены'))
-
