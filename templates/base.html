@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+  <head>
+    <title>{% block title %} {% endblock %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon"  href="{% static 'img/fav/favicon.ico' type="image" %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/fav/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/fav/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/fav/favicon-16x16.png' %}">
+    <meta name="msapplication-TileColor" content="#000">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <script>
+      $(document).ready(function() {
+        $('.nav-tabs a').click(function() {
+          $(this).tab('show');
+        });
+      });
+    </script>
+
+  </head>
+  <div class="container py-2">
+  <body>
+      {% include 'includes/header.html' %}
+    <main>
+      <h1>{{ text }}</h1>
+      {% block content %}
+        Базовый шаблон
+        {% include 'includes/paginator.html' %}
+      {% endblock %}
+    </main>
+      {% include 'includes/footer.html' %}
+  </body>
+  </div>
+</html>

@@ -1,0 +1,11 @@
+{% block content %}
+<article>
+  <h1>{{ group.title }}</h1>
+    <p>
+      {{ group.description }}
+    </p>
+    {% for card in business_card %}
+      {% include 'includes/business_card.html' %}
+    {% endfor %} 
+</article>
+{% endblock %}
