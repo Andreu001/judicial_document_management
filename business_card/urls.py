@@ -24,8 +24,7 @@ router.register(
     basename='sidescaseincase'
     )
 router.register(
-    r'businesscard/(?P<businesscard_id>\d+)/'
-    r'petitionsincase',
+    r'businesscard/(?P<businesscard_id>\d+)/petitionsincase',
     PetitionsInCaseViewSet,
     basename='petitionsincase'
 )

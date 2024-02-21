@@ -115,6 +115,8 @@ class BusinessCard(models.Model):
         verbose_name='Дата создания/изменения карточки'
         )
     preliminary_hearing = models.DateField(
+        blank=True,
+        null=True,
         verbose_name='Дата предварительного слушания/(с/з)'
     )
     # необходимо сделать таблицу (список) решений по вновь поступившему делу
@@ -275,25 +277,25 @@ class BusinessMovement(models.Model):
     decision_case = models.CharField(
         blank=True,
         null=True,
-        max_length=50,  # Так же в дальнейшем выбор из мэнитумэни
+        max_length=50,  # Так же в дальнейшем выбор из Decisions
         verbose_name='Решение по поступившему делу'
     )
     composition_colleges = models.CharField(
         blank=True,
         null=True,
         max_length=50,
-        verbose_name='Состав коллегии'  # далее сделать мэнитумэни
+        verbose_name='Состав коллегии'  # далее сделать выбор из списка
     )
     result_court_session = models.CharField(
         blank=True,
         null=True,
-        max_length=200,  # В дальнейшем выбор из мэнитумэни
+        max_length=200,  # В дальнейшем выбор из списка
         verbose_name='Результат судебного заседания'
     )
     reason_deposition = models.CharField(
         blank=True,
         null=True,
-        max_length=200,  # В дальнейшем выбор из мэнитумэни
+        max_length=200,  # В дальнейшем выбор из списка вариантов
         verbose_name='причина отложения'
     )
     business_card = models.ForeignKey(
@@ -320,7 +322,7 @@ class BusinessMovement(models.Model):
 
 class ConsideredCase(models.Model):
     '''9. Действия по рассмотренному делу'''
-    # Может так же сделать выбор из списка решений
+    # Может так же сделать выбор из списка решений Decisions
     name_case = models.CharField(
         max_length=200,
         verbose_name='Решение по делу'
@@ -361,11 +363,6 @@ class Appeal(models.Model):
     date_appeal = models.DateField(
         verbose_name='дата апелляции'
     )
-    # Удалить!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    filed_appeal = models.ManyToManyField(
-        SidesCase,
-        verbose_name='SidesCase',
-    )
     decision_appeal = models.CharField(
         blank=True,
         null=True,
@@ -375,8 +372,6 @@ class Appeal(models.Model):
     # Уведомление сторон об апелляции
     notification_parties = models.ManyToManyField(
         SidesCaseInCase,
-        blank=True,
-        null=True,
         verbose_name='Уведомление сторон об апелляции'
     )
     meeting_requirements = models.CharField(
@@ -408,8 +403,6 @@ class ExecutionCase(models.Model):
     )
     notification_parties = models.ManyToManyField(
         SidesCaseInCase,
-        blank=True,
-        null=True,
         verbose_name='Уведомление сторон об исполнении'
     )
     executive_lists = models.DateField(

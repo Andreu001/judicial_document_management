@@ -12,10 +12,8 @@ from rest_framework import status
 # from rest_framework.decorators import api_view, permission_classes
 # from rest_framework.authentication import TokenAuthentication
 
-from .models import (FamiliarizationCase, SidesCase,
-                     Petitions, ConsideredCase,
-                     Category, BusinessCard, PetitionsInCase,
-                     Appeal, SidesCaseInCase, ExecutionCase)
+from .models import (SidesCase, Petitions, Category, BusinessCard,
+                     Appeal, SidesCaseInCase)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           ConsideredCaseSerializer, ExecutionCaseSerializer,
@@ -169,7 +167,9 @@ class FamiliarizationCaseViewSet(viewsets.ModelViewSet):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        familiarization_data = self.request.data.get('notification_parties', [])
+        familiarization_data = self.request.data.get(
+            'notification_parties', []
+            )
         familiarization = SidesCaseInCase.objects.filter(
             id__in=familiarization_data
         )
@@ -188,12 +188,12 @@ class FamiliarizationCaseViewSet(viewsets.ModelViewSet):
                 ) for familiarization_id in familiarization_data if isinstance(
                 familiarization_id, (int, str)
                 )]
-        familiarization = FamiliarizationCase.objects.filter(
+        familiarization = SidesCaseInCase.objects.filter(
             id__in=familiarization_ids
             )
 
         instance = serializer.save(business_card=businesscard)
-        instance.familiarization.set(familiarization)
+        instance.notification_parties.set(familiarization)
 
 
 class BusinessMovementViewSet(viewsets.ModelViewSet):
@@ -218,8 +218,9 @@ class BusinessMovementViewSet(viewsets.ModelViewSet):
             int(movement_id) for movement_id in movement_data if isinstance(
                 movement_id, (int, str)
                 )]
-
+        sides_case = SidesCaseInCase.objects.filter(id__in=movement_ids)
         instance = serializer.save(business_card=businesscard)
+        instance.sides_case.set(sides_case)
 
     def perform_update(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
@@ -231,14 +232,14 @@ class BusinessMovementViewSet(viewsets.ModelViewSet):
                 side_id, (int, str)
                 )
             ]
-        sides_case = SidesCase.objects.filter(id__in=movement_ids)
+        sides_case = SidesCaseInCase.objects.filter(id__in=movement_ids)
         instance = serializer.save(business_card=businesscard)
         instance.sides_case.set(sides_case)
 
 
 class ConsideredCaseViewSet(viewsets.ModelViewSet):
     """
-    Рассмотрение дела
+    Решение по делу
     """
 
     serializer_class = ConsideredCaseSerializer
@@ -249,6 +250,34 @@ class ConsideredCaseViewSet(viewsets.ModelViewSet):
             )
         new_queryset = businesscard.consideredcase.all()
         return new_queryset
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        consideredcase_data = self.request.data.get(
+            'notification_parties', []
+            )
+        consideredcase = SidesCaseInCase.objects.filter(
+            id__in=consideredcase_data
+        )
+
+        instance = serializer.save(business_card=businesscard)
+        instance.notification_parties.set(consideredcase)
+
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        consideredcase_data = self.request.data.get(
+            'notification_parties', []
+            )
+        consideredcase = SidesCaseInCase.objects.filter(
+            id__in=consideredcase_data
+        )
+
+        instance = serializer.save(business_card=businesscard)
+        instance.notification_parties.set(consideredcase)
 
 
 class AppealViewSet(viewsets.ModelViewSet):
@@ -265,6 +294,34 @@ class AppealViewSet(viewsets.ModelViewSet):
         new_queryset = businesscard.appeal.all()
         return new_queryset
 
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        appeal_data = self.request.data.get(
+            'notification_parties', []
+            )
+        appeal = SidesCaseInCase.objects.filter(
+            id__in=appeal_data
+        )
+
+        instance = serializer.save(business_card=businesscard)
+        instance.notification_parties.set(appeal)
+
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        appeal_data = self.request.data.get(
+            'notification_parties', []
+            )
+        appeal = SidesCaseInCase.objects.filter(
+            id__in=appeal_data
+        )
+
+        instance = serializer.save(business_card=businesscard)
+        instance.notification_parties.set(appeal)
+
 
 class ExecutionCaseViewSet(viewsets.ModelViewSet):
     """
@@ -278,3 +335,31 @@ class ExecutionCaseViewSet(viewsets.ModelViewSet):
             )
         new_queryset = businesscard.executioncase.all()
         return new_queryset
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        executioncase_data = self.request.data.get(
+            'notification_parties', []
+            )
+        executioncase = SidesCaseInCase.objects.filter(
+            id__in=executioncase_data
+        )
+
+        instance = serializer.save(business_card=businesscard)
+        instance.notification_parties.set(executioncase)
+
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+        executioncase_data = self.request.data.get(
+            'notification_parties', []
+            )
+        executioncase = SidesCaseInCase.objects.filter(
+            id__in=executioncase_data
+        )
+
+        instance = serializer.save(business_card=businesscard)
+        instance.notification_parties.set(executioncase)
