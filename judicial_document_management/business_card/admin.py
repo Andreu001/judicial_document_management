@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models import (SidesCase, BusinessMovement,
-                     Petitions, BusinessCard, Decisions, Category)
+from .models import (SidesCase, BusinessMovement, Decisions,
+                     Petitions, BusinessCard, Category)
 
 
 @admin.register(BusinessMovement)
@@ -36,6 +36,16 @@ class PetitionsAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
+@admin.register(Decisions)
+class DecisionsAdmin(admin.ModelAdmin):
+    '''Стороны по делу'''
+    list_display = (
+        'name_case',
+    )
+    search_fields = ('text',)
+    empty_value_display = '-пусто-'
+
+
 @admin.register(BusinessCard)
 class BusinessCardAdmin(admin.ModelAdmin):
     list_display = (
@@ -47,17 +57,6 @@ class BusinessCardAdmin(admin.ModelAdmin):
     )
     search_fields = ('original_name',)
     list_editable = ('case_category',)
-    empty_value_display = '-пусто-'
-
-
-@admin.register(Decisions)
-class DecisionsAdmin(admin.ModelAdmin):
-    '''Модель заявленных ходатайств по делу'''
-    list_display = (
-        'name_case',
-        'date_consideration',
-    )
-    search_fields = ('petitions',)
     empty_value_display = '-пусто-'
 
 

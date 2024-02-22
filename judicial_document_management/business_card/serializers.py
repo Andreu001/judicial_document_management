@@ -5,9 +5,9 @@
 from rest_framework import serializers
 
 from .models import (FamiliarizationCase, SidesCase,
-                     Petitions, Decisions, ConsideredCase,
+                     Petitions, ConsideredCase,
                      Category, BusinessCard, PetitionsInCase,
-                     SidesCaseInCase, Appeal, BusinessMovement)
+                     SidesCaseInCase, Appeal, BusinessMovement, ExecutionCase)
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -20,7 +20,8 @@ class FamiliarizationCaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = FamiliarizationCase
         fields = ('id', 'petition', 'start_date', 'end_date',
-                  'number_days', 'amount_one_day', 'total_amount')
+                  'number_days', 'amount_one_day',
+                  'total_amount', 'notification_parties')
 
 
 class SidesCaseSerializer(serializers.ModelSerializer):
@@ -39,15 +40,6 @@ class PetitionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Petitions
         fields = ('id', 'petitions',)
-
-
-class DecisionsSerializer(serializers.ModelSerializer):
-    """
-    Модель вынесенных решений по делу
-    """
-    class Meta:
-        model = Decisions
-        fields = ('id', 'name_case', 'date_consideration')
 
 
 class ConsideredCaseSerializer(serializers.ModelSerializer):
@@ -92,25 +84,11 @@ class BusinessCardSerializer(serializers.ModelSerializer):
                   'preliminary_hearing')
 
 
-class PetitionsInCaseSerializer(serializers.ModelSerializer):
-    """
-    Промежуточная таблица для ходатайств
-    """
-    class Meta:
-        model = PetitionsInCase
-        fields = ('petitions',
-                  'id',
-                  'sides_case',
-                  'date_application',
-                  'decision_rendered',
-                  'date_decision')
-
-
 class SidesCaseInCaseSerializer(serializers.ModelSerializer):
     """
     Модель добавления сторон по делу
     """
-    sides_case = SidesCaseSerializer(many=True, read_only=True)
+    # sides_case = SidesCaseSerializer(many=True, read_only=True)
 
     class Meta:
         model = SidesCaseInCase
@@ -119,6 +97,29 @@ class SidesCaseInCaseSerializer(serializers.ModelSerializer):
                   'under_arrest',
                   'date_sending_agenda'
                   )
+
+
+class PetitionsInCaseSerializer(serializers.ModelSerializer):
+    """
+    Промежуточная таблица для ходатайств
+    """
+
+    notification_parties_names = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PetitionsInCase
+        fields = (
+            'petitions',
+            'id',
+            'notification_parties',
+            'notification_parties_names',  # Добавляем это поле
+            'date_application',
+            'decision_rendered',
+            'date_decision',
+        )
+
+    def get_notification_parties_names(self, obj):
+        return [str(side) for side in obj.notification_parties.all()]
 
 
 class AppealSerializer(serializers.ModelSerializer):
@@ -149,4 +150,17 @@ class BusinessMovementSerializer(serializers.ModelSerializer):
                   'composition_colleges',
                   'result_court_session',
                   'reason_deposition',
+                  )
+
+
+class ExecutionCaseSerializer(serializers.ModelSerializer):
+    """
+    ИСполнение по делу
+    """
+
+    class Meta:
+        model = ExecutionCase
+        fields = ('date_notification',
+                  'notification_parties',
+                  'executive_lists',
                   )

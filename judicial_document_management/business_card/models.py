@@ -4,37 +4,8 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class FamiliarizationCase(models.Model):
-    '''1. Ознакомление с материалами дела'''
-    petition = models.BooleanField(
-        verbose_name='заявлено ходатайство об ознакомлении'
-    )
-    start_date = models.DateField(
-        verbose_name='дата начала'
-    )
-    end_date = models.DateField(
-        verbose_name='дата окончания'
-    )
-    number_days = models.IntegerField(
-        verbose_name='количество дней'  # считает автоматически
-    )
-    amount_one_day = models.IntegerField(
-        verbose_name='сумма за один день ознакомления'
-    )
-    total_amount = models.IntegerField(
-        verbose_name='общая сумма вознаграждения по постановлению'
-    )  # считает автоматически
-
-    class Meta:
-        ordering = ('-start_date',)
-        verbose_name = 'Ознакомление с материаламми дела'
-
-    def __str__(self):
-        return f'Всего оплаченно {self.total_amount} за {self.number_days}'
-
-
 class SidesCase(models.Model):
-    '''2. Стороны по делу'''
+    '''1. Стороны по делу'''
     sides_case = models.CharField(
         max_length=100,
         verbose_name='Сторона по делу'
@@ -50,7 +21,7 @@ class SidesCase(models.Model):
 
 
 class Petitions(models.Model):
-    '''3. Модель заявленных ходатайств по делу'''
+    '''2. Модель ходатайств по делу'''
     petitions = models.CharField(
         max_length=150,
         verbose_name='наименование ходатайства'
@@ -63,6 +34,31 @@ class Petitions(models.Model):
 
     def __str__(self):
         return self.petitions
+
+
+class Category(models.Model):
+    '''3. Модель категорий дела'''
+    title_category = models.CharField(
+        max_length=200,
+        verbose_name='Название категории'
+        )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Описание'
+        )
+    slug = models.SlugField(
+        max_length=255,
+        unique=True
+        )
+
+    class Meta:
+        ordering = ('title_category',)
+        verbose_name = 'Категория дела'
+        verbose_name_plural = 'Категория дела'
+
+    def __str__(self) -> str:
+        return self.title_category
 
 
 class Decisions(models.Model):
@@ -89,56 +85,8 @@ class Decisions(models.Model):
         return self.name_case
 
 
-class ConsideredCase(models.Model):
-    '''5. Действия по рассмотренному делу'''
-    date_consideration = models.DateField(
-        verbose_name='Дата рассмотрения'
-    )
-    effective_date = models.DateField(
-        verbose_name='дата вступления в законную силу'
-    )
-    notification_parties = models.ManyToManyField(
-        SidesCase,
-        verbose_name='Кому и когда направленны копии решений'
-    )
-    executive_lists = models.DateField(
-        verbose_name='Дата исполнения дела'
-    )
-
-    class Meta:
-        verbose_name = 'Дело рассмотренно'
-
-    def __str__(self):
-        return self.date_consideration
-
-
-class Category(models.Model):
-    '''6. Модель категорий дела'''
-    title_category = models.CharField(
-        max_length=200,
-        verbose_name='Название категории'
-        )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Описание'
-        )
-    slug = models.SlugField(
-        max_length=255,
-        unique=True
-        )
-
-    class Meta:
-        ordering = ('title_category',)
-        verbose_name = 'Категория дела'
-        verbose_name_plural = 'Категория дела'
-
-    def __str__(self) -> str:
-        return self.title_category
-
-
 class BusinessCard(models.Model):
-    '''7. Модель карточки по делу'''
+    '''4. Модель карточки по делу'''
     original_name = models.CharField(
         unique=True,
         max_length=100,
@@ -167,7 +115,14 @@ class BusinessCard(models.Model):
         verbose_name='Дата создания/изменения карточки'
         )
     preliminary_hearing = models.DateField(
+        blank=True,
+        null=True,
         verbose_name='Дата предварительного слушания/(с/з)'
+    )
+    # необходимо сделать таблицу (список) решений по вновь поступившему делу
+    name_case = models.CharField(
+        max_length=200,
+        verbose_name='Решение по поступившему делу'
     )
 
     class Meta:
@@ -179,54 +134,8 @@ class BusinessCard(models.Model):
         return self.original_name
 
 
-class PetitionsInCase(models.Model):
-    '''8. Промежуточная таблица для ходатайств'''
-    petitions = models.ManyToManyField(
-        Petitions,
-        verbose_name='ходатайства по делу',
-    )
-    sides_case = models.ManyToManyField(
-        SidesCase,
-        verbose_name='Кто заявил ходатайство'
-    )
-    date_application = models.DateField(
-        verbose_name='Дата ходатайства'
-        )
-    decision_rendered = models.CharField(
-        max_length=150,
-        verbose_name='наименование вынесенного решения',
-        null=True,
-    )
-    date_decision = models.DateField(
-        verbose_name='Дата решения по ходатайству',
-        null=True,
-    )
-    notation = models.TextField(
-        max_length=300,
-        verbose_name='примечания',
-        null=True,
-    )
-    business_card = models.ForeignKey(
-        BusinessCard,
-        on_delete=models.DO_NOTHING,
-        related_name='petitionsincase',
-        verbose_name='Карточка на дело',
-    )
-
-    class Meta:
-        ordering = ('date_application',)
-        verbose_name = 'Ходатайство'
-        verbose_name_plural = 'Ходатайства'
-
-    def __str__(self):
-        return (
-            f'{self.sides_case} {self.date_application} '
-            f'заявил ходатайство о {self.petitions}'
-            )
-
-
 class SidesCaseInCase(models.Model):
-    '''9. Модель добавления сторон по делу сторон по делу'''
+    '''5. Модель добавления сторон по делу сторон по делу'''
     name = models.CharField(
         max_length=150,
         verbose_name='ФИО'
@@ -260,40 +169,105 @@ class SidesCaseInCase(models.Model):
         return f'{self.sides_case} {self.name}'
 
 
-class Appeal(models.Model):
-    '''10. Апелляция по делу'''
-    date_appeal = models.DateField(
-        verbose_name='дата апелляции'
+class PetitionsInCase(models.Model):
+    '''6.Заявленные ходатайства по делу'''
+    petitions = models.ManyToManyField(
+        Petitions,
+        verbose_name='ходатайства по делу',
     )
-    # Кто подал апелляцию
-    filed_appeal = models.ManyToManyField(
+    sides_case = models.ManyToManyField(
         SidesCase,
-        verbose_name='SidesCase',
+        verbose_name='Сторона по делу'
     )
-    decision_appeal = models.CharField(
-        max_length=20,
-        verbose_name='в апелляции отказано/удовлетворенно'
-    )
-    # Уведомление сторон об апелляции
     notification_parties = models.ManyToManyField(
         SidesCaseInCase,
-        verbose_name='Уведомление сторон об апелляции'
+        verbose_name='Кто заявил ходатайство'
     )
-    meeting_requirements = models.CharField(
-        max_length=50,
-        verbose_name='выполнение требований УПК, перед направлением дела'
+    date_application = models.DateField(
+        verbose_name='Дата ходатайства'
+        )
+    decision_rendered = models.CharField(
+        max_length=150,
+        verbose_name='наименование вынесенного решения',
+        null=True,
+    )
+    date_decision = models.DateField(
+        verbose_name='Дата решения по ходатайству',
+        null=True,
+    )
+    notation = models.TextField(
+        max_length=300,
+        verbose_name='примечания',
+        null=True,
+    )
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.CASCADE,
+        related_name='petitionsincase',
+        verbose_name='Карточка на дело',
     )
 
     class Meta:
-        verbose_name = 'Апелляция'
-        verbose_name_plural = 'Апелляции'
+        ordering = ('date_application',)
+        verbose_name = 'Ходатайство'
+        verbose_name_plural = 'Ходатайства'
 
     def __str__(self):
-        return self.date_appeal
+        return (
+            f'{self.sides_case} {self.date_application} '
+            f'заявил ходатайство о {self.petitions}'
+            )
+
+
+class FamiliarizationCase(models.Model):
+    '''7. Ознакомление с материалами дела'''
+    petition = models.BooleanField(
+        verbose_name='заявлено ходатайство об ознакомлении'
+    )
+    notification_parties = models.ManyToManyField(
+        SidesCaseInCase,
+        verbose_name='Кто заявил ходатайство'
+    )
+    start_date = models.DateField(
+        verbose_name='дата начала'
+    )
+    end_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='дата окончания'
+    )
+    number_days = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='количество дней'  # считает автоматически
+    )
+    amount_one_day = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='сумма за один день ознакомления'
+    )
+    total_amount = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name='общая сумма вознаграждения по постановлению'
+    )  # считает автоматически
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.CASCADE,
+        related_name='familiarizationcase',
+        verbose_name='Карточка на дело',
+    )
+
+    class Meta:
+        ordering = ('-start_date',)
+        verbose_name = 'Ознакомление с материаламми дела'
+
+    def __str__(self):
+        return f'Всего оплаченно {self.total_amount} за {self.number_days}'
 
 
 class BusinessMovement(models.Model):
-    '''11. Движение по делу'''
+    '''8. Движение по делу'''
     date_meeting = models.DateField(
         verbose_name='Дата заседания'
         )
@@ -303,30 +277,30 @@ class BusinessMovement(models.Model):
     decision_case = models.CharField(
         blank=True,
         null=True,
-        max_length=50,  # Так же в дальнейшем выбор из мэнитумэни
+        max_length=50,  # Так же в дальнейшем выбор из Decisions
         verbose_name='Решение по поступившему делу'
     )
     composition_colleges = models.CharField(
         blank=True,
         null=True,
         max_length=50,
-        verbose_name='Состав коллегии'  # далее сделать мэнитумэни
+        verbose_name='Состав коллегии'  # далее сделать выбор из списка
     )
     result_court_session = models.CharField(
         blank=True,
         null=True,
-        max_length=200,  # В дальнейшем выбор из мэнитумэни
+        max_length=200,  # В дальнейшем выбор из списка
         verbose_name='Результат судебного заседания'
     )
     reason_deposition = models.CharField(
         blank=True,
         null=True,
-        max_length=200,  # В дальнейшем выбор из мэнитумэни
+        max_length=200,  # В дальнейшем выбор из списка вариантов
         verbose_name='причина отложения'
     )
     business_card = models.ForeignKey(
         BusinessCard,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name='businessmovement',
         verbose_name='Карточка на дело',
     )
@@ -344,3 +318,107 @@ class BusinessMovement(models.Model):
 
     def __str__(self):
         return f'{self.decision_case} {self.date_meeting}'
+
+
+class ConsideredCase(models.Model):
+    '''9. Действия по рассмотренному делу'''
+    # Может так же сделать выбор из списка решений Decisions
+    name_case = models.CharField(
+        max_length=200,
+        verbose_name='Решение по делу'
+    )
+    date_consideration = models.DateField(
+        verbose_name='Дата рассмотрения'
+    )
+    effective_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='дата вступления в законную силу'
+    )
+    notification_parties = models.ManyToManyField(
+        SidesCaseInCase,
+        verbose_name='Уведомление сторон'
+    )
+    executive_lists = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата исполнения дела'
+    )
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.CASCADE,
+        related_name='consideredcase',
+        verbose_name='Карточка на дело',
+    )
+
+    class Meta:
+        verbose_name = 'Дело рассмотренно'
+
+    def __str__(self):
+        return self.date_consideration
+
+
+class Appeal(models.Model):
+    '''10. Апелляция по делу'''
+    date_appeal = models.DateField(
+        verbose_name='дата апелляции'
+    )
+    decision_appeal = models.CharField(
+        blank=True,
+        null=True,
+        max_length=20,
+        verbose_name='в апелляции отказано/удовлетворенно'
+    )
+    # Уведомление сторон об апелляции
+    notification_parties = models.ManyToManyField(
+        SidesCaseInCase,
+        verbose_name='Уведомление сторон об апелляции'
+    )
+    meeting_requirements = models.CharField(
+        blank=True,
+        null=True,
+        max_length=50,
+        verbose_name='выполнение требований УПК, перед направлением дела'
+    )
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.CASCADE,
+        related_name='appeal',
+        verbose_name='Карточка на дело',
+    )
+
+    class Meta:
+        verbose_name = 'Апелляция'
+        verbose_name_plural = 'Апелляции'
+
+    def __str__(self):
+        return self.date_appeal
+
+
+class ExecutionCase(models.Model):
+    '''11. ИСполнение по делу'''
+    # Может так же сделать выбор из списка решений?
+    date_notification = models.DateField(
+        verbose_name='Дата уведомления'
+    )
+    notification_parties = models.ManyToManyField(
+        SidesCaseInCase,
+        verbose_name='Уведомление сторон об исполнении'
+    )
+    executive_lists = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата исполнения дела'
+    )
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.CASCADE,
+        related_name='executioncase',
+        verbose_name='Карточка на дело',
+    )
+
+    class Meta:
+        verbose_name = 'Дело рассмотрено'
+
+    def __str__(self):
+        return self.date_notification
