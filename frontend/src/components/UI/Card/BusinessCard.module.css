@@ -1,0 +1,159 @@
+/* BusinessCard.module.css */
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 450px;
+  min-height: 220px;
+}
+
+.cardContent {
+  flex-grow: 1;
+  padding: 16px;
+  max-height: 250px; /* Фиксированная высота */
+  overflow-y: auto; /* Вертикальная прокрутка */
+  scrollbar-width: thin; /* Для Firefox */
+  scrollbar-color: #ccc transparent; /* Цвет скроллбара */
+}
+
+/* Стилизация скроллбара для Chrome/Edge/Safari */
+.cardContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cardContent::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
+}
+
+/* Эффект увеличения при наведении */
+/*.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}*/
+
+/* Заголовок карточки */
+.cardHeader {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Контейнер заголовка */
+.headerTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Название категории */
+.categoryTitle {
+    font-size: 14px;
+    font-weight: normal;
+    color: #333;
+}
+
+/* Контейнер номера дела и статьи */
+.caseInfo {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Номер дела */
+.caseNumber {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Статья */
+.caseArticle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #666;
+}
+  
+  .cardHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333333; /* Темно-серый текст */
+  }
+  
+  .cardHeader p {
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: #666666; /* Серый текст */
+  }
+  
+  /* Контент карточки */
+  .cardContent {
+    flex-grow: 1;
+    padding: 16px;
+  }
+  
+  .cardButtons {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    border-top: 1px solid #e0e0e0; /* Разделитель */
+  }
+  
+  .cardButtons button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #0e2135; /* Синий цвет для кнопок */
+    transition: color 0.3s;
+  }
+  
+  .cardButtons button:hover {
+    color: #021b35; /* Темно-синий цвет при наведении */
+  }
+
+  /* Кнопки "Удалить" и "Редактировать" */
+  .cardButtons .delete {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+  }
+  
+  .cardButtons .delete:hover {
+    background: #cc0000;
+  }
+  
+  .cardButtons .edit {
+    background: #4da6ff;
+    color: white;
+    border: none;
+  }
+  
+  .cardButtons .edit:hover {
+    background: #0066cc;
+  }
+  
+  .cardButtons button.active {
+    font-weight: bold; /* Жирный текст для активной кнопки */
+    color: #0056b3; /* Темно-синий цвет для активной кнопки */
+  }
+
+  .centeredForm {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 90%;
+}

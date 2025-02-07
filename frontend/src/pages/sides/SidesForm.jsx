@@ -3,6 +3,7 @@ import axios from 'axios';
 import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updateSide } from '../../API/SideService';
+import styles from '../../components//UI/input/Input.module.css';
 
 
 const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
@@ -113,48 +114,61 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     
   
     return (
-      <form>
-        <MyInput
-          type="text"
-          name="name"
-          value={side.name || editSideData.name}
-          onChange={handleChange}
-          placeholder="ФИО"
-        />
-        <MyInput
-          type="text"
-          name="under_arrest"
-          value={side.under_arrest || editSideData.under_arrest}
-          onChange={handleChange}
-          placeholder="Под стражей"
-        />
-        <select
-          name="sides_case"
-          value={side.sides_case || (editSideData.sides_case ? [editSideData.sides_case.id] : '')}
-          onChange={handleChange}
-        >
-          <option value="">Выберите Название стороны</option>
-          {sidesCaseList.map((sideCase, index) => (
-            <option key={index} value={sideCase.id}>
-              {sideCase.sides_case}
-            </option>
-          ))}
-        </select>
-
-        <MyInput
-          type="text"
-          name="date_sending_agenda"
-          value={side.date_sending_agenda || editSideData.date_sending_agenda}
-          onChange={handleChange}
-          placeholder="Дата направления повестки Г.М.Д."
-        />
-        {isEditing ? (
-          <>
-            <MyButton onClick={handleAddNewSide}>Сохранить</MyButton>
-            <MyButton onClick={handleCancel}>Отменить</MyButton>
-          </>
-        ) : null}
-      </form>
+      <div className={styles.formContainer}>
+        <form>
+          <div className={styles.formGroup}>
+          <label>Ф.И.О.</label>
+            <MyInput
+              type="text"
+              name="name"
+              value={side.name || editSideData.name}
+              onChange={handleChange}
+              placeholder="ФИО"
+            />
+          </div>
+          <div className={styles.formGroup}>
+          <label>Мера пресечения</label>
+            <MyInput
+              type="text"
+              name="under_arrest"
+              value={side.under_arrest || editSideData.under_arrest}
+              onChange={handleChange}
+              placeholder="Под стражей"
+            />
+          </div>
+          <div className={styles.formGroup}>
+          <label>Сторона по делу</label>
+            <select
+              name="sides_case"
+              value={side.sides_case || (editSideData.sides_case ? [editSideData.sides_case.id] : '')}
+              onChange={handleChange}
+            >
+              <option value="">Выберите Название стороны</option>
+              {sidesCaseList.map((sideCase, index) => (
+                <option key={index} value={sideCase.id}>
+                  {sideCase.sides_case}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.formGroup}>
+          <label>Дата повестки</label>
+            <MyInput
+              type="text"
+              name="date_sending_agenda"
+              value={side.date_sending_agenda || editSideData.date_sending_agenda}
+              onChange={handleChange}
+              placeholder="Дата направления повестки Г.М.Д."
+            />
+          </div>
+          {isEditing ? (
+            <>
+              <MyButton onClick={handleAddNewSide}>Сохранить</MyButton>
+              <MyButton onClick={handleCancel}>Отменить</MyButton>
+            </>
+          ) : null}
+        </form>
+      </div>
     );
   };
   

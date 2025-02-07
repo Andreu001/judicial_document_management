@@ -11,6 +11,7 @@ import { useFetching } from '../../hooks/useFetching';
 import { useCard } from '../../hooks/useCard';
 import CardForm from '../../components/CardForm';
 import SideService from '../../API/SideService';
+import styles from '../../components/UI/Header/Header.module.css';
 
 function Cards() {
   const [cards, setCards] = useState([]);
@@ -21,6 +22,7 @@ function Cards() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showForm, setShowForm] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Административные дела'); // Активная категория
 
   const sortedAndSearchCards = useCard(cards, filter.sort, filter.query);
 
@@ -30,18 +32,6 @@ function Cards() {
     const totalCount = response.headers['x-total-count'];
     setTotalPages(getPageCount(totalCount, limit));
   });
-
-  useEffect(() => {
-
-    CardService.getAll(limit, page).then((response) => {
-      setCards(response.data);
-    });
-
-  }, []);
-
-  async function fetchSide() {
-    const response = await SideService.getAllSide();
-  }
 
   useEffect(() => {
     fetchCards(limit, page);
@@ -82,20 +72,43 @@ function Cards() {
     setShowForm(false);
   };
 
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category); // Устанавливаем активную категорию
+  };
+
   return (
     <div className='App'>
-      <MyButton style={{ marginTop: 30 }} onClick={handleCreateCardClick}>
-        Создать карточку
-      </MyButton>
-      <MyButton onClick={fetchSide}>
-        Стороны
-      </MyButton>
+      {/* Верхняя панель */}
+      <div className={styles.header}>
+        <CardFilter filter={filter} setFilter={setFilter} />
+      </div>
+
+      {/* Категории и кнопка "Создать карточку" */}
+      <div className={styles.createCardButtonContainer}>
+        <div className={styles.categories}>
+          {['Административные дела', 'Административное судопроизводство', 'Гражданские дела', 'Уголовные дела'].map(
+            (category) => (
+              <div
+                key={category}
+                className={`${styles.category} ${activeCategory === category ? styles.active : ''}`}
+                onClick={() => handleCategoryClick(category)}
+              >
+                {category}
+              </div>
+            )
+          )}
+        </div>
+        <button className={styles.createCardButton} onClick={handleCreateCardClick}>
+          Создать карточку
+        </button>
+      </div>
+
+      {/* Модальное окно */}
       <Modal visible={modal} setVisible={setModal}>
-        {showForm ? ( // Показать форму, если showForm === true
-          <CardForm create={createCard} />
-        ) : null}
+        {showForm ? <CardForm create={createCard} /> : null}
       </Modal>
-      <CardFilter filter={filter} setFilter={setFilter} />
+
+      {/* Список карточек */}
       {isCardsLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 50 }}>
           <Loader />
@@ -103,6 +116,8 @@ function Cards() {
       ) : (
         <CardList remove={removeCard} cards={sortedAndSearchCards} title='Список карточек' />
       )}
+
+      {/* Пагинация */}
       <Pagination page={page} changePage={changePage} totalPages={totalPages} />
     </div>
   );

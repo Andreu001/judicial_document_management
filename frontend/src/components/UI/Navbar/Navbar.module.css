@@ -1,0 +1,41 @@
+/* Navbar.module.css */
+.navbar {
+  width: 6,3cm; /* Ширина 6 см */
+  height: 100vh; /* Высота на всю высоту экрана */
+  background: linear-gradient(180deg, #37474F, #263238);
+  padding: 20px; /* Отступы внутри панели */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для красоты */
+  position: fixed; /* Фиксированное положение */
+  top: 0;
+  left: 0;
+}
+
+.navbar__header {
+  margin-bottom: 100px; /* Отступ снизу для заголовка */
+  text-align: center; /* Выравнивание текста по центру */
+}
+
+.navbar__title {
+  font-family: 'Georgia', serif; /* Шрифт с засечками */
+  font-size: 20px; /* Размер текста */
+  color: #c9f8cf; /* Темно-серый цвет */
+  font-weight: bold; /* Жирный текст */
+}
+
+.navbar__links {
+  display: flex;
+  flex-direction: column; /* Ссылки в столбик */
+  gap: 15px; /* Отступ между ссылками */
+  padding-left: 20px;
+}
+
+.navbar__links a {
+  color: white; /* Белый цвет текста */
+  text-decoration: none; /* Убираем подчеркивание */
+  font-size: 16px; /* Размер текста */
+  transition: color 0.3s; /* Плавное изменение цвета */
+}
+
+.navbar__links a:hover {
+  color: #FFD700; /* Золотой цвет при наведении */
+}

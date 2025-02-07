@@ -1,18 +1,30 @@
-import React from "react";
+import React from 'react';
+import styles from './UI/Card/BusinessCard.module.css';
 
-// Новый компонент для панели заголовка
-const CardHeader = ({ title, category }) => {
+const CardHeader = ({ card }) => {
+  console.log("Категория дела:", card.case_category_title); // Отладка
   
+  const normalizedCategory = card.case_category_title?.trim().toLowerCase();
   const categoryColors = {
-    "Административное правнарушение": "#B8FC9C", // Зеленый цвет
-    "Административное судопроизводство": "#FFEAC2", // Оранжевый цвет
-    "Гражданское судопроизводство": "#B7C6FB", // Синий цвет
-    "Уголовное судопроизводство": "#FF9EA3", // Красный цвет
+    'административное правнарушение': '#ffcc80',
+    'административное судопроизводство': '#b3e5fc',
+    'гражданское судопроизводство': '#c8e6c9',
+    'уголовное судопроизводство': '#ef9a9a',
   };
+  const cardStyle = {
+    backgroundColor: categoryColors[normalizedCategory] || '#e0e0e0',
+  };  
+  console.log("Категория:", card.case_category_title, "Цвет:", cardStyle.backgroundColor);
 
   return (
-    <div style={{ backgroundColor: categoryColors[category], padding: "5px", borderRadius: "5px", display: "inline-block" }}>
-      {category}
+    <div className={styles.cardHeader} style={cardStyle}>
+      <div className={styles.headerTop}>
+        <h5 className={styles.categoryTitle}>{card.case_category_title}</h5>
+        <div className={styles.caseInfo}>
+          <p className={styles.caseNumber}>№ {card.original_name}</p>
+          <p className={styles.caseArticle}>Ст. {card.article}</p>
+        </div>
+      </div>
     </div>
   );
 };

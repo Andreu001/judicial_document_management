@@ -1,0 +1,13 @@
+/* CardList.module.css */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr; /* Все строки одинаковой высоты */
+  gap: 20px;
+  padding: 20px;
+  margin: 0 auto;
+  align-items: center;
+  margin-top: 50px; /* Отступ от поиска */
+  margin-left: 7cm; /* Отступ слева */
+  margin-right: 2cm; /* Отступ справа */
+}

@@ -3,6 +3,7 @@ import axios from 'axios';
 import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updateMove } from '../../API/MovementService';
+import styles from '../../components//UI/input/Input.module.css';
 
 const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -79,57 +80,77 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
   };
 
   return (
-    <form>
-      <MyInput
-        type="date"
-        name="date_meeting"
-        value={businessMovement.date_meeting || editMovementData.date_meeting}
-        onChange={handleChange}
-        placeholder="Дата заседания"
-      />
-      <MyInput
-        type="time"
-        name="meeting_time"
-        value={businessMovement.meeting_time || editMovementData.meeting_time}
-        onChange={handleChange}
-        placeholder="Время заседания"
-      />
-        <MyInput
-        type="text"
-        name="decision_case"
-        value={businessMovement.decision_case || editMovementData.decision_case}
-        onChange={handleChange}
-        placeholder="Решение по поступившему делу"
-      />
-        <MyInput
-        type="text"
-        name="composition_colleges"
-        value={businessMovement.composition_colleges || editMovementData.composition_colleges}
-        onChange={handleChange}
-        placeholder="Состав коллегии"
-      />
-        <MyInput
-        type="text"
-        name="result_court_session"
-        value={businessMovement.result_court_session || editMovementData.result_court_session}
-        onChange={handleChange}
-        placeholder="Результат судебного заседания"
-      />
-        <MyInput
-        type="text"
-        name="reason_deposition"
-        value={businessMovement.reason_deposition || editMovementData.reason_deposition}
-        onChange={handleChange}
-        placeholder="причина отложения"
-      />
+    <div className={styles.formContainer}>
+      <form>
+        <div className={styles.formGroup}>
+        <label>Дата заседания</label>
+          <MyInput
+            type="date"
+            name="date_meeting"
+            value={businessMovement.date_meeting || editMovementData.date_meeting}
+            onChange={handleChange}
+            placeholder="Дата заседания"
+          />
+        </div>
+        <div className={styles.formGroup}>
+        <label>Время заседания</label>
+          <MyInput
+            type="time"
+            name="meeting_time"
+            value={businessMovement.meeting_time || editMovementData.meeting_time}
+            onChange={handleChange}
+            placeholder="Время заседания"
+          />
+        </div>
+          <div className={styles.formGroup}>
+          <label>Решение по поступившему делу</label>
+            <MyInput
+            type="text"
+            name="decision_case"
+            value={businessMovement.decision_case || editMovementData.decision_case}
+            onChange={handleChange}
+            placeholder="Решение по поступившему делу"
+          />
+        </div>
+          <div className={styles.formGroup}>
+          <label>Состав коллегии</label>
+            <MyInput
+            type="text"
+            name="composition_colleges"
+            value={businessMovement.composition_colleges || editMovementData.composition_colleges}
+            onChange={handleChange}
+            placeholder="Состав коллегии"
+          />
+        </div>
+          <div className={styles.formGroup}>
+          <label>Результат с/з</label>
+            <MyInput
+            type="text"
+            name="result_court_session"
+            value={businessMovement.result_court_session || editMovementData.result_court_session}
+            onChange={handleChange}
+            placeholder="Результат судебного заседания"
+          />
+        </div>
+          <div className={styles.formGroup}>
+          <label>Причина отложения</label>
+            <MyInput
+            type="text"
+            name="reason_deposition"
+            value={businessMovement.reason_deposition || editMovementData.reason_deposition}
+            onChange={handleChange}
+            placeholder="причина отложения"
+          />
+        </div>
 
-      {isEditing ? (
-        <>
-          <MyButton onClick={handleAddNewBusinessMovement}>Сохранить</MyButton>
-          <MyButton onClick={handleCancel}>Отменить</MyButton>
-        </>
-      ) : null}
-    </form>
+        {isEditing ? (
+          <>
+            <MyButton onClick={handleAddNewBusinessMovement}>Сохранить</MyButton>
+            <MyButton onClick={handleCancel}>Отменить</MyButton>
+          </>
+        ) : null}
+      </form>
+    </div>
   );
 };
 

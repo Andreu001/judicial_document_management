@@ -3,6 +3,7 @@ import axios from 'axios';
 import MyInput from './UI/input/MyInput';
 import MyButton from './UI/button/MyButton';
 import CardService from '../API/CardService';
+import styles from './UI/input/Input.module.css';
 
 const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -70,6 +71,8 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     onCancel();
   };
 
+
+
   const handleAddNewCard = (e) => {
     e.preventDefault();
 
@@ -93,59 +96,71 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   };
 
   return (
-    <form>
-      <MyInput
-        type="text"
-        name="original_name"
-        value={card.original_name}
-        onChange={handleChange}
-        placeholder="Номер дела"
-      />
-      <MyInput
-        type="text"
-        name="author"
-        value={card.author}
-        onChange={handleChange}
-        placeholder="Автор"
-      />
-      <select name="case_category" value={card.case_category} onChange={handleChange}>
-        <option value="">Выберите категорию</option>
-        {categoryList.map((category, index) => (
-          <option key={index} value={category.id}>
-            {category.title_category}
-          </option>
-        ))}
-      </select>
-      <MyInput
-        type="text"
-        name="article"
-        value={card.article}
-        onChange={handleChange}
-        placeholder="Статья"
-      />
-      <MyInput
-        type="text"
-        name="pub_date"
-        value={card.pub_date}
-        onChange={handleChange}
-        placeholder="Дата создания (не заполнять!!!!)"
-      />
-      <MyInput
-        type="date"
-        name="preliminary_hearing"
-        value={card.preliminary_hearing}
-        onChange={handleChange}
-        placeholder="Дата предварительного заседания"
-      />
-      {isEditing ? (
-        <>
-          <MyButton onClick={handleSave}>Сохранить дело</MyButton>
-          <MyButton onClick={handleCancel}>Отменить</MyButton>
-        </>
-      ) : (
-        <MyButton onClick={handleAddNewCard}>Создать NEW</MyButton>
-      )}
-    </form>
+    <div className={styles.formContainer}>
+      <form>
+      <div className={styles.formGroup}>
+        <label>Номер дела</label>
+          <MyInput
+            type="text"
+            name="original_name"
+            value={card.original_name}
+            onChange={handleChange}
+            placeholder="Номер дела"
+          />
+          <div className={styles.formGroup}>
+          <label>Автор</label>
+          <MyInput
+            type="text"
+            name="author"
+            value={card.author}
+            onChange={handleChange}
+            placeholder="Автор"
+          />
+          </div>
+          <div className={styles.formGroup}>
+          <label>Категория дела</label>
+            <select name="case_category" value={card.case_category} onChange={handleChange}>
+              <option value="">Выберите категорию</option>
+              {categoryList.map((category, index) => (
+                <option key={index} value={category.id}>
+                  {category.title_category}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.formGroup}>
+          <label>Статья</label>
+            <MyInput
+              type="text"
+              name="article"
+              value={card.article}
+              onChange={handleChange}
+              placeholder="Статья"
+            />
+          </div>
+          <div className={styles.formGroup}>
+          <label>Дата предварительного заседания</label>
+            <MyInput
+              type="date"
+              name="preliminary_hearing"
+              value={card.preliminary_hearing}
+              onChange={handleChange}
+              placeholder="Дата предварительного заседания"
+            />
+          </div>
+          <div className={styles.buttonGroup}>
+          {isEditing ? (
+            <>
+              <MyButton onClick={handleSave}>Сохранить</MyButton>
+              <MyButton onClick={handleCancel}>Отменить</MyButton>
+            </>
+          ) : (
+            <MyButton onClick={handleAddNewCard}>Создать</MyButton>
+          )}
+          </div>
+        </div>
+      </form>
+    </div>
   );
 };
 

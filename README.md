@@ -48,7 +48,14 @@ python manage.py loading_csv
 ```sh
 python manage.py runserver
 ```
-```
+### Запуск фронта
+- установить node.js https://nodejs.org/en/download
+- установить npm install
+- установить npm install axios
+- установить npm install bootstrap
+- установить npm install react-transition-group
+
+```sh
 npm start
 ```
 

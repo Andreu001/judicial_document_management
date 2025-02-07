@@ -17,6 +17,8 @@ import MovementService from '../API/MovementService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 import MovementForm from '../pages/movement/MovementForm';
 import styles from './UI/Card/BusinessCard.module.css';
+import CardHeader from './CardHeader';
+
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -200,47 +202,45 @@ const BusinessCard = (props) => {
   const renderButtons = () => {
     if (activeTab === 1) {
       return (
-        <div className={styles.cardButtons}>
+        <>
           <MyButton onClick={handleAddSideToState}>
             Добавить сторону
           </MyButton>
-        </div>
+        </>
       );
     } else if (activeTab === 2) {
       return (
-        <div className={styles.cardButtons}>
+        <>
           <MyButton onClick={handleAddMovementToState}>
             Добавить движение по делу
           </MyButton>
-        </div>
+        </>
       );
     } else if (activeTab === 3) {
       return (
-        <div className={styles.cardButtons}>
+        <>
           <MyButton onClick={handleAddPetitionToState}>
-            Добавить ходатайство по делу
+            Добавить ходатайство
           </MyButton>
-        </div>
+        </>
       );
     } else if (activeTab === 4) {
       return (
-        <div className={styles.cardButtons}>
+        <>
           <MyButton onClick={handleAddPetitionToState}>
             Добавить решение
           </MyButton>
-        </div>
+        </>
       );
     }
     { return (
-      <div className={styles.cardButtons}>
-        <MyButton onClick={() => router(`/cards/${props.card.id}`)}>
-          Подробнее
-        </MyButton>
-        <MyButton className={styles.delete} onClick={handleRemove}>Удалить</MyButton>
-        <MyButton className={styles.edit} onClick={handleEditToggle}>
-          {isEditingCard ? 'Сохранить' : 'Редактировать'}
-        </MyButton>
-      </div>
+        <>
+          <MyButton onClick={() => router(`/cards/${props.card.id}`)}>
+            Подробнее
+          </MyButton>
+          <MyButton onClick={handleRemove}>Удалить</MyButton>
+          <MyButton onClick={handleEditToggle}>Редактировать</MyButton>
+        </>
       );
     }
   };
@@ -434,6 +434,14 @@ const BusinessCard = (props) => {
             ) : null}
 
           </div>
+          <hr
+            style={{
+              width: '100%',
+              height: '2px',
+              backgroundColor: '#d3d3d3',
+              margin: '15px 0',
+            }}
+          />
           <div className="post__btns">{renderButtons()}</div>
         </>
       )}

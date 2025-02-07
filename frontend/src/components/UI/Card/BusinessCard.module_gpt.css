@@ -1,0 +1,88 @@
+/* Контейнер карточек */
+.card {
+    width: 30%; /* 3 карточки в ряд */
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  /* Эффект увеличения при наведении */
+  .card:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Заголовок карточки */
+  .cardHeader {
+    text-align: center;
+    border-bottom: 2px solid #4df9b7;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .cardHeader h3 {
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .cardHeader p {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  /* Контейнер вкладок */
+  .tabs {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+  
+  /* Контент вкладок */
+  .cardContent {
+    font-size: 14px;
+    color: #444;
+  }
+  
+  /* Кнопки управления */
+  .cardButtons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+  }
+  
+  /* Анимация кнопок */
+  .cardButtons button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: background 0.3s, transform 0.2s;
+  }
+  
+  .cardButtons button:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Кнопки "Удалить" и "Редактировать" */
+  .cardButtons .delete {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+  }
+  
+  .cardButtons .delete:hover {
+    background: #cc0000;
+  }
+  
+  .cardButtons .edit {
+    background: #4da6ff;
+    color: white;
+    border: none;
+  }
+  
+  .cardButtons .edit:hover {
+    background: #0066cc;
+  }
+  

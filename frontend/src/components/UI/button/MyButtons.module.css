@@ -1,9 +1,33 @@
+/* MyButtons.module.css */
 .myBtn {
-    padding: 5px 15px;
-    color: teal;
-    font-size: 14px;
-    background: transparent;
-    border: 1px solid teal;
-    cursor: pointer;
-    margin-right: 10px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff; /* Белый текст */
+  border-radius: 25px; /* Закругленные углы (овальная форма) */
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-right: 10px;
+  background: linear-gradient(135deg, #6a11cb, #2575fc); /* Градиентный фон */
 }
+
+.myBtn:hover {
+  background-color: #0056b3; /* Темно-синий фон при наведении */
+  transform: translateY(-1px); /* Легкий эффект поднятия */
+}
+
+.myBtn:active {
+  background-color: #004080; /* Еще темнее синий при нажатии */
+  transform: translateY(0);
+}
+
+.myBtn.cancel {
+  background-color: #e0e0e0; /* Серый фон для кнопки "Отменить" */
+  color: #333333; /* Темно-серый текст */
+}
+
+.myBtn.cancel:hover {
+  background-color: #cccccc; /* Темно-серый фон при наведении */
+}
+

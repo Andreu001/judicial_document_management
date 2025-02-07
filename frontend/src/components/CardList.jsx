@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import CardService from '../API/CardService';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import BusinessCard from './BusinessCard';
+import styles from './UI/CardList/CardList.module.css';
 
 const CardList = (props) => {
-    const [cards, setCards] = useState([]);
+  const [cards, setCards] = useState([]);
 
   useEffect(() => {
     async function fetchCards() {
@@ -38,16 +39,14 @@ const CardList = (props) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', maxWidth: '1000px', margin: '0 auto', padding: '15px' }}>
+    <div className={styles.cardGrid}>
       {cards.map((card, index) => (
         <CSSTransition
           key={card.id}
           timeout={500}
           classNames="post"
         >
-          <div style={{ width: 'calc(50% - 10px)', marginBottom: '10px' }}>
-            <BusinessCard key={card.id} remove={() => removeCard(card.id)} number={index + 1} card={card} />
-          </div>
+          <BusinessCard key={card.id} remove={() => removeCard(card.id)} number={index + 1} card={card} />
         </CSSTransition>
       ))}
     </div>

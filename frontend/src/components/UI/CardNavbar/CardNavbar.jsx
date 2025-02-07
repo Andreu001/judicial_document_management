@@ -15,25 +15,31 @@ const CardNavbar = ({ onTabChange }) => {
         className={activeTab === 0 ? styles.active : ""}
         onClick={() => handleTabClick(0)}
       >
-        Общая информация
+        Общее
       </h6>
       <h6
         className={activeTab === 1 ? styles.active : ""}
         onClick={() => handleTabClick(1)}
       >
-        Стороны по делу
+        Стороны
       </h6>
       <h6
         className={activeTab === 2 ? styles.active : ""}
         onClick={() => handleTabClick(2)}
       >
-        Движение дела
+        Движение
       </h6>
       <h6
         className={activeTab === 3 ? styles.active : ""}
         onClick={() => handleTabClick(3)}
       >
-        Ходатайства по делу
+        Ходатайства
+      </h6>
+      <h6
+        className={activeTab === 4 ? styles.active : ""}
+        onClick={() => handleTabClick(4)}
+      >
+        Решения
       </h6>
     </div>
   );

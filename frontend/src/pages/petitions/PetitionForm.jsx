@@ -3,6 +3,7 @@ import axios from 'axios';
 import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updatedPetition } from '../../API/PetitionService';
+import styles from '../../components//UI/input/Input.module.css';
 
 const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave, onCancel, cardId, sideId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -152,78 +153,89 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
       console.error('Ошибка создания/обновления ходатайства:', error.message);
       console.error('Дополнительные сведения:', error.response ? error.response.data : error.message);
     }
-  };
-  
-  
-  
-  
-  
+  };  
 
   return (
-    <form>
-      <select
-        name="petitions"
-        value={selectedPetitionId}
-        onChange={handleChange}
-      >
-        <option value="">Выберите Ходатайство</option>
-        {petitionsCaseList.map((petitionCase, index) => (
-          <option key={index} value={petitionCase.id}>
-            {petitionCase.petitions}
-          </option>
-        ))}
-      </select>
+    <div className={styles.formContainer}>
+      <form>
+        <div className={styles.formGroup}>
+        <label>Ходатайство</label>
+          <select
+            name="petitions"
+            value={selectedPetitionId}
+            onChange={handleChange}
+          >
+            <option value="">Выберите Ходатайство</option>
+            {petitionsCaseList.map((petitionCase, index) => (
+              <option key={index} value={petitionCase.id}>
+                {petitionCase.petitions}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.formGroup}>
+        <label>Сторона подавшая ходатайство</label>
+          <select
+            name="sides_case"
+            value={side.sides_case || (editSideData.sides_case ? [editSideData.sides_case.id] : '')}
+            onChange={handleChange}
+          >
+            <option value="">Выберите Название стороны</option>
+            {sidesCaseList.map((sideCase, index) => (
+              <option key={index} value={sideCase.id}>
+                {sideCase.sides_case}
+              </option>
+            ))}
+          </select>
+        </div>
+          <div className={styles.formGroup}>
+          <label>Дата поступления</label>
+            <MyInput
+              type="date"
+              name="date_application"
+              value={petition.date_application || editPetitionData.date_application}
+              onChange={handleChange}
+              placeholder="Дата ходатайства"
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Решение по ходатайству</label>
+            <MyInput
+              type="text"
+              name="decision_rendered"
+              value={petition.decision_rendered || editPetitionData.decision_rendered}
+              onChange={handleChange}
+              placeholder="наименование вынесенного решения"
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Дата вынесения</label>
+              <MyInput
+              type="date"
+              name="date_decision"
+              value={petition.date_decision || editPetitionData.date_decision}
+              onChange={handleChange}
+              placeholder="Дата решения по ходатайству"
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Примечение</label>
+            <MyInput
+            type="text"
+            name="notation"
+            value={petition.notation || editPetitionData.notation}
+            onChange={handleChange}
+            placeholder="примечания"
+        /> </div>
 
-      <select
-        name="sides_case"
-        value={side.sides_case || (editSideData.sides_case ? [editSideData.sides_case.id] : '')}
-        onChange={handleChange}
-      >
-        <option value="">Выберите Название стороны</option>
-        {sidesCaseList.map((sideCase, index) => (
-          <option key={index} value={sideCase.id}>
-            {sideCase.sides_case}
-          </option>
-        ))}
-      </select>
-
-
-        <MyInput
-        type="date"
-        name="date_application"
-        value={petition.date_application || editPetitionData.date_application}
-        onChange={handleChange}
-        placeholder="Дата ходатайства"
-      />
-        <MyInput
-        type="text"
-        name="decision_rendered"
-        value={petition.decision_rendered || editPetitionData.decision_rendered}
-        onChange={handleChange}
-        placeholder="наименование вынесенного решения"
-      />
-        <MyInput
-        type="date"
-        name="date_decision"
-        value={petition.date_decision || editPetitionData.date_decision}
-        onChange={handleChange}
-        placeholder="Дата решения по ходатайству"
-      />
-        <MyInput
-        type="text"
-        name="notation"
-        value={petition.notation || editPetitionData.notation}
-        onChange={handleChange}
-        placeholder="примечания"
-      />
-
-      {isEditing ? (
-        <>
-          <MyButton onClick={handleAddNewPetition}>Сохранить</MyButton>
-          <MyButton onClick={handleCancel}>Отменить</MyButton>
-        </>
-      ) : null}
-    </form>
+        {isEditing ? (
+          <>
+            <MyButton onClick={handleAddNewPetition}>Сохранить</MyButton>
+            <MyButton onClick={handleCancel}>Отменить</MyButton>
+          </>
+        ) : null}
+      </form>
+    </div>
   );
 };
 
