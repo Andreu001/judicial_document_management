@@ -2,7 +2,6 @@ import React from 'react';
 import styles from './UI/Card/BusinessCard.module.css';
 
 const CardHeader = ({ card }) => {
-  console.log("Категория дела:", card.case_category_title); // Отладка
   
   const normalizedCategory = card.case_category_title?.trim().toLowerCase();
   const categoryColors = {
@@ -14,7 +13,6 @@ const CardHeader = ({ card }) => {
   const cardStyle = {
     backgroundColor: categoryColors[normalizedCategory] || '#e0e0e0',
   };  
-  console.log("Категория:", card.case_category_title, "Цвет:", cardStyle.backgroundColor);
 
   return (
     <div className={styles.cardHeader} style={cardStyle}>

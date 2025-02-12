@@ -71,8 +71,6 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     onCancel();
   };
 
-
-
   const handleAddNewCard = (e) => {
     e.preventDefault();
 

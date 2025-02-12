@@ -1,0 +1,27 @@
+.cardFooter {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    background-color: #fff; /* или любой другой фон */
+    padding: 10px;
+    box-sizing: border-box;
+    z-index: 10; /* чтобы он был поверх остального контента */
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Убедитесь, что карточка растягивается на всю высоту контейнера */
+  }
+  
+  .cardContent {
+    flex-grow: 1; /* позволяет этому блоку занимать оставшееся пространство */
+    overflow-y: auto; /* если контента слишком много, появляется прокрутка */
+  }
+  
+  .cardFooter {
+    margin-top: auto; /* это выталкивает футер вниз */
+    padding: 10px;
+    background-color: #fff; /* или другой фон */
+    width: 100%;
+  }

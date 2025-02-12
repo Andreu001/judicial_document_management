@@ -175,10 +175,10 @@ class PetitionsInCase(models.Model):
         Petitions,
         verbose_name='ходатайства по делу',
     )
-    sides_case = models.ManyToManyField(
+    '''sides_case = models.ManyToManyField(
         SidesCase,
         verbose_name='Сторона по делу'
-    )
+    )'''
     notification_parties = models.ManyToManyField(
         SidesCaseInCase,
         verbose_name='Кто заявил ходатайство'

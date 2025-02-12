@@ -56,9 +56,10 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
       }
 
       axios
-      .get(`http://localhost:8000/business_card/sides/`)
+      .get(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`)
       .then((response) => {
         setsidesCaseList(response.data);
+        console.log(response.data)
       })
       .catch((error) => {
         console.error('Error fetching category list:', error);
@@ -95,49 +96,38 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
   
     setSide((prevSide) => ({
       ...prevSide,
-      [name]: name === 'sides_case' ? [value] : value,
+      [name]: value,
     }));
   };
    
 
+  const formatDate = (date) => {
+    if (!date) return null; // Если дата пустая, возвращаем null, чтобы не сломать код
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) return null; // Проверяем, корректна ли дата
+    return parsedDate.toISOString().split('T')[0]; // Формат YYYY-MM-DD
+  };
+  
   const handleAddNewPetition = async (e) => {
     e.preventDefault();
     
-    const formatDate = (date) => {
-      const formattedDate = new Date(date);
-      return formattedDate.toISOString().split('T')[0];
-    };
-  
     const newPetitionData = {
       petitions: petition.petitions,
-      sides_case: petition.sides_case.length > 0 ? [petition.sides_case[0]] : null,
-      date_application: petition.date_application,
-      decision_rendered: petition.decision_rendered, // Используйте decision_rendered из состояния petition
-      date_decision: petition.date_decision,
+      sides_case: petition.sides_case ? petition.sides_case : null,
+      date_application: formatDate(petition.date_application),  // Форматируем дату
+      decision_rendered: petition.decision_rendered,
+      date_decision: formatDate(petition.date_decision),  // Форматируем дату
       notation: petition.notation,
     };
   
+    console.log('Отправка данных:', newPetitionData); // Проверка перед отправкой
+  
     try {
-      if (!newPetitionData.date_application) {
-        delete newPetitionData.date_application;
-      }
-  
-      if (!newPetitionData.decision_rendered) {
-        delete newPetitionData.decision_rendered;
-      }
-  
       if (editingPetitionId) {
-        // Редактирование существующей стороны
         const response = await updatedPetition(cardId, sideId, editingPetitionId, newPetitionData);
-        console.log('Сторона cardId:', cardId);
-        console.log('Сторона editingPetitionId:', editingPetitionId);
-        console.log('Сторона обновлена:', response.data);
         onSave(response.data);
       } else {
-        // Создание новой ходатайства
-        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/petitionsincase/`, newPetitionData);
-        console.log('Ходатайство создана:', response.data);
-        console.log('Отправка данных:', newPetitionData);
+        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`, newPetitionData);
         create(response.data);
       }
   
@@ -149,11 +139,13 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
         date_decision: '',
         notation: '',
       });
+  
     } catch (error) {
-      console.error('Ошибка создания/обновления ходатайства:', error.message);
+      console.error('Ошибка:', error.message);
       console.error('Дополнительные сведения:', error.response ? error.response.data : error.message);
     }
-  };  
+  };
+  
 
   return (
     <div className={styles.formContainer}>
@@ -177,13 +169,13 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
         <label>Сторона подавшая ходатайство</label>
           <select
             name="sides_case"
-            value={side.sides_case || (editSideData.sides_case ? [editSideData.sides_case.id] : '')}
+            value={petition.sides_case || ''}
             onChange={handleChange}
           >
-            <option value="">Выберите Название стороны</option>
-            {sidesCaseList.map((sideCase, index) => (
-              <option key={index} value={sideCase.id}>
-                {sideCase.sides_case}
+            <option value="">Выберите сторону</option>
+            {sidesCaseList.map((side) => (
+              <option key={side.id} value={side.id}>
+                {side.name} ({side.sides_case_name})
               </option>
             ))}
           </select>

@@ -1,33 +1,56 @@
-/* MyButtons.module.css */
 .myBtn {
-  padding: 12px 24px;
-  font-size: 14px;
+  padding: 0.5vw 1.5vw; /* Уменьшены отступы */
+  font-size: 0.875rem; /* Меньший размер шрифта */
   font-weight: 500;
-  color: #ffffff; /* Белый текст */
-  border-radius: 25px; /* Закругленные углы (овальная форма) */
+  color: #ffffff;
+  border-radius: 20px; /* Уменьшенный радиус скругления */
   border: none;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
-  margin-right: 10px;
-  background: linear-gradient(135deg, #6a11cb, #2575fc); /* Градиентный фон */
+  margin: 3px; /* Уменьшены отступы между кнопками */
+  background: linear-gradient(135deg, #af9176, #8b6064); /* Новый градиент */
+  flex-grow: 1; /* Адаптивный размер */
 }
 
 .myBtn:hover {
-  background-color: #0056b3; /* Темно-синий фон при наведении */
-  transform: translateY(-1px); /* Легкий эффект поднятия */
+  background-color: #4a6b60;
+  transform: translateY(-1px);
 }
 
 .myBtn:active {
-  background-color: #004080; /* Еще темнее синий при нажатии */
+  background-color: #2e4237;
   transform: translateY(0);
 }
 
 .myBtn.cancel {
-  background-color: #e0e0e0; /* Серый фон для кнопки "Отменить" */
-  color: #333333; /* Темно-серый текст */
+  background-color: #e0e0e0;
+  color: #333333;
 }
 
 .myBtn.cancel:hover {
-  background-color: #cccccc; /* Темно-серый фон при наведении */
+  background-color: #cccccc;
 }
 
+.myBtn.delete {
+  background-color: #d32f2f;
+}
+
+.myBtn.delete:hover {
+  background-color: #b71c1c;
+}
+
+.myBtn.edit {
+  background-color: #1976d2;
+}
+
+.myBtn.edit:hover {
+  background-color: #1565c0;
+}
+
+.myBtn.details {
+  background-color: #4caf50;
+}
+
+.myBtn.details:hover {
+  background-color: #388e3c;
+}

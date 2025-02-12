@@ -24,7 +24,7 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
   
     useEffect(() => {
       axios
-        .get(`http://localhost:8000/business_card/sides/`)
+        .get('http://localhost:8000/business_card/sides/')
         .then((response) => {
           setsidesCaseList(response.data);
         })
@@ -32,16 +32,15 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
           console.error('Error fetching category list:', error);
         });
     
-        if (editSideData) {
-          setIsEditing(true);
-          setSide((prevSide) => ({
-            ...prevSide,
-            ...editSideData,
-            sides_case: editSideData.sides_case ? [editSideData.sides_case.id] : '',
-          }));
-          setEditingSideId(editSideData.id);
-        }
-        
+      if (editSideData) {
+        setIsEditing(true);
+        setSide((prevSide) => ({
+          ...prevSide,
+          ...editSideData,
+          sides_case: editSideData.sides_case ? [editSideData.sides_case.id] : [],
+        }));
+        setEditingSideId(editSideData.id);
+      }
     }, [editSideData]);
     
     

@@ -112,41 +112,45 @@ class PetitionsInCaseViewSet(viewsets.ModelViewSet):
     Ходатайства по делу
     """
     serializer_class = PetitionsInCaseSerializer
+    search_fields = ('notification_parties',)
 
     def get_queryset(self):
         businesscard = get_object_or_404(
             BusinessCard, pk=self.kwargs.get('businesscard_id')
-            )
-        new_queryset = businesscard.petitionsincase.all()
-        return new_queryset
+        )
+        return businesscard.petitionsincase.all()
 
     def perform_create(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
-
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
         petitions_data = self.request.data.get('petitions', [])
-        petitions_ids = [
-            int(petitions_id) for petitions_id in petitions_data if isinstance(
-                petitions_id, (int, str)
-                )]
-        petitions = Petitions.objects.filter(id__in=petitions_ids)
+        petitions = Petitions.objects.filter(id__in=petitions_data)
+
+        notification_parties_data = self.request.data.get('notification_parties', [])
+        notification_parties = SidesCaseInCase.objects.filter(
+            id__in=notification_parties_data, business_card=businesscard
+        )
 
         instance = serializer.save(business_card=businesscard)
         instance.petitions.set(petitions)
+        instance.notification_parties.set(notification_parties)
 
     def perform_update(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
-
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
         petitions_data = self.request.data.get('petitions', [])
-        petitions_ids = [
-            int(petitions_id) for petitions_id in petitions_data if isinstance(
-                petitions_id, (int, str)
-                )]
-        petitions = Petitions.objects.filter(id__in=petitions_ids)
+        petitions = Petitions.objects.filter(id__in=petitions_data)
+
+        notification_parties_data = self.request.data.get('notification_parties', [])
+        notification_parties = SidesCaseInCase.objects.filter(
+            id__in=notification_parties_data, business_card=businesscard
+        )
 
         instance = serializer.save(business_card=businesscard)
         instance.petitions.set(petitions)
+        instance.notification_parties.set(notification_parties)
 
 
 class FamiliarizationCaseViewSet(viewsets.ModelViewSet):
@@ -171,7 +175,7 @@ class FamiliarizationCaseViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         familiarization = SidesCaseInCase.objects.filter(
-            id__in=familiarization_data
+            id__in=familiarization_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)
@@ -189,7 +193,7 @@ class FamiliarizationCaseViewSet(viewsets.ModelViewSet):
                 familiarization_id, (int, str)
                 )]
         familiarization = SidesCaseInCase.objects.filter(
-            id__in=familiarization_ids
+            id__in=familiarization_ids, business_card=businesscard
             )
 
         instance = serializer.save(business_card=businesscard)
@@ -259,7 +263,7 @@ class ConsideredCaseViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         consideredcase = SidesCaseInCase.objects.filter(
-            id__in=consideredcase_data
+            id__in=consideredcase_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)
@@ -273,7 +277,7 @@ class ConsideredCaseViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         consideredcase = SidesCaseInCase.objects.filter(
-            id__in=consideredcase_data
+            id__in=consideredcase_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)
@@ -302,7 +306,7 @@ class AppealViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         appeal = SidesCaseInCase.objects.filter(
-            id__in=appeal_data
+            id__in=appeal_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)
@@ -316,7 +320,7 @@ class AppealViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         appeal = SidesCaseInCase.objects.filter(
-            id__in=appeal_data
+            id__in=appeal_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)
@@ -344,7 +348,7 @@ class ExecutionCaseViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         executioncase = SidesCaseInCase.objects.filter(
-            id__in=executioncase_data
+            id__in=executioncase_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)
@@ -358,7 +362,7 @@ class ExecutionCaseViewSet(viewsets.ModelViewSet):
             'notification_parties', []
             )
         executioncase = SidesCaseInCase.objects.filter(
-            id__in=executioncase_data
+            id__in=executioncase_data, business_card=businesscard
         )
 
         instance = serializer.save(business_card=businesscard)

@@ -1,23 +1,28 @@
-import { useMemo } from "react";
-
-export const useSortedCard = (cards, sort) => {
-    const sortedCards = useMemo(() => {
-		if(sort) {
-			return [...cards].sort((a, b) => a[sort].localeCompare(b[sort]));
-		}
-		return cards;
-	}, [sort, cards])
-
-    return sortedCards;
-
-}
+import { useMemo } from 'react';
 
 export const useCard = (cards, sort, query) => {
-    const sortedCards = useSortedCard(cards, sort);
+  return useMemo(() => {
+    let sortedCards = [...cards];
 
-    const sortedAndSearchCards = useMemo(() => {
-		return sortedCards.filter(card => card.title)
-	}, [query, sortedCards])
+    // Сортировка
+    if (sort) {
+      sortedCards.sort((a, b) => {
+        if (a[sort] < b[sort]) return -1;
+        if (a[sort] > b[sort]) return 1;
+        return 0;
+      });
+    }
 
-    return sortedAndSearchCards;
-}
+    // Поиск
+    if (query) {
+      sortedCards = sortedCards.filter(card =>
+        card.name.toLowerCase().includes(query.toLowerCase()) || // Поиск по ФИО
+        card.receivedDate.toLowerCase().includes(query.toLowerCase()) || // Поиск по дате поступления
+        card.appointedDate.toLowerCase().includes(query.toLowerCase()) || // Поиск по дате назначения
+        card.consideredDate.toLowerCase().includes(query.toLowerCase()) // Поиск по дате рассмотрения
+      );
+    }
+
+    return sortedCards;
+  }, [cards, sort, query]);
+};

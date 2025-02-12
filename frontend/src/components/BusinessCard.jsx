@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import MyButton from './UI/button/MyButton';
 import { useNavigate } from 'react-router-dom';
 import CardService from '../API/CardService';
-import PetitionService, { updatePetition } from '../API/PetitionService';
+import PetitionService from '../API/PetitionService';
 import { updateCard } from '../API/CardService';
 import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
 import CardForm from './CardForm';
-import { handleShowDetails, handleAddSide, handleDeleteSide, handleEditSide } from '../pages/sides/Sides';
-import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, handleEditMove } from '../pages/movement/Movement';
+import { handleShowDetails, handleAddSide, handleDeleteSide, } from '../pages/sides/Sides';
+import { handleAddMove, handleDeleteMove, } from '../pages/movement/Movement';
 import { handleShowDetailsPetition, handleEditPetition, handleAddPetitions, handleDeletePetition } from '../pages/petitions/Petition';
 import SidesForm from '../pages/sides/SidesForm';
 import PetitionForm from '../pages/petitions/PetitionForm';
@@ -17,6 +16,7 @@ import MovementService from '../API/MovementService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 import MovementForm from '../pages/movement/MovementForm';
 import styles from './UI/Card/BusinessCard.module.css';
+import CardFooter from './UI/CardFooter/CardFooter';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -92,6 +92,7 @@ const BusinessCard = (props) => {
     setEditedSideId(null);
   };
 
+ 
   const handleSaveCard = async (updatedCardData) => {
     try {
       const cardId = String(updatedCardData.id);
@@ -165,9 +166,9 @@ const BusinessCard = (props) => {
         console.error('ID карточки не определен');
         return;
       }
-
+  
       const cardId = String(props.card.id);
-      await CardService.remove(cardId);
+      await props.remove(cardId); // Вызываем функцию remove, переданную через props
       console.log('Удаляется карточка с ID:', cardId);
     } catch (error) {
       console.error('Ошибка удаления:', error);
@@ -197,53 +198,6 @@ const BusinessCard = (props) => {
     handleAddPetitions(newPetition, setNewPetition);
   };
 
-  const renderButtons = () => {
-    if (activeTab === 1) {
-      return (
-        <div className={styles.cardButtons}>
-          <MyButton onClick={handleAddSideToState}>
-            Добавить сторону
-          </MyButton>
-        </div>
-      );
-    } else if (activeTab === 2) {
-      return (
-        <div className={styles.cardButtons}>
-          <MyButton onClick={handleAddMovementToState}>
-            Добавить движение по делу
-          </MyButton>
-        </div>
-      );
-    } else if (activeTab === 3) {
-      return (
-        <div className={styles.cardButtons}>
-          <MyButton onClick={handleAddPetitionToState}>
-            Добавить ходатайство по делу
-          </MyButton>
-        </div>
-      );
-    } else if (activeTab === 4) {
-      return (
-        <div className={styles.cardButtons}>
-          <MyButton onClick={handleAddPetitionToState}>
-            Добавить решение
-          </MyButton>
-        </div>
-      );
-    }
-    { return (
-      <div className={styles.cardButtons}>
-        <MyButton onClick={() => router(`/cards/${props.card.id}`)}>
-          Подробнее
-        </MyButton>
-        <MyButton className={styles.delete} onClick={handleRemove}>Удалить</MyButton>
-        <MyButton className={styles.edit} onClick={handleEditToggle}>
-          {isEditingCard ? 'Сохранить' : 'Редактировать'}
-        </MyButton>
-      </div>
-      );
-    }
-  };
 
   return (
     <div className={styles.card}>
@@ -330,9 +284,10 @@ const BusinessCard = (props) => {
                           <strong>ФИО {sides.name}.</strong>
                           <div>Под стражей: {sides.under_arrest ? 'Да' : 'Нет'}</div>
                           {sides.sides_case ? (
-                            sides.sides_case.map((sideCase, idx) => (
-                              <div key={idx}>Статус стороны: {sideCase.sides_case}</div>
-                            ))
+                            sides.sides_case.map((sideCase, idx) => {
+                              console.log('sideCase:', sideCase);
+                              return <div key={idx}>Статус стороны:  {sideCase.sides_case_name || 'Не указано'}</div>;
+                            })
                           ) : (
                             <div>Нет данных по сторонам дела</div>
                           )}
@@ -403,8 +358,8 @@ const BusinessCard = (props) => {
                   <div key={index} style={{ marginBottom: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <strong>ходатайства по делу: {petitions.petitions}.</strong>
-                        <div>Кто заявил ходатайство: {petitions.sides_case}</div>
+                        <strong>Ходатайство по делу: {petitions.petitions}.</strong>
+                        <div>Кто заявил ходатайство: {petitions.sides_case_name}</div>
                         <div>Дата ходатайства: {petitions.date_application}</div>
                         <div>наименование вынесенного решения: {petitions.decision_rendered}</div>
                         <div>Дата решения по ходатайству: {petitions.date_decision}</div>
@@ -434,7 +389,16 @@ const BusinessCard = (props) => {
             ) : null}
 
           </div>
-          <div className="post__btns">{renderButtons()}</div>
+          <CardFooter
+            activeTab={activeTab}
+            handleAddSideToState={handleAddSideToState}
+            handleAddMovementToState={handleAddMovementToState}
+            handleAddPetitionToState={handleAddPetitionToState}
+            handleRemove={handleRemove}
+            handleEditToggle={handleEditToggle}
+            isEditingCard={isEditingCard}
+            cardId={card.id}
+          />
         </>
       )}
     </div>

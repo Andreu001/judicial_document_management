@@ -50,7 +50,7 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
   const handleAddNewBusinessMovement = async (e) => {
     e.preventDefault();
 
-    const newBusinessMovementData = { ...businessMovement, business_card: cardId };
+  const newBusinessMovementData = { ...businessMovement, business_card: cardId };
 
     try {
       if (editingBusinessMovementId) {

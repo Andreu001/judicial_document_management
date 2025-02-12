@@ -47,10 +47,10 @@ function Cards() {
         console.error('ID карточки не определен');
         return;
       }
-
+  
       const cardId = String(id);
       await CardService.remove(cardId);
-      setCards(cards.filter((card) => card.id !== id));
+      setCards(prevCards => prevCards.filter(card => card.id !== id));
       console.log('Удаляется карточка с ID:', cardId);
     } catch (error) {
       console.error('Ошибка удаления:', error);

@@ -35,7 +35,7 @@ export const handleDeletePetition = async (petitionId, cardId, setPetition) => {
     const cardIdString = String(cardId);
 
     await PetitionService.remove(cardIdString, petitionIdString);
-    console.log('Удаляется сторона с ID:', petitionIdString);
+    console.log('Удаляется ходатайство с ID:', petitionIdString);
 
     setPetition((prevPetition) => prevPetition.filter((item) => String(item.id) !== petitionIdString));
 

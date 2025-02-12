@@ -68,7 +68,7 @@ const Sides = (props) => {
   useEffect(() => {
     const fetchSides = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
+        const response = await axios.get('http://127.0.0.1:8000/business_card/sidescaseincase/');
         console.log('Response:', response);
         setSide(response.data);
       } catch (error) {
@@ -78,6 +78,7 @@ const Sides = (props) => {
     
     fetchSides();
   }, []);
+  
 
   const handleCancel = () => {
     setEditedSideDataState({ ...props.side });
@@ -95,8 +96,9 @@ const Sides = (props) => {
           onCancel={handleCancel}
           setSide={props.setSide}
         />
-      ) : (<SideList remove={handleDeleteSide} />)
-      }
+      ) : (
+        <SideList sides={sides} remove={handleDeleteSide} />
+      )}
     </div>
   );
 };

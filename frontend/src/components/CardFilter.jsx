@@ -22,10 +22,10 @@ const CardFilter = ({ filter, setFilter }) => {
           onChange={(selectedSort) => setFilter({ ...filter, sort: selectedSort })}
           defaultValue="Сортировка"
           options={[
-            { value: 'title', name: 'По дате поступления' },
-            { value: 'title', name: 'По дате назначения' },
-            { value: 'title', name: 'По дате рассмотрения' },
-            { value: 'body', name: 'По ФИО' },
+            { value: 'receivedDate', name: 'По дате поступления' },
+            { value: 'appointedDate', name: 'По дате назначения' },
+            { value: 'consideredDate', name: 'По дате рассмотрения' },
+            { value: 'name', name: 'По ФИО' },
           ]}
         />
       </div>

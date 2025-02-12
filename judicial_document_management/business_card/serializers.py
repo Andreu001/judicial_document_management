@@ -13,10 +13,33 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class SidesCaseInCaseSerializer(serializers.ModelSerializer):
+    """
+    Модель добавления сторон по делу
+    """
+
+    sides_case_name = serializers.StringRelatedField(
+        many=True,
+        source='sides_case',
+        read_only=True
+    )
+
+    class Meta:
+        model = SidesCaseInCase
+        fields = ('name', 'id',
+                  'sides_case', 'sides_case_name',
+                  'under_arrest',
+                  'date_sending_agenda'
+                  )
+
+
 class FamiliarizationCaseSerializer(serializers.ModelSerializer):
     """
     Ознакомление с материалами дела
     """
+
+    notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
+
     class Meta:
         model = FamiliarizationCase
         fields = ('id', 'petition', 'start_date', 'end_date',
@@ -28,6 +51,7 @@ class SidesCaseSerializer(serializers.ModelSerializer):
     """
     Стороны по делу
     """
+
     class Meta:
         model = SidesCase
         fields = ('id', 'sides_case',)
@@ -46,6 +70,9 @@ class ConsideredCaseSerializer(serializers.ModelSerializer):
     """
      Действия по рассмотренному делу
     """
+
+    notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
+
     class Meta:
         model = ConsideredCase
         fields = ('id', 'date_consideration',
@@ -84,27 +111,13 @@ class BusinessCardSerializer(serializers.ModelSerializer):
                   'preliminary_hearing')
 
 
-class SidesCaseInCaseSerializer(serializers.ModelSerializer):
-    """
-    Модель добавления сторон по делу
-    """
-    # sides_case = SidesCaseSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = SidesCaseInCase
-        fields = ('name', 'id',
-                  'sides_case',
-                  'under_arrest',
-                  'date_sending_agenda'
-                  )
-
 
 class PetitionsInCaseSerializer(serializers.ModelSerializer):
     """
     Промежуточная таблица для ходатайств
     """
 
-    notification_parties_names = serializers.SerializerMethodField()
+    notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
 
     class Meta:
         model = PetitionsInCase
@@ -112,20 +125,20 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
             'petitions',
             'id',
             'notification_parties',
-            'notification_parties_names',  # Добавляем это поле
             'date_application',
             'decision_rendered',
             'date_decision',
         )
 
-    def get_notification_parties_names(self, obj):
-        return [str(side) for side in obj.notification_parties.all()]
 
 
 class AppealSerializer(serializers.ModelSerializer):
     """
     Апелляция по делу
     """
+
+    notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
+
     class Meta:
         model = Appeal
         fields = ('date_appeal',
@@ -157,6 +170,8 @@ class ExecutionCaseSerializer(serializers.ModelSerializer):
     """
     ИСполнение по делу
     """
+
+    notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
 
     class Meta:
         model = ExecutionCase

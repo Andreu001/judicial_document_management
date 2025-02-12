@@ -329,9 +329,9 @@ const BusinessCard = (props) => {
                         <div>
                           <strong>ФИО {sides.name}.</strong>
                           <div>Под стражей: {sides.under_arrest ? 'Да' : 'Нет'}</div>
-                          {sides.sides_case ? (
-                            sides.sides_case.map((sideCase, idx) => (
-                              <div key={idx}>Статус стороны: {sideCase.sides_case}</div>
+                          {sides.sides_case_name ? (
+                            sides.sides_case_name.map((sideCase, idx) => (
+                              <div key={idx}>Статус стороны: {sideCase.sides_case_name}</div>
                             ))
                           ) : (
                             <div>Нет данных по сторонам дела</div>
@@ -342,7 +342,7 @@ const BusinessCard = (props) => {
                           <IoMdEye onClick={() => handleShowDetails({ side: sides }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
                           <IoMdTrash
                             onClick={() => {
-                              const currentSideId = sides.id; // или нужный вам способ получения id
+                              const currentSideId = sides.id;
                               console.log('currentSideId:', currentSideId);
                               console.log('props.card.id:', props.card.id);
                               handleDeleteSide(currentSideId, props.card.id, setSide);
