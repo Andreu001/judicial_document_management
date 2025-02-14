@@ -5,7 +5,7 @@
 from rest_framework import serializers
 
 from .models import (FamiliarizationCase, SidesCase,
-                     Petitions, ConsideredCase,
+                     Petitions, ConsideredCase, Decisions,
                      Category, BusinessCard, PetitionsInCase,
                      SidesCaseInCase, Appeal, BusinessMovement, ExecutionCase)
 from django.contrib.auth import get_user_model
@@ -64,6 +64,17 @@ class PetitionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Petitions
         fields = ('id', 'petitions',)
+
+
+class DecisionsSerializer(serializers.ModelSerializer):
+    """
+    Модель заявленных ходатайств по делу
+    """
+    class Meta:
+        model = Decisions
+        fields = ('id', 'name_case', 'date_consideration', 
+                  'notation',
+                  )
 
 
 class ConsideredCaseSerializer(serializers.ModelSerializer):

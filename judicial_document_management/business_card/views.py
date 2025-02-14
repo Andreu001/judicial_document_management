@@ -13,13 +13,13 @@ from rest_framework import status
 # from rest_framework.authentication import TokenAuthentication
 
 from .models import (SidesCase, Petitions, Category, BusinessCard,
-                     Appeal, SidesCaseInCase)
+                     Appeal, SidesCaseInCase, Decisions)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           ConsideredCaseSerializer, ExecutionCaseSerializer,
                           CategorySerializer, BusinessCardSerializer,
                           PetitionsInCaseSerializer, SidesCaseInCaseSerializer,
-                          AppealSerializer, BusinessMovementSerializer)
+                          AppealSerializer, BusinessMovementSerializer, DecisionsSerializer)
 # from .utils import paginator_list
 
 
@@ -42,6 +42,14 @@ class PetitionsViewSet(viewsets.ModelViewSet):
     """
     queryset = Petitions.objects.all()
     serializer_class = PetitionsSerializer
+
+
+class DecisionsViewSet(viewsets.ModelViewSet):
+    """
+    Список ходатайств
+    """
+    queryset = Decisions.objects.all()
+    serializer_class = DecisionsSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -217,28 +225,39 @@ class BusinessMovementViewSet(viewsets.ModelViewSet):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        movement_data = self.request.data.get('sides_case', [])
-        movement_ids = [
-            int(movement_id) for movement_id in movement_data if isinstance(
-                movement_id, (int, str)
-                )]
-        sides_case = SidesCaseInCase.objects.filter(id__in=movement_ids)
-        instance = serializer.save(business_card=businesscard)
-        instance.sides_case.set(sides_case)
+        decision_case_data = self.request.data.get('decision_case', [])
+        
+        decision_case_ids = [
+            int(decision_id) for decision_id in decision_case_data
+            if isinstance(decision_id, (int, str)) and str(decision_id).isdigit()
+        ]
 
-    def perform_update(self, serializer):
-        businesscard_id = self.kwargs.get('businesscard_id')
-        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
-
-        movement_data = self.request.data.get('sides_case', [])
-        movement_ids = [
-            int(side_id) for side_id in movement_data if isinstance(
-                side_id, (int, str)
-                )
-            ]
-        sides_case = SidesCaseInCase.objects.filter(id__in=movement_ids)
+        decisions = Decisions.objects.filter(id__in=decision_case_ids)
+        
         instance = serializer.save(business_card=businesscard)
-        instance.sides_case.set(sides_case)
+        instance.decision_case.set(decisions)
+
+def perform_update(self, serializer):
+    businesscard_id = self.kwargs.get('businesscard_id')
+    businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+
+    # Получаем данные decision_case из запроса
+    decision_case_data = self.request.data.get('decision_case', [])
+    
+    # Преобразуем данные в список ID (если они переданы как строки или числа)
+    decision_case_ids = [
+        int(decision_id) for decision_id in decision_case_data
+        if isinstance(decision_id, (int, str)) and str(decision_id).isdigit()
+    ]
+
+    # Находим объекты Decisions по ID
+    decisions = Decisions.objects.filter(id__in=decision_case_ids)
+    
+    # Сохраняем обновленный объект BusinessMovement
+    instance = serializer.save(business_card=businesscard)
+    
+    # Обновляем связь ManyToMany для decision_case
+    instance.decision_case.set(decisions)
 
 
 class ConsideredCaseViewSet(viewsets.ModelViewSet):

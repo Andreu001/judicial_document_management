@@ -31,7 +31,7 @@ export const handleDeleteMove = async (moveId, cardId, setMove) => {
     const cardIdString = String(cardId);
 
     await MovementService.remove(cardIdString, moveIdString);
-    console.log('Удаляется сторона с ID:', moveIdString);
+    console.log('Удаляется движение с ID:', moveIdString);
 
     setMove((prevMove) => prevMove.filter((item) => String(item.id) !== moveIdString));
 
@@ -80,22 +80,6 @@ const Movement = (props) => {
     }
   };
 
-  /*const handleSave = async (editedMoveData) => {
-    try {
-      const moveId = String(editedMoveData.id);
-      const updatedMove = await updateMove(moveId, editedMoveData);
-  
-      setEditedMoveDataState(updatedMove);
-      setIsEditing(false);
-  
-      handleAddMove(updatedMove, setMovements);
-  
-      console.log('Состояние movements после сохранения:', updatedMove);
-    } catch (error) {
-      console.error('Ошибка при обновлении движения:', error);
-    }
-  };*/
-  
   useEffect(() => {
     const fetchMove = async () => {
       try {

@@ -10,7 +10,6 @@ class ReceivedCaseAdmin(admin.ModelAdmin):
     list_display = ('pk',
                     'date_meeting',
                     'meeting_time',
-                    'decision_case',
                     )
     search_fields = ('date_meeting',)
     empty_value_display = '-пусто-'

@@ -5,7 +5,7 @@ from .views import (FamiliarizationCaseViewSet, SidesCaseViewSet,
                     ConsideredCaseViewSet, CategoryViewSet,
                     BusinessCardViewSet, AppealViewSet,
                     BusinessMovementViewSet, SidesCaseInCaseViewSet,
-                    ExecutionCaseViewSet
+                    ExecutionCaseViewSet, DecisionsViewSet
                     )
 
 
@@ -17,6 +17,7 @@ router.register(r'sides', SidesCaseViewSet, basename='sides')
 router.register(r'petitions', PetitionsViewSet, basename='petitions')
 router.register(r'category', CategoryViewSet, basename='category')
 router.register(r'businesscard', BusinessCardViewSet, basename='businesscard')
+router.register(r'decisions', DecisionsViewSet, basename='decisions')
 
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/sidescaseincase',

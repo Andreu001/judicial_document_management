@@ -1,7 +1,7 @@
 import React from 'react';
 import MyButton from '../button/MyButton';
 import { useNavigate } from 'react-router-dom';
-import styles from './CardFooter.module.css'; // Убедитесь, что путь к CSS файлу правильный
+import styles from './CardFooter.module.css';
 
 const CardFooter = ({
   activeTab,

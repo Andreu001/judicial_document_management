@@ -42,6 +42,7 @@ const BusinessCard = (props) => {
   const [showPetitionForm, setShowPetitionForm] = useState(false);
   const [newPetition, setNewPetition] = useState([]);
   const [editedPetitionId, setEditedPetitionId] = useState(null);
+  const [decisionCases, setDecisionCases] = useState([]);
 
   useEffect(() => {
     PetitionService.getAllPetitions(cardId)
@@ -84,6 +85,23 @@ const BusinessCard = (props) => {
         console.error('Ошибка при загрузке сторон:', error);
       });
   }, [cardId]);
+
+  useEffect(() => {
+    MovementService.getDecisionCases()
+      .then((response) => {
+        console.log('Загруженные решения:', response.data);  // Логирование данных после загрузки
+        if (Array.isArray(response.data)) {
+          setDecisionCases(response.data);
+        } else {
+          console.error('Неверный формат данных:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка загрузки решений:', error);
+      });
+  }, []);
+  
+  
   
 
   const handleEditToggle = () => {
@@ -120,8 +138,7 @@ const BusinessCard = (props) => {
 
   const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
     setIsEditingMove(isEditing);
-  
-    // Находим отредактированные данные движения по ID
+
     const editedMove = movements.find((move) => move.id === moveId);
   
     setEditedMoveData({ ...editedMove });
@@ -133,12 +150,13 @@ const BusinessCard = (props) => {
     try {
       const moveId = String(updatedMoveData.id);
       const updatedMove = await MovementService.updateMove(cardId, moveId, updatedMoveData);
-
+  
       setMovements((prevMovements) =>
         prevMovements.map((move) => (move.id === moveId ? updatedMove : move))
       );
-
+  
       setIsEditingMove(false);
+      setShowMovementForm(false); // Закрываем форму
       console.log('Состояние движения после сохранения:', updatedMove);
     } catch (error) {
       console.error('Ошибка при обновлении движения:', error);
@@ -179,19 +197,32 @@ const BusinessCard = (props) => {
     setActiveTab(tabIndex);
   };
 
-  const handleAddSideToState = (e) => {
-    e.preventDefault()
-    setIsEditingSide(true);
-    setShowSideForm(true);
-    setSide([...sides, newside])
+const handleAddSideToState = (e) => {
+  e.preventDefault();
+  setEditedSideData({}); // Очищаем данные перед добавлением новой стороны
+  setIsEditingSide(true);
+  setShowSideForm(true);
+};
+
+
+  const createSide = async (newSide) => {
+    try {
+      const response = await SideService.createSide(cardId, newSide);
+      setSide((prevSides) => [...prevSides, response.data])
+      setShowSideForm(false); // Закрываем форму
+    } catch (error) {
+      console.error('Ошибка при создании стороны:', error);
+    }
   };
 
-  const createSide = (newSide) => {
-    handleAddSide(newSide, setNewSide);
-  };
-
-  const createMove = (newMove) => {
-    handleAddMove(newMove, setNewMove);
+  const createMove = async (newMove) => {
+    try {
+      const response = await MovementService.createMove(cardId, newMove);
+      setMovements((prevMovements) => [...prevMovements, response.data]);
+      setShowMovementForm(false);
+    } catch (error) {
+      console.error('Ошибка при создании движения:', error);
+    }
   };
 
   const createPetition = (newPetition) => {
@@ -244,6 +275,7 @@ const BusinessCard = (props) => {
               setIsEditingSide(false);
               setEditedSideId(null);
             } else {
+              await createSide(newSide);
             }
           }}
           onCancel={() => {
@@ -283,11 +315,10 @@ const BusinessCard = (props) => {
                         <div>
                           <strong>ФИО {sides.name}.</strong>
                           <div>Под стражей: {sides.under_arrest ? 'Да' : 'Нет'}</div>
-                          {sides.sides_case ? (
-                            sides.sides_case.map((sideCase, idx) => {
-                              console.log('sideCase:', sideCase);
-                              return <div key={idx}>Статус стороны:  {sideCase.sides_case_name || 'Не указано'}</div>;
-                            })
+                          {sides.sides_case_name ? (
+                            sides.sides_case_name.map((sideCaseName, idx) => (
+                              <div key={idx}>Статус стороны: {sideCaseName || 'Не указано'}</div>
+                            ))
                           ) : (
                             <div>Нет данных по сторонам дела</div>
                           )}
@@ -297,7 +328,7 @@ const BusinessCard = (props) => {
                           <IoMdEye onClick={() => handleShowDetails({ side: sides }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
                           <IoMdTrash
                             onClick={() => {
-                              const currentSideId = sides.id; // или нужный вам способ получения id
+                              const currentSideId = sides.id;
                               console.log('currentSideId:', currentSideId);
                               console.log('props.card.id:', props.card.id);
                               handleDeleteSide(currentSideId, props.card.id, setSide);
@@ -323,8 +354,12 @@ const BusinessCard = (props) => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <strong>Дата заседания: {movements.date_meeting}.</strong>
-                        <div>Время заседания: {movements.meeting_time}</div>                        
-                        <div>Решение по поступившему делу: {movements.decision_case}</div>
+                        <div>Время заседания: {movements.meeting_time}</div>
+                        <div>
+                          Решение по поступившему делу: {movements.decision_case && movements.decision_case.length > 0
+                            ? decisionCases.find((decision) => decision.id === movements.decision_case[0])?.name_case || 'Неизвестно'
+                            : 'Неизвестно'}
+                        </div>
                         <div>Состав коллегии: {movements.composition_colleges}</div>
                         <div>Результат судебного заседания: {movements.result_court_session}</div>
                         <div>причина отложения: {movements.reason_deposition}</div>

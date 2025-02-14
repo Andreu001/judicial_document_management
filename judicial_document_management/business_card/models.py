@@ -69,9 +69,12 @@ class Decisions(models.Model):
     )
     date_consideration = models.DateField(
         null=True,
+        blank=True,
         verbose_name='Дата вынесения'
     )
     notation = models.TextField(
+        null=True,
+        blank=True,
         max_length=300,
         verbose_name='примечания'
     )
@@ -274,10 +277,8 @@ class BusinessMovement(models.Model):
     meeting_time = models.TimeField(
         verbose_name='Время заседания'
     )
-    decision_case = models.CharField(
-        blank=True,
-        null=True,
-        max_length=50,  # Так же в дальнейшем выбор из Decisions
+    decision_case = models.ManyToManyField(
+        Decisions,
         verbose_name='Решение по поступившему делу'
     )
     composition_colleges = models.CharField(
@@ -303,12 +304,6 @@ class BusinessMovement(models.Model):
         on_delete=models.CASCADE,
         related_name='businessmovement',
         verbose_name='Карточка на дело',
-    )
-    notation = models.TextField(
-        blank=True,
-        null=True,
-        max_length=300,
-        verbose_name='примечания'
     )
 
     class Meta:

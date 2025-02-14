@@ -19,10 +19,16 @@ export default class MovementService {
     const response = await axios.get(`http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`);
     return response;
   } catch (error) {
-    console.error('Ошибка при выполнении запроса getAllSide:', error);
-    throw error; // Выбрасываем ошибку дальше
+    console.error('Ошибка при выполнении запроса:', error);
+    throw error;
   }
 
+  static async getDecisionCases() {
+    return axios.get(`http://localhost:8000/business_card/decisions/`);
+  } catch (error) {
+    console.error('Ошибка при выполнении запроса decisions:', error);
+    throw error;
+  }
 
   static async remove(cardId, moveId) {
     try {

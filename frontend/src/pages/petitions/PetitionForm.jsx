@@ -130,6 +130,7 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
         const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`, newPetitionData);
         create(response.data);
       }
+      onCancel();
   
       setPetition({
         petitions: '',

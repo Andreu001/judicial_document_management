@@ -37,7 +37,7 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
         setSide((prevSide) => ({
           ...prevSide,
           ...editSideData,
-          sides_case: editSideData.sides_case ? [editSideData.sides_case.id] : [],
+          sides_case: editSideData.sides_case ? [editSideData.sides_case[0]] : [],
         }));
         setEditingSideId(editSideData.id);
       }
@@ -89,6 +89,7 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
           console.log('Отправка данных:', newSideData);
           create(response.data);
         }
+        onCancel();
     
         setSide({
           name: '',

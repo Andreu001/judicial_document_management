@@ -12,12 +12,14 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
   const [businessMovement, setBusinessMovement] = useState({
     date_meeting: '',
     meeting_time: '',
-    decision_case: '',
+    decision_case: [],
     composition_colleges: '',
     result_court_session: '',
     reason_deposition: '',
     notation: '',
   });
+
+  const [decisionCases, setDecisionCases] = useState([]);
 
   useEffect(() => {
     if (editMovementData && !isEditing) {
@@ -29,8 +31,17 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
       
       setEditingBusinessMovementId(editMovementData.id);
     }
+
+    // Загружаем список решений с сервера
+    axios.get('http://localhost:8000/business_card/decisions/')
+    .then((response) => {
+      console.log('Данные решений:', response.data);
+      setDecisionCases(response.data);
+    })
+    .catch((error) => {
+      console.error('Ошибка при загрузке списка решений:', error);
+    });  
   }, [editMovementData, isEditing]);
-  
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -39,42 +50,46 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
+  
     setBusinessMovement((prevBusinessMovement) => ({
       ...prevBusinessMovement,
-      [name]: value,
+      [name]: name === "decision_case" ? [value] : value,
     }));
-    
   };
+  
 
   const handleAddNewBusinessMovement = async (e) => {
     e.preventDefault();
-
-  const newBusinessMovementData = { ...businessMovement, business_card: cardId };
-
+  
+    const newBusinessMovementData = { ...businessMovement, business_card: cardId };
+  
     try {
       if (editingBusinessMovementId) {
         const response = await updateMove(cardId, editingBusinessMovementId, newBusinessMovementData);
         console.log('Движение по делу обновлено:', response.data);
-        onSave(response.data);
+        onSave(response.data); // Передаем обновленные данные в родительский компонент
       } else {
-        // Создание нового "Движения по делу"
-        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`, newBusinessMovementData);
+        const response = await axios.post(
+          `http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`,
+          newBusinessMovementData
+        );
         console.log('Движение по делу создано:', response.data);
-        create(response.data);
+        onSave(response.data); // Передаем новые данные в родительский компонент
       }
-
+  
+      onCancel();
+  
       setBusinessMovement({
         date_meeting: '',
         meeting_time: '',
-        decision_case: '',
+        decision_case: [],
         composition_colleges: '',
         result_court_session: '',
         reason_deposition: '',
         notation: '',
       });
     } catch (error) {
-      console.error('Ошибка создания/обновления "Движения по делу":', error.message);
+      console.error('Ошибка создания/обновления "Движения по делу":', newBusinessMovementData);
       console.error('Дополнительные сведения:', error.response ? error.response.data : error.message);
     }
   };
@@ -83,7 +98,7 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
     <div className={styles.formContainer}>
       <form>
         <div className={styles.formGroup}>
-        <label>Дата заседания</label>
+          <label>Дата заседания</label>
           <MyInput
             type="date"
             name="date_meeting"
@@ -93,7 +108,7 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
           />
         </div>
         <div className={styles.formGroup}>
-        <label>Время заседания</label>
+          <label>Время заседания</label>
           <MyInput
             type="time"
             name="meeting_time"
@@ -102,19 +117,24 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
             placeholder="Время заседания"
           />
         </div>
-          <div className={styles.formGroup}>
+        <div className={styles.formGroup}>
           <label>Решение по поступившему делу</label>
-            <MyInput
-            type="text"
+          <select
             name="decision_case"
             value={businessMovement.decision_case || editMovementData.decision_case}
             onChange={handleChange}
-            placeholder="Решение по поступившему делу"
-          />
+          >
+            <option value="">Выберите решение</option>
+            {decisionCases.map((caseItem, index) => (
+              <option key={index} value={caseItem.id}>
+                {caseItem.name_case}
+              </option>
+            ))}
+          </select>
         </div>
-          <div className={styles.formGroup}>
+        <div className={styles.formGroup}>
           <label>Состав коллегии</label>
-            <MyInput
+          <MyInput
             type="text"
             name="composition_colleges"
             value={businessMovement.composition_colleges || editMovementData.composition_colleges}
@@ -122,9 +142,9 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
             placeholder="Состав коллегии"
           />
         </div>
-          <div className={styles.formGroup}>
+        <div className={styles.formGroup}>
           <label>Результат с/з</label>
-            <MyInput
+          <MyInput
             type="text"
             name="result_court_session"
             value={businessMovement.result_court_session || editMovementData.result_court_session}
@@ -132,14 +152,14 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
             placeholder="Результат судебного заседания"
           />
         </div>
-          <div className={styles.formGroup}>
+        <div className={styles.formGroup}>
           <label>Причина отложения</label>
-            <MyInput
+          <MyInput
             type="text"
             name="reason_deposition"
             value={businessMovement.reason_deposition || editMovementData.reason_deposition}
             onChange={handleChange}
-            placeholder="причина отложения"
+            placeholder="Причина отложения"
           />
         </div>
 
