@@ -174,7 +174,7 @@ class SidesCaseInCase(models.Model):
 
 class PetitionsInCase(models.Model):
     '''6.Заявленные ходатайства по делу'''
-    petitions = models.ManyToManyField(
+    petitions_name = models.ManyToManyField(
         Petitions,
         verbose_name='ходатайства по делу',
     )
@@ -218,7 +218,7 @@ class PetitionsInCase(models.Model):
     def __str__(self):
         return (
             f'{self.sides_case} {self.date_application} '
-            f'заявил ходатайство о {self.petitions}'
+            f'заявил ходатайство о {self.petitions_name}'
             )
 
 
@@ -317,9 +317,8 @@ class BusinessMovement(models.Model):
 
 class ConsideredCase(models.Model):
     '''9. Действия по рассмотренному делу'''
-    # Может так же сделать выбор из списка решений Decisions
-    name_case = models.CharField(
-        max_length=200,
+    name_case = models.ManyToManyField(
+        Decisions,
         verbose_name='Решение по делу'
     )
     date_consideration = models.DateField(

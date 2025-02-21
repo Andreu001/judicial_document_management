@@ -83,10 +83,11 @@ class ConsideredCaseSerializer(serializers.ModelSerializer):
     """
 
     notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
+    name_case = DecisionsSerializer(many=True, read_only=True)
 
     class Meta:
         model = ConsideredCase
-        fields = ('id', 'date_consideration',
+        fields = ('name_case', 'id', 'date_consideration',
                   'effective_date',
                   'notification_parties',
                   'executive_lists')
@@ -129,18 +130,18 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
     """
 
     notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
+    petitions_name = PetitionsSerializer(many=True, read_only=True)
 
     class Meta:
         model = PetitionsInCase
         fields = (
-            'petitions',
+            'petitions_name',
             'id',
             'notification_parties',
             'date_application',
             'decision_rendered',
             'date_decision',
         )
-
 
 
 class AppealSerializer(serializers.ModelSerializer):

@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import PetitionService from '../../API/PetitionService';
 import PetitionForm from './PetitionForm';
-import  { updatePetition } from '../../API/PetitionService';
 import PetitionList from './PetitionList';
 import axios from 'axios';
 
 export const handleShowDetailsPetition = (props, router) => {
   router(`/cards/details/${props.petition.id}`);
-  console.log( "Передается в МУВВВВ!!!!", props.petition);
+  console.log("Передается в МУВВВВ!!!!", props.petition);
 };
 
-export const handleAddPetitions = (newPetition, setGlobalPetition) => {
+export const handleAddPetitions = (newPetition, setPetitions) => {
   console.log('Добавляется ходатайство:', newPetition);
   if (newPetition && Object.keys(newPetition).length > 0) {
-    setGlobalPetition((prevPetition) => [...prevPetition, newPetition]);
+    setPetitions((prevPetitions) => [...prevPetitions, newPetition]);
   }
 };
 
@@ -21,7 +20,7 @@ export const handleEditPetition = (isEditing, setIsEditing) => {
   setIsEditing(isEditing);
 };
 
-export const handleDeletePetition = async (petitionId, cardId, setPetition) => {
+export const handleDeletePetition = async (petitionId, cardId, setPetitions) => {
   try {
     console.log('petitionId:', petitionId);
     console.log('cardId:', cardId);
@@ -37,7 +36,7 @@ export const handleDeletePetition = async (petitionId, cardId, setPetition) => {
     await PetitionService.remove(cardIdString, petitionIdString);
     console.log('Удаляется ходатайство с ID:', petitionIdString);
 
-    setPetition((prevPetition) => prevPetition.filter((item) => String(item.id) !== petitionIdString));
+    setPetitions((prevPetitions) => prevPetitions.filter((item) => String(item.id) !== petitionIdString));
 
   } catch (error) {
     console.error('Ошибка удаления:', error);
@@ -47,7 +46,7 @@ export const handleDeletePetition = async (petitionId, cardId, setPetition) => {
 const Petition = (props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedPetitionsDataState, setEditedPetitionsDataState] = useState({ ...props.petitions });
-  const [petitions, setPetitions] = useState();
+  const [petitions, setPetitions] = useState(props.petitions); // Изначально принимаем спискок через props
 
   const handleSave = async (editedPetitionsData) => {
     try {
@@ -57,8 +56,8 @@ const Petition = (props) => {
       setEditedPetitionsDataState(updatedPetitions);
       setIsEditing(false);
   
-      handleAddPetitions(updatedPetitions, setPetitions);
-  
+      handleAddPetitions(updatedPetitions, setPetitions); // Обновляем список
+
       console.log('Состояние Petitions после сохранения:', updatedPetitions);
     } catch (error) {
       console.error('Ошибка при обновлении движения:', error);
@@ -70,7 +69,7 @@ const Petition = (props) => {
       try {
         const response = await axios.get(`http://127.0.0.1:8000/business_card/petitions/`);
         console.log('Response:', response);
-        setPetitions(response.data);
+        setPetitions(response.data); // Обновляем состояние списка при загрузке
       } catch (error) {
         console.error('Error fetching Petitions:', error);
       }
@@ -93,10 +92,11 @@ const Petition = (props) => {
           editPetitionsData={editedPetitionsDataState}
           onSave={handleSave}
           onCancel={handleCancel}
-          setPetitions={props.setPetitions}
+          setPetitions={setPetitions} // Передаем функцию обновления
         />
-      ) : (<PetitionList remove={handleDeletePetition} />)
-      }
+      ) : (
+        <PetitionList petitions={petitions} remove={handleDeletePetition} />
+      )}
     </div>
   );
 };

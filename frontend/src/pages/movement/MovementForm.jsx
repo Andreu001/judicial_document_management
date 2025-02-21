@@ -65,10 +65,12 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
   
     try {
       if (editingBusinessMovementId) {
+        // Обновление существующего движения
         const response = await updateMove(cardId, editingBusinessMovementId, newBusinessMovementData);
         console.log('Движение по делу обновлено:', response.data);
         onSave(response.data); // Передаем обновленные данные в родительский компонент
       } else {
+        // Создание нового движения
         const response = await axios.post(
           `http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`,
           newBusinessMovementData
@@ -77,8 +79,9 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
         onSave(response.data); // Передаем новые данные в родительский компонент
       }
   
-      onCancel();
+      onCancel(); // Закрываем форму
   
+      // Сбрасываем состояние формы
       setBusinessMovement({
         date_meeting: '',
         meeting_time: '',

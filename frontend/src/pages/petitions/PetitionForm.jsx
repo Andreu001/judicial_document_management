@@ -16,8 +16,8 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
 
 
   const [petition, setPetition] = useState({
-    petitions: [],
-    sides_case: [],
+    petitions_name: [],
+    notification_parties: [],
     date_application: '',
     decision_rendered: '',
     date_decision: '',
@@ -27,12 +27,7 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
   const [side, setSide] = useState({
     name: '',
     sides_case: '',
-    under_arrest: '',
-    date_sending_agenda: '',
-    business_card: '',
   });
-  
-  const [selectedSideId, setSelectedSideId] = useState('');
   
 
   useEffect(() => {
@@ -85,92 +80,107 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
   const handleChange = (e) => {
     const { name, value } = e.target;
   
-    if (name === 'petitions') {
-      setSelectedPetitionId(value);
-    }
-  
-    setPetition((prevPetition) => ({
-      ...prevPetition,
-      [name]: name === 'petitions' ? [value] : value,
-    }));
-  
-    setSide((prevSide) => ({
-      ...prevSide,
-      [name]: value,
-    }));
+    setPetition((prevPetition) => {
+      if (name === 'petitions_name') {
+        return {
+          ...prevPetition,
+          petitions_name: value ? [parseInt(value, 10)] : [],
+        };
+      }
+      if (name === 'notification_parties') {
+        return {
+          ...prevPetition,
+          notification_parties: value ? [parseInt(value, 10)] : [],
+        };
+      }
+      return {
+        ...prevPetition,
+        [name]: value,
+      };
+    });
   };
-   
+  
 
   const formatDate = (date) => {
-    if (!date) return null; // Если дата пустая, возвращаем null, чтобы не сломать код
+    if (!date) return null;
     const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) return null; // Проверяем, корректна ли дата
-    return parsedDate.toISOString().split('T')[0]; // Формат YYYY-MM-DD
+    if (isNaN(parsedDate.getTime())) return null;
+    return parsedDate.toISOString().split('T')[0];
   };
   
   const handleAddNewPetition = async (e) => {
     e.preventDefault();
-    
+  
     const newPetitionData = {
-      petitions: petition.petitions,
-      sides_case: petition.sides_case ? petition.sides_case : null,
-      date_application: formatDate(petition.date_application),  // Форматируем дату
+      petitions_name: petition.petitions_name.map(id => id), // Оставляем как массив чисел
+      notification_parties: petition.notification_parties.map(id => id), // Тоже массив чисел
+      date_application: formatDate(petition.date_application),
       decision_rendered: petition.decision_rendered,
-      date_decision: formatDate(petition.date_decision),  // Форматируем дату
+      date_decision: formatDate(petition.date_decision),
       notation: petition.notation,
+      business_card: cardId,
     };
   
-    console.log('Отправка данных:', newPetitionData); // Проверка перед отправкой
+    console.log('Отправка данных:', newPetitionData);
   
     try {
+      let response;
       if (editingPetitionId) {
-        const response = await updatedPetition(cardId, sideId, editingPetitionId, newPetitionData);
-        onSave(response.data);
+        // Если мы редактируем существующее ходатайство
+        response = await updatedPetition(cardId, sideId, editingPetitionId, newPetitionData);
+        onSave(response.data); // Обновляем родительский компонент
       } else {
-        const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`, newPetitionData);
-        create(response.data);
+        // Если добавляем новое ходатайство
+        response = await axios.post(
+          `http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`,
+          newPetitionData
+        );
+        create(response.data); // Обновляем родительский компонент с новым ходатайством
+        setPetitionCaseList((prevList) => [...prevList, response.data]); // Добавляем новое ходатайство в список
       }
-      onCancel();
+      
+      onCancel(); // Закрываем форму после успешной отправки
   
+      // Сбрасываем форму для нового ввода
       setPetition({
-        petitions: '',
-        sides_case: [],
+        petitions_name: [],
+        notification_parties: [],
         date_application: '',
         decision_rendered: '',
         date_decision: '',
         notation: '',
       });
-  
     } catch (error) {
       console.error('Ошибка:', error.message);
       console.error('Дополнительные сведения:', error.response ? error.response.data : error.message);
     }
   };
   
+    
 
   return (
     <div className={styles.formContainer}>
       <form>
         <div className={styles.formGroup}>
         <label>Ходатайство</label>
-          <select
-            name="petitions"
-            value={selectedPetitionId}
-            onChange={handleChange}
-          >
-            <option value="">Выберите Ходатайство</option>
-            {petitionsCaseList.map((petitionCase, index) => (
-              <option key={index} value={petitionCase.id}>
-                {petitionCase.petitions}
-              </option>
-            ))}
-          </select>
+        <select
+          name="petitions_name"
+          value={petition.petitions_name[0] || ''}
+          onChange={handleChange}
+        >
+          <option value="">Выберите Ходатайство</option>
+          {petitionsCaseList.map((petitionCase) => (
+            <option key={petitionCase.id} value={petitionCase.id}>
+              {petitionCase.petitions}
+            </option>
+          ))}
+        </select>
         </div>
         <div className={styles.formGroup}>
         <label>Сторона подавшая ходатайство</label>
           <select
-            name="sides_case"
-            value={petition.sides_case || ''}
+            name="notification_parties"
+            value={petition.notification_parties || ''}
             onChange={handleChange}
           >
             <option value="">Выберите сторону</option>

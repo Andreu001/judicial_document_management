@@ -124,40 +124,65 @@ class PetitionsInCaseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         businesscard = get_object_or_404(
-            BusinessCard, pk=self.kwargs.get('businesscard_id')
-        )
+            BusinessCard, pk=self.kwargs.get('businesscard_id'))
         return businesscard.petitionsincase.all()
 
     def perform_create(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        petitions_data = self.request.data.get('petitions', [])
-        petitions = Petitions.objects.filter(id__in=petitions_data)
-
+        # Получаем данные из запроса
+        petitions_data = self.request.data.get('petitions_name', [])
         notification_parties_data = self.request.data.get('notification_parties', [])
+
+        # Преобразуем данные в список ID
+        petitions_ids = [
+            int(petition_id) for petition_id in petitions_data
+            if isinstance(petition_id, (int, str)) and str(petition_id).isdigit()
+        ]
+        notification_parties_ids = [
+            int(party_id) for party_id in notification_parties_data
+            if isinstance(party_id, (int, str)) and str(party_id).isdigit()
+        ]
+
+        # Фильтруем объекты
+        petitions = Petitions.objects.filter(id__in=petitions_ids)
         notification_parties = SidesCaseInCase.objects.filter(
-            id__in=notification_parties_data, business_card=businesscard
+            id__in=notification_parties_ids, business_card=businesscard
         )
 
+        # Сохраняем объект и устанавливаем связи
         instance = serializer.save(business_card=businesscard)
-        instance.petitions.set(petitions)
+        instance.petitions_name.set(petitions)
         instance.notification_parties.set(notification_parties)
 
     def perform_update(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        petitions_data = self.request.data.get('petitions', [])
-        petitions = Petitions.objects.filter(id__in=petitions_data)
-
+        # Получаем данные из запроса
+        petitions_data = self.request.data.get('petitions_name', [])
         notification_parties_data = self.request.data.get('notification_parties', [])
+
+        # Преобразуем данные в список ID
+        petitions_ids = [
+            int(petition_id) for petition_id in petitions_data
+            if isinstance(petition_id, (int, str)) and str(petition_id).isdigit()
+        ]
+        notification_parties_ids = [
+            int(party_id) for party_id in notification_parties_data
+            if isinstance(party_id, (int, str)) and str(party_id).isdigit()
+        ]
+
+        # Фильтруем объекты
+        petitions = Petitions.objects.filter(id__in=petitions_ids)
         notification_parties = SidesCaseInCase.objects.filter(
-            id__in=notification_parties_data, business_card=businesscard
+            id__in=notification_parties_ids, business_card=businesscard
         )
 
+        # Сохраняем объект и устанавливаем связи
         instance = serializer.save(business_card=businesscard)
-        instance.petitions.set(petitions)
+        instance.petitions_name.set(petitions)
         instance.notification_parties.set(notification_parties)
 
 
@@ -241,22 +266,17 @@ def perform_update(self, serializer):
     businesscard_id = self.kwargs.get('businesscard_id')
     businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-    # Получаем данные decision_case из запроса
     decision_case_data = self.request.data.get('decision_case', [])
-    
-    # Преобразуем данные в список ID (если они переданы как строки или числа)
+
     decision_case_ids = [
         int(decision_id) for decision_id in decision_case_data
         if isinstance(decision_id, (int, str)) and str(decision_id).isdigit()
     ]
 
-    # Находим объекты Decisions по ID
     decisions = Decisions.objects.filter(id__in=decision_case_ids)
-    
-    # Сохраняем обновленный объект BusinessMovement
+
     instance = serializer.save(business_card=businesscard)
-    
-    # Обновляем связь ManyToMany для decision_case
+
     instance.decision_case.set(decisions)
 
 

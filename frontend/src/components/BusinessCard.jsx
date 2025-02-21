@@ -11,8 +11,10 @@ import { handleAddMove, handleDeleteMove, } from '../pages/movement/Movement';
 import { handleShowDetailsPetition, handleEditPetition, handleAddPetitions, handleDeletePetition } from '../pages/petitions/Petition';
 import SidesForm from '../pages/sides/SidesForm';
 import PetitionForm from '../pages/petitions/PetitionForm';
+import ConsideredForm from '../pages/considered/ConsideredForm';
 import SideService from '../API/SideService';
 import MovementService from '../API/MovementService';
+import ConsideredService from '../API/ConsideredService';
 import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 import MovementForm from '../pages/movement/MovementForm';
 import styles from './UI/Card/BusinessCard.module.css';
@@ -41,12 +43,20 @@ const BusinessCard = (props) => {
   const [isEditingPetition, setIsEditingPetition] = useState(false);
   const [showPetitionForm, setShowPetitionForm] = useState(false);
   const [newPetition, setNewPetition] = useState([]);
+  const [petitionNames, setPetitionNames] = useState({});
   const [editedPetitionId, setEditedPetitionId] = useState(null);
   const [decisionCases, setDecisionCases] = useState([]);
+  const [considereds, setConsidereds] = useState([]);
+  const [isEditingConsidered, setIsEditingConsidered] = useState(false);
+  const [showConsideredForm, setShowConsideredForm] = useState(false);
+  const [editedConsideredData, setEditedConsideredData] = useState({});
+  const [editedConsideredId, setEditedConsideredId] = useState(null);
+
 
   useEffect(() => {
     PetitionService.getAllPetitions(cardId)
       .then((response) => {
+        console.log('Полученные ходатайства:', response.data);
         if (Array.isArray(response.data)) {
           setPetitions(response.data);
         } else {
@@ -54,9 +64,29 @@ const BusinessCard = (props) => {
         }
       })
       .catch((error) => {
-        console.error('Ошибка при загрузке сторон:', error);
+        console.error('Ошибка при загрузке ходатайств:', error);
       });
   }, [cardId]);
+  
+  useEffect(() => {
+    const fetchPetitionNames = async () => {
+      if (petitions) {
+        const petitionIds = petitions.flatMap(petition => petition.petitions_name);
+        const names = await Promise.all(petitionIds.map(async (id) => {
+          try {
+            const response = await PetitionService.getPetitionById(id);
+            return { [id]: response.data.petitions };
+          } catch (error) {
+          }
+        }));
+  
+        const nameMap = Object.assign({}, ...names);
+        setPetitionNames(nameMap);
+      }
+    };
+  
+    fetchPetitionNames();
+  }, [petitions]);
   
   useEffect(() => {
     SideService.getAllSide(cardId)
@@ -89,7 +119,6 @@ const BusinessCard = (props) => {
   useEffect(() => {
     MovementService.getDecisionCases()
       .then((response) => {
-        console.log('Загруженные решения:', response.data);  // Логирование данных после загрузки
         if (Array.isArray(response.data)) {
           setDecisionCases(response.data);
         } else {
@@ -100,8 +129,63 @@ const BusinessCard = (props) => {
         console.error('Ошибка загрузки решений:', error);
       });
   }, []);
-  
-  
+
+  useEffect(() => {
+    ConsideredService.getAllConsidereds(cardId)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setConsidereds(response.data);
+        } else {
+          console.error('Неверный тип данных в ответе:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке решений:', error);
+      });
+  }, [cardId]);
+
+  const handleAddConsideredToState = () => {
+    console.log("Adding considered to state");
+    setShowConsideredForm(true);
+    setIsEditingConsidered(false);
+    setEditedConsideredData({});
+  };
+
+  const handleEditConsideredForm = (consideredId) => {
+    const editedConsidered = considereds.find((c) => c.id === consideredId);
+    setEditedConsideredId(consideredId);
+    setIsEditingConsidered(true);
+    setShowConsideredForm(true);
+    setEditedConsideredData({ ...editedConsidered });
+  };
+
+  const handleDeleteConsidered = async (consideredId) => {
+    try {
+      await ConsideredService.deleteConsidered(cardId, consideredId);
+      setConsidereds((prev) => prev.filter((c) => c.id !== consideredId));
+    } catch (error) {
+      console.error('Ошибка при удалении решения:', error);
+    }
+  };
+
+  const handleSaveConsidered = async (newConsidered) => {
+    try {
+      if (editedConsideredId) {
+        const updatedConsidered = await ConsideredService.updateConsidered(cardId, editedConsideredId, newConsidered);
+        setConsidereds((prev) =>
+          prev.map((c) => (c.id === editedConsideredId ? updatedConsidered.data : c))
+        );
+      } else {
+        const response = await ConsideredService.createConsidered(cardId, newConsidered);
+        setConsidereds((prev) => [...prev, response.data]);
+      }
+      setShowConsideredForm(false);
+      setIsEditingConsidered(false);
+      setEditedConsideredId(null);
+    } catch (error) {
+      console.error('Ошибка при сохранении решения:', error);
+    }
+  };
   
 
   const handleEditToggle = () => {
@@ -152,12 +236,12 @@ const BusinessCard = (props) => {
       const updatedMove = await MovementService.updateMove(cardId, moveId, updatedMoveData);
   
       setMovements((prevMovements) =>
-        prevMovements.map((move) => (move.id === moveId ? updatedMove : move))
+        prevMovements.map((move) => (move.id === moveId ? updatedMove.data : move))
       );
   
       setIsEditingMove(false);
-      setShowMovementForm(false); // Закрываем форму
-      console.log('Состояние движения после сохранения:', updatedMove);
+      setShowMovementForm(false);
+      console.log('Состояние движения после сохранения:', updatedMove.data);
     } catch (error) {
       console.error('Ошибка при обновлении движения:', error);
     }
@@ -205,36 +289,42 @@ const handleAddSideToState = (e) => {
 };
 
 
-  const createSide = async (newSide) => {
-    try {
-      const response = await SideService.createSide(cardId, newSide);
-      setSide((prevSides) => [...prevSides, response.data])
-      setShowSideForm(false); // Закрываем форму
-    } catch (error) {
-      console.error('Ошибка при создании стороны:', error);
-    }
-  };
+const createSide = async (newSide) => {
+  try {
+    const response = await SideService.createSide(cardId, newSide);
+    setSide((prevSides) => [...prevSides, response.data]); // Обновляем состояние
+    setShowSideForm(false); // Закрываем форму
+  } catch (error) {
+    console.error('Ошибка при создании стороны:', error);
+  }
+};
 
-  const createMove = async (newMove) => {
-    try {
-      const response = await MovementService.createMove(cardId, newMove);
-      setMovements((prevMovements) => [...prevMovements, response.data]);
-      setShowMovementForm(false);
-    } catch (error) {
-      console.error('Ошибка при создании движения:', error);
-    }
-  };
+const createMove = async (newMove) => {
+  try {
+    const response = await MovementService.createMove(cardId, newMove);
+    setMovements((prevMovements) => [...prevMovements, response.data]); // Обновляем состояние
+    setShowMovementForm(false); // Закрываем форму
+  } catch (error) {
+    console.error('Ошибка при создании движения:', error);
+  }
+};
 
-  const createPetition = (newPetition) => {
-    handleAddPetitions(newPetition, setNewPetition);
-  };
+const createPetition = async (newPetition) => {
+  try {
+    const response = await PetitionService.createPetition(cardId, newPetition);
+    setPetitions((prevPetitions) => [...prevPetitions, response.data]); // Обновляем состояние
+    setShowPetitionForm(false); // Закрываем форму
+  } catch (error) {
+    console.error('Ошибка при создании ходатайства:', error);
+  }
+};
 
 
   return (
     <div className={styles.card}>
       {showPetitionForm && isEditingPetition ? (
         <PetitionForm
-          create={createPetition}
+          create={createPetition} // Передаем функцию создания
           editPetitionData={editedPetitionData}
           onSave={async (newPetition) => {
             if (editedPetitionId) {
@@ -243,6 +333,7 @@ const handleAddSideToState = (e) => {
               setIsEditingPetition(false);
               setEditedPetitionId(null);
             } else {
+              await createPetition(newPetition); // Вызываем функцию создания
             }
           }}
           onCancel={() => {
@@ -259,14 +350,15 @@ const handleAddSideToState = (e) => {
         <MovementForm
           create={createMove}
           editMovementData={editedMoveData}
-          onSave={handleSaveMove}
+          onSave={handleSaveMove} // Передаем функцию для сохранения
           onCancel={() => setShowMovementForm(false)}
           cardId={cardId}
         />
       ) : null}
+
       {showSideForm && isEditingSide ? (
         <SidesForm
-          create={createSide}
+          create={createSide} // Передаем функцию создания
           editSideData={editedSideData}
           onSave={async (newSide) => {
             if (editedSideId) {
@@ -275,7 +367,7 @@ const handleAddSideToState = (e) => {
               setIsEditingSide(false);
               setEditedSideId(null);
             } else {
-              await createSide(newSide);
+              await createSide(newSide); // Вызываем функцию создания
             }
           }}
           onCancel={() => {
@@ -287,6 +379,21 @@ const handleAddSideToState = (e) => {
           cardId={cardId}
         />
       ) : null}
+      {showConsideredForm && (
+        <ConsideredForm
+          create={handleSaveConsidered}
+          editConsideredData={editedConsideredData}
+          onSave={handleSaveConsidered}
+          onCancel={() => {
+            setShowConsideredForm(false);
+            setIsEditingConsidered(false);
+            setEditedConsideredId(null);
+          }}
+          setNewConsidered={setEditedConsideredData}
+          cardId={cardId}
+        />
+      )}
+
       {isEditingCard ? (
         <CardForm
           create={props.create}
@@ -393,8 +500,20 @@ const handleAddSideToState = (e) => {
                   <div key={index} style={{ marginBottom: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <strong>Ходатайство по делу: {petitions.petitions}.</strong>
-                        <div>Кто заявил ходатайство: {petitions.sides_case_name}</div>
+                      <strong>
+                        Ходатайство по делу:
+                        {petitions.petitions_name && petitions.petitions_name.length > 0
+                          ? petitions.petitions_name.map((petition) => petition.petitions).join(', ')
+                          : 'Не указано'}
+                      </strong>
+                        <div>
+                          Кто заявил ходатайство:
+                          {petitions.notification_parties && petitions.notification_parties.length > 0
+                            ? petitions.notification_parties.map((party, idx) => (
+                                <div key={idx}>{party.name || 'Не указано'}</div>
+                              ))
+                            : 'Неизвестно'}
+                        </div>
                         <div>Дата ходатайства: {petitions.date_application}</div>
                         <div>наименование вынесенного решения: {petitions.decision_rendered}</div>
                         <div>Дата решения по ходатайству: {petitions.date_decision}</div>
@@ -423,12 +542,51 @@ const handleAddSideToState = (e) => {
               </>
             ) : null}
 
+            {activeTab === 4 && considereds ? (
+              <>
+                {considereds.map((considered, index) => (
+                  <div key={index} style={{ marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong>Название решения: {considered.name_case}</strong>
+                        <div>Дата вынесения решения: {considered.date_consideration}</div>
+                        <div>Дата вступления в законную силу: {considered.effective_date}</div>
+                        <div>
+                        Уведомление сторон:
+                          {considered.notification_parties && considered.notification_parties.length > 0
+                            ? considered.notification_parties.map((party, idx) => (
+                                <div key={idx}>{party.name || 'Не указано'}</div>
+                              ))
+                            : 'Неизвестно'}
+                        </div>
+                        <div>Дата исполнения дела: {considered.executive_lists}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <IoMdEye onClick={() => handleShowDetails({ considered }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
+                        <IoMdTrash
+                          onClick={() => handleDeleteConsidered(considered.id)}
+                          style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
+                        />
+                        <IoMdCreate
+                          onClick={() => handleEditConsideredForm(considered.id)}
+                          style={{ cursor: 'pointer', color: 'green' }}
+                        />
+                      </div>
+                    </div>
+                    <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
+                  </div>
+                ))}
+              </>
+            ) : null}
+
+
           </div>
           <CardFooter
             activeTab={activeTab}
             handleAddSideToState={handleAddSideToState}
             handleAddMovementToState={handleAddMovementToState}
             handleAddPetitionToState={handleAddPetitionToState}
+            handleAddConsideredToState={handleAddConsideredToState}
             handleRemove={handleRemove}
             handleEditToggle={handleEditToggle}
             isEditingCard={isEditingCard}

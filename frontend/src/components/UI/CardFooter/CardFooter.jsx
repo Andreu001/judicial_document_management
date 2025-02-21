@@ -8,6 +8,7 @@ const CardFooter = ({
   handleAddSideToState,
   handleAddMovementToState,
   handleAddPetitionToState,
+  handleAddConsideredToState,
   handleRemove,
   handleEditToggle,
   isEditingCard,
@@ -37,7 +38,7 @@ const CardFooter = ({
     } else if (activeTab === 4) {
       return (
         <div className={styles.cardButtons}>
-          <MyButton className={styles.add} onClick={handleAddPetitionToState}>Добавить решение</MyButton>
+          <MyButton className={styles.add} onClick={handleAddConsideredToState}>Добавить решение</MyButton>
         </div>
       );
     }
