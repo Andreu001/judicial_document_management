@@ -1,125 +1,165 @@
-/* Header.module.css */
 .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 10px;
-    position: fixed;  /* Фиксируем сверху */
-    top: 0;
-    left: 6.4cm; /* Отодвигаем от navbar */
-    width: calc(100vw - 6.8cm); /* Растягиваем до правого края */
-    z-index: 10; /* Делаем поверх других элементов */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  position: fixed;  /* Фиксируем сверху */
+  top: 0;
+  left: 6.4cm; /* Отодвигаем от navbar */
+  width: calc(100vw - 6.8cm); /* Растягиваем до правого края */
+  z-index: 10; /* Делаем поверх других элементов */
 }
 
 .search {
-    flex-grow: 2;
-    margin-right: 20px;
+  flex-grow: 2;
+  margin-right: 20px;
+  display: flex;
+  gap: 10px; /* Отступ между полем ввода и выпадающим списком */
 }
 
 .search input {
-    width: 100%;
-    padding: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-    background-color: #f9f9f9;
+  width: 70%; /* Уменьшаем ширину поля ввода */
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: #f9f9f9;
 }
 
+.search select {
+  width: auto; /* Делаем компактнее */
+  min-width: 150px; /* Минимальная ширина */
+  padding: 8px; /* Меньший отступ */
+  border: 1px solid #71a5a0; /* Цвет границы */
+  border-radius: 6px; /* Закругление */
+  font-size: 14px; /* Уменьшаем шрифт */
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Стиль при наведении */
+.search select:hover {
+  background-color: #f0f9f9;
+  border-color: #60b0a0;
+}
+
+/* Стиль при фокусе */
+.search select:focus {
+  outline: none;
+  border-color: #57a098;
+  box-shadow: 0 0 5px rgba(87, 160, 152, 0.5);
+}
+
+.searchButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #71a5a0;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  transition: background-color 0.3s;
+}
+
+.searchButton:hover {
+  background-color: #e0e0e0;
+}
+
+
 .sort {
-    min-width: 180px;
-    margin-right: 40px;
+  min-width: 180px;
+  margin-right: 40px;
 }
 
 .sort select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-    background-color: #f9f9f9;
-    cursor: pointer;
-    width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  width: 100%;
 }
 
 .actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .notificationButton,
 .profileButton {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    color: #71a5a0;
-    transition: color 0.3s, background-color 0.3s;
-    padding: 8px 12px;
-    border-radius: 4px;
-    background-color: #f9f9f9;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #71a5a0;
+  transition: color 0.3s, background-color 0.3s;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
 }
 
 .notificationButton:hover,
 .profileButton:hover {
-    color: #70bbbb;
-    background-color: #e0e0e0;
+  color: #70bbbb;
+  background-color: #e0e0e0;
 }
 
-  
-  .divider {
-    width: 1px;
-    height: 24px;
-    background-color: #ccc; /* Цвет разделителя */
-    margin: 0 10px; /* Отступы вокруг разделителя */
-  }
-  
+.divider {
+  width: 1px;
+  height: 24px;
+  background-color: #ccc; /* Цвет разделителя */
+  margin: 0 10px; /* Отступы вокруг разделителя */
+}
+
 .createCardButtonContainer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 100px; /* Отступ от поиска */
-    margin-left: 7cm; /* Отступ слева */
-    margin-right: 2cm; /* Отступ справа */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px; /* Уменьшен отступ от поиска */
+  margin-left: 7cm;
+  margin-right: 2cm;
 }
 
-  
-  .categories {
-    display: flex;
-    gap: 20px; /* Отступ между категориями */
-  }
-  
-  .category {
-    font-size: 16px;
-    color: #2F4F4F;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .category:hover {
-    background-color: #f0f0f0; /* Светлый фон при наведении */
-  }
-  
-  .category.active {
-    color: #023fc2;
-    font-weight: bold;
-  }
-  
-  .createCardButton {
-    background-color: #157c00;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .createCardButton:hover {
-    background-color: #2F4F4F; /* Темно-серый цвет при наведении */
-  }
+.categories {
+  display: flex;
+  gap: 20px; /* Отступ между категориями */
+}
+
+.category {
+  font-size: 16px;
+  color: #2F4F4F;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.category:hover {
+  background-color: #f0f0f0; /* Светлый фон при наведении */
+}
+
+.category.active {
+  color: #023fc2;
+  font-weight: bold;
+}
+
+.createCardButton {
+  background-color: #157c00;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.createCardButton:hover {
+  background-color: #2F4F4F; /* Темно-серый цвет при наведении */
+}

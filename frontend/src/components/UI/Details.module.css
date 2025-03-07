@@ -1,0 +1,58 @@
+/* Details.module.css */
+
+.detailsContainer {
+    margin-left: 6.3cm;
+    padding: 40px;
+    background: #f4f4f4;
+    min-height: 100vh;
+    color: #222;
+    font-family: 'Inter', sans-serif;
+}
+
+.detailsHeader {
+    font-size: 2.8rem;
+    background: linear-gradient(45deg, #0073e6, #00b4d8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 40px;
+    font-weight: bold;
+}
+
+.detailsContent {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.detailsContent::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+      #0073e6 0%,
+      #00b4d8 25%,
+      #4a90e2 50%,
+      #0073e6 100%
+    );
+    animation: rotate 20s linear infinite;
+    opacity: 0.08;
+}
+
+@keyframes rotate {
+    100% { transform: rotate(360deg); }
+}
+
+.comment {
+    background: rgba(0, 0, 0, 0.03);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(3px);
+}

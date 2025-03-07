@@ -1,0 +1,64 @@
+/* Modal.module.css */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.modalContent {
+  background: #282c34;
+  border: 3px solid transparent;
+  border-radius: 15px;
+  padding: 40px;
+  width: 600px;
+  max-width: 90%;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  color: #f4f4f4;
+  font-family: 'Roboto', sans-serif;
+  max-height: 80vh;
+  height: auto;
+  overflow-y: auto;
+  transition: border-color 0.4s ease, box-shadow 0.3s ease;
+}
+
+.modalContent:hover {
+  border-color: #f5a623; /* Подсветка рамки при наведении */
+  box-shadow: 0 0 50px rgba(245, 166, 35, 0.8); /* Яркая тень при наведении */
+}
+
+.modalHeader {
+  font-size: 1.8rem;
+  color: #f5a623;
+  margin-bottom: 25px;
+}
+
+.modalBody {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.modalCloseButton {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #f5a623;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.modalCloseButton:hover {
+  opacity: 0.8;
+}

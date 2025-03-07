@@ -1,28 +1,45 @@
 import { useMemo } from 'react';
 
-export const useCard = (cards, sort, query) => {
+export const useCard = (cards, sort, query, searchBy) => {
   return useMemo(() => {
-    let sortedCards = [...cards];
+    let filteredCards = [...cards];
 
-    // Сортировка
-    if (sort) {
-      sortedCards.sort((a, b) => {
-        if (a[sort] < b[sort]) return -1;
-        if (a[sort] > b[sort]) return 1;
-        return 0;
+    console.log("🔍 Категория поиска:", searchBy);
+    console.log("🔎 Поисковый запрос:", query);
+
+    if (query.trim() && searchBy) {
+      const lowerQuery = query.toLowerCase().trim();
+
+      filteredCards = filteredCards.filter(card => {
+        switch (searchBy) {
+          case 'name': // Поиск по ФИО
+            return card.sides?.some(side => side?.name?.toLowerCase().includes(lowerQuery));
+
+          case 'caseNumber': // Поиск по номеру дела
+            return card.original_name?.toLowerCase().includes(lowerQuery);
+
+          case 'article': // Поиск по статье
+            return card.article ? card.article.toString().toLowerCase().includes(lowerQuery) : false;
+
+          default:
+            return false;
+        }
       });
     }
 
-    // Поиск
-    if (query) {
-      sortedCards = sortedCards.filter(card =>
-        card.name.toLowerCase().includes(query.toLowerCase()) || // Поиск по ФИО
-        card.receivedDate.toLowerCase().includes(query.toLowerCase()) || // Поиск по дате поступления
-        card.appointedDate.toLowerCase().includes(query.toLowerCase()) || // Поиск по дате назначения
-        card.consideredDate.toLowerCase().includes(query.toLowerCase()) // Поиск по дате рассмотрения
-      );
+    // Сортировка
+    if (sort) {
+      filteredCards.sort((a, b) => {
+        if (!a[sort] || !b[sort]) return 0;
+
+        if (sort.includes('Date')) {
+          return new Date(a[sort]) - new Date(b[sort]);
+        }
+
+        return a[sort].localeCompare(b[sort], 'ru');
+      });
     }
 
-    return sortedCards;
-  }, [cards, sort, query]);
+    return filteredCards;
+  }, [cards, sort, query, searchBy]);
 };

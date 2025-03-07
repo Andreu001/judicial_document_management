@@ -42,8 +42,8 @@ export default class ConsideredService {
       console.log(response);
       return response.data;
     } catch (error) {
-      console.error(`Ошибка удаления рассмотренного дела:`, error);
-      throw new Error(`Ошибка удаления рассмотренного дела: ${error}`);
+      console.error(`Ошибка удаления решения:`, error);
+      throw new Error(`Ошибка удаления решения: ${error}`);
     }
   }
 }

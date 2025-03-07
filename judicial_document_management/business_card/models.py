@@ -189,10 +189,9 @@ class PetitionsInCase(models.Model):
     date_application = models.DateField(
         verbose_name='Дата ходатайства'
         )
-    decision_rendered = models.CharField(
-        max_length=150,
+    decision_rendered = models.ManyToManyField(
+        Decisions,
         verbose_name='наименование вынесенного решения',
-        null=True,
     )
     date_decision = models.DateField(
         verbose_name='Дата решения по ходатайству',

@@ -35,12 +35,8 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
     // Загружаем список решений с сервера
     axios.get('http://localhost:8000/business_card/decisions/')
     .then((response) => {
-      console.log('Данные решений:', response.data);
       setDecisionCases(response.data);
     })
-    .catch((error) => {
-      console.error('Ошибка при загрузке списка решений:', error);
-    });  
   }, [editMovementData, isEditing]);
 
   const handleCancel = () => {

@@ -7,16 +7,20 @@ import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
 import CardForm from './CardForm';
 import { handleShowDetails, handleAddSide, handleDeleteSide, } from '../pages/sides/Sides';
-import { handleAddMove, handleDeleteMove, } from '../pages/movement/Movement';
+import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, } from '../pages/movement/Movement';
 import { handleShowDetailsPetition, handleEditPetition, handleAddPetitions, handleDeletePetition } from '../pages/petitions/Petition';
+import { handleShowDetailsConsidered, handleAddConsidered, handleDeleteConsidered, } from '../pages/considered/Considered';
 import SidesForm from '../pages/sides/SidesForm';
+import SidesList from '../pages/sides/SidesList';
 import PetitionForm from '../pages/petitions/PetitionForm';
+import PetitionList from '../pages/petitions/PetitionList';
 import ConsideredForm from '../pages/considered/ConsideredForm';
+import ConsideredList from '../pages/considered/ConsideredList';
 import SideService from '../API/SideService';
 import MovementService from '../API/MovementService';
 import ConsideredService from '../API/ConsideredService';
-import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
 import MovementForm from '../pages/movement/MovementForm';
+import MovementList from '../pages/movement/MovementList';
 import styles from './UI/Card/BusinessCard.module.css';
 import CardFooter from './UI/CardFooter/CardFooter';
 
@@ -25,7 +29,6 @@ const BusinessCard = (props) => {
   const { card } = props;
   const cardId = card.id;
   const [newside, setNewSide] = useState([]);
-  const [newMove, setNewMove] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [isEditingCard, setIsEditingCard] = useState(false);
   const [isEditingMove, setIsEditingMove] = useState(false);
@@ -38,6 +41,7 @@ const BusinessCard = (props) => {
   const [isEditingSide, setIsEditingSide] = useState(false);
   const [sides, setSide] = useState([]);
   const [editedSideId, setEditedSideId] = useState(null);
+  const [editedMoveId, setEditedMoveId] = useState(null);
   const [movements, setMovements] = useState();
   const [petitions, setPetitions] = useState();
   const [isEditingPetition, setIsEditingPetition] = useState(false);
@@ -46,7 +50,7 @@ const BusinessCard = (props) => {
   const [petitionNames, setPetitionNames] = useState({});
   const [editedPetitionId, setEditedPetitionId] = useState(null);
   const [decisionCases, setDecisionCases] = useState([]);
-  const [considereds, setConsidereds] = useState([]);
+  const [considered, setConsidered] = useState([]);
   const [isEditingConsidered, setIsEditingConsidered] = useState(false);
   const [showConsideredForm, setShowConsideredForm] = useState(false);
   const [editedConsideredData, setEditedConsideredData] = useState({});
@@ -54,19 +58,24 @@ const BusinessCard = (props) => {
 
 
   useEffect(() => {
-    PetitionService.getAllPetitions(cardId)
-      .then((response) => {
-        console.log('Полученные ходатайства:', response.data);
+    const fetchPetitions = async () => {
+      try {
+        const response = await PetitionService.getAllPetitions(cardId);
         if (Array.isArray(response.data)) {
           setPetitions(response.data);
         } else {
-          console.error('Неверный тип данных в ответе:', response.data);
+          console.error("Неверный формат данных ходатайств:", response.data);
         }
-      })
-      .catch((error) => {
-        console.error('Ошибка при загрузке ходатайств:', error);
-      });
+      } catch (error) {
+        console.error("Ошибка при загрузке ходатайств:", error);
+      }
+    };
+  
+    if (cardId) {
+      fetchPetitions();
+    }
   }, [cardId]);
+  
   
   useEffect(() => {
     const fetchPetitionNames = async () => {
@@ -134,7 +143,7 @@ const BusinessCard = (props) => {
     ConsideredService.getAllConsidereds(cardId)
       .then((response) => {
         if (Array.isArray(response.data)) {
-          setConsidereds(response.data);
+          setConsidered(response.data);
         } else {
           console.error('Неверный тип данных в ответе:', response.data);
         }
@@ -152,41 +161,12 @@ const BusinessCard = (props) => {
   };
 
   const handleEditConsideredForm = (consideredId) => {
-    const editedConsidered = considereds.find((c) => c.id === consideredId);
+    const editedConsidered = considered.find((c) => c.id === consideredId);
     setEditedConsideredId(consideredId);
     setIsEditingConsidered(true);
     setShowConsideredForm(true);
     setEditedConsideredData({ ...editedConsidered });
   };
-
-  const handleDeleteConsidered = async (consideredId) => {
-    try {
-      await ConsideredService.deleteConsidered(cardId, consideredId);
-      setConsidereds((prev) => prev.filter((c) => c.id !== consideredId));
-    } catch (error) {
-      console.error('Ошибка при удалении решения:', error);
-    }
-  };
-
-  const handleSaveConsidered = async (newConsidered) => {
-    try {
-      if (editedConsideredId) {
-        const updatedConsidered = await ConsideredService.updateConsidered(cardId, editedConsideredId, newConsidered);
-        setConsidereds((prev) =>
-          prev.map((c) => (c.id === editedConsideredId ? updatedConsidered.data : c))
-        );
-      } else {
-        const response = await ConsideredService.createConsidered(cardId, newConsidered);
-        setConsidereds((prev) => [...prev, response.data]);
-      }
-      setShowConsideredForm(false);
-      setIsEditingConsidered(false);
-      setEditedConsideredId(null);
-    } catch (error) {
-      console.error('Ошибка при сохранении решения:', error);
-    }
-  };
-  
 
   const handleEditToggle = () => {
     setIsEditingCard(!isEditingCard);
@@ -229,24 +209,6 @@ const BusinessCard = (props) => {
     setShowMovementForm(true);
   };
   
-
-  const handleSaveMove = async (updatedMoveData) => {
-    try {
-      const moveId = String(updatedMoveData.id);
-      const updatedMove = await MovementService.updateMove(cardId, moveId, updatedMoveData);
-  
-      setMovements((prevMovements) =>
-        prevMovements.map((move) => (move.id === moveId ? updatedMove.data : move))
-      );
-  
-      setIsEditingMove(false);
-      setShowMovementForm(false);
-      console.log('Состояние движения после сохранения:', updatedMove.data);
-    } catch (error) {
-      console.error('Ошибка при обновлении движения:', error);
-    }
-  };
-
   const handleCancel = () => {
     setEditedCardData({ ...props.card });
     setIsEditingCard(false);
@@ -291,31 +253,43 @@ const handleAddSideToState = (e) => {
 
 const createSide = async (newSide) => {
   try {
-    const response = await SideService.createSide(cardId, newSide);
-    setSide((prevSides) => [...prevSides, response.data]); // Обновляем состояние
+    await SideService.getAllSide(cardId, newSide); // Сначала создаем сторону
+    const response = await SideService.getAllSide(cardId); // Получаем обновленные данные
+    setSide(response.data); // Устанавливаем новые данные в стейт
     setShowSideForm(false); // Закрываем форму
   } catch (error) {
     console.error('Ошибка при создании стороны:', error);
   }
 };
 
-const createMove = async (newMove) => {
+const createConsidered = async (newConsidered) => {
   try {
-    const response = await MovementService.createMove(cardId, newMove);
-    setMovements((prevMovements) => [...prevMovements, response.data]); // Обновляем состояние
-    setShowMovementForm(false); // Закрываем форму
+    const response = await ConsideredService.getAllConsidereds(cardId, newConsidered);
+    // Обновляем состояние considereds, добавляя новое решение
+    setConsidered(response.data);
+    setShowConsideredForm(false); // Закрываем форму
   } catch (error) {
-    console.error('Ошибка при создании движения:', error);
+    console.error('Ошибка при создании решения:', error);
   }
 };
 
 const createPetition = async (newPetition) => {
   try {
-    const response = await PetitionService.createPetition(cardId, newPetition);
-    setPetitions((prevPetitions) => [...prevPetitions, response.data]); // Обновляем состояние
+    const response = await PetitionService.getAllPetitions(cardId, newPetition);
+    setPetitions(response.data); // Обновляем состояние
     setShowPetitionForm(false); // Закрываем форму
   } catch (error) {
     console.error('Ошибка при создании ходатайства:', error);
+  }
+};
+
+const createMove = async (newMove) => {
+  try {
+    const response = await MovementService.getAllMove(cardId, newMove);
+    setMovements(response.data); // Обновляем состояние
+    setShowMovementForm(false); // Закрываем форму
+  } catch (error) {
+    console.error('Ошибка при создании движения:', error);
   }
 };
 
@@ -328,12 +302,12 @@ const createPetition = async (newPetition) => {
           editPetitionData={editedPetitionData}
           onSave={async (newPetition) => {
             if (editedPetitionId) {
-              const updatedPetition = await PetitionService.updatePetition(cardId, editedPetitionId, newPetition);
+              const updatedPetition = await PetitionService.updatedPetition(cardId, editedPetitionId, newPetition);
               setEditedPetitionData(updatedPetition);
               setIsEditingPetition(false);
               setEditedPetitionId(null);
             } else {
-              await createPetition(newPetition); // Вызываем функцию создания
+              await createPetition(newPetition);
             }
           }}
           onCancel={() => {
@@ -350,7 +324,16 @@ const createPetition = async (newPetition) => {
         <MovementForm
           create={createMove}
           editMovementData={editedMoveData}
-          onSave={handleSaveMove} // Передаем функцию для сохранения
+          onSave={async (newMove) => {
+            if (editedMoveId) {
+              const updatedMove = await MovementService.updateMove(cardId, editedMoveId, newMove);
+              setEditedMoveData(updatedMove);
+              setIsEditingMove(false);
+              setEditedMoveId(null);
+            } else {
+              await createMove(newMove); // Вызываем функцию создания
+            }
+          }}
           onCancel={() => setShowMovementForm(false)}
           cardId={cardId}
         />
@@ -381,9 +364,18 @@ const createPetition = async (newPetition) => {
       ) : null}
       {showConsideredForm && (
         <ConsideredForm
-          create={handleSaveConsidered}
+          create={createConsidered}
           editConsideredData={editedConsideredData}
-          onSave={handleSaveConsidered}
+          onSave={async (newConsidered) => {
+            if (editedConsideredId) {
+              const updatedConsidered = await ConsideredService.updateConsidered(cardId, editedConsideredId, newConsidered);
+              setEditedConsideredData(updatedConsidered);
+              setIsEditingConsidered(false);
+              setEditedConsideredId(null);
+            } else {
+              await createConsidered(newConsidered);
+            }
+          }}
           onCancel={() => {
             setShowConsideredForm(false);
             setIsEditingConsidered(false);
@@ -405,180 +397,63 @@ const createPetition = async (newPetition) => {
         <>
         <CardHeader card={props.card} />
           <div className={styles.cardContent}>
-              <CardNavbar onTabChange={handleTabChange} />
-              {activeTab === 0 && (
-                <div>
-                  <strong>АЙДИ карточки: {props.card.id}</strong>
-                  <div>Автор: {props.card.author}</div>
-                  <div>Дата создания: {props.card.pub_date}</div>
-                </div>
-              )}
+            <CardNavbar onTabChange={handleTabChange} />
+            {activeTab === 0 && (
+              <div>
+                <strong>АЙДИ карточки: {props.card.id}</strong>
+                <div>Автор: {props.card.author}</div>
+                <div>Дата создания: {props.card.pub_date}</div>
+              </div>
+            )}
 
-              {activeTab === 1 && sides ? (
-                <>
-                  {sides.map((sides, index) => (
-                    <div key={index} style={{ marginBottom: '15px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong>ФИО {sides.name}.</strong>
-                          <div>Под стражей: {sides.under_arrest ? 'Да' : 'Нет'}</div>
-                          {sides.sides_case_name ? (
-                            sides.sides_case_name.map((sideCaseName, idx) => (
-                              <div key={idx}>Статус стороны: {sideCaseName || 'Не указано'}</div>
-                            ))
-                          ) : (
-                            <div>Нет данных по сторонам дела</div>
-                          )}
-                          <div>Дата направления повестки: {sides.date_sending_agenda}</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          <IoMdEye onClick={() => handleShowDetails({ side: sides }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
-                          <IoMdTrash
-                            onClick={() => {
-                              const currentSideId = sides.id;
-                              console.log('currentSideId:', currentSideId);
-                              console.log('props.card.id:', props.card.id);
-                              handleDeleteSide(currentSideId, props.card.id, setSide);
-                            }}
-                            style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-                          />
-                          <IoMdCreate
-                              onClick={() => handleEditSideForm(sides.id)}
-                              style={{ cursor: 'pointer', color: 'green' }}
-                            />
-                        </div>
-                      </div>
-                      <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
-                    </div>
-                  ))}
-                </>
-              ) : null}
+          {activeTab === 1 && sides ? (
+            <SidesList
+              sides={sides}
+              setSide={setSide}
+              handleShowDetails={handleShowDetails}
+              handleDeleteSide={handleDeleteSide}
+              handleEditSideForm={handleEditSideForm}
+              cardId={cardId}
+              router={router}
+            />
+          ) : null}
 
-              {activeTab === 2 && movements ? (
-                <>
-                {movements.map((movements, index) => (
-                  <div key={index} style={{ marginBottom: '15px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong>Дата заседания: {movements.date_meeting}.</strong>
-                        <div>Время заседания: {movements.meeting_time}</div>
-                        <div>
-                          Решение по поступившему делу: {movements.decision_case && movements.decision_case.length > 0
-                            ? decisionCases.find((decision) => decision.id === movements.decision_case[0])?.name_case || 'Неизвестно'
-                            : 'Неизвестно'}
-                        </div>
-                        <div>Состав коллегии: {movements.composition_colleges}</div>
-                        <div>Результат судебного заседания: {movements.result_court_session}</div>
-                        <div>причина отложения: {movements.reason_deposition}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <IoMdEye onClick={() => handleShowDetails({ move: movements }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
-                        <IoMdTrash
-                          onClick={() => {
-                            const currentMoveId = movements.id;
-                            console.log('currentMoveId:', currentMoveId);
-                            console.log('props.card.id:', props.card.id);
-                            handleDeleteMove(currentMoveId, props.card.id, setMovements);
-                          }}
-                          style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-                        />
-                        <IoMdCreate
-                            onClick={() => handleEditMoveForm(true, setIsEditingMove, setEditedMoveData, movements.id)}
-                            style={{ cursor: 'pointer', color: 'green' }}
-                          />
-                      </div>
-                    </div>
-                    <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
-                  </div>
-                ))}
-              </>
-            ) : null}
+          {activeTab === 2 && movements ? (
+            <MovementList
+              movements={movements}
+              decisionCases={decisionCases}
+              handleShowDetailsMovement={handleShowDetailsMovement}
+              handleDeleteMove={handleDeleteMove}
+              handleEditMoveForm={handleEditMoveForm}
+              cardId={cardId}
+              setMovements={setMovements}
+              router={router}
+            />
+          ) : null}
 
-              {activeTab === 3 && petitions ? (
-                <>
-                {petitions.map((petitions, index) => (
-                  <div key={index} style={{ marginBottom: '15px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                      <strong>
-                        Ходатайство по делу:
-                        {petitions.petitions_name && petitions.petitions_name.length > 0
-                          ? petitions.petitions_name.map((petition) => petition.petitions).join(', ')
-                          : 'Не указано'}
-                      </strong>
-                        <div>
-                          Кто заявил ходатайство:
-                          {petitions.notification_parties && petitions.notification_parties.length > 0
-                            ? petitions.notification_parties.map((party, idx) => (
-                                <div key={idx}>{party.name || 'Не указано'}</div>
-                              ))
-                            : 'Неизвестно'}
-                        </div>
-                        <div>Дата ходатайства: {petitions.date_application}</div>
-                        <div>наименование вынесенного решения: {petitions.decision_rendered}</div>
-                        <div>Дата решения по ходатайству: {petitions.date_decision}</div>
-                        <div>примечания: {petitions.notation}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <IoMdEye onClick={() => handleShowDetailsPetition({ petition: petitions }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
-                        <IoMdTrash
-                          onClick={() => {
-                            const currentPetitionId = petitions.id;
-                            console.log('currentPetitionId:', currentPetitionId);
-                            console.log('props.card.id:', props.card.id);
-                            handleDeletePetition(currentPetitionId, props.card.id, setPetitions);
-                          }}
-                          style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-                        />
-                        <IoMdCreate
-                            onClick={() => handleEditPetition(true, setIsEditingPetition, setEditedPetitionData, petitions.id)}
-                            style={{ cursor: 'pointer', color: 'green' }}
-                          />
-                      </div>
-                    </div>
-                    <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
-                  </div>
-                ))}
-              </>
-            ) : null}
+          {activeTab === 3 && petitions ? (
+              <PetitionList
+                petitions={petitions}
+                handleShowDetailsPetition={handleShowDetailsPetition}
+                handleDeletePetition={handleDeletePetition}
+                handleEditPetition={handleEditPetition}
+                cardId={cardId}
+                setPetitions={setPetitions}
+                router={router}
+              />
+          ) : null}
 
-            {activeTab === 4 && considereds ? (
-              <>
-                {considereds.map((considered, index) => (
-                  <div key={index} style={{ marginBottom: '15px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong>Название решения: {considered.name_case}</strong>
-                        <div>Дата вынесения решения: {considered.date_consideration}</div>
-                        <div>Дата вступления в законную силу: {considered.effective_date}</div>
-                        <div>
-                        Уведомление сторон:
-                          {considered.notification_parties && considered.notification_parties.length > 0
-                            ? considered.notification_parties.map((party, idx) => (
-                                <div key={idx}>{party.name || 'Не указано'}</div>
-                              ))
-                            : 'Неизвестно'}
-                        </div>
-                        <div>Дата исполнения дела: {considered.executive_lists}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <IoMdEye onClick={() => handleShowDetails({ considered }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
-                        <IoMdTrash
-                          onClick={() => handleDeleteConsidered(considered.id)}
-                          style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-                        />
-                        <IoMdCreate
-                          onClick={() => handleEditConsideredForm(considered.id)}
-                          style={{ cursor: 'pointer', color: 'green' }}
-                        />
-                      </div>
-                    </div>
-                    <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
-                  </div>
-                ))}
-              </>
-            ) : null}
-
+          {activeTab === 4 && considered ? (
+            <ConsideredList
+              considered={considered}
+              handleShowDetailsConsidered={handleShowDetailsConsidered}
+              handleDeleteConsidered={handleDeleteConsidered}
+              handleEditConsideredForm={handleEditConsideredForm}
+              cardId={cardId}
+              setConsidered={setConsidered}
+              router={router}
+            />
+          ) : null}
 
           </div>
           <CardFooter

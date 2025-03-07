@@ -5,14 +5,15 @@ import ConsideredList from './ConsideredList';
 import axios from 'axios';
 
 export const handleShowDetailsConsidered = (props, router) => {
-  router(`/cards/details/${props.considered.id}`);
-  console.log("Передается в МУВВВВ!!!!", props.considered);
+  router(`/business_card/businesscard/${props.cardId}/considered/${props.considered.id}`);
+  console.log("Передается в МУВВВВ!!!!", props.cardId);
 };
 
-export const handleAddConsidered = (newConsidered, setConsideredCases) => {
+
+export const handleAddConsidered = (newConsidered, setConsidered) => {
   console.log('Добавляется рассмотренное дело:', newConsidered);
   if (newConsidered && Object.keys(newConsidered).length > 0) {
-    setConsideredCases((prevCases) => [...prevCases, newConsidered]);
+    setConsidered((prevCases) => [...prevCases, newConsidered]);
   }
 };
 
@@ -20,13 +21,13 @@ export const handleEditConsidered = (isEditing, setIsEditing) => {
   setIsEditing(isEditing);
 };
 
-export const handleDeleteConsidered = async (consideredId, cardId, setConsideredCases) => {
+export const handleDeleteConsidered = async (consideredId, cardId, setConsidered) => {
   try {
     console.log('consideredId:', consideredId);
     console.log('cardId:', cardId);
 
     if (!consideredId || !cardId) {
-      console.error('ID рассмотренного дела или карточки не определены');
+      console.error('ID рассмотренного решения или карточки не определены');
       return;
     }
 
@@ -34,19 +35,20 @@ export const handleDeleteConsidered = async (consideredId, cardId, setConsidered
     const cardIdString = String(cardId);
 
     await ConsideredService.remove(cardIdString, consideredIdString);
-    console.log('Удаляется рассмотренное дело с ID:', consideredIdString);
+    console.log('Удаляется решение с ID:', consideredIdString);
 
-    setConsideredCases((prevCases) => prevCases.filter((item) => String(item.id) !== consideredIdString));
+    setConsidered((prevCases) => prevCases.filter((item) => String(item.id) !== consideredIdString));
 
   } catch (error) {
     console.error('Ошибка удаления:', error);
   }
 };
 
+
 const Considered = (props) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedConsideredDataState, setEditedConsideredDataState] = useState({ ...props.consideredCases });
-  const [consideredCases, setConsideredCases] = useState(props.consideredCases); // Изначально принимаем список через props
+  const [editedConsideredDataState, setEditedConsideredDataState] = useState({ ...props.considered });
+  const [considered, setConsidered] = useState(props.considered);
 
   const handleSave = async (editedConsideredData) => {
     try {
@@ -56,7 +58,7 @@ const Considered = (props) => {
       setEditedConsideredDataState(updatedConsidered);
       setIsEditing(false);
   
-      handleAddConsidered(updatedConsidered, setConsideredCases); // Обновляем список
+      handleAddConsidered(updatedConsidered, setConsidered); // Обновляем список
 
       console.log('Состояние Considered после сохранения:', updatedConsidered);
     } catch (error) {
@@ -64,24 +66,10 @@ const Considered = (props) => {
     }
   };
   
-  useEffect(() => {
-    const fetchConsideredCases = async () => {
-      try {
-        const response = await axios.get(`http://127.0.0.1:8000/business_card/considered_cases/`);
-        console.log('Response:', response);
-        setConsideredCases(response.data); // Обновляем состояние списка при загрузке
-      } catch (error) {
-        console.error('Error fetching Considered Cases:', error);
-      }
-    };
-    
-    fetchConsideredCases();
-  }, []);
-
   const handleCancel = () => {
-    setEditedConsideredDataState({ ...props.consideredCases });
+    setEditedConsideredDataState({ ...props.considered });
     setIsEditing(false);
-    console.log('Отменено. Состояние Considered Cases:', consideredCases);
+    console.log('Отменено. Состояние Considered Cases:', considered);
   };
 
   return (
@@ -92,10 +80,10 @@ const Considered = (props) => {
           editConsideredData={editedConsideredDataState}
           onSave={handleSave}
           onCancel={handleCancel}
-          setConsideredCases={setConsideredCases} // Передаем функцию обновления
+          setConsidered={setConsidered} // Передаем функцию обновления
         />
       ) : (
-        <ConsideredList consideredCases={consideredCases} remove={handleDeleteConsidered} />
+        <ConsideredList considered={considered} remove={handleDeleteConsidered} />
       )}
     </div>
   );

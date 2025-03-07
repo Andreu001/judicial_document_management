@@ -78,16 +78,11 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
         if (editingSideId) {
           // Редактирование существующей стороны
           const response = await updateSide(cardId, editingSideId, newSideData);
-          console.log('Сторона cardId:', cardId);
-          console.log('Сторона editingSideId:', editingSideId);
-          console.log('Сторона обновлена:', response.data);
           onSave(response.data);
         } else {
           // Создание новой стороны
           const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`, newSideData);
-          console.log('Сторона создана:', response.data);
-          console.log('Отправка данных:', newSideData);
-          create(response.data);
+          create(response.data); // Вызываем функцию create для обновления состояния
         }
         onCancel();
     

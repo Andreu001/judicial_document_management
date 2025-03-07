@@ -10,19 +10,17 @@ import CardFilter from '../../components/CardFilter';
 import { useFetching } from '../../hooks/useFetching';
 import { useCard } from '../../hooks/useCard';
 import CardForm from '../../components/CardForm';
-import SideService from '../../API/SideService';
 import styles from '../../components/UI/Header/Header.module.css';
 
 function Cards() {
   const [cards, setCards] = useState([]);
-  const [sides, setSides] = useState([]);
   const [filter, setFilter] = useState({ sort: '', query: '' });
   const [modal, setModal] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showForm, setShowForm] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Административные дела'); // Активная категория
+  const [activeCategory, setActiveCategory] = useState('Все дела'); // Активная категория по умолчанию
 
   const sortedAndSearchCards = useCard(cards, filter.sort, filter.query);
 
@@ -35,7 +33,7 @@ function Cards() {
 
   useEffect(() => {
     fetchCards(limit, page);
-  }, []);
+  }, [limit, page]);
 
   const createCard = (newCard) => {
     setCards([...cards, newCard]);
@@ -43,15 +41,8 @@ function Cards() {
 
   const removeCard = async (id) => {
     try {
-      if (!id) {
-        console.error('ID карточки не определен');
-        return;
-      }
-  
-      const cardId = String(id);
-      await CardService.remove(cardId);
+      await CardService.remove(id);
       setCards(prevCards => prevCards.filter(card => card.id !== id));
-      console.log('Удаляется карточка с ID:', cardId);
     } catch (error) {
       console.error('Ошибка удаления:', error);
     }
@@ -76,6 +67,15 @@ function Cards() {
     setActiveCategory(category); // Устанавливаем активную категорию
   };
 
+  // Фильтрация карточек по категории
+  const filteredCards = activeCategory === 'Все дела'
+    ? cards // Если выбрано "Все дела", показываем все карточки
+    : cards.filter(card => {
+        const normalizedCategory = card.case_category_title?.trim().toLowerCase();
+        const activeCategoryNormalized = activeCategory.toLowerCase();
+        return normalizedCategory === activeCategoryNormalized;
+      });
+
   return (
     <div className='App'>
       {/* Верхняя панель */}
@@ -86,7 +86,7 @@ function Cards() {
       {/* Категории и кнопка "Создать карточку" */}
       <div className={styles.createCardButtonContainer}>
         <div className={styles.categories}>
-          {['Административные дела', 'Административное судопроизводство', 'Гражданские дела', 'Уголовные дела'].map(
+          {['Все дела', 'Административное правнарушение', 'Административное судопроизводство', 'Гражданское судопроизводство', 'Уголовное судопроизводство'].map(
             (category) => (
               <div
                 key={category}
@@ -114,7 +114,7 @@ function Cards() {
           <Loader />
         </div>
       ) : (
-        <CardList remove={removeCard} cards={sortedAndSearchCards} title='Список карточек' />
+        <CardList remove={removeCard} cards={filteredCards} title='Список карточек' />
       )}
 
       {/* Пагинация */}

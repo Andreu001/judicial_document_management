@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import SideService from '../../API/SideService';
 import SidesForm from './SidesForm';
 import { updateSide } from '../../API/SideService';
-import SideList from '../../components/SideList';
+import SideList from './SidesList';
 import axios from 'axios';
 
 export const handleShowDetails = (props, router) => {
-  router(`/cards/details/${props.side.id}`);
+  router(`/business_card/businesscard/:id/sidescaseincase/${props.side.id}`);
   console.log( "Передается в САЙДДДД!!!!", props.side);
 };
 

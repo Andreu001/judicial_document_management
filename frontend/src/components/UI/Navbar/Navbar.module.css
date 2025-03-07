@@ -1,6 +1,6 @@
 /* Navbar.module.css */
 .navbar {
-  width: 6,3cm; /* Ширина 6 см */
+  width: 6.3cm; /* Ширина 6 см */
   height: 100vh; /* Высота на всю высоту экрана */
   background: linear-gradient(180deg, #37474F, #263238);
   padding: 20px; /* Отступы внутри панели */
@@ -38,4 +38,40 @@
 
 .navbar__links a:hover {
   color: #FFD700; /* Золотой цвет при наведении */
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdownButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.dropdownButton:hover {
+  color: #FFD700;
+}
+
+.dropdownContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.dropdownContent a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.dropdownContent a:hover {
+  color: #FFD700;
 }

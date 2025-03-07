@@ -1,0 +1,195 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: 150;
+  justify-content: 150; /* Центрируем контент по вертикали */
+  height: 100vh;
+  padding-top: 20px;
+  text-align: center;
+  margin-left: 15.3cm; /* Отступ для навбара */
+}
+
+
+.profile-card, .about-card {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  width: 100%;
+  text-align: left;
+  margin: 0 auto; /* Центрируем карточку по горизонтали */
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.avatar img {
+  border-radius: 50%;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+}
+
+.edit-button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background: #37474F;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.details {
+  flex: 1;
+}
+
+.detail-item {
+  margin-bottom: 15px;
+}
+
+.detail-item label {
+  font-weight: bold;
+  color: #37474F;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.primary-button, .secondary-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.primary-button {
+  background: #37474F;
+  color: white;
+}
+
+.secondary-button {
+  background: #FFD700;
+  color: #263238;
+}
+
+.about-card h1 {
+  color: #263238;
+  margin-bottom: 20px;
+}
+
+.description {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.team-section h2, .contact-section h2 {
+  color: #263238;
+  margin-bottom: 15px;
+}
+
+.team-members {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.member {
+  text-align: center;
+}
+
+.member img {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+}
+
+.contact-section p {
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.social-links {
+  display: flex;
+  gap: 10px;
+}
+
+.social-links a {
+  color: #37474F;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.social-links a:hover {
+  color: #FFD700;
+}
+
+.archive-card {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  width: 100%;
+  text-align: left;
+  margin: 0 auto;
+}
+
+.archive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.archive-list {
+  list-style: none;
+  padding: 0;
+}
+
+.archive-item {
+  background: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s;
+}
+
+.archive-item:hover {
+  background: #f1f1f1;
+}
+
+.view-button {
+  background: #37474F;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.view-button:hover {
+  background: #263238;
+}

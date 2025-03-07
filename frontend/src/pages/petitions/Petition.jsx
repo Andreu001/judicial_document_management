@@ -5,7 +5,7 @@ import PetitionList from './PetitionList';
 import axios from 'axios';
 
 export const handleShowDetailsPetition = (props, router) => {
-  router(`/cards/details/${props.petition.id}`);
+  router(`/business_card/businesscard/:id/petitionsincase/${props.petition.id}`);
   console.log("Передается в МУВВВВ!!!!", props.petition);
 };
 
@@ -92,7 +92,7 @@ const Petition = (props) => {
           editPetitionsData={editedPetitionsDataState}
           onSave={handleSave}
           onCancel={handleCancel}
-          setPetitions={setPetitions} // Передаем функцию обновления
+          setPetitions={setPetitions}
         />
       ) : (
         <PetitionList petitions={petitions} remove={handleDeletePetition} />

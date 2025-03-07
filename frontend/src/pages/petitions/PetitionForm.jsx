@@ -28,6 +28,19 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
     name: '',
     sides_case: '',
   });
+  const [decisionsList, setDecisionsList] = useState([]);
+
+useEffect(() => {
+  axios
+    .get(`http://localhost:8000/business_card/decisions/`)
+    .then((response) => {
+      setDecisionsList(response.data);
+    })
+    .catch((error) => {
+      console.error('Ошибка при загрузке решений:', error);
+    });
+}, []);
+
   
 
   useEffect(() => {
@@ -81,16 +94,16 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
     const { name, value } = e.target;
   
     setPetition((prevPetition) => {
-      if (name === 'petitions_name') {
+      if (name === 'petitions_name' || name === 'notification_parties') {
         return {
           ...prevPetition,
-          petitions_name: value ? [parseInt(value, 10)] : [],
+          [name]: value ? [parseInt(value, 10)] : [],
         };
       }
-      if (name === 'notification_parties') {
+      if (name === 'decision_rendered') {
         return {
           ...prevPetition,
-          notification_parties: value ? [parseInt(value, 10)] : [],
+          decision_rendered: value ? [parseInt(value, 10)] : [], // Делаем массив
         };
       }
       return {
@@ -99,6 +112,7 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
       };
     });
   };
+  
   
 
   const formatDate = (date) => {
@@ -112,10 +126,12 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
     e.preventDefault();
   
     const newPetitionData = {
-      petitions_name: petition.petitions_name.map(id => id), // Оставляем как массив чисел
-      notification_parties: petition.notification_parties.map(id => id), // Тоже массив чисел
+      petitions_name: petition.petitions_name,
+      notification_parties: petition.notification_parties,
       date_application: formatDate(petition.date_application),
-      decision_rendered: petition.decision_rendered,
+      decision_rendered: Array.isArray(petition.decision_rendered)
+        ? petition.decision_rendered
+        : [petition.decision_rendered],
       date_decision: formatDate(petition.date_decision),
       notation: petition.notation,
       business_card: cardId,
@@ -203,13 +219,14 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
         </div>
         <div className={styles.formGroup}>
           <label>Решение по ходатайству</label>
-            <MyInput
-              type="text"
-              name="decision_rendered"
-              value={petition.decision_rendered || editPetitionData.decision_rendered}
-              onChange={handleChange}
-              placeholder="наименование вынесенного решения"
-          />
+          <select name="decision_rendered" value={petition.decision_rendered || ''} onChange={handleChange}>
+            <option value="">Выберите решение</option>
+            {decisionsList.map((decision) => (
+              <option key={decision.id} value={decision.id}>
+                {decision.name_case}
+              </option>
+            ))}
+          </select>
         </div>
         <div className={styles.formGroup}>
           <label>Дата вынесения</label>

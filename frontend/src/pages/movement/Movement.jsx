@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import MovementService from '../../API/MovementService';
 import MovementForm from './MovementForm';
-import  { updateMove } from '../../API/MovementService';
+import { updateMove } from '../../API/MovementService';
 import MovementList from './MovementList';
 import axios from 'axios';
 
 export const handleShowDetailsMovement = (props, router) => {
-  router(`/cards/details/${props.move.id}`);
-  console.log( "Передается в МУВВВВ!!!!", props.move);
+  router(`/business_card/businesscard/:id/businessmovement/${props.move.id}`);
+  console.log("Передается в МУВВВВ!!!!", props.move);
 };
 
 export const handleAddMove = (newMove, setGlobalMove) => {
@@ -17,7 +17,7 @@ export const handleAddMove = (newMove, setGlobalMove) => {
   }
 };
 
-export const handleDeleteMove = async (moveId, cardId, setMove) => {
+export const handleDeleteMove = async (moveId, cardId, setMovements) => {
   try {
     console.log('moveId:', moveId);
     console.log('cardId:', cardId);
@@ -33,7 +33,8 @@ export const handleDeleteMove = async (moveId, cardId, setMove) => {
     await MovementService.remove(cardIdString, moveIdString);
     console.log('Удаляется движение с ID:', moveIdString);
 
-    setMove((prevMove) => prevMove.filter((item) => String(item.id) !== moveIdString));
+    // Обновляем состояние movements, удаляя удаленное движение
+    setMovements((prevMovements) => prevMovements.filter((item) => String(item.id) !== moveIdString));
 
   } catch (error) {
     console.error('Ошибка удаления:', error);
@@ -42,27 +43,16 @@ export const handleDeleteMove = async (moveId, cardId, setMove) => {
 
 const Movement = (props) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedMoveDataState, setEditedMoveDataState] = useState({ ...props.movements });
-  const [movements, setMovements] = useState();
-  const [showMovementForm, setShowMovementForm] = useState(false);
-  const [isEditingMove, setIsEditingMove] = useState(false);
-  const cardId = card.id;
+  const [editedMoveDataState, setEditedMoveDataState] = useState({});
+  const [movements, setMovements] = useState([]);
   const { card } = props;
+  const cardId = card?.id;
 
-  const handleAddMovementToState = () => {
-    setShowMovementForm(true);
-  };
-
-  const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
-    setIsEditingMove(isEditing);
-  
-    // Находим отредактированные данные движения по ID
+  const handleEditMoveForm = (isEditing, moveId) => {
+    setIsEditing(isEditing);
     const editedMove = movements.find((move) => move.id === moveId);
-  
-    setEditedMoveData({ ...editedMove });
-    setShowMovementForm(true);
+    setEditedMoveDataState({ ...editedMove });
   };
-  
 
   const handleSaveMove = async (updatedMoveData) => {
     try {
@@ -73,15 +63,37 @@ const Movement = (props) => {
         prevMovements.map((move) => (move.id === moveId ? updatedMove : move))
       );
 
-      setIsEditingMove(false);
+      setIsEditing(false);
       console.log('Состояние движения после сохранения:', updatedMove);
     } catch (error) {
       console.error('Ошибка при обновлении движения:', error);
     }
   };
 
+  const handleDeleteMove = async (moveId, cardId) => {
+    try {
+      if (!moveId || !cardId) {
+        console.error('ID стороны или карточки не определены');
+        return;
+      }
+
+      const moveIdString = String(moveId);
+      const cardIdString = String(cardId);
+
+      await MovementService.remove(cardIdString, moveIdString);
+      console.log('Удаляется движение с ID:', moveIdString);
+
+      // Обновление состояния для удаления движения из списка
+      setMovements((prevMovements) =>
+        prevMovements.filter((item) => String(item.id) !== moveIdString)
+      );
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchMove = async () => {
+    const fetchMoves = async () => {
       try {
         const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
         console.log('Response:', response);
@@ -90,28 +102,30 @@ const Movement = (props) => {
         console.error('Error fetching Movements:', error);
       }
     };
-    
-    fetchMove();
-  }, []);
 
-  const handleCancel = () => {
-    setEditedMoveDataState({ ...props.movements });
-    setIsEditing(false);
-    console.log('Отменено. Состояние movements:', movements);
-  };
+    if (cardId) {
+      fetchMoves();
+    }
+  }, [cardId]);
 
   return (
-    <div className='App'>
+    <div className="App">
       {isEditing ? (
         <MovementForm
           create={props.create}
           editMoveData={editedMoveDataState}
           onSave={handleSaveMove}
-          onCancel={handleCancel}
-          setMovements={props.setMovements}
+          onCancel={() => setIsEditing(false)}
         />
-      ) : (<MovementList remove={handleDeleteMove} />)
-      }
+      ) : (
+        <MovementList
+          movements={movements}
+          handleDeleteMove={handleDeleteMove} // Передаем handleDeleteMove
+          handleEditMoveForm={handleEditMoveForm}
+          cardId={cardId}
+          router={props.router}
+        />
+      )}
     </div>
   );
 };

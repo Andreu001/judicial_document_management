@@ -298,29 +298,30 @@ class ConsideredCaseViewSet(viewsets.ModelViewSet):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        consideredcase_data = self.request.data.get(
-            'notification_parties', []
-            )
-        consideredcase = SidesCaseInCase.objects.filter(
-            id__in=consideredcase_data, business_card=businesscard
-        )
+        consideredcase_data = self.request.data.get('notification_parties', [])
+        consideredcase = SidesCaseInCase.objects.filter(id__in=consideredcase_data, business_card=businesscard)
+
+        name_case_data = self.request.data.get('name_case', [])  # Получаем id решений
+        name_case_instances = Decisions.objects.filter(id__in=name_case_data)  # Ищем решения по ID
 
         instance = serializer.save(business_card=businesscard)
         instance.notification_parties.set(consideredcase)
+        instance.name_case.set(name_case_instances)  # Привязываем решения
+
 
     def perform_update(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        consideredcase_data = self.request.data.get(
-            'notification_parties', []
-            )
-        consideredcase = SidesCaseInCase.objects.filter(
-            id__in=consideredcase_data, business_card=businesscard
-        )
+        consideredcase_data = self.request.data.get('notification_parties', [])
+        consideredcase = SidesCaseInCase.objects.filter(id__in=consideredcase_data, business_card=businesscard)
+
+        name_case_data = self.request.data.get('name_case', [])  # Получаем id решений
+        name_case_instances = Decisions.objects.filter(id__in=name_case_data)  # Ищем решения по ID
 
         instance = serializer.save(business_card=businesscard)
         instance.notification_parties.set(consideredcase)
+        instance.name_case.set(name_case_instances)  # Привязываем решения
 
 
 class AppealViewSet(viewsets.ModelViewSet):
