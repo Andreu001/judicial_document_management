@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'criminal_proceedings.apps.CriminalProceedingsConfig',
     'rest_framework',
     'core',
-    'users.apps.UsersConfig',
+    'users', # 'users.apps.UsersConfig',
     'corsheaders',
 ]
 
