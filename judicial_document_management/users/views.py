@@ -1,25 +1,19 @@
+from rest_framework import viewsets, generics, permissions
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+from .permissions import IsAdmin, IsCourtStaff
+from .serializers import UserSerializer
 
-from django.shortcuts import render
-from django.contrib.auth import authenticate, login
-from django.http import HttpResponseRedirect
-from django.urls import reverse
+User = get_user_model()
 
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdmin]
 
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            # Перенаправление на страницу после успешной авторизации
-            return HttpResponseRedirect(reverse('user-profile'))
-        else:
-            # Логика для обработки ошибки входа
-            return render(
-                request,
-                'login.html',
-                {'error_message': 'Invalid credentials'}
-                )
-    else:
-        return render(request, 'login.html')
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

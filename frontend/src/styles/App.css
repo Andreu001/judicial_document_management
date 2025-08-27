@@ -32,29 +32,7 @@
     display: flex;
 }
 
-.remove-btn {
-    margin-right: 0.5rem;
-  }
-  
-.post-enter {
-    opacity: 0;
-  }
-.post-enter-active {
-    opacity: 1;
-    transition: opacity 500ms ease-in;
-  }
-.post-exit {
-    opacity: 1;
-  }
-.post-exit-active {
-    opacity: 0;
-    transition: opacity 500ms ease-in;
-  }
 
-  .page__wrapper {
-    margin-top: 30px;
-    display: flex;
-}
 
 .page {
     padding: 10px;

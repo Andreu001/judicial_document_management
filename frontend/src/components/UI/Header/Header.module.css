@@ -10,6 +10,7 @@
   left: 6.4cm; /* Отодвигаем от navbar */
   width: calc(100vw - 6.8cm); /* Растягиваем до правого края */
   z-index: 10; /* Делаем поверх других элементов */
+  background: white;
 }
 
 .search {
@@ -162,4 +163,18 @@
 
 .createCardButton:hover {
   background-color: #2F4F4F; /* Темно-серый цвет при наведении */
+}
+
+.loginButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.loginButton:hover {
+  background: #0056b3;
 }

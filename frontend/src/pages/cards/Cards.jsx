@@ -7,10 +7,12 @@ import Loader from '../../components/UI/loader/Loader';
 import { getPageCount } from '../../utils/pages';
 import Pagination from '../../components/UI/pagination/Pagination';
 import CardFilter from '../../components/CardFilter';
-import { useFetching } from '../../hooks/useFetching';
+import { useProtectedFetching } from '../../hooks/useProtectedFetching';
 import { useCard } from '../../hooks/useCard';
 import CardForm from '../../components/CardForm';
 import styles from '../../components/UI/Header/Header.module.css';
+import { useAuth } from '../../context/AuthContext';
+import cl from '../../components/UI/loader/Loader.module.css';
 
 function Cards() {
   const [cards, setCards] = useState([]);
@@ -20,29 +22,42 @@ function Cards() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showForm, setShowForm] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Все дела'); // Активная категория по умолчанию
+  const [activeCategory, setActiveCategory] = useState('Все дела');
+  const { isAuthenticated } = useAuth();
+  const [fetchCards, isCardsLoading, cardsError] = useProtectedFetching();
 
   const sortedAndSearchCards = useCard(cards, filter.sort, filter.query);
 
-  const [fetchCards, isCardsLoading] = useFetching(async (limit, page) => {
-    const response = await CardService.getAll(limit, page);
-    setCards(response.data);
-    const totalCount = response.headers['x-total-count'];
-    setTotalPages(getPageCount(totalCount, limit));
-  });
-
   useEffect(() => {
-    fetchCards(limit, page);
-  }, [limit, page]);
+    if (isAuthenticated()) {
+      loadCards();
+    }
+  }, [limit, page, isAuthenticated]);
+
+  const loadCards = async () => {
+    try {
+      await fetchCards(async () => {
+        const response = await CardService.getAll(limit, page);
+        setCards(response.data);
+        const totalCount = response.headers['x-total-count'];
+        setTotalPages(getPageCount(totalCount, limit));
+      });
+    } catch (error) {
+      console.error('Failed to load cards:', error);
+    }
+  };
 
   const createCard = (newCard) => {
     setCards([...cards, newCard]);
+    setModal(false);
   };
 
   const removeCard = async (id) => {
     try {
-      await CardService.remove(id);
-      setCards(prevCards => prevCards.filter(card => card.id !== id));
+      await fetchCards(async () => {
+        await CardService.remove(id);
+        setCards(prevCards => prevCards.filter(card => card.id !== id));
+      });
     } catch (error) {
       console.error('Ошибка удаления:', error);
     }
@@ -50,12 +65,13 @@ function Cards() {
 
   const changePage = (page) => {
     setPage(page);
-    fetchCards(limit, page);
   };
 
   const handleCreateCardClick = () => {
-    setModal(true);
-    setShowForm(true);
+    if (isAuthenticated()) {
+      setModal(true);
+      setShowForm(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -64,26 +80,33 @@ function Cards() {
   };
 
   const handleCategoryClick = (category) => {
-    setActiveCategory(category); // Устанавливаем активную категорию
+    setActiveCategory(category);
   };
 
-  // Фильтрация карточек по категории
   const filteredCards = activeCategory === 'Все дела'
-    ? cards // Если выбрано "Все дела", показываем все карточки
+    ? cards
     : cards.filter(card => {
         const normalizedCategory = card.case_category_title?.trim().toLowerCase();
         const activeCategoryNormalized = activeCategory.toLowerCase();
         return normalizedCategory === activeCategoryNormalized;
       });
 
+  if (!isAuthenticated()) {
+    return (
+      <div className={cl.authMessage}>
+        <div className={cl.authIcon}>🔐</div>
+        <h3 className={cl.authTitle}>Для просмотра данных требуется авторизация</h3>
+        <p className={cl.authText}>Пожалуйста, войдите в систему чтобы продолжить работу</p>
+        <button className={cl.authButton} onClick={() => window.location.reload()}>
+          Перезагрузить страницу
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className='App'>
-      {/* Верхняя панель */}
-      <div className={styles.header}>
-        <CardFilter filter={filter} setFilter={setFilter} />
-      </div>
 
-      {/* Категории и кнопка "Создать карточку" */}
       <div className={styles.createCardButtonContainer}>
         <div className={styles.categories}>
           {['Все дела', 'Административное правнарушение', 'Административное судопроизводство', 'Гражданское судопроизводство', 'Уголовное судопроизводство'].map(
@@ -98,26 +121,30 @@ function Cards() {
             )
           )}
         </div>
-        <button className={styles.createCardButton} onClick={handleCreateCardClick}>
+        <button 
+          className={styles.createCardButton} 
+          onClick={handleCreateCardClick}
+          disabled={!isAuthenticated()}
+        >
           Создать карточку
         </button>
       </div>
 
-      {/* Модальное окно */}
       <Modal visible={modal} setVisible={setModal}>
-        {showForm ? <CardForm create={createCard} /> : null}
+        {showForm && <CardForm create={createCard} onCancel={handleCloseModal} />}
       </Modal>
 
-      {/* Список карточек */}
       {isCardsLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 50 }}>
           <Loader />
         </div>
       ) : (
-        <CardList remove={removeCard} cards={filteredCards} title='Список карточек' />
+        <>
+          {cardsError && <div style={{ color: 'red', textAlign: 'center' }}>Ошибка: {cardsError}</div>}
+          <CardList remove={removeCard} cards={filteredCards} title='Список карточек' />
+        </>
       )}
 
-      {/* Пагинация */}
       <Pagination page={page} changePage={changePage} totalPages={totalPages} />
     </div>
   );

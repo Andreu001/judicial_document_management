@@ -38,9 +38,11 @@ INSTALLED_APPS = [
     'civil_proceedings',
     'criminal_proceedings.apps.CriminalProceedingsConfig',
     'rest_framework',
+    'rest_framework.authtoken',
     'core',
     'users', # 'users.apps.UsersConfig',
     'corsheaders',
+    'djoser',
 ]
 
 MIDDLEWARE = [
@@ -171,3 +173,31 @@ CORS_ALLOW_HEADERS = [
 CSRF_USE_SESSIONS = False  # Необходимо, чтобы дать
 
 APPEND_SLASH = True
+
+AUTH_USER_MODEL = 'users.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'user': 'users.serializers.UserSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+        'token_create': 'djoser.serializers.TokenCreateSerializer',
+    },
+    'PERMISSIONS': {
+        'user': ['rest_framework.permissions.IsAuthenticated'],
+        'user_list': ['rest_framework.permissions.IsAdminUser'],
+    },
+    'HIDE_USERS': False,
+}
+
+REST_AUTH_TOKEN_MODEL = 'rest_framework.authtoken.models.Token'

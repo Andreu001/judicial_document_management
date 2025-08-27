@@ -4,6 +4,7 @@ import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updatedPetition } from '../../API/PetitionService';
 import styles from '../../components//UI/input/Input.module.css';
+import baseService from '../../API/baseService';
 
 const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave, onCancel, cardId, sideId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -31,7 +32,7 @@ const PetitionForm = ({ create, editSideData = {}, editPetitionData = {}, onSave
   const [decisionsList, setDecisionsList] = useState([]);
 
 useEffect(() => {
-  axios
+  baseService
     .get(`http://localhost:8000/business_card/decisions/`)
     .then((response) => {
       setDecisionsList(response.data);
@@ -44,7 +45,7 @@ useEffect(() => {
   
 
   useEffect(() => {
-    axios
+    baseService
       .get(`http://localhost:8000/business_card/petitions/`)
       .then((response) => {
         setPetitionCaseList(response.data);
@@ -63,7 +64,7 @@ useEffect(() => {
         setEditingPetitionId(editPetitionData.id);
       }
 
-      axios
+      baseService
       .get(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`)
       .then((response) => {
         setsidesCaseList(response.data);
@@ -147,7 +148,7 @@ useEffect(() => {
         onSave(response.data); // Обновляем родительский компонент
       } else {
         // Если добавляем новое ходатайство
-        response = await axios.post(
+        response = await baseService.post(
           `http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`,
           newPetitionData
         );

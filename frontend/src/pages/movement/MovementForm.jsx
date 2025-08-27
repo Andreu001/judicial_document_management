@@ -4,6 +4,7 @@ import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updateMove } from '../../API/MovementService';
 import styles from '../../components//UI/input/Input.module.css';
+import baseService from '../../API/baseService';
 
 const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -33,7 +34,7 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
     }
 
     // Загружаем список решений с сервера
-    axios.get('http://localhost:8000/business_card/decisions/')
+    baseService.get('http://localhost:8000/business_card/decisions/')
     .then((response) => {
       setDecisionCases(response.data);
     })
@@ -67,7 +68,7 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
         onSave(response.data); // Передаем обновленные данные в родительский компонент
       } else {
         // Создание нового движения
-        const response = await axios.post(
+        const response = await baseService.post(
           `http://localhost:8000/business_card/businesscard/${cardId}/businessmovement/`,
           newBusinessMovementData
         );

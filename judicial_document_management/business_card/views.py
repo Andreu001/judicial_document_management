@@ -2,9 +2,10 @@ from django.contrib.auth import get_user_model
 # from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 # from django.http import HttpResponseBadRequest
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework import status
+from users.permissions import IsCourtStaff, IsLawyer
 # from rest_framework.decorators import action
 
 # from rest_framework.views import APIView
@@ -26,6 +27,17 @@ from .serializers import (FamiliarizationCaseSerializer,
 POSTS_NUMBER = 6
 
 User = get_user_model()
+
+
+class DocumentViewSet(viewsets.ModelViewSet):
+    # Все аутентифицированные пользователи могут просматривать
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Только сотрудники суда могут изменять документы
+            return [IsCourtStaff()]
+        return super().get_permissions()
 
 
 class SidesCaseViewSet(viewsets.ModelViewSet):

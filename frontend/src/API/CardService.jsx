@@ -1,54 +1,97 @@
-import axios from 'axios';
+import baseService from './baseService';
 
-axios.defaults.xsrfCookieName = 'csrftoken';
-axios.defaults.xsrfHeaderName = 'X-CSRFToken';
-
-
-const BASE_URL = 'http://localhost:8000/business_card/businesscard/';
+const BASE_URL = '/business_card/businesscard/';
 
 export const updateCard = async (id, updatedData) => {
   try {
-    const response = await axios.patch(`${BASE_URL}${id}/`, updatedData);
+    const response = await baseService.patch(`${BASE_URL}${id}/`, updatedData);
     return response.data;
   } catch (error) {
+    console.error('Error updating card:', error);
     throw error;
   }
 };
 
-export default class CardService {
+class CardService {
   static async getAll(limit = 6, page = 1) {
-    const response = await axios.get('http://127.0.0.1:8000/business_card/businesscard/', {
-      params: {
-        _limit: limit,
-        _page: page
-      }
-    });
-    return response;
+    try {
+      const response = await baseService.get(BASE_URL, {
+        params: {
+          _limit: limit,
+          _page: page
+        }
+      });
+      return response;
+    } catch (error) {
+      console.error('Error fetching cards:', error);
+      throw error;
+    }
   }
 
   static async remove(id) {
     try {
-        const response = await axios.delete(`http://localhost:8000/business_card/businesscard/${id}/`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            }
-        });
-        console.log(response); // Логируем ответ для проверки
-        return response.data;
+      const response = await baseService.delete(`${BASE_URL}${id}/`);
+      console.log('Delete response:', response);
+      return response.data;
     } catch (error) {
-        console.error(error);
-        throw new Error(`Ошибка удаления карточки: ${error}`);
+      console.error('Error deleting card:', error);
+      throw new Error(`Ошибка удаления карточки: ${error.message}`);
     }
-}
+  }
 
   static async getById(id) {
-    const response = await axios.get(`http://127.0.0.1:8000/business_card/businesscard/${id}`);
-    return response;
+    try {
+      const response = await baseService.get(`${BASE_URL}${id}/`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching card by id:', error);
+      throw error;
+    }
   }
 
   static async getCommentsByCardId(id) {
-    const response = await axios.get(`${id}`);
-    return response;
+    try {
+      const response = await baseService.get(`${BASE_URL}${id}/comments/`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      throw error;
+    }
+  }
+
+  static async create(cardData) {
+    try {
+      const response = await baseService.post(BASE_URL, cardData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating card:', error.response?.data || error);
+      throw error;
+    }
+  }
+  static async getCategories() {
+    try {
+      const response = await baseService.get('/business_card/category/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  }
+
+  static async searchCards(query, searchBy = 'name') {
+    try {
+      const response = await baseService.get(BASE_URL, {
+        params: {
+          search: query,
+          search_fields: searchBy
+        }
+      });
+      return response;
+    } catch (error) {
+      console.error('Error searching cards:', error);
+      throw error;
+    }
   }
 }
+
+export default CardService;

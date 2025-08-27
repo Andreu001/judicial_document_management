@@ -3,6 +3,7 @@ import PetitionService from '../../API/PetitionService';
 import PetitionForm from './PetitionForm';
 import PetitionList from './PetitionList';
 import axios from 'axios';
+import baseService from '../../API/baseService';
 
 export const handleShowDetailsPetition = (props, router) => {
   router(`/business_card/businesscard/:id/petitionsincase/${props.petition.id}`);
@@ -67,7 +68,7 @@ const Petition = (props) => {
   useEffect(() => {
     const fetchPetitions = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/business_card/petitions/`);
+        const response = await baseService.get(`http://127.0.0.1:8000/business_card/petitions/`);
         console.log('Response:', response);
         setPetitions(response.data); // Обновляем состояние списка при загрузке
       } catch (error) {

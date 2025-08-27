@@ -4,6 +4,7 @@ import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updateConsidered } from '../../API/ConsideredService';
 import styles from '../../components/UI/input/Input.module.css';
+import baseService from '../../API/baseService';
 
 const ConsideredForm = ({ create, editConsideredData = {}, onSave, onCancel, cardId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -20,7 +21,7 @@ const ConsideredForm = ({ create, editConsideredData = {}, onSave, onCancel, car
   });
 
   useEffect(() => {
-    axios
+    baseService
       .get(`http://localhost:8000/business_card/decisions/`)
       .then((response) => {
         setDecisionsList(response.data);
@@ -29,7 +30,7 @@ const ConsideredForm = ({ create, editConsideredData = {}, onSave, onCancel, car
         console.error('Ошибка при загрузке решений по делу:', error);
       });
 
-    axios
+    baseService
       .get(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`)
       .then((response) => {
         setSidesCaseList(response.data);
@@ -100,7 +101,7 @@ const ConsideredForm = ({ create, editConsideredData = {}, onSave, onCancel, car
         response = await updateConsidered(cardId, editingConsideredId, newConsideredData);
         onSave(response.data);
       } else {
-        response = await axios.post(
+        response = await baseService.post(
           `http://localhost:8000/business_card/businesscard/${cardId}/considered/`,
           newConsideredData
         );

@@ -4,6 +4,7 @@ import SidesForm from './SidesForm';
 import { updateSide } from '../../API/SideService';
 import SideList from './SidesList';
 import axios from 'axios';
+import baseService from '../../API/baseService';
 
 export const handleShowDetails = (props, router) => {
   router(`/business_card/businesscard/:id/sidescaseincase/${props.side.id}`);
@@ -68,7 +69,7 @@ const Sides = (props) => {
   useEffect(() => {
     const fetchSides = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/business_card/sidescaseincase/');
+        const response = await baseService.get('http://127.0.0.1:8000/business_card/sidescaseincase/');
         console.log('Response:', response);
         setSide(response.data);
       } catch (error) {

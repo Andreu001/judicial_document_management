@@ -1,38 +1,66 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 import '../components/UI/PageLayout/PageLayout.css';
 
 const Profile = () => {
+    const { user } = useAuth();
+
+    const getRoleName = (role) => {
+        const roles = {
+            admin: 'Администратор',
+            judge: 'Судья',
+            secretary: 'Секретарь',
+            lawyer: 'Адвокат',
+            citizen: 'Гражданин'
+        };
+        return roles[role] || role;
+    };
+
     return (
         <div className="page-container">
             <div className="profile-card">
-                <h1>Профиль пользователя</h1>
-                <div className="profile-info">
-                    <div className="avatar">
-                        <img src="https://via.placeholder.com/150" alt="Аватар" />
-                        <button className="edit-button">Изменить фото</button>
-                    </div>
-                    <div className="details">
-                        <div className="detail-item">
-                            <label>Имя:</label>
-                            <p>Иван Иванов</p>
+                <h1 className="profile-title">Профиль пользователя</h1>
+                
+                <div className="profile-content">
+                    <div className="profile-header">
+                        <div className="profile-avatar">
+                            <div className="avatar-circle">
+                                {user?.first_name?.[0]?.toUpperCase()}
+                                {user?.last_name?.[0]?.toUpperCase()}
+                            </div>
                         </div>
-                        <div className="detail-item">
-                            <label>Email:</label>
-                            <p>ivan@example.com</p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Телефон:</label>
-                            <p>+7 (999) 123-45-67</p>
-                        </div>
-                        <div className="detail-item">
-                            <label>Роль:</label>
-                            <p>Администратор</p>
+                        
+                        <div className="profile-name">
+                            <h2>{user?.first_name} {user?.last_name}</h2>
+                            <span className="profile-role">Должность - {getRoleName(user?.role)}</span>
                         </div>
                     </div>
-                </div>
-                <div className="actions">
-                    <button className="primary-button">Редактировать профиль</button>
-                    <button className="secondary-button">Сменить пароль</button>
+
+                    <div className="profile-details">
+                        <div className="detail-section">
+                            <h3>Контактная информация</h3>
+                            <div className="detail-grid">
+                                <div className="detail-item">
+                                    <span className="detail-label">Email:</span>
+                                    <span className="detail-value">{user?.email || 'Не указан'}</span>
+                                </div>
+                                
+                                <div className="detail-item">
+                                    <span className="detail-label">Телефон:</span>
+                                    <span className="detail-value">{user?.phone || 'Не указан'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {user?.additional_info && (
+                            <div className="detail-section">
+                                <h3>Дополнительная информация</h3>
+                                <div className="detail-item">
+                                    <span className="detail-value">{user.additional_info}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

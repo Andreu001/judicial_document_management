@@ -4,6 +4,7 @@ import MyInput from '../../components/UI/input/MyInput';
 import MyButton from '../../components/UI/button/MyButton';
 import { updateSide } from '../../API/SideService';
 import styles from '../../components//UI/input/Input.module.css';
+import baseService from '../../API/baseService';
 
 
 const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
@@ -23,7 +24,7 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     const [sidesCaseList, setsidesCaseList] = useState([]);
   
     useEffect(() => {
-      axios
+      baseService
         .get('http://localhost:8000/business_card/sides/')
         .then((response) => {
           setsidesCaseList(response.data);
@@ -81,7 +82,7 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
           onSave(response.data);
         } else {
           // Создание новой стороны
-          const response = await axios.post(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`, newSideData);
+          const response = await baseService.post(`http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`, newSideData);
           create(response.data); // Вызываем функцию create для обновления состояния
         }
         onCancel();

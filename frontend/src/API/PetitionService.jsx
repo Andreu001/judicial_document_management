@@ -1,42 +1,35 @@
-import axios from 'axios';
-
-axios.defaults.xsrfCookieName = 'csrftoken';
-axios.defaults.xsrfHeaderName = 'X-CSRFToken';
-
+import baseService from './baseService';
 
 export const updatedPetition = async (cardId, petitionsId, updatedData) => {
   try {
-    const response = await axios.patch(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/${petitionsId}/`, updatedData);
+    const response = await baseService.patch(`/business_card/businesscard/${cardId}/petitionsincase/${petitionsId}/`, updatedData);
     return response.data;
   } catch (error) {
+    console.error('Error updating petition:', error);
     throw error;
   }
 };
 
-
-export default class PetitionService {
+class PetitionService {
   static async getAllPetitions(cardId) {
-    const response = await axios.get(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`);
-    return response;
-  } catch (error) {
-    console.error('Ошибка при выполнении запроса getAllPetitions:', error);
-    throw error; // Выбрасываем ошибку дальше
+    try {
+      const response = await baseService.get(`/business_card/businesscard/${cardId}/petitionsincase/`);
+      return response;
+    } catch (error) {
+      console.error('Ошибка при выполнении запроса getAllPetitions:', error);
+      throw error;
+    }
   }
-
 
   static async remove(cardId, petitionsId) {
     try {
-        const response = await axios.delete(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/${petitionsId}/`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            }
-        });
-        console.log(response);
-        return response.data;
+      const response = await baseService.delete(`/business_card/businesscard/${cardId}/petitionsincase/${petitionsId}/`);
+      return response.data;
     } catch (error) {
-        console.error(error);
-        throw new Error(`Ошибка удаления движения: ${error}`);
+      console.error('Error deleting petition:', error);
+      throw new Error(`Ошибка удаления ходатайства: ${error.message}`);
     }
+  }
 }
-}
+
+export default PetitionService;

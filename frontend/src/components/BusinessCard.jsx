@@ -23,6 +23,7 @@ import MovementForm from '../pages/movement/MovementForm';
 import MovementList from '../pages/movement/MovementList';
 import styles from './UI/Card/BusinessCard.module.css';
 import CardFooter from './UI/CardFooter/CardFooter';
+import authService from '../API/authService';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -55,7 +56,54 @@ const BusinessCard = (props) => {
   const [showConsideredForm, setShowConsideredForm] = useState(false);
   const [editedConsideredData, setEditedConsideredData] = useState({});
   const [editedConsideredId, setEditedConsideredId] = useState(null);
+  const [authorName, setAuthorName] = useState('');
 
+  // Функция для форматирования даты
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'Не указано';
+    
+    const date = new Date(dateString);
+    
+    // Форматируем дату: дд.мм.гг
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    // Форматируем время: чч:мм
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  };
+
+// Загрузка данных об авторе
+  useEffect(() => {
+    const fetchAuthorName = async () => {
+      try {
+        if (props.card.author) {
+          // Получаем данные пользователя по ID
+          const userData = await authService.getUserById(props.card.author);
+          if (userData) {
+            setAuthorName(`${userData.first_name} ${userData.last_name}`);
+          } else {
+            setAuthorName(`Пользователь #${props.card.author}`);
+          }
+        } else if (props.card.author_name) {
+          // Если автор уже приходит с сервера в виде имени
+          setAuthorName(props.card.author_name);
+        } else {
+          setAuthorName('Неизвестный автор');
+        }
+      } catch (error) {
+        console.error('Ошибка при загрузке данных автора:', error);
+        setAuthorName(`Пользователь #${props.card.author}`);
+      }
+    };
+
+    if (props.card.author) {
+      fetchAuthorName();
+    }
+  }, [props.card.author, props.card.author_name]);
 
   useEffect(() => {
     const fetchPetitions = async () => {
@@ -401,8 +449,9 @@ const createMove = async (newMove) => {
             {activeTab === 0 && (
               <div>
                 <strong>АЙДИ карточки: {props.card.id}</strong>
-                <div>Автор: {props.card.author}</div>
-                <div>Дата создания: {props.card.pub_date}</div>
+                <div>Автор: {authorName || 'Не указан'}</div>
+                <div>Дата создания: {formatDateTime(props.card.pub_date)}</div>
+                <div>Дата редактирования: {formatDateTime(props.card.updated_at)}</div>
               </div>
             )}
 

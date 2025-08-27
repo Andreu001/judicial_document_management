@@ -1,3 +1,4 @@
+/* Loader.module.css */
 .loader {
     width: 100px;
     height: 100px;
@@ -6,12 +7,145 @@
     animation: rotate 1s infinite linear;
 }
 
-
 @keyframes rotate {
     from {
         transform: rotate(0deg) scale(1);
     }
     to {
         transform: rotate(360deg) scale(1.4);
+    }
+}
+
+/* Стили для сообщения об авторизации */
+.authMessage {
+    margin-left: 6.5cm;
+    padding: 40px 20px;
+    text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+.authTitle {
+    font-size: 2.5rem;
+    color: #37474F;
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    animation: slideInDown 0.8s ease-out;
+}
+
+.authText {
+    font-size: 1.2rem;
+    color: #546e7a;
+    margin-bottom: 30px;
+    animation: slideInUp 0.8s ease-out 0.3s both;
+}
+
+.authButton {
+    background: linear-gradient(45deg, #37474F, #263238);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(55, 71, 79, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.authButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(55, 71, 79, 0.4);
+}
+
+.authIcon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: bounce 1.5s infinite;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-20px);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(55, 71, 79, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(55, 71, 79, 0.4);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(55, 71, 79, 0.3);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .authMessage {
+        margin-left: 0;
+        padding: 20px;
+    }
+    
+    .authTitle {
+        font-size: 2rem;
+    }
+    
+    .authText {
+        font-size: 1rem;
+    }
+    
+    .authIcon {
+        font-size: 3rem;
     }
 }

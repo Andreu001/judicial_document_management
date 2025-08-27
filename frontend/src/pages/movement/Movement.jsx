@@ -4,6 +4,7 @@ import MovementForm from './MovementForm';
 import { updateMove } from '../../API/MovementService';
 import MovementList from './MovementList';
 import axios from 'axios';
+import baseService from '../../API/baseService';
 
 export const handleShowDetailsMovement = (props, router) => {
   router(`/business_card/businesscard/:id/businessmovement/${props.move.id}`);
@@ -95,7 +96,7 @@ const Movement = (props) => {
   useEffect(() => {
     const fetchMoves = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
+        const response = await baseService.get(`http://127.0.0.1:8000/business_card/sidescaseincase/`);
         console.log('Response:', response);
         setMovements(response.data);
       } catch (error) {

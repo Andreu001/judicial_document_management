@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import MyInput from './UI/input/MyInput';
 import MySelect from './UI/select/MySelect';
+import LoginForm from './Auth/LoginForm';
+import UserMenu from './User/UserMenu';
 import styles from './UI/Header/Header.module.css';
 
 const Header = ({ filter, setFilter, onSearch }) => {
+  const [showLogin, setShowLogin] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+
   const handleSearch = () => {
     if (onSearch) {
       onSearch(filter.query);
@@ -18,48 +24,64 @@ const Header = ({ filter, setFilter, onSearch }) => {
   };
 
   return (
-    <div className={styles.header}>
-      <div className={styles.search}>
-        <MyInput
-          value={filter.query}
-          onChange={(e) => setFilter({ ...filter, query: e.target.value })}
-          onKeyDown={handleKeyDown}
-          placeholder="Поиск..."
-        />
-        <button className={styles.searchButton} onClick={handleSearch}>
-          🔍
-        </button>
-        <MySelect
-          value={filter.searchBy}
-          onChange={(selectedSearchBy) => setFilter({ ...filter, searchBy: selectedSearchBy })}
-          defaultValue="Поиск по"
-          options={[
-            { value: 'name', name: 'По ФИО' },
-            { value: 'caseNumber', name: 'По номеру дела' },
-            { value: 'article', name: 'По статье' },
-          ]}
-        />
+    <>
+      <div className={styles.header}>
+        <div className={styles.search}>
+          <MyInput
+            value={filter.query}
+            onChange={(e) => setFilter({ ...filter, query: e.target.value })}
+            onKeyDown={handleKeyDown}
+            placeholder="Поиск..."
+          />
+          <button className={styles.searchButton} onClick={handleSearch}>
+            🔍
+          </button>
+          <MySelect
+            value={filter.searchBy}
+            onChange={(selectedSearchBy) => setFilter({ ...filter, searchBy: selectedSearchBy })}
+            defaultValue="Поиск по"
+            options={[
+              { value: 'name', name: 'По ФИО' },
+              { value: 'caseNumber', name: 'По номеру дела' },
+              { value: 'article', name: 'По статье' },
+            ]}
+          />
+        </div>
+
+        <div className={styles.sort}>
+          <MySelect
+            value={filter.sort}
+            onChange={(selectedSort) => setFilter({ ...filter, sort: selectedSort })}
+            defaultValue="Сортировка"
+            options={[
+              { value: 'receivedDate', name: 'По дате поступления' },
+              { value: 'appointedDate', name: 'По дате назначения' },
+              { value: 'consideredDate', name: 'По дате рассмотрения' },
+            ]}
+          />
+        </div>
+
+        <div className={styles.actions}>
+          <button className={styles.notificationButton}>🔔</button>
+          <div className={styles.divider}></div>
+          
+          {isAuthenticated() && user ? (
+            <UserMenu user={user} />
+          ) : (
+            <button 
+              onClick={() => setShowLogin(true)}
+              className={styles.loginButton}
+            >
+              👤 Войти
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className={styles.sort}>
-        <MySelect
-          value={filter.sort}
-          onChange={(selectedSort) => setFilter({ ...filter, sort: selectedSort })}
-          defaultValue="Сортировка"
-          options={[
-            { value: 'receivedDate', name: 'По дате поступления' },
-            { value: 'appointedDate', name: 'По дате назначения' },
-            { value: 'consideredDate', name: 'По дате рассмотрения' },
-          ]}
-        />
-      </div>
-
-      <div className={styles.actions}>
-        <button className={styles.notificationButton}>🔔</button>
-        <div className={styles.divider}></div>
-        <Link to="/profile" className={styles.profileButton}>👤 Профиль</Link>
-      </div>
-    </div>
+      {showLogin && (
+        <LoginForm onClose={() => setShowLogin(false)} />
+      )}
+    </>
   );
 };
 
