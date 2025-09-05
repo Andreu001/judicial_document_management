@@ -49,16 +49,6 @@ class CardService {
     }
   }
 
-  static async getCommentsByCardId(id) {
-    try {
-      const response = await baseService.get(`${BASE_URL}${id}/comments/`);
-      return response;
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      throw error;
-    }
-  }
-
   static async create(cardData) {
     try {
       const response = await baseService.post(BASE_URL, cardData);

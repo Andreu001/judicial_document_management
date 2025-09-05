@@ -8,46 +8,58 @@ import styles from '../../components/UI/Details.module.css';
 const CardIdPage = () => {
     const params = useParams();
     const [card, setCard] = useState({});
-    const [comments, setComments] = useState([]);
-    
-    const [fetchPostById, isLoading, error] = useFetching(async (id) => {
-        const response = await CardService.getById(id);
-        setCard(response.data);
-    });
-    
-    const [fetchComments, isComLoading, comError] = useFetching(async (id) => {
-        const response = await CardService.getCommentsByCardId(id);
-        setComments(response.data);
-    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchPostById(params.id);
-        fetchComments(params.id);
-    }, []);
+        const fetchPostById = async () => {
+            try {
+                setIsLoading(true);
+                const response = await CardService.getById(params.id);
+                setCard(response.data);
+                setIsLoading(false);
+            } catch (err) {
+                console.error('Ошибка загрузки карточки:', err);
+                setError('Не удалось загрузить данные карточки');
+                setIsLoading(false);
+            }
+        };
+
+        fetchPostById();
+    }, [params.id]);
+
+    if (isLoading) {
+        return (
+            <div className={styles.detailsContainer}>
+                <Loader />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className={styles.detailsContainer}>
+                <div className={styles.error}>{error}</div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.detailsContainer}>
-            <h1 className={styles.detailsHeader}>Вы открыли страницу поста c ID = {params.id}</h1>
-            {isLoading ? (
-                <Loader />
-            ) : (
-                <div className={styles.detailsContent}>
-                    <h2>Детали поста</h2>
-                    <p><strong>ID:</strong> {card.id}</p>
-                    <p><strong>Название:</strong> {card.title}</p>
-                </div>
-            )}
-            <div className={styles.commentsSection}>
-                <h3>Комментарии</h3>
-                {isComLoading ? (
-                    <Loader />
-                ) : (
-                    comments.map((comm) => (
-                        <div key={comm.id} className={styles.comment}>
-                            <h5>{comm.email}</h5>
-                            <p>{comm.body}</p>
-                        </div>
-                    ))
+            <h1 className={styles.detailsHeader}>Детали карточки дела ID: {params.id}</h1>
+            
+            <div className={styles.detailsContent}>
+                <h2>Основная информация</h2>
+                <p><strong>ID:</strong> {card.id}</p>
+                <p><strong>Название:</strong> {card.original_name || 'Не указано'}</p>
+                <p><strong>Категория:</strong> {card.case_category_title || 'Не указана'}</p>
+                <p><strong>Дата создания:</strong> {new Date(card.pub_date).toLocaleDateString('ru-RU')}</p>
+                
+                {card.description && (
+                    <div>
+                        <h3>Описание</h3>
+                        <p>{card.description}</p>
+                    </div>
                 )}
             </div>
         </div>

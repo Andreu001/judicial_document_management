@@ -157,3 +157,155 @@
     max-width: 500px;
     width: 90%;
 }
+
+.defendantItem {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: between;
+  align-items: center;
+}
+
+.defendantInfo {
+  flex: 1;
+}
+
+.defendantInfo strong {
+  color: #2c3e50;
+  font-size: 16px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.defendantInfo div {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-bottom: 3px;
+}
+
+.defendantActions {
+  display: flex;
+  gap: 10px;
+}
+
+
+.formOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.formContainer {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+/* Вертикальные компактные кнопки с иконками */
+.verticalActionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: stretch;
+  min-width: 80px;
+}
+
+.verticalActionButton {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.viewButton {
+  background-color: #3498db;
+  color: white;
+}
+
+.viewButton:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+}
+
+.editButton {
+  background-color: #f39c12;
+  color: white;
+}
+
+.editButton:hover {
+  background-color: #e67e22;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* Иконки для кнопок */
+.buttonIcon {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  margin-right: 3px;
+  font-size: 10px;
+}
+
+/* Адаптация для defendantItem */
+.defendantItem {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.defendantInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.defendantInfo strong {
+  color: #2c3e50;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
+  word-wrap: break-word;
+}
+
+.defendantInfo div {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}

@@ -17,7 +17,6 @@ const SidesList = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
                 <strong>ФИО {sides.name}.</strong>
-                <div>Под стражей: {sides.under_arrest ? 'Да' : 'Нет'}</div>
                 {sides.sides_case_name ? (
                 sides.sides_case_name.map((sideCaseName, idx) => (
                     <div key={idx}>Статус стороны: {sideCaseName || 'Не указано'}</div>

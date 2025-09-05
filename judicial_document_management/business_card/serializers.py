@@ -9,6 +9,7 @@ from .models import (FamiliarizationCase, SidesCase,
                      Category, BusinessCard, PetitionsInCase,
                      SidesCaseInCase, Appeal, BusinessMovement, ExecutionCase)
 from django.contrib.auth import get_user_model
+from criminal_proceedings.serializers import CriminalProceedingsSerializer
 
 User = get_user_model()
 
@@ -28,7 +29,6 @@ class SidesCaseInCaseSerializer(serializers.ModelSerializer):
         model = SidesCaseInCase
         fields = ('name', 'id',
                   'sides_case', 'sides_case_name',
-                  'under_arrest',
                   'date_sending_agenda'
                   )
 
@@ -110,6 +110,8 @@ class BusinessCardSerializer(serializers.ModelSerializer):
     case_category_title = serializers.CharField(
         source='case_category.title_category', read_only=True
         )
+    
+    criminal_proceedings = CriminalProceedingsSerializer(read_only=True)
 
     class Meta:
         model = BusinessCard
@@ -118,9 +120,10 @@ class BusinessCardSerializer(serializers.ModelSerializer):
                   'author',
                   'case_category',
                   'case_category_title',
-                  'article',
                   'pub_date',
-                  'preliminary_hearing')
+                  'preliminary_hearing',
+                  'criminal_proceedings'
+                  )
 
 
 

@@ -9,4 +9,5 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
     path('api/', include('users.urls')),  # для кастомных API endpoints
+    path('criminal_proceedings/', include('criminal_proceedings.urls')),
 ]

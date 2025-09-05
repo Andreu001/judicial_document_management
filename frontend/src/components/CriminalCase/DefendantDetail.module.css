@@ -1,0 +1,247 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  margin-left: 6.3cm; /* Точная ширина навбара */
+  box-sizing: border-box;
+  width: calc(100% - 6.3cm); /* Ширина контейнера минус навбар */
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #dee2e6;
+  gap: 20px;
+}
+
+.backButton {
+  background: #6c757d;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+  min-width: 80px;
+}
+
+.backButton:hover {
+  background-color: #5a6268;
+}
+
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.card {
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  margin-bottom: 25px;
+  border: 1px solid #e9ecef;
+}
+
+.section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.sectionTitle {
+  color: #495057;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #007bff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #007bff;
+}
+
+.label {
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 12px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.value {
+  color: #2c3e50;
+  font-size: 14px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 30px;
+  font-size: 16px;
+  color: #6c757d;
+  background: white;
+  border-radius: 6px;
+  margin: 20px 0;
+}
+
+.error {
+  color: #dc3545;
+  border: 1px solid #f5c6cb;
+  background-color: #f8d7da;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 15px 0;
+  background: white;
+  border-radius: 6px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.editButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  min-width: 120px;
+}
+
+.editButton:hover {
+  background-color: #218838;
+}
+
+.closeButton {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  min-width: 80px;
+}
+
+.closeButton:hover {
+  background-color: #5a6268;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  margin-left: 6.3cm; /* Точная ширина навбара */
+  box-sizing: border-box;
+  width: calc(100% - 6.3cm); /* Ширина контейнера минус навбар */
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .container {
+    margin-left: 5cm;
+    width: calc(100% - 5cm);
+  }
+}
+
+@media (max-width: 900px) {
+  .container {
+    margin-left: 0;
+    width: 100%;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin-top: 60px;
+    padding: 15px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .backButton {
+    align-self: flex-start;
+  }
+  
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .title {
+    font-size: 18px;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+  }
+  
+  .editButton,
+  .closeButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+    margin-top: 50px;
+  }
+  
+  .card {
+    padding: 15px;
+  }
+  
+  .sectionTitle {
+    font-size: 14px;
+  }
+  
+  .value {
+    font-size: 13px;
+  }
+}

@@ -1,146 +1,146 @@
-/*.formContainer {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 24px;
-    background-color: #ffffff; /* Белый фон 
-    border: 1px solid #e0e0e0; /* Серая рамка 
-    border-radius: 12px; /* Закругленные углы 
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Тень 
-  }*/
-  
+.formContainer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  border-radius: 10px;
+  max-width: 95vw;
+  max-height: 90vh;
+  width: auto;
+  min-width: 400px;
+  overflow-y: auto;
+}
 
-  .formContainer {
-    position: fixed; /* Форма фиксируется поверх */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
-    z-index: 1000; /* Убедись, что форма поверх остальных элементов */
-    width: 400px;
-    border-radius: 10px;
-  }
-  
-  .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999; /* Чуть ниже, чем форма */
-  }
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
 
 .formTitle {
-    font-size: 22px;
-    font-weight: bold;
-    color: #2c3e50;
-    text-align: center;
-    margin-bottom: 20px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.formRow {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .formGroup {
-    margin-bottom: 16px;
+  flex: 1;
+  min-width: 250px;
+  margin-bottom: 15px;
 }
 
 .formGroup label {
-    display: block;
-    font-size: 14px;
-    color: #333333; /* Темно-серый текст */
-    margin-bottom: 8px;
+  display: block;
+  font-size: 14px;
+  color: #333333;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  outline: none;
+  background: #ffffff;
+}
+
+.formGroup select {
+  height: 46px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 15px 0;
+  border-top: 1px solid #eee;
+}
+
+/* Стили для уголовной формы */
+.criminalFormContainer {
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 15px -20px;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .formContainer {
+    min-width: 90%;
+    padding: 15px;
+    max-height: 85vh;
   }
   
-  .formGroup select {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #333333;
-    background-color: #f9f9f9;
-    transition: border-color 0.3s, box-shadow 0.3s;
+  .formRow {
+    flex-direction: column;
+    gap: 10px;
   }
   
-  .formGroup select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    outline: none;
+  .formGroup {
+    min-width: auto;
   }
   
   .buttonGroup {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 24px;
+    flex-direction: column;
+    position: relative;
   }
-
-.label {
-    display: block;
-    font-size: 14px;
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.myInput {
-    width: 100%;
+  
+  .criminalFormContainer {
+    max-height: 50vh;
+    margin: 10px -15px;
     padding: 10px 15px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
-    background: #f9f9f9;
-    transition: all 0.3s ease;
+  }
 }
 
-.myInput:focus {
-    border-color: #2c3e50;
-    background: #ffffff;
-    outline: none;
-    box-shadow: 0 0 5px rgba(44, 62, 80, 0.5);
-}
-
-.select {
-    width: 100%;
+@media (max-width: 480px) {
+  .formContainer {
+    min-width: 95%;
     padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: #f9f9f9;
-    font-size: 14px;
-}
-
-.formButtons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-}
-
-.formButton {
-    flex: 1;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    text-align: center;
-}
-
-.saveButton {
-    background: #2c3e50;
-    color: white;
-}
-
-.saveButton:hover {
-    background: #1a252f;
-}
-
-.cancelButton {
-    background: #ff4d4d;
-    color: white;
-}
-
-.cancelButton:hover {
-    background: #cc0000;
+  }
+  
+  .formGroup input,
+  .formGroup select,
+  .formGroup textarea {
+    padding: 10px 12px;
+  }
 }

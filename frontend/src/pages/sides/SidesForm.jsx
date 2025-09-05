@@ -16,7 +16,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     const [side, setSide] = useState({
       name: '',
       sides_case: '',
-      under_arrest: '',
       date_sending_agenda: '',
       business_card: '',
     });
@@ -65,7 +64,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     
       const newSideData = {
         name: side.name,
-        under_arrest: side.under_arrest,
         sides_case: side.sides_case,
         date_sending_agenda: side.date_sending_agenda ? formatDate(side.date_sending_agenda) : null,
         business_card: side.business_card,
@@ -89,7 +87,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     
         setSide({
           name: '',
-          under_arrest: '',
           sides_case: [],
           date_sending_agenda: '',
           business_card: '',
@@ -120,16 +117,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
               value={side.name || editSideData.name}
               onChange={handleChange}
               placeholder="ФИО"
-            />
-          </div>
-          <div className={styles.formGroup}>
-          <label>Мера пресечения</label>
-            <MyInput
-              type="text"
-              name="under_arrest"
-              value={side.under_arrest || editSideData.under_arrest}
-              onChange={handleChange}
-              placeholder="Под стражей"
             />
           </div>
           <div className={styles.formGroup}>

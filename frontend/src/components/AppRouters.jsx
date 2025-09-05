@@ -12,6 +12,8 @@ import MovementDetail from "../pages/movement/MovementDetail";
 import PetitionDetail from "../pages/petitions/PetitionDetail";
 import ConsideredDetail from "../pages/considered/ConsideredDetail";
 import Layout from './Layout';
+import DefendantDetail from "./CriminalCase//DefendantDetail";
+import CriminalDetail from "./CriminalCase//CriminalDetail";
 
 const AppRouter = () => {
     return (
@@ -30,6 +32,8 @@ const AppRouter = () => {
                 <Route path="business_card/businesscard/:id/businessmovement/:id" element={<MovementDetail />} />
                 <Route path="business_card/businesscard/:id/petitionsincase/:id" element={<PetitionDetail />} />
                 <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
+                <Route path="/businesscard/:cardId/defendants/:defendantId" element={<DefendantDetail />} />
+                <Route path="/businesscard/:cardId/criminal-details" element={<CriminalDetail />} />
             </Route>
         </Routes>
     );

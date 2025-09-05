@@ -110,9 +110,6 @@ class BusinessCard(models.Model):
         related_name='cards',
         verbose_name='Категория дела'
     )
-    article = models.PositiveSmallIntegerField(
-        verbose_name='Статья УК РФ'
-    )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата создания/изменения карточки'
@@ -147,11 +144,6 @@ class SidesCaseInCase(models.Model):
         SidesCase,
         verbose_name='Стороны по делу',
     )
-    under_arrest = models.BooleanField(
-        blank=True,
-        null=True,
-        verbose_name='под стражей'
-        )
     date_sending_agenda = models.DateField(
         blank=True,
         null=True,

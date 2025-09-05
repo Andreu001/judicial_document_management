@@ -8,7 +8,7 @@ class CardForm(ModelForm):
     class Meta:
         model = BusinessCard
         fields = [
-            'original_name', 'case_category', 'article',
+            'original_name', 'case_category',
             'preliminary_hearing'
         ]
 
@@ -28,7 +28,6 @@ class SideForm(ModelForm):
         model = SidesCaseInCase
         fields = [
             'sides_case', 'name',
-            'under_arrest',
             'date_sending_agenda',
             'business_card',
         ]

@@ -4,9 +4,6 @@ export const useCard = (cards, sort, query, searchBy) => {
   return useMemo(() => {
     let filteredCards = [...cards];
 
-    console.log("🔍 Категория поиска:", searchBy);
-    console.log("🔎 Поисковый запрос:", query);
-
     if (query.trim() && searchBy) {
       const lowerQuery = query.toLowerCase().trim();
 

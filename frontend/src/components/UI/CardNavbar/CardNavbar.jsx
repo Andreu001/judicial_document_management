@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styles from "./CardNavbar.module.css"; // Обратите внимание на импорт стилей
+import styles from "./CardNavbar.module.css";
 
 const CardNavbar = ({ onTabChange }) => {
   const [activeTab, setActiveTab] = useState(0);
@@ -10,7 +10,7 @@ const CardNavbar = ({ onTabChange }) => {
   };
 
   return (
-    <div className={styles.tabs}> {/* Обновлено использование импортированных стилей */}
+    <div className={styles.tabs}>
       <h6
         className={activeTab === 0 ? styles.active : ""}
         onClick={() => handleTabClick(0)}

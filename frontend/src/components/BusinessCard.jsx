@@ -24,6 +24,10 @@ import MovementList from '../pages/movement/MovementList';
 import styles from './UI/Card/BusinessCard.module.css';
 import CardFooter from './UI/CardFooter/CardFooter';
 import authService from '../API/authService';
+import CriminalCaseService from '../API/CriminalCaseService';
+import DefendantForm from './CriminalCase/DefendantForm';
+import baseService from '../API/baseService';
+import CriminalDecisionForm from './CriminalCase/CriminalDecisionForm';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -57,6 +61,287 @@ const BusinessCard = (props) => {
   const [editedConsideredData, setEditedConsideredData] = useState({});
   const [editedConsideredId, setEditedConsideredId] = useState(null);
   const [authorName, setAuthorName] = useState('');
+  const [criminalCase, setCriminalCase] = useState(null);
+  const [defendants, setDefendants] = useState([]);
+  const [showDefendantForm, setShowDefendantForm] = useState(false);
+  const [isEditingDefendant, setIsEditingDefendant] = useState(false);
+  const [editedDefendantData, setEditedDefendantData] = useState({});
+  const [editedDefendantId, setEditedDefendantId] = useState(null);
+  const isCriminalCategory = card.case_category === 4;
+  const handleShowDetails = () => {
+    if (isCriminalCategory) {
+      router(`/businesscard/${cardId}/criminal-details`);
+    } else {
+      router(`/cards/${cardId}`);
+    }
+  };
+  const [criminalDecisions, setCriminalDecisions] = useState([]);
+  const [showCriminalDecisionForm, setShowCriminalDecisionForm] = useState(false);
+  const [isEditingCriminalDecision, setIsEditingCriminalDecision] = useState(false);
+  const [editedCriminalDecisionData, setEditedCriminalDecisionData] = useState({});
+  const [editedCriminalDecisionId, setEditedCriminalDecisionId] = useState(null);
+  
+  // Загрузка решений по уголовному делу
+  useEffect(() => {
+    const loadCriminalDecisions = async () => {
+      if (criminalCase) {
+        try {
+          const decisionsData = await CriminalCaseService.getDecisions(cardId);
+          setCriminalDecisions(decisionsData);
+        } catch (error) {
+          console.error('Ошибка загрузки решений по уголовному делу:', error);
+          setCriminalDecisions([]);
+        }
+      }
+    };
+    
+    if (criminalCase) {
+      loadCriminalDecisions();
+    }
+  }, [criminalCase, cardId]);
+
+  // Обработчики для решений по уголовному делу
+  const handleAddCriminalDecision = () => {
+    setShowCriminalDecisionForm(true);
+    setIsEditingCriminalDecision(false);
+    setEditedCriminalDecisionData({});
+  };
+
+  const handleEditCriminalDecision = (decisionId) => {
+    const decision = criminalDecisions.find(d => d.id === decisionId);
+    setEditedCriminalDecisionData(decision);
+    setEditedCriminalDecisionId(decisionId);
+    setIsEditingCriminalDecision(true);
+    setShowCriminalDecisionForm(true);
+  };
+
+  const handleSaveCriminalDecision = async (decisionData) => {
+    try {
+      // Проверяем, что criminalCase существует
+      if (!criminalCase || !criminalCase.id) {
+        console.error('Уголовное дело не загружено или не имеет ID');
+        return;
+      }
+      
+      // Создаем очищенный объект данных, удаляя пустые строки для дат
+      const cleanedData = {};
+      Object.keys(decisionData).forEach(key => {
+        // Для полей дат: если значение пустая строка, не включаем его
+        if (decisionData[key] === '' && key.includes('_date')) {
+          cleanedData[key] = null; // или просто не добавляем поле
+        } else {
+          cleanedData[key] = decisionData[key];
+        }
+      });
+      
+      // Добавляем criminal_proceedings_id к данным
+      const dataToSend = {
+        ...cleanedData,
+        criminal_proceedings: criminalCase.id // Добавляем ID уголовного производства
+      };
+      
+      console.log('Saving criminal decision with data:', dataToSend);
+      
+      if (isEditingCriminalDecision) {
+        const updatedDecision = await CriminalCaseService.updateDecision(
+          cardId, 
+          editedCriminalDecisionId, 
+          dataToSend
+        );
+        setCriminalDecisions(criminalDecisions.map(d => 
+          d.id === editedCriminalDecisionId ? updatedDecision : d
+        ));
+      } else {
+        const newDecision = await CriminalCaseService.createDecision(cardId, dataToSend);
+        setCriminalDecisions([...criminalDecisions, newDecision]);
+      }
+      
+      setShowCriminalDecisionForm(false);
+      setEditedCriminalDecisionData({});
+      setEditedCriminalDecisionId(null);
+    } catch (error) {
+      console.error('Ошибка сохранения решения:', error);
+      console.error('Error response data:', error.response?.data);
+    }
+  };
+
+  const handleDeleteCriminalDecision = async (decisionId) => {
+    try {
+      await CriminalCaseService.deleteDecision(cardId, decisionId);
+      setCriminalDecisions(criminalDecisions.filter(d => d.id !== decisionId));
+    } catch (error) {
+      console.error('Ошибка удаления решения:', error);
+    }
+  };
+
+  useEffect(() => {
+    const loadDefendants = async () => {
+      try {
+        if (criminalCase) {
+          const defendantsData = await CriminalCaseService.getDefendants(cardId);
+          
+          // Получаем названия сторон для каждого обвиняемого
+          const defendantsWithSideNames = await Promise.all(
+            defendantsData.map(async (defendant) => {
+              if (defendant.side_case) {
+                try {
+                  const sideResponse = await baseService.get(`http://localhost:8000/business_card/sides/${defendant.side_case}/`);
+                  return {
+                    ...defendant,
+                    side_case_name: sideResponse.data.sides_case
+                  };
+                } catch (error) {
+                  console.error('Ошибка загрузки названия стороны:', error);
+                  return { ...defendant, side_case_name: 'Неизвестный статус' };
+                }
+              }
+              return defendant;
+            })
+          );
+          
+          setDefendants(defendantsWithSideNames);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки обвиняемых:', error);
+      }
+    };
+    
+    if (criminalCase) {
+      loadDefendants();
+    }
+  }, [criminalCase, cardId]);
+
+  const handleAddDefendantToState = () => {
+    setShowDefendantForm(true);
+    setIsEditingDefendant(false);
+    setEditedDefendantData({});
+  };
+
+const handleEditDefendant = (defendantId) => {
+  const defendant = defendants.find(d => d.id === defendantId);
+  setEditedDefendantData({ 
+    ...defendant,
+    side_case: defendant.side_case // Убедитесь, что передается side_case
+  });
+  setEditedDefendantId(defendantId);
+  setIsEditingDefendant(true);
+  setShowDefendantForm(true);
+};
+
+  const handleSaveDefendant = async (defendantData) => {
+    try {
+      console.log('Saving defendant data:', defendantData);
+      
+      if (isEditingDefendant) {
+        const updatedDefendant = await CriminalCaseService.updateDefendant(
+          cardId, 
+          editedDefendantId, 
+          defendantData
+        );
+
+        // Если сервер не возвращает side_case, добавляем его из отправленных данных
+        const defendantWithSideCase = {
+          ...updatedDefendant,
+          side_case: defendantData.side_case || updatedDefendant.side_case
+        };
+
+        if (defendantWithSideCase.side_case) {
+          const sideResponse = await baseService.get(`http://localhost:8000/business_card/sides/${defendantWithSideCase.side_case}/`);
+          defendantWithSideCase.side_case_name = sideResponse.data.sides_case;
+        }
+        
+        setDefendants(defendants.map(d => 
+          d.id === editedDefendantId ? defendantWithSideCase : d
+        ));
+      } else {
+        const newDefendant = await CriminalCaseService.createDefendant(cardId, defendantData);
+
+        // Если сервер не возвращает side_case, добавляем его из отправленных данных
+        const defendantWithSideCase = {
+          ...newDefendant,
+          side_case: defendantData.side_case || newDefendant.side_case
+        };
+
+        if (defendantWithSideCase.side_case) {
+          const sideResponse = await baseService.get(`http://localhost:8000/business_card/sides/${defendantWithSideCase.side_case}/`);
+          defendantWithSideCase.side_case_name = sideResponse.data.sides_case;
+        }
+        
+        setDefendants([...defendants, defendantWithSideCase]);
+      }
+      
+      setShowDefendantForm(false);
+      setEditedDefendantData({});
+      setEditedDefendantId(null);
+    } catch (error) {
+      console.error('Ошибка сохранения обвиняемого:', error);
+      console.error('Error response data:', error.response?.data);
+    }
+  };
+
+  const handleDeleteDefendant = async (defendantId) => {
+    try {
+      await CriminalCaseService.deleteDefendant(cardId, defendantId);
+      setDefendants(defendants.filter(d => d.id !== defendantId));
+    } catch (error) {
+      console.error('Ошибка удаления обвиняемого:', error);
+    }
+  };
+
+useEffect(() => {
+  const loadCriminalCase = async () => {
+    if (isCriminalCategory) {
+      try {
+        const criminalData = await CriminalCaseService.getByBusinessCardId(cardId);
+        setCriminalCase(criminalData);
+        
+        if (criminalData) {
+          try {
+            const defendantsData = await CriminalCaseService.getDefendants(cardId);
+            
+            // Получаем названия сторон для каждого обвиняемого
+            const defendantsWithSideNames = await Promise.all(
+              defendantsData.map(async (defendant) => {
+                if (defendant.side_case) {
+                  try {
+                    const sideResponse = await baseService.get(`http://localhost:8000/business_card/sides/${defendant.side_case}/`);
+                    return {
+                      ...defendant,
+                      side_case_name: sideResponse.data.sides_case
+                    };
+                  } catch (error) {
+                    console.error('Ошибка загрузки названия стороны:', error);
+                    return { ...defendant, side_case_name: 'Неизвестный статус' };
+                  }
+                }
+                return defendant;
+              })
+            );
+            
+            setDefendants(defendantsWithSideNames);
+          } catch (defendantError) {
+            console.error('Ошибка загрузки обвиняемых:', defendantError);
+            setDefendants([]);
+          }
+        } else {
+          console.log('No criminal case found for this card');
+          setDefendants([]);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки уголовного дела:', error);
+        setCriminalCase(null);
+        setDefendants([]);
+      }
+    } else {
+      setCriminalCase(null);
+      setDefendants([]);
+    }
+  };
+  
+  if (cardId) {
+    loadCriminalCase();
+  }
+}, [cardId, isCriminalCategory]);
 
   // Функция для форматирования даты
   const formatDateTime = (dateString) => {
@@ -208,6 +493,11 @@ const BusinessCard = (props) => {
     setEditedConsideredData({});
   };
 
+  const handleShowDefendantDetails = (defendantId) => {
+    // Переход на страницу деталей обвиняемого
+    router(`/businesscard/${cardId}/defendants/${defendantId}`);
+  };
+
   const handleEditConsideredForm = (consideredId) => {
     const editedConsidered = considered.find((c) => c.id === consideredId);
     setEditedConsideredId(consideredId);
@@ -291,12 +581,34 @@ const BusinessCard = (props) => {
     setActiveTab(tabIndex);
   };
 
-const handleAddSideToState = (e) => {
-  e.preventDefault();
-  setEditedSideData({}); // Очищаем данные перед добавлением новой стороны
-  setIsEditingSide(true);
-  setShowSideForm(true);
-};
+  const handleAddSideToState = (e) => {
+    e.preventDefault();
+    
+    console.log('criminalCase:', criminalCase);
+    console.log('showDefendantForm будет:', !!criminalCase);
+    console.log('showSideForm будет:', !criminalCase);
+    
+    // Сначала скрываем обе формы
+    setShowSideForm(false);
+    setShowDefendantForm(false);
+    
+    // Ждем следующего tick для избежания конфликта рендеринга
+    setTimeout(() => {
+      // Если это уголовное дело, показываем форму обвиняемого
+      if (criminalCase) {
+        console.log('Showing defendant form for criminal case');
+        setShowDefendantForm(true);
+        setIsEditingDefendant(false);
+        setEditedDefendantData({});
+      } else {
+        console.log('Showing regular side form');
+        // Для обычных дел показываем стандартную форму стороны
+        setEditedSideData({});
+        setEditedSideId(null);
+        setShowSideForm(true);
+      }
+    }, 0);
+  };
 
 
 const createSide = async (newSide) => {
@@ -387,29 +699,53 @@ const createMove = async (newMove) => {
         />
       ) : null}
 
-      {showSideForm && isEditingSide ? (
-        <SidesForm
-          create={createSide} // Передаем функцию создания
-          editSideData={editedSideData}
-          onSave={async (newSide) => {
-            if (editedSideId) {
-              const updatedSide = await SideService.updateSide(cardId, editedSideId, newSide);
-              setEditedSideData(updatedSide);
-              setIsEditingSide(false);
-              setEditedSideId(null);
-            } else {
-              await createSide(newSide); // Вызываем функцию создания
-            }
-          }}
-          onCancel={() => {
-            setShowSideForm(false);
-            setIsEditingSide(false);
-            setEditedSideId(null);
-          }}
-          setNewSide={setNewSide}
-          cardId={cardId}
-        />
-      ) : null}
+      {(showSideForm || showDefendantForm) && (
+        <div className={styles.formOverlay}>
+          {/* Форма обычной стороны - ТОЛЬКО если НЕТ уголовного дела */}
+          {showSideForm && !criminalCase && (
+            <div className={styles.formContainer}>
+              <SidesForm
+                create={createSide}
+                editSideData={editedSideData}
+                isEditing={!!editedSideId}
+                onSave={async (newSide) => {
+                  if (editedSideId) {
+                    const updatedSide = await SideService.updateSide(cardId, editedSideId, newSide);
+                    setEditedSideData(updatedSide);
+                    setEditedSideId(null);
+                  } else {
+                    await createSide(newSide);
+                  }
+                  setShowSideForm(false);
+                }}
+                onCancel={() => {
+                  setShowSideForm(false);
+                  setEditedSideId(null);
+                }}
+                setNewSide={setNewSide}
+                cardId={cardId}
+              />
+            </div>
+          )}
+
+          {/* Форма обвиняемого - ТОЛЬКО если ЕСТЬ уголовное дело */}
+          {showDefendantForm && criminalCase && (
+            <div className={styles.formContainer}>
+              <DefendantForm
+                defendantData={editedDefendantData}
+                onDefendantDataChange={setEditedDefendantData}
+                onSubmit={(data) => handleSaveDefendant(data)} // Принимаем данные
+                onCancel={() => {
+                  setShowDefendantForm(false);
+                  setEditedDefendantData({});
+                  setEditedDefendantId(null);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {showConsideredForm && (
         <ConsideredForm
           create={createConsidered}
@@ -455,18 +791,73 @@ const createMove = async (newMove) => {
               </div>
             )}
 
-          {activeTab === 1 && sides ? (
-            <SidesList
-              sides={sides}
-              setSide={setSide}
-              handleShowDetails={handleShowDetails}
-              handleDeleteSide={handleDeleteSide}
-              handleEditSideForm={handleEditSideForm}
-              cardId={cardId}
-              router={router}
-            />
-          ) : null}
-
+            {activeTab === 1 && (
+              <div>
+                {criminalCase ? (
+                  // Отображаем обвиняемых для уголовных дел
+                  <div>
+                    {defendants.length > 0 ? (
+                      defendants.map(defendant => (
+                        <div key={defendant.id} className={styles.defendantItem}>
+                          <div className={styles.defendantInfo}>
+                            <strong>{defendant.full_name}</strong>
+                            {defendant.side_case_name && (
+                              <div><strong>Статус: {defendant.side_case_name} </strong></div>
+                            )}
+                            <div>Адрес: {defendant.address || 'Не указан'}</div>
+                            <div>Дата рождения: {defendant.birth_date || 'Не указана'}</div>
+                            <div>Гражданство: {defendant.citizenship || 'Не указано'}</div>
+                          </div>
+                            <div className={styles.verticalActionButtons}>
+                              <button 
+                                onClick={() => handleShowDefendantDetails(defendant.id)}
+                                className={`${styles.verticalActionButton} ${styles.viewButton}`}
+                                title="Просмотреть подробнее"
+                              >
+                                <span className={styles.buttonIcon}>👁️</span>
+                                Просмотр
+                              </button>
+                              <button 
+                                onClick={() => handleEditDefendant(defendant.id)}
+                                className={`${styles.verticalActionButton} ${styles.editButton}`}
+                                title="Редактировать"
+                              >
+                                <span className={styles.buttonIcon}>✏️</span>
+                                Изменить
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteDefendant(defendant.id)}
+                                className={`${styles.verticalActionButton} ${styles.deleteButton}`}
+                                title="Удалить"
+                              >
+                                <span className={styles.buttonIcon}>🗑️</span>
+                                Удалить
+                              </button>
+                            </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>Обвиняемые не добавлены</p>
+                    )}
+                  </div>
+                ) : (
+                  // Отображаем обычные стороны для других категорий дел
+                  sides && sides.length > 0 ? (
+                    <SidesList
+                      sides={sides}
+                      setSide={setSide}
+                      handleShowDetails={handleShowDetails}
+                      handleDeleteSide={handleDeleteSide}
+                      handleEditSideForm={handleEditSideForm}
+                      cardId={cardId}
+                      router={router}
+                    />
+                  ) : (
+                    <p>Стороны не добавлены</p>
+                  )
+                )}
+              </div>
+            )}
           {activeTab === 2 && movements ? (
             <MovementList
               movements={movements}
@@ -492,17 +883,68 @@ const createMove = async (newMove) => {
               />
           ) : null}
 
-          {activeTab === 4 && considered ? (
-            <ConsideredList
-              considered={considered}
-              handleShowDetailsConsidered={handleShowDetailsConsidered}
-              handleDeleteConsidered={handleDeleteConsidered}
-              handleEditConsideredForm={handleEditConsideredForm}
-              cardId={cardId}
-              setConsidered={setConsidered}
-              router={router}
-            />
-          ) : null}
+          {activeTab === 4 && (
+            <div>
+              {criminalCase ? (
+                // Отображаем решения по уголовному делу
+                <div>
+                  {criminalDecisions.length > 0 ? (
+                    criminalDecisions.map(decision => (
+                      <div key={decision.id} className={styles.decisionItem}>
+                        <div className={styles.decisionInfo}>
+                          <strong>Решение от {decision.court_consideration_date}</strong>
+                          <div>Результат: {decision.consideration_result}</div>
+                          <div>Статус: {decision.sentence_appealed}</div>
+                        </div>
+                        <div className={styles.verticalActionButtons}>
+                          <button onClick={() => handleEditCriminalDecision(decision.id)}>
+                            Редактировать
+                          </button>
+                          <button onClick={() => handleDeleteCriminalDecision(decision.id)}>
+                            Удалить
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p>Решения не добавлены</p>
+                  )}
+                </div>
+              ) : (
+                // Отображаем обычные решения для других категорий дел
+                considered && considered.length > 0 ? (
+                  <ConsideredList
+                    considered={considered}
+                    handleShowDetailsConsidered={handleShowDetailsConsidered}
+                    handleDeleteConsidered={handleDeleteConsidered}
+                    handleEditConsideredForm={handleEditConsideredForm}
+                    cardId={cardId}
+                    setConsidered={setConsidered}
+                    router={router}
+                  />
+                ) : (
+                  <p>Решения не добавлены</p>
+                )
+              )}
+            </div>
+          )}
+
+          {showCriminalDecisionForm && (
+            <div className={styles.formOverlay}>
+              <div className={styles.formContainer}>
+                <CriminalDecisionForm
+                  decisionData={editedCriminalDecisionData}
+                  onDecisionDataChange={setEditedCriminalDecisionData}
+                  onSubmit={handleSaveCriminalDecision}
+                  onCancel={() => {
+                    setShowCriminalDecisionForm(false);
+                    setEditedCriminalDecisionData({});
+                    setEditedCriminalDecisionId(null);
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           </div>
           <CardFooter
@@ -511,10 +953,14 @@ const createMove = async (newMove) => {
             handleAddMovementToState={handleAddMovementToState}
             handleAddPetitionToState={handleAddPetitionToState}
             handleAddConsideredToState={handleAddConsideredToState}
+            handleAddCriminalDecision={handleAddCriminalDecision}
             handleRemove={handleRemove}
             handleEditToggle={handleEditToggle}
+            handleShowDetails={handleShowDetails}
             isEditingCard={isEditingCard}
             cardId={card.id}
+            hasCriminalCase={!!criminalCase || isCriminalCategory}
+            card={card}
           />
         </>
       )}

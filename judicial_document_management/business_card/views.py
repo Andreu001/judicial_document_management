@@ -79,6 +79,18 @@ class BusinessCardViewSet(viewsets.ModelViewSet):
     queryset = BusinessCard.objects.all()
     serializer_class = BusinessCardSerializer
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        
+        # Автоматически создаем уголовное производство для уголовных дел
+        if instance.case_category and instance.case_category.id == 4:
+            try:
+                from criminal_proceedings.models import CriminalProceedings
+                CriminalProceedings.objects.create(business_card=instance)
+                print(f"Created criminal proceedings for card {instance.id}")
+            except Exception as e:
+                print(f"Error creating criminal proceedings: {e}")
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete()

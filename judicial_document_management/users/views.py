@@ -1,7 +1,7 @@
 from rest_framework import viewsets, generics, permissions
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .permissions import IsAdmin, IsCourtStaff
+from .permissions import IsAdmin
 from .serializers import UserSerializer
 
 User = get_user_model()

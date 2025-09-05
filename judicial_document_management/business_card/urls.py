@@ -30,12 +30,14 @@ router.register(
     basename='petitionsincase'
 )
 router.register(r'businesscard/(?P<businesscard_id>\d+)/familiarization',
-                FamiliarizationCaseViewSet,
-                basename='familiarization')
+    FamiliarizationCaseViewSet,
+    basename='familiarization'
+    )
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/businessmovement',
     BusinessMovementViewSet,
-    basename='businessmovement')
+    basename='businessmovement'
+    )
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/considered',
     ConsideredCaseViewSet, basename='considered'
