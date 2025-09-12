@@ -355,41 +355,6 @@ class AppealViewSet(viewsets.ModelViewSet):
     queryset = Appeal.objects.all()
     serializer_class = AppealSerializer
 
-    def get_queryset(self):
-        businesscard = get_object_or_404(
-            BusinessCard, pk=self.kwargs.get('businesscard_id')
-            )
-        new_queryset = businesscard.appeal.all()
-        return new_queryset
-
-    def perform_create(self, serializer):
-        businesscard_id = self.kwargs.get('businesscard_id')
-        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
-
-        appeal_data = self.request.data.get(
-            'notification_parties', []
-            )
-        appeal = SidesCaseInCase.objects.filter(
-            id__in=appeal_data, business_card=businesscard
-        )
-
-        instance = serializer.save(business_card=businesscard)
-        instance.notification_parties.set(appeal)
-
-    def perform_update(self, serializer):
-        businesscard_id = self.kwargs.get('businesscard_id')
-        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
-
-        appeal_data = self.request.data.get(
-            'notification_parties', []
-            )
-        appeal = SidesCaseInCase.objects.filter(
-            id__in=appeal_data, business_card=businesscard
-        )
-
-        instance = serializer.save(business_card=businesscard)
-        instance.notification_parties.set(appeal)
-
 
 class ExecutionCaseViewSet(viewsets.ModelViewSet):
     """

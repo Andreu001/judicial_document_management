@@ -18,6 +18,7 @@ router.register(r'petitions', PetitionsViewSet, basename='petitions')
 router.register(r'category', CategoryViewSet, basename='category')
 router.register(r'businesscard', BusinessCardViewSet, basename='businesscard')
 router.register(r'decisions', DecisionsViewSet, basename='decisions')
+router.register(r'appeal', AppealViewSet, basename='appeal')
 
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/sidescaseincase',
@@ -41,10 +42,6 @@ router.register(
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/considered',
     ConsideredCaseViewSet, basename='considered'
-    )
-router.register(
-    r'businesscard/(?P<businesscard_id>\d+)/appeal',
-    AppealViewSet, basename='appeal'
     )
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/executioncase',

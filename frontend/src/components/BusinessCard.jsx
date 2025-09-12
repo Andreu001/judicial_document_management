@@ -28,6 +28,7 @@ import CriminalCaseService from '../API/CriminalCaseService';
 import DefendantForm from './CriminalCase/DefendantForm';
 import baseService from '../API/baseService';
 import CriminalDecisionForm from './CriminalCase/CriminalDecisionForm';
+import CriminalDecisionDetail from './CriminalCase/CriminalDecisionDetail';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -80,18 +81,73 @@ const BusinessCard = (props) => {
   const [isEditingCriminalDecision, setIsEditingCriminalDecision] = useState(false);
   const [editedCriminalDecisionData, setEditedCriminalDecisionData] = useState({});
   const [editedCriminalDecisionId, setEditedCriminalDecisionId] = useState(null);
+
+  const handleAddCriminalDecisionToState = () => {
+    console.log("Adding criminal decision to state");
+    setShowCriminalDecisionForm(true);
+    setIsEditingCriminalDecision(false);
+    setEditedCriminalDecisionData({});
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Не указано';
+    
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}.${month}.${year}`;
+  };
+
+  const getCourtInstanceText = (instance) => {
+    switch (instance) {
+      case '1': return 'Апелляционной';
+      case '2': return 'Кассационной';
+      default: return 'Не указано';
+    }
+  };
   
-  // Загрузка решений по уголовному делу
   useEffect(() => {
     const loadCriminalDecisions = async () => {
       if (criminalCase) {
         try {
           const decisionsData = await CriminalCaseService.getDecisions(cardId);
-          setCriminalDecisions(decisionsData);
+          
+          // Получаем названия для связанных полей
+          const decisionsWithNames = await Promise.all(
+            decisionsData.map(async (decision) => {
+              if (decision.name_case) {
+                try {
+                  const decisionResponse = await baseService.get(`http://localhost:8000/business_card/decisions/${decision.name_case}/`);
+                  decision.decision_name = decisionResponse.data.decisions;
+                } catch (error) {
+                  console.error('Ошибка загрузки названия решения:', error);
+                  decision.decision_name = 'Неизвестное решение';
+                }
+              }
+              
+              if (decision.decision_appeal) {
+                try {
+                  const appealResponse = await baseService.get(`http://localhost:8000/business_card/appeal/${decision.decision_appeal}/`);
+                  decision.appeal_name = appealResponse.data.appeal;
+                } catch (error) {
+                  console.error('Ошибка загрузки названия апелляции:', error);
+                  decision.appeal_name = 'Неизвестный результат';
+                }
+              }
+              
+              return decision;
+            })
+          );
+          
+          setCriminalDecisions(decisionsWithNames);
         } catch (error) {
-          console.error('Ошибка загрузки решений по уголовному делу:', error);
+          console.error('Ошибка загрузки решений:', error);
           setCriminalDecisions([]);
         }
+      } else {
+        setCriminalDecisions([]);
       }
     };
     
@@ -100,7 +156,6 @@ const BusinessCard = (props) => {
     }
   }, [criminalCase, cardId]);
 
-  // Обработчики для решений по уголовному делу
   const handleAddCriminalDecision = () => {
     setShowCriminalDecisionForm(true);
     setIsEditingCriminalDecision(false);
@@ -109,7 +164,7 @@ const BusinessCard = (props) => {
 
   const handleEditCriminalDecision = (decisionId) => {
     const decision = criminalDecisions.find(d => d.id === decisionId);
-    setEditedCriminalDecisionData(decision);
+    setEditedCriminalDecisionData({ ...decision });
     setEditedCriminalDecisionId(decisionId);
     setIsEditingCriminalDecision(true);
     setShowCriminalDecisionForm(true);
@@ -117,42 +172,41 @@ const BusinessCard = (props) => {
 
   const handleSaveCriminalDecision = async (decisionData) => {
     try {
-      // Проверяем, что criminalCase существует
-      if (!criminalCase || !criminalCase.id) {
-        console.error('Уголовное дело не загружено или не имеет ID');
-        return;
-      }
-      
-      // Создаем очищенный объект данных, удаляя пустые строки для дат
-      const cleanedData = {};
-      Object.keys(decisionData).forEach(key => {
-        // Для полей дат: если значение пустая строка, не включаем его
-        if (decisionData[key] === '' && key.includes('_date')) {
-          cleanedData[key] = null; // или просто не добавляем поле
-        } else {
-          cleanedData[key] = decisionData[key];
-        }
-      });
-      
-      // Добавляем criminal_proceedings_id к данным
-      const dataToSend = {
-        ...cleanedData,
-        criminal_proceedings: criminalCase.id // Добавляем ID уголовного производства
-      };
-      
-      console.log('Saving criminal decision with data:', dataToSend);
-      
       if (isEditingCriminalDecision) {
         const updatedDecision = await CriminalCaseService.updateDecision(
           cardId, 
           editedCriminalDecisionId, 
-          dataToSend
+          decisionData
         );
+
+        // Обновляем названия
+        if (updatedDecision.name_case) {
+          const decisionResponse = await baseService.get(`http://localhost:8000/business_card/decisions/${updatedDecision.name_case}/`);
+          updatedDecision.decision_name = decisionResponse.data.decisions;
+        }
+        
+        if (updatedDecision.decision_appeal) {
+          const appealResponse = await baseService.get(`http://localhost:8000/business_card/appeals/${updatedDecision.decision_appeal}/`);
+          updatedDecision.appeal_name = appealResponse.data.appeal;
+        }
+        
         setCriminalDecisions(criminalDecisions.map(d => 
           d.id === editedCriminalDecisionId ? updatedDecision : d
         ));
       } else {
-        const newDecision = await CriminalCaseService.createDecision(cardId, dataToSend);
+        const newDecision = await CriminalCaseService.createDecision(cardId, decisionData);
+
+        // Получаем названия
+        if (newDecision.name_case) {
+          const decisionResponse = await baseService.get(`http://localhost:8000/business_card/decisions/${newDecision.name_case}/`);
+          newDecision.decision_name = decisionResponse.data.decisions;
+        }
+        
+        if (newDecision.decision_appeal) {
+          const appealResponse = await baseService.get(`http://localhost:8000/business_card/appeals/${newDecision.decision_appeal}/`);
+          newDecision.appeal_name = appealResponse.data.appeal;
+        }
+        
         setCriminalDecisions([...criminalDecisions, newDecision]);
       }
       
@@ -161,7 +215,6 @@ const BusinessCard = (props) => {
       setEditedCriminalDecisionId(null);
     } catch (error) {
       console.error('Ошибка сохранения решения:', error);
-      console.error('Error response data:', error.response?.data);
     }
   };
 
@@ -173,6 +226,11 @@ const BusinessCard = (props) => {
       console.error('Ошибка удаления решения:', error);
     }
   };
+
+  const handleShowCriminalDecisionDetails = (decisionId) => {
+    router(`/businesscard/${cardId}/criminal-decisions/${decisionId}`);
+  };
+
 
   useEffect(() => {
     const loadDefendants = async () => {
@@ -746,6 +804,23 @@ const createMove = async (newMove) => {
         </div>
       )}
 
+      {showCriminalDecisionForm && (
+        <div className={styles.formOverlay}>
+          <div className={styles.formContainer}>
+            <CriminalDecisionForm
+              decisionData={editedCriminalDecisionData}
+              onDecisionDataChange={setEditedCriminalDecisionData}
+              onSubmit={(data) => handleSaveCriminalDecision(data)}
+              onCancel={() => {
+                setShowCriminalDecisionForm(false);
+                setEditedCriminalDecisionData({});
+                setEditedCriminalDecisionId(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {showConsideredForm && (
         <ConsideredForm
           create={createConsidered}
@@ -886,21 +961,86 @@ const createMove = async (newMove) => {
           {activeTab === 4 && (
             <div>
               {criminalCase ? (
-                // Отображаем решения по уголовному делу
+                // Отображаем решения для уголовных дел
                 <div>
                   {criminalDecisions.length > 0 ? (
                     criminalDecisions.map(decision => (
-                      <div key={decision.id} className={styles.decisionItem}>
-                        <div className={styles.decisionInfo}>
-                          <strong>Решение от {decision.court_consideration_date}</strong>
-                          <div>Результат: {decision.consideration_result}</div>
-                          <div>Статус: {decision.sentence_appealed}</div>
+                      <div key={decision.id} className={styles.defendantItem}>
+                        <div className={styles.defendantInfo}>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}><strong>Решение:</strong></div>
+                            <div className={styles.infoValue} ><strong>{decision.name_case || 'Не указано'}</strong></div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Дата апелляции:</div>
+                            <div className={styles.infoValue}>{formatDate(decision.appeal_date) || 'Не указано'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Заявитель:</div>
+                            <div className={styles.infoValue}>{decision.appeal_applicant || 'Не указан'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Процессуальное положение:</div>
+                            <div className={styles.infoValue}>{decision.appeal_applicant_status || 'Не указано'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Суд:</div>
+                            <div className={styles.infoValue}>{getCourtInstanceText(decision.court_instance) || 'Не указан'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Дата направления:</div>
+                            <div className={styles.infoValue}>{formatDate(decision.court_sent_date) || 'Не указана'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Дата возвращения:</div>
+                            <div className={styles.infoValue}>{formatDate(decision.court_return_date) || 'Не указана'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Причина возвращения:</div>
+                            <div className={styles.infoValue}>{decision.court_return_reason || 'Не указана'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Дата повторного направления:</div>
+                            <div className={styles.infoValue}>{formatDate(decision.court_resend_date) || 'Не указана'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Дата рассмотрения:</div>
+                            <div className={styles.infoValue}>{formatDate(decision.court_consideration_date) || 'Не указана'}</div>
+                          </div>
+                          <div className={styles.infoRow}>
+                            <div className={styles.infoLabel}>Результат:</div>
+                            <div className={styles.infoValue}>{decision.appeal_name || 'Не указан'}</div>
+                          </div>
+                          {decision.consideration_changes && (
+                            <div className={styles.infoRow}>
+                              <div className={styles.infoLabel}>Сущность изменений:</div>
+                              <div className={styles.infoValue}>{decision.consideration_changes}</div>
+                            </div>
+                          )}
                         </div>
                         <div className={styles.verticalActionButtons}>
-                          <button onClick={() => handleEditCriminalDecision(decision.id)}>
-                            Редактировать
+                          <button 
+                            onClick={() => handleShowCriminalDecisionDetails(decision.id)}
+                            className={`${styles.verticalActionButton} ${styles.viewButton}`}
+                            title="Просмотреть подробнее"
+                          >
+                            <span className={styles.buttonIcon}>👁️</span>
+                            Просмотр
                           </button>
-                          <button onClick={() => handleDeleteCriminalDecision(decision.id)}>
+                          <button 
+                            onClick={() => handleEditCriminalDecision(decision.id)}
+                            className={`${styles.verticalActionButton} ${styles.editButton}`}
+                            title="Редактировать"
+                          >
+                            <span className={styles.buttonIcon}>✏️</span>
+                            Изменить
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteCriminalDecision(decision.id)}
+                            className={`${styles.verticalActionButton} ${styles.deleteButton}`}
+                            title="Удалить"
+                          >
+                            <span className={styles.buttonIcon}>🗑️</span>
                             Удалить
                           </button>
                         </div>
@@ -911,7 +1051,7 @@ const createMove = async (newMove) => {
                   )}
                 </div>
               ) : (
-                // Отображаем обычные решения для других категорий дел
+                // Стандартная форма решений для других категорий дел
                 considered && considered.length > 0 ? (
                   <ConsideredList
                     considered={considered}
@@ -928,40 +1068,21 @@ const createMove = async (newMove) => {
               )}
             </div>
           )}
-
-          {showCriminalDecisionForm && (
-            <div className={styles.formOverlay}>
-              <div className={styles.formContainer}>
-                <CriminalDecisionForm
-                  decisionData={editedCriminalDecisionData}
-                  onDecisionDataChange={setEditedCriminalDecisionData}
-                  onSubmit={handleSaveCriminalDecision}
-                  onCancel={() => {
-                    setShowCriminalDecisionForm(false);
-                    setEditedCriminalDecisionData({});
-                    setEditedCriminalDecisionId(null);
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           </div>
-          <CardFooter
-            activeTab={activeTab}
-            handleAddSideToState={handleAddSideToState}
-            handleAddMovementToState={handleAddMovementToState}
-            handleAddPetitionToState={handleAddPetitionToState}
-            handleAddConsideredToState={handleAddConsideredToState}
-            handleAddCriminalDecision={handleAddCriminalDecision}
-            handleRemove={handleRemove}
-            handleEditToggle={handleEditToggle}
-            handleShowDetails={handleShowDetails}
-            isEditingCard={isEditingCard}
-            cardId={card.id}
-            hasCriminalCase={!!criminalCase || isCriminalCategory}
-            card={card}
-          />
+            <CardFooter
+              activeTab={activeTab}
+              handleAddSideToState={handleAddSideToState}
+              handleAddMovementToState={handleAddMovementToState}
+              handleAddPetitionToState={handleAddPetitionToState}
+              handleAddConsideredToState={criminalCase ? handleAddCriminalDecisionToState : handleAddConsideredToState}
+              handleRemove={handleRemove}
+              handleEditToggle={handleEditToggle}
+              handleShowDetails={handleShowDetails}
+              isEditingCard={isEditingCard}
+              cardId={card.id}
+              hasCriminalCase={!!criminalCase || isCriminalCategory}
+              card={card}
+            />
         </>
       )}
     </div>

@@ -1,6 +1,6 @@
 # criminal_proceedings/models.py
 from django.db import models
-from business_card.models import BusinessCard, SidesCase
+from business_card.models import BusinessCard, SidesCase, Decisions, Appeal
 
 
 class CriminalProceedings(models.Model):
@@ -108,22 +108,16 @@ class CriminalDecision(models.Model):
     criminal_proceedings = models.ForeignKey(
         CriminalProceedings,
         on_delete=models.CASCADE,
-        related_name="decisions",
+        related_name="criminal_decisions",
         verbose_name="Уголовное производство"
     )
-    
-    # 13. Приговор (постановление)
-    sentence_appealed = models.CharField(
-        max_length=1,
-        choices=[
-            ('1', 'не обжалован'),
-            ('2', 'обжалован осужденным'),
-            ('3', 'обжалован прокурором'),
-            ('4', 'обжалован др. участниками процесса')
-        ],
+
+    name_case = models.ForeignKey(
+        Decisions,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Обжалование приговора"
+        verbose_name='Решение по поступившему делу'
     )
     
     appeal_date = models.DateField(null=True, blank=True, verbose_name="Дата поступления апелляции")
@@ -150,18 +144,9 @@ class CriminalDecision(models.Model):
     # 15. Рассмотрено
     court_consideration_date = models.DateField(null=True, blank=True, verbose_name="Дата рассмотрения во II инстанции")
     
-    consideration_result = models.CharField(
-        max_length=1,
-        choices=[
-            ('1', 'оставлен без изменения'),
-            ('2', 'отменен с возвращением на новое рассмотрение'),
-            ('3', 'изменен'),
-            ('4', 'вынесен новый приговор (апелляцией)'),
-            ('5', 'отменен с прекращением'),
-            ('6', 'отменено апелляционное постановление'),
-            ('7', 'отменено с возвращением дела прокурору'),
-            ('8', 'иные результаты рассмотрения')
-        ],
+    decision_appeal = models.ForeignKey(
+        Appeal,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         verbose_name="Результат рассмотрения во II инстанции"
@@ -231,6 +216,7 @@ class CriminalDecision(models.Model):
     class Meta:
         verbose_name = "Решение по уголовному делу"
         verbose_name_plural = "Решения по уголовным делам"
+        ordering = ['-appeal_date']
     
     def __str__(self):
-        return f"Решение по делу {self.criminal_proceedings.business_card.original_name}"
+        return f"Решение по делу {self.criminal_proceedings.business_card.original_name} - {self.get_court_instance_display()}"

@@ -14,6 +14,7 @@ import ConsideredDetail from "../pages/considered/ConsideredDetail";
 import Layout from './Layout';
 import DefendantDetail from "./CriminalCase//DefendantDetail";
 import CriminalDetail from "./CriminalCase//CriminalDetail";
+import CriminalDecisionDetail from "./CriminalCase//CriminalDecisionDetail";
 
 const AppRouter = () => {
     return (
@@ -34,6 +35,7 @@ const AppRouter = () => {
                 <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
                 <Route path="/businesscard/:cardId/defendants/:defendantId" element={<DefendantDetail />} />
                 <Route path="/businesscard/:cardId/criminal-details" element={<CriminalDetail />} />
+                <Route path="/businesscard/:cardId/criminal-decisions/:decisionId" element={<CriminalDecisionDetail />} />
             </Route>
         </Routes>
     );

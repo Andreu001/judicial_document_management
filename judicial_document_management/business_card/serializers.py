@@ -156,12 +156,10 @@ class AppealSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appeal
-        fields = ('date_appeal',
-                  'id',
-                  'filed_appeal',
+        fields = ('id',
                   'decision_appeal',
                   'notification_parties',
-                  'meeting_requirements')
+                  )
 
 
 class BusinessMovementSerializer(serializers.ModelSerializer):

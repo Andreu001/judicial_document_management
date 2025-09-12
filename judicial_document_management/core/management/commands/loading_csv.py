@@ -3,7 +3,7 @@ import csv
 from django.conf import settings
 from django.core.management import BaseCommand
 
-from business_card.models import Category, Decisions, Petitions, SidesCase
+from business_card.models import Category, Decisions, Petitions, SidesCase, Appeal
 
 
 TABLES = {
@@ -11,6 +11,7 @@ TABLES = {
     Decisions: 'decisions.csv',
     Petitions: 'petitions.csv',
     SidesCase: 'sidescase.csv',
+    Appeal: 'appeal.csv',
 }
 
 

@@ -74,7 +74,6 @@ const DefendantForm = ({ defendantData, onDefendantDataChange, onCancel, onSubmi
           </div>
         </div>
 
-        {/* Остальные поля формы остаются без изменений */}
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
             <label>Дата рождения</label>

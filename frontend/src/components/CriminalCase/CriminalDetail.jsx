@@ -63,33 +63,47 @@ const CriminalDetail = () => {
     fetchCriminalDetails();
   }, [cardId]);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+const handleInputChange = (e) => {
+  const { name, value, type, checked } = e.target;
+  setFormData(prev => ({
+    ...prev,
+    [name]: type === 'checkbox' ? checked : value
+  }));
+};
+
+const handleSave = async () => {
+  try {
+    setSaving(true);
+    
+    // Убедитесь, что отправляете только нужные данные
+    const dataToSend = { ...formData };
+    // Удалите ненужные поля, которые могут быть в форме
+    delete dataToSend.defendants;
+    delete dataToSend.criminal_decisions;
+    delete dataToSend.id;
+    
+    console.log('Saving criminal data:', dataToSend);
+    
+    const updatedData = await CriminalCaseService.update(cardId, dataToSend);
+    console.log('Update successful:', updatedData);
+    
+    setCriminalData(updatedData);
+    setFormData(updatedData);
+    setIsEditing(false);
+    setSaving(false);
+  } catch (err) {
+    console.error('Ошибка сохранения:', err);
+    console.error('Error details:', err.response?.data);
+    setError('Не удалось сохранить данные');
+    setSaving(false);
+  }
+};
 
   const handleDateChange = (name, dateString) => {
     setFormData(prev => ({
       ...prev,
       [name]: dateString || null
     }));
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      await CriminalCaseService.update(cardId, formData);
-      setCriminalData(formData);
-      setIsEditing(false);
-      setSaving(false);
-    } catch (err) {
-      console.error('Ошибка сохранения:', err);
-      setError('Не удалось сохранить данные');
-      setSaving(false);
-    }
   };
 
   const handleCancel = () => {

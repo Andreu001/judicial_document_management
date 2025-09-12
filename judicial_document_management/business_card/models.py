@@ -345,14 +345,14 @@ class ConsideredCase(models.Model):
 
 class Appeal(models.Model):
     '''10. Апелляция по делу'''
-    date_appeal = models.DateField(
-        verbose_name='дата апелляции'
-    )
     decision_appeal = models.CharField(
         blank=True,
         null=True,
         max_length=20,
-        verbose_name='в апелляции отказано/удовлетворенно'
+        verbose_name='Апелляционное решение'
+    )
+    ''' date_appeal = models.DateField(
+        verbose_name='дата апелляции'
     )
     # Уведомление сторон об апелляции
     notification_parties = models.ManyToManyField(
@@ -370,14 +370,14 @@ class Appeal(models.Model):
         on_delete=models.CASCADE,
         related_name='appeal',
         verbose_name='Карточка на дело',
-    )
+    )'''
 
     class Meta:
         verbose_name = 'Апелляция'
         verbose_name_plural = 'Апелляции'
 
     def __str__(self):
-        return self.date_appeal
+        return self.decision_appeal
 
 
 class ExecutionCase(models.Model):

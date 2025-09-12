@@ -309,3 +309,114 @@
   margin-bottom: 2px;
   line-height: 1.3;
 }
+
+/* BusinessCard.module.css */
+/* ... остальные стили ... */
+
+.infoRow {
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  flex-wrap: wrap; /* Добавляем перенос на новую строку если нужно */
+}
+
+.infoLabel {
+  font-weight: 600;
+  color: #555;
+  min-width: 180px;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+
+.infoValue {
+  color: #333;
+  flex: 1;
+  min-width: 0; /* Важно для правильного отображения длинного текста */
+}
+
+/* Убираем проблемное свойство word-break */
+.infoRow {
+  word-break: normal; /* Или вообще удаляем это свойство */
+}
+
+/* Для длинного текста лучше использовать перенос по словам */
+.infoValue {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .defendantItem {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .defendantInfo {
+    padding-right: 0;
+    width: 100%;
+  }
+  
+  .infoRow {
+    flex-direction: row; /* Оставляем в строке на мобильных */
+    gap: 5px;
+    margin-bottom: 6px;
+  }
+  
+  .infoLabel {
+    min-width: 120px; /* Уменьшаем минимальную ширину для мобильных */
+    font-size: 12px;
+    margin-right: 5px;
+  }
+  
+  .infoValue {
+    font-size: 12px;
+    flex: 1;
+  }
+  
+  .verticalActionButtons {
+    flex-direction: row;
+    justify-content: flex-end;
+    min-width: auto;
+    width: 100%;
+    gap: 6px;
+  }
+  
+  .verticalActionButton {
+    flex: 1;
+    justify-content: center;
+    padding: 6px;
+    font-size: 10px;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+  .infoRow {
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  
+  .infoLabel {
+    min-width: auto;
+    font-size: 11px;
+    margin-right: 0;
+  }
+  
+  .infoValue {
+    font-size: 11px;
+    margin-left: 0;
+  }
+  
+  .verticalActionButtons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .verticalActionButton {
+    padding: 5px;
+    font-size: 9px;
+  }
+}

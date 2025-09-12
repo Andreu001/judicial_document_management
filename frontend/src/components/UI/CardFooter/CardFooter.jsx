@@ -17,7 +17,6 @@ const CardFooter = ({
   hasCriminalCase,
   handleShowDetails,
   card,
-  handleAddCriminalDecision // Добавим этот пропс
   }) => {
   const router = useNavigate();
   
@@ -60,14 +59,8 @@ const isCriminalCase = () => {
     } else if (activeTab === 4) {
       return (
         <div className={styles.cardButtons}>
-          <MyButton className={styles.add} onClick={() => {
-            if (isCriminalCase()) {
-              handleAddCriminalDecision(); // Вызываем функцию для уголовных решений
-            } else {
-              handleAddConsideredToState(); // Стандартная функция для обычных решений
-            }
-          }}>
-            Добавить решение
+          <MyButton className={styles.add} onClick={handleAddConsideredToState}>
+            {hasCriminalCase ? 'Добавить решение по УД' : 'Добавить решение'}
           </MyButton>
         </div>
       );

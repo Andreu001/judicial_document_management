@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (SidesCase, BusinessMovement, Decisions,
-                     Petitions, BusinessCard, Category)
+                     Petitions, BusinessCard, Category, Appeal)
 
 
 @admin.register(BusinessMovement)
@@ -67,4 +67,14 @@ class CategoryAdmin(admin.ModelAdmin):
         'description',
     )
     search_fields = ('title',)
+    empty_value_display = '-пусто-'
+
+
+@admin.register(Appeal)
+class AppealAdmin(admin.ModelAdmin):
+    '''Модель апелляции'''
+    list_display = (
+        'decision_appeal',
+    )
+    search_fields = ('decision_appeal',)
     empty_value_display = '-пусто-'
