@@ -8,6 +8,7 @@ urlpatterns = [
     path('business_card/', include('business_card.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-    path('api/', include('users.urls')),  # для кастомных API endpoints
+    path('api/', include('users.urls')),
     path('criminal_proceedings/', include('criminal_proceedings.urls')),
+    path('notifications/', include('notifications.urls')),
 ]

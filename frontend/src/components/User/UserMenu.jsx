@@ -30,6 +30,15 @@ const UserMenu = ({ user }) => {
     return roles[role] || role;
   };
 
+  const getSubjectLevelName = (level) => {
+    const levels = {
+      magistrate: 'Мировой суд',
+      city_district: 'Городской/районный суд',
+      subject_level: 'Суд уровня субъекта'
+    };
+    return levels[level] || level;
+  };
+
   const handleLogout = async () => {
     await logout();
     setIsOpen(false);
@@ -61,6 +70,12 @@ const UserMenu = ({ user }) => {
                 {user.first_name} {user.last_name}
               </div>
               <div className={styles.role}>{getRoleName(user.role)}</div>
+              {/* Отображаем уровень субъекта для судей */}
+              {user.role === 'judge' && user.subject_level && (
+                <div className={styles.subjectLevel}>
+                  {getSubjectLevelName(user.subject_level)}
+                </div>
+              )}
               {user.email && <div className={styles.email}>{user.email}</div>}
             </div>
           </div>

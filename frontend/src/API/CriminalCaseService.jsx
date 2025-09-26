@@ -3,23 +3,52 @@ import baseService from './baseService';
 const BASE_URL = '/criminal_proceedings/businesscard/';
 
 class CriminalCaseService {
+  static cleanData(data) {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  }
+
   static async update(businesscardId, criminalData) {
     try {
       // Получаем существующую запись
       const existingData = await this.getByBusinessCardId(businesscardId);
       
       if (!existingData) {
-        throw new Error('Уголовное дело не найдено');
+        // Если запись не существует, создаем новую
+        console.log('Создание новой записи уголовного дела');
+        return await this.create(businesscardId, criminalData);
       }
 
-      // Отправляем только измененные данные
+      // Проверяем, что ID существует
+      if (!existingData.id) {
+        throw new Error('ID уголовного дела не найден в существующих данных');
+      }
+
+      console.log('Обновление существующей записи с ID:', existingData.id);
+      
+      // Очищаем данные от null значений
+      const cleanedData = this.cleanData(criminalData);
+      
+      // Отправляем PATCH запрос
       const response = await baseService.patch(
         `/criminal_proceedings/businesscard/${businesscardId}/criminal/${existingData.id}/`,
-        criminalData
+        cleanedData
       );
       return response.data;
     } catch (error) {
       console.error('Error updating criminal case:', error);
+      
+      // Добавляем более детальную информацию об ошибке
+      if (error.response) {
+        console.error('Server response:', error.response.data);
+        console.error('Status:', error.response.status);
+      }
+      
       throw error;
     }
   }
@@ -80,10 +109,19 @@ class CriminalCaseService {
   static async getByBusinessCardId(businesscardId) {
     try {
       const response = await baseService.get(`/criminal_proceedings/businesscard/${businesscardId}/criminal/`);
-      return response.data;
+      console.log('Ответ от сервера:', response.data);
+      
+      // Сервер возвращает массив, берем первый элемент
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        return response.data[0]; // Возвращаем первый объект из массива
+      }
+      
+      // Если массив пустой или null, возвращаем null
+      console.log('Уголовное дело не найдено, возвращаем null');
+      return null;
     } catch (error) {
       if (error.response?.status === 404) {
-        console.log('Full error:', error);
+        console.log('Уголовное дело не найдено (404), возвращаем null');
         return null;
       }
       console.error('Error fetching criminal case:', error);

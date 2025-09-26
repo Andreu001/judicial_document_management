@@ -1,77 +1,81 @@
 .container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px 20px 20px 260px;
-  background-color: #f8f9fa;
   min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem 0 0 15rem; /* Отступ от хедера и навбара */
+  margin: 0;
+  width: calc(100% - 6.4rem);
   box-sizing: border-box;
 }
 
 .header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 20px;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0 2rem;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border-bottom: 2px solid #dee2e6;
+  padding: 1rem 2rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .backButton {
   background: #6c757d;
-  border: none;
   color: white;
-  padding: 10px 20px;
-  border-radius: 6px;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-  min-width: 120px;
+  font-size: 0.85rem;
 }
 
 .backButton:hover {
-  background-color: #5a6268;
+  background: #5a6268;
 }
 
 .title {
-  color: #2c3e50;
-  margin: 0;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 600;
-  text-align: center;
-  flex: 1;
+  color: #333;
+  margin: 0;
+}
+
+.headerRight {
+  display: flex;
+  gap: 1rem;
+}
+
+.editButton, .saveButton, .cancelButton {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .editButton {
-  background: #28a745;
+  background: #007bff;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  min-width: 120px;
 }
 
 .editButton:hover {
-  background: #218838;
-}
-
-.editActions {
-  display: flex;
-  gap: 10px;
+  background: #0056b3;
 }
 
 .saveButton {
-  background: #007bff;
+  background: #28a745;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  min-width: 120px;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #1e7e34;
 }
 
 .saveButton:disabled {
@@ -82,86 +86,113 @@
 .cancelButton {
   background: #dc3545;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  min-width: 120px;
 }
 
-/* Горизонтальный layout для контента */
-.content {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
+.cancelButton:hover {
+  background: #c82333;
 }
 
-/* Левая колонка - основные разделы */
-.mainSections {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Правая колонка - обвиняемые и особые отметки */
-.sideSections {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 300px;
-}
-
-.section {
+.tabsContainer {
   background: white;
-  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 0 2rem 2rem 0;
+  overflow: hidden;
 }
 
-.sectionTitle {
-  color: #495057;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #007bff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 1rem;
+  flex-wrap: wrap;
 }
 
-/* Горизонтальная сетка для полей */
-.grid {
+.tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: #007bff;
+  background: #e9ecef;
+}
+
+.activeTab {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: white;
+}
+
+.tabContentWrapper {
+  padding: 1.5rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.tabContent {
+  min-height: 400px;
+}
+
+.tabGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.fieldGroup {
+  background: #f8f9fa;
+  padding: 1.25rem;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.subsectionTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #007bff;
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border-left: 3px solid #007bff;
+  margin-bottom: 0.75rem;
 }
 
 .field label {
-  font-weight: 600;
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.field span {
+  display: block;
+  font-size: 0.85rem;
   color: #495057;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 0.375rem 0.75rem;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  min-height: 1.5rem;
 }
 
 .input, .select, .textarea {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
   border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 14px;
-  background: white;
+  font-size: 0.85rem;
+  box-sizing: border-box;
 }
 
 .input:focus, .select:focus, .textarea:focus {
@@ -172,15 +203,115 @@
 
 .textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
 }
 
-/* Стили для списка обвиняемых */
+.defendantsSection {
+  padding: 1rem;
+}
+
+.defendantsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.defendantCard {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.defendantCard h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.defendantInfo p {
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.defendantInfo strong {
+  color: #495057;
+}
+
+.noData {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 2rem;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.loading {
+  color: #007bff;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0 0 3.2rem;
+    width: calc(100% - 3.2rem);
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tabGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabContentWrapper {
+    padding: 1rem;
+  }
+}
+
+/* Новая структура с sidebar */
+.content {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex: 2;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 300px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
 .defendantsList {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 400px;
+  max-height: 600px;
   overflow-y: auto;
 }
 
@@ -203,91 +334,115 @@
   color: #6c757d;
 }
 
-/* Особые отметки - занимают всю ширину правой колонки */
-.specialNotes {
-  composes: section;
-}
-
-.specialNotes .field {
-  grid-column: 1 / -1;
-}
-
-.loading, .error {
-  text-align: center;
-  padding: 40px;
+.sectionTitle {
+  color: #495057;
   font-size: 16px;
-  background: white;
-  border-radius: 8px;
-  margin: 20px 0;
-}
-
-.error {
-  color: #dc3545;
-  border: 1px solid #f5c6cb;
-  background-color: #f8d7da;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #007bff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Адаптивность */
 @media (max-width: 1200px) {
-  .container {
-    padding: 15px 15px 15px 245px;
-  }
-  
   .content {
     flex-direction: column;
   }
   
-  .mainSections, .sideSections {
-    flex: none;
+  .sidebar {
     width: 100%;
+    min-width: auto;
+  }
+}
+
+.checkpointsButton {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-right: 1rem;
+}
+
+.checkpointsButton:hover {
+  background: #138496;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .headerRight {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .checkpointsButton {
+    margin-right: 0;
+    order: -1;
+  }
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    min-width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .section {
+    flex: 1;
+    min-width: 300px;
   }
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 15px;
-    margin-left: 0;
-  }
-  
-  .header {
+  .sidebar {
     flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-  
-  .editActions {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .saveButton, .cancelButton, .editButton, .backButton {
-    width: 100%;
-  }
-  
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .title {
-    font-size: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 10px;
   }
   
   .section {
-    padding: 15px;
+    min-width: auto;
   }
-  
-  .field {
-    padding: 10px;
-  }
-  
-  .input, .select, .textarea {
-    padding: 6px 10px;
-    font-size: 13px;
-  }
+}
+
+/* Добавить в CriminalDetail.module.css */
+.generateRulingButton {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.generateRulingButton:hover {
+  background: #138496;
 }

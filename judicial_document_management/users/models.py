@@ -10,10 +10,17 @@ class User(AbstractUser):
         ('citizen', 'Гражданин'),
     )
     
+    SUBJECT_LEVELS = (
+        ('magistrate', 'Мировой суд'),
+        ('city_district', 'Городской/районный суд'),
+        ('subject_level', 'Суд уровня субъекта'),
+    )
+    
     role = models.CharField(max_length=20, choices=USER_ROLES, default='citizen')
     phone = models.CharField(max_length=15, blank=True)
     court = models.CharField(max_length=100, blank=True)
     bar_association = models.CharField(max_length=100, blank=True)
+    subject_level = models.CharField(max_length=20, choices=SUBJECT_LEVELS, blank=True, verbose_name='Уровень субъекта')
     
     class Meta:
         verbose_name = 'Пользователь'

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import MyInput from './UI/input/MyInput';
 import MySelect from './UI/select/MySelect';
 import LoginForm from './Auth/LoginForm';
 import UserMenu from './User/UserMenu';
+import NotificationBell from './Notifications/NotificationsBell';
 import styles from './UI/Header/Header.module.css';
 
 const Header = ({ filter, setFilter, onSearch }) => {
@@ -62,7 +62,8 @@ const Header = ({ filter, setFilter, onSearch }) => {
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.notificationButton}>🔔</button>
+          {/* Заменяем кнопку уведомлений на компонент колокольчика */}
+          <NotificationBell />
           <div className={styles.divider}></div>
           
           {isAuthenticated() && user ? (

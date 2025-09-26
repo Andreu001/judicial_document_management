@@ -1,22 +1,28 @@
 .container {
-  padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
-  margin-left: 6.3cm;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
   box-sizing: border-box;
-  width: calc(100% - 6.3cm);
 }
 
 .header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   padding: 20px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   border-bottom: 2px solid #dee2e6;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .backButton {
@@ -44,6 +50,11 @@
   flex: 1;
 }
 
+.headerRight {
+  display: flex;
+  gap: 1rem;
+}
+
 .editButton {
   background: #28a745;
   color: white;
@@ -59,7 +70,7 @@
   background: #218838;
 }
 
-.editActions {
+.editButtons {
   display: flex;
   gap: 10px;
 }
@@ -89,6 +100,7 @@
   min-width: 120px;
 }
 
+/* Новая структура с sidebar */
 .content {
   display: flex;
   gap: 20px;
@@ -97,198 +109,250 @@
 
 .mainContent {
   flex: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
 .sidebar {
   flex: 1;
+  min-width: 300px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+.tabsContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 0 2rem 2rem 0;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 1rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: #495057;
+  background: #e9ecef;
+}
+
+.activeTab {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: white;
+}
+
+.tabContentWrapper {
+  padding: 0;
+}
+
+.tabContent {
+  padding: 0;
+}
+
+.tabGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.fieldGroup {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.fieldGroup:last-child {
+  border-bottom: none;
+}
+
+.subsectionTitle {
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #007bff;
+}
+
+.field {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  min-width: 300px;
+  margin-bottom: 1rem;
 }
 
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.field label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: #495057;
+  font-size: 0.9rem;
 }
 
+.field span {
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  color: #495057;
+}
+
+.input,
+.select,
+.textarea {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Стили для sidebar */
 .section {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
 }
 
 .sectionTitle {
-  margin-bottom: 15px;
-  color: #333;
+  color: #2c3e50;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
   border-bottom: 2px solid #007bff;
-  padding-bottom: 5px;
-}
-
-.infoGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.infoItem {
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  border-left: 3px solid #007bff;
-}
-
-.label {
-  font-weight: 600;
-  color: #555;
-  margin-bottom: 5px;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
-.value {
-  color: #333;
-  font-size: 14px;
-}
-
-.sideSection {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.sideTitle {
-  color: #495057;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #28a745;
-  text-transform: uppercase;
 }
 
 .defendantsList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
+  gap: 1rem;
 }
 
 .defendantItem {
-  padding: 15px;
   background: #f8f9fa;
+  padding: 1rem;
   border-radius: 6px;
-  border-left: 4px solid #28a745;
+  border-left: 4px solid #007bff;
 }
 
 .defendantItem h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 0.5rem 0;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 0.9rem;
 }
 
 .defendantItem p {
-  margin: 4px 0;
-  font-size: 13px;
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
   color: #6c757d;
 }
 
-.noDefendants {
+/* Состояния загрузки и ошибок */
+.loading {
   text-align: center;
+  padding: 2rem;
   color: #6c757d;
-  font-style: italic;
-}
-
-.editForm {
-  margin: 20px 0;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.loading, .error {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
 }
 
 .error {
   color: #dc3545;
+  text-align: center;
+  padding: 2rem;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  margin: 1rem 0;
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 1024px) {
+/* Адаптивность */
+@media (max-width: 1200px) {
   .container {
-    margin-left: 5cm;
-    width: calc(100% - 5cm);
+    padding-left: 20px;
   }
-}
-
-@media (max-width: 900px) {
-  .container {
-    margin-left: 0;
+  
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
     width: 100%;
-    padding: 15px;
+    min-width: auto;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
   }
 }
 
 @media (max-width: 768px) {
-  .container {
-    margin-top: 60px;
-    padding: 15px;
-  }
-  
   .header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    gap: 1rem;
+    text-align: center;
   }
   
-  .backButton {
-    align-self: flex-start;
+  .headerLeft {
+    flex-direction: column;
+    gap: 0.5rem;
   }
   
-  .infoGrid {
-    grid-template-columns: 1fr;
+  .headerRight {
+    justify-content: center;
   }
   
-  .title {
-    font-size: 18px;
-  }
-  
-  .actionButtons {
+  .tabs {
     flex-direction: column;
   }
   
-  .editButton,
-  .closeButton {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 10px;
-    margin-top: 50px;
+  .tab {
+    border-bottom: 1px solid #dee2e6;
+    border-left: 2px solid transparent;
   }
   
-  .card {
-    padding: 15px;
-  }
-  
-  .sectionTitle {
-    font-size: 14px;
-  }
-  
-  .value {
-    font-size: 13px;
+  .activeTab {
+    border-left-color: #007bff;
+    border-bottom-color: #dee2e6;
   }
 }

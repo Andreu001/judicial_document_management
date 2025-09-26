@@ -6,16 +6,46 @@ import baseService from '../../API/baseService';
 const DefendantForm = ({ defendantData, onDefendantDataChange, onCancel, onSubmit }) => {
   const [sidesCaseList, setSidesCaseList] = useState([]);
   const [selectedSideCase, setSelectedSideCase] = useState(defendantData.side_case || '');
+  const [defendantOptions, setDefendantOptions] = useState({
+    sex: [],
+    restraint_measure: []
+  });
 
   useEffect(() => {
     // Загружаем список сторон по делу
-    baseService
-      .get('http://localhost:8000/business_card/sides/')
+    baseService.get('http://localhost:8000/business_card/sides/')
       .then((response) => {
         setSidesCaseList(response.data);
       })
       .catch((error) => {
         console.error('Error fetching sides list:', error);
+      });
+
+    // Загружаем опции для полей defendant из бэкенда
+    baseService.get('http://localhost:8000/criminal_proceedings/defendant-options/')
+      .then((response) => {
+        setDefendantOptions(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching defendant options:', error);
+        // Значения по умолчанию на основе models.py
+        setDefendantOptions({
+          sex: [
+            { value: '1', label: 'мужской' },
+            { value: '2', label: 'женский' }
+          ],
+          restraint_measure: [
+            { value: '0', label: 'не избиралась' },
+            { value: '1', label: 'подписка о невыезде' },
+            { value: '2', label: 'личное поручительство' },
+            { value: '3', label: 'наблюдение командования воинской части' },
+            { value: '4', label: 'присмотр за несовершеннолетним подозреваемым (обвиняемым)' },
+            { value: '5', label: 'залог' },
+            { value: '6', label: 'домашний арест' },
+            { value: '7', label: 'заключение под стражу' },
+            { value: '8', label: 'запрет определенных действий' }
+          ]
+        });
       });
   }, []);
 
@@ -94,8 +124,11 @@ const DefendantForm = ({ defendantData, onDefendantDataChange, onCancel, onSubmi
               className={styles.select}
             >
               <option value="">Выберите пол</option>
-              <option value="male">Мужской</option>
-              <option value="female">Женский</option>
+              {defendantOptions.sex.map((option, index) => (
+                <option key={index} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -124,16 +157,46 @@ const DefendantForm = ({ defendantData, onDefendantDataChange, onCancel, onSubmi
           </div>
         </div>
 
+        <div className={styles.formGroup}>
+          <label>Статья *</label>
+          <MyInput
+            type="number"
+            name="article"
+            value={defendantData.article || ''}
+            onChange={handleChange}
+            placeholder="Статья УК РФ"
+            required
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label>Максимальное наказание по статье *</label>
+          <MyInput
+            type="number"
+            name="maximum_penalty_article"
+            value={defendantData.maximum_penalty_article || ''}
+            onChange={handleChange}
+            placeholder="Максимальное наказание по статье"
+            required
+          />
+        </div>
+
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
             <label>Мера пресечения</label>
-            <MyInput
-              type="text"
-              name="restraint_measure"
-              value={defendantData.restraint_measure || ''}
+            <select 
+              name="restraint_measure" 
+              value={defendantData.restraint_measure || ''} 
               onChange={handleChange}
-              placeholder="Мера пресечения"
-            />
+              className={styles.select}
+            >
+              <option value="">Выберите меру пресечения</option>
+              {defendantOptions.restraint_measure.map((option, index) => (
+                <option key={index} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className={styles.formGroup}>

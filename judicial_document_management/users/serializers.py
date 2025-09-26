@@ -8,11 +8,11 @@ class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
         fields = ('id', 'username', 'email', 'password', 
-                 'first_name', 'last_name', 'role', 'phone')
+                 'first_name', 'last_name', 'role', 'phone', 'subject_level')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 
-                 'last_name', 'role', 'phone', 'court', 'bar_association')
+                 'last_name', 'role', 'phone', 'court', 'bar_association', 'subject_level')
         read_only_fields = ('username', 'email')

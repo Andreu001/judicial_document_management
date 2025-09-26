@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'users', # 'users.apps.UsersConfig',
     'corsheaders',
     'djoser',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -201,3 +202,16 @@ DJOSER = {
 }
 
 REST_AUTH_TOKEN_MODEL = 'rest_framework.authtoken.models.Token'
+
+NOTIFICATIONS_TARGETS = [
+    {
+        "app_label": "criminal_proceedings",
+        "model": "CriminalProceedings",
+        "human_name": "Уголовное судопроизводство",
+        # поля даты которые надо отслеживать (заполни по реальным названиям в твоих моделях)
+        "date_fields": ["hearing_date", "decision_date", "copy_sent_date"],
+        # можно задать глобальные фильтры для queryset (опционально)
+        "filters": {},
+    },
+    # Добавь civil/admin/... по аналогии
+]

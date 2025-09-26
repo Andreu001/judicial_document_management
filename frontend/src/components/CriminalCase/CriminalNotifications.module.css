@@ -1,0 +1,220 @@
+/* CriminalCase/CriminalNotifications.module.css */
+.notificationsPanel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.panelTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+.statsSection {
+  margin-bottom: 1.5rem;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.statLabel {
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.statValue {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.stagesSection {
+  margin-bottom: 1.5rem;
+}
+
+.stagesSection h4 {
+  margin: 0 0 1rem 0;
+  color: #34495e;
+  font-size: 1rem;
+}
+
+.stageItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.stageIndicator {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.stageCircle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border: 2px solid #bdc3c7;
+}
+
+.stageCircle.completed {
+  background: #27ae60;
+  color: white;
+  border-color: #27ae60;
+}
+
+.stageCircle.current {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.stageCircle.pending {
+  background: white;
+  color: #7f8c8d;
+}
+
+.stageLine {
+  width: 20px;
+  height: 2px;
+  background: #bdc3c7;
+  margin: 0 5px;
+}
+
+.stageLine.completed {
+  background: #27ae60;
+}
+
+.stageName {
+  font-size: 0.9rem;
+}
+
+.stageName.completed {
+  color: #7f8c8d;
+  text-decoration: line-through;
+}
+
+.stageName.current {
+  color: #3498db;
+  font-weight: 600;
+}
+
+.stageName.pending {
+  color: #bdc3c7;
+}
+
+.jurisdictionSection {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.jurisdictionButton {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.jurisdictionButton:hover {
+  background: #c0392b;
+}
+
+.caseNotifications h4 {
+  margin: 0 0 1rem 0;
+  color: #34495e;
+  font-size: 1rem;
+}
+
+.caseNotification {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid #3498db;
+}
+
+.caseNotification:last-child {
+  margin-bottom: 0;
+}
+
+.notificationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.notificationTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.markReadButton {
+  background: none;
+  border: none;
+  color: #7f8c8d;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+}
+
+.markReadButton:hover {
+  color: #e74c3c;
+}
+
+.notificationMessage {
+  font-size: 0.85rem;
+  color: #5a6c7d;
+  line-height: 1.4;
+}
+
+.noNotifications {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 2rem;
+}
+
+/* Добавить в конец файла */
+.violation {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.generateRulingButton {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.generateRulingButton:hover {
+  background: #138496;
+}
