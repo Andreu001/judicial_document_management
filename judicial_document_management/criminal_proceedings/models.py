@@ -578,3 +578,20 @@ class CriminalDecision(models.Model):
     
     def __str__(self):
         return f"Решение по делу {self.criminal_proceedings.business_card.original_name} - {self.get_court_instance_display()}"
+
+
+@property
+def registered_case_number(self):
+    if hasattr(self, 'registered_case'):
+        return self.registered_case.full_number
+    return None
+
+def get_registered_case_info(self):
+    if hasattr(self, 'registered_case'):
+        case = self.registered_case
+        return {
+            'full_number': case.full_number,
+            'registration_date': case.registration_date,
+            'status': case.get_status_display()
+        }
+    return None

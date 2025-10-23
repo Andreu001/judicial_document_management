@@ -40,7 +40,7 @@ const isCriminalCase = () => {
       return (
         <div className={styles.cardButtons}>
           <MyButton className={styles.add} onClick={handleAddSideToState}>
-            {isCriminalCase() ? 'Добавить обвиняемого' : 'Добавить сторону'}
+            {isCriminalCase() ? 'Добавить стороны' : 'Добавить сторону'}
           </MyButton>
         </div>
       );

@@ -3,6 +3,7 @@ import MyInput from './UI/input/MyInput';
 import MyButton from './UI/button/MyButton';
 import CardService from '../API/CardService';
 import CriminalCaseService from '../API/CriminalCaseService';
+import CaseRegistryService from '../API/CaseRegistryService'; // Новый сервис
 import CriminalCaseForm from './CriminalCase/CriminalCaseForm';
 import styles from './UI/input/Input.module.css';
 import { useProtectedFetching } from '../hooks/useProtectedFetching';
@@ -17,13 +18,21 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     case_category: '',
     pub_date: '',
     preliminary_hearing: '',
+    registry_index: '', // Новое поле для индекса
   });
   
   const [criminalData, setCriminalData] = useState({});
   const [categoryList, setCategoryList] = useState([]);
+  const [registryIndexes, setRegistryIndexes] = useState([]); // Список индексов
+  const [nextNumber, setNextNumber] = useState(''); // Следующий номер
+  const [selectedIndex, setSelectedIndex] = useState(''); // Выбранный индекс
+  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
+  
   const { isAuthenticated, user } = useAuth();
   const [fetchCategories, isCategoriesLoading, categoriesError] = useProtectedFetching();
+  const currentYear = new Date().getFullYear();
 
+  // Определяем, является ли категория уголовной
   const isCriminalCategory = () => {
     const selectedCategory = categoryList.find(cat => 
       cat.id === parseInt(card.case_category)
@@ -34,6 +43,7 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   useEffect(() => {
     if (isAuthenticated()) {
       loadCategories();
+      loadRegistryIndexes();
     }
 
     if (editCardData) {
@@ -42,6 +52,7 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     }
   }, [editCardData, isAuthenticated]);
 
+  // Загрузка категорий
   const loadCategories = async () => {
     try {
       await fetchCategories(async () => {
@@ -50,6 +61,114 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
       });
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  // Загрузка индексов регистрации
+  const loadRegistryIndexes = async () => {
+    try {
+      const indexes = await CaseRegistryService.getIndexes();
+      setRegistryIndexes(indexes);
+    } catch (error) {
+      console.error('Ошибка загрузки индексов:', error);
+    }
+  };
+
+  // Получение следующего номера для выбранного индекса
+  const getNextNumber = async (indexCode) => {
+    try {
+      setIsGeneratingNumber(true);
+      const nextNum = await CaseRegistryService.getNextNumber(indexCode);
+      setNextNumber(nextNum);
+      return nextNum;
+    } catch (error) {
+      console.error('Ошибка получения номера:', error);
+      return null;
+    } finally {
+      setIsGeneratingNumber(false);
+    }
+  };
+
+  // Обработчик изменения категории
+  const handleCategoryChange = async (e) => {
+    const categoryId = e.target.value;
+    setCard({ ...card, case_category: categoryId });
+    
+    // Автоматически выбираем индекс на основе категории
+    const selectedCategory = categoryList.find(cat => cat.id === parseInt(categoryId));
+    if (selectedCategory) {
+      await autoSelectIndex(selectedCategory);
+    }
+  };
+
+  // Автоматический выбор индекса на основе категории
+  const autoSelectIndex = async (category) => {
+    let indexCode = '';
+    
+    // Сопоставление категорий с индексами
+    if (category.title_category.toLowerCase().includes('уголов')) {
+      indexCode = '1'; // Основной индекс для уголовных дел
+    } else if (category.title_category.toLowerCase().includes('граждан')) {
+      indexCode = '2'; // Основной индекс для гражданских дел
+    } else if (category.title_category.toLowerCase().includes('административ')) {
+      indexCode = '2а'; // Индекс для административных дел
+    } else if (category.title_category.toLowerCase().includes('административных правонарушен')) {
+      indexCode = '5'; // Индекс для дел об административных правонарушениях
+    } else {
+      indexCode = '15'; // Иные материалы по умолчанию
+    }
+
+    const selectedIndex = registryIndexes.find(index => index.index === indexCode);
+    if (selectedIndex) {
+      setSelectedIndex(selectedIndex);
+      setCard(prev => ({ ...prev, registry_index: indexCode }));
+      
+      // Получаем следующий номер
+      const nextNum = await getNextNumber(indexCode);
+      if (nextNum) {
+        setCard(prev => ({ 
+          ...prev, 
+          original_name: `${indexCode}-${nextNum}/${currentYear}` 
+        }));
+      }
+    }
+  };
+
+  // Обработчик ручного выбора индекса
+  const handleIndexChange = async (e) => {
+    const indexCode = e.target.value;
+    const selectedIndex = registryIndexes.find(index => index.index === indexCode);
+    
+    if (selectedIndex) {
+      setSelectedIndex(selectedIndex);
+      setCard(prev => ({ ...prev, registry_index: indexCode }));
+      
+      // Получаем следующий номер
+      const nextNum = await getNextNumber(indexCode);
+      if (nextNum) {
+        setCard(prev => ({ 
+          ...prev, 
+          original_name: `${indexCode}-${nextNum}/${currentYear}`
+        }));
+      }
+    }
+  };
+
+  // Обработчик изменения номера дела (ручной ввод)
+  const handleOriginalNameChange = (e) => {
+    setCard({ ...card, original_name: e.target.value });
+  };
+
+  // Кнопка для генерации номера
+  const handleGenerateNumber = async () => {
+    if (selectedIndex) {
+      const nextNum = await getNextNumber(selectedIndex.index);
+      if (nextNum) {
+        setCard(prev => ({ 
+          ...prev, 
+          original_name: `${selectedIndex.index}-${nextNum}/${currentYear}` 
+        }));
+      }
     }
   };
 
@@ -83,6 +202,12 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   const handleCreateCard = async (e) => {
     e.preventDefault();
 
+    // Проверяем, что номер сгенерирован
+    if (!card.original_name) {
+      alert('Пожалуйста, сгенерируйте номер дела');
+      return;
+    }
+
     // Если уголовная категория и еще не показана форма уголовного производства
     if (isCriminalCategory() && !showCriminalForm) {
       setShowCriminalForm(true);
@@ -101,9 +226,34 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
         case_category: card.case_category,
         pub_date: card.pub_date || null,
         preliminary_hearing: card.preliminary_hearing || null,
+        registry_index: card.registry_index, // Сохраняем индекс
       };
 
+      // Регистрируем дело в реестре
+      let registeredCase = null;
+      if (card.registry_index) {
+        try {
+          registeredCase = await CaseRegistryService.registerCase({
+            index: card.registry_index,
+            description: `Дело ${card.original_name}`,
+          });
+        } catch (registryError) {
+          console.error('Ошибка регистрации дела:', registryError);
+        }
+      }
+
       const response = await CardService.create(cardData);
+
+      // Если есть зарегистрированное дело, обновляем его с ID карточки
+      if (registeredCase && response.id) {
+        try {
+          await CaseRegistryService.updateCase(registeredCase.id, {
+            business_card_id: response.id
+          });
+        } catch (updateError) {
+          console.error('Ошибка обновления зарегистрированного дела:', updateError);
+        }
+      }
 
       if (isCriminalCategory() && response.id) {
         try {
@@ -115,15 +265,19 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
 
       create(response);
       
+      // Сброс формы
       setCard({
         original_name: '',
         case_category: '',
         pub_date: '',
         preliminary_hearing: '',
+        registry_index: '',
       });
       
       setCriminalData({});
       setShowCriminalForm(false);
+      setSelectedIndex('');
+      setNextNumber('');
 
     } catch (error) {
       console.error('Ошибка создания карточки:', error.response?.data || error);
@@ -142,6 +296,39 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   return (
     <div className={styles.formContainer}>
       <form>
+        {/* Блок выбора индекса и генерации номера */}
+        <div className={styles.formRow}>
+          <div className={styles.formGroup}>
+            <label>Индекс дела *</label>
+            <select 
+              name="registry_index" 
+              value={card.registry_index} 
+              onChange={handleIndexChange}
+              required
+              className={styles.select}
+            >
+              <option value="">Выберите индекс</option>
+              {registryIndexes.map((index) => (
+                <option key={index.id} value={index.index}>
+                  {index.index} - {index.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Следующий номер</label>
+            <div className={styles.numberGeneration}>
+              <MyInput
+                type="text"
+                value={nextNumber || 'Не выбран индекс'}
+                disabled
+                className={styles.numberInput}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
             <label>Номер дела *</label>
@@ -149,10 +336,14 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
               type="text"
               name="original_name"
               value={card.original_name}
-              onChange={handleChange}
-              placeholder="Номер дела"
+              onChange={handleOriginalNameChange}
+              placeholder="Номер дела (сгенерируется автоматически)"
               required
+              readOnly={!!nextNumber} // Делаем поле только для чтения после генерации
             />
+            <small className={styles.helpText}>
+              {selectedIndex ? `Формат: ${selectedIndex.index}/номер` : 'Сначала выберите индекс'}
+            </small>
           </div>
 
           <div className={styles.formGroup}>
@@ -160,13 +351,13 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
             <select 
               name="case_category" 
               value={card.case_category} 
-              onChange={handleChange}
+              onChange={handleCategoryChange}
               required
               className={styles.select}
             >
               <option value="">Выберите категорию</option>
-              {categoryList.map((category, index) => (
-                <option key={index} value={category.id}>
+              {categoryList.map((category) => (
+                <option key={category.id} value={category.id}>
                   {category.title_category}
                 </option>
               ))}
@@ -184,7 +375,6 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
               placeholder="Автор"
             />
           </div>
-
         </div>
 
         <div className={styles.formRow}>
@@ -199,7 +389,7 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
           </div>
         </div>
 
-        {/* Форма уголовного производства в отдельном прокручиваемом контейнере */}
+        {/* Форма уголовного производства */}
         {showCriminalForm && (
           <div className={styles.criminalFormContainer}>
             <CriminalCaseForm

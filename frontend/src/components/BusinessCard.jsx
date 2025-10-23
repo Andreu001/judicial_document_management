@@ -29,6 +29,7 @@ import DefendantForm from './CriminalCase/DefendantForm';
 import baseService from '../API/baseService';
 import CriminalDecisionForm from './CriminalCase/CriminalDecisionForm';
 import CriminalDecisionDetail from './CriminalCase/CriminalDecisionDetail';
+import CaseRegistryService from '../API/CaseRegistryService';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -81,6 +82,7 @@ const BusinessCard = (props) => {
   const [isEditingCriminalDecision, setIsEditingCriminalDecision] = useState(false);
   const [editedCriminalDecisionData, setEditedCriminalDecisionData] = useState({});
   const [editedCriminalDecisionId, setEditedCriminalDecisionId] = useState(null);
+  const [registeredCase, setRegisteredCase] = useState(null);
 
   const handleAddCriminalDecisionToState = () => {
     console.log("Adding criminal decision to state");
@@ -107,6 +109,25 @@ const BusinessCard = (props) => {
       default: return 'Не указано';
     }
   };
+
+  useEffect(() => {
+    const loadRegisteredCase = async () => {
+      try {
+        const cases = await CaseRegistryService.getCases({
+          business_card: cardId
+        });
+        if (cases.length > 0) {
+          setRegisteredCase(cases[0]);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки зарегистрированного дела:', error);
+      }
+    };
+
+    if (cardId) {
+      loadRegisteredCase();
+    }
+  }, [cardId]);
   
   useEffect(() => {
     const loadCriminalDecisions = async () => {
@@ -857,14 +878,19 @@ const createMove = async (newMove) => {
         <CardHeader card={props.card} />
           <div className={styles.cardContent}>
             <CardNavbar onTabChange={handleTabChange} />
-            {activeTab === 0 && (
-              <div>
-                <strong>АЙДИ карточки: {props.card.id}</strong>
-                <div>Автор: {authorName || 'Не указан'}</div>
-                <div>Дата создания: {formatDateTime(props.card.pub_date)}</div>
-                <div>Дата редактирования: {formatDateTime(props.card.updated_at)}</div>
-              </div>
-            )}
+              {activeTab === 0 && (
+                <div>
+                  <strong>АЙДИ карточки: {props.card.id}</strong>
+                  {registeredCase && (
+                    <div>
+                      <strong>Зарегистрированный номер: {registeredCase.full_number}</strong>
+                    </div>
+                  )}
+                  <div>Автор: {authorName || 'Не указан'}</div>
+                  <div>Дата создания: {formatDateTime(props.card.pub_date)}</div>
+                  <div>Дата редактирования: {formatDateTime(props.card.updated_at)}</div>
+                </div>
+              )}
 
             {activeTab === 1 && (
               <div>

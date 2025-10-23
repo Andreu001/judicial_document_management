@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'djoser',
     'notifications',
+    'case_registry',
 ]
 
 MIDDLEWARE = [
