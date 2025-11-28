@@ -61,6 +61,7 @@ python manage.py runserver
 - установить npm install axios
 - установить npm install bootstrap
 - установить npm install react-transition-group
+- установить npm install react-draft-wysiwyg draft-js
 
 ```sh
 npm start
