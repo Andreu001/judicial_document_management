@@ -1,6 +1,6 @@
 # criminal_proceedings/serializers.py
 from rest_framework import serializers
-from .models import CriminalProceedings, Defendant, CriminalDecision
+from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling
 
 class DefendantSerializer(serializers.ModelSerializer):
     class Meta:
@@ -84,3 +84,10 @@ class CriminalDecisionOptionsSerializer(serializers.Serializer):
                 ]
         
         return choices_data
+
+
+class CriminalRulingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CriminalRuling
+        fields = "__all__"
+        read_only_fields = ("criminal_proceedings", "created_at", "updated_at")

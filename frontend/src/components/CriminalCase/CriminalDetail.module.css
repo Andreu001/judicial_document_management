@@ -446,3 +446,148 @@
 .generateRulingButton:hover {
   background: #138496;
 }
+
+/* Добавьте эти стили в конец файла CriminalDetail.module.css */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.modalContent h3 {
+  margin-top: 0;
+  color: #333;
+  text-align: center;
+}
+
+.rulingOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.rulingButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.rulingButton:hover {
+  background: #0056b3;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.rulingSection {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.rulingWarning {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.generateRulingButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.generateRulingButton:disabled:hover {
+  background: #6c757d;
+}
+
+.modalContentLarge {
+  background: white;
+  border-radius: 8px;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 95vh;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalContentLarge > div {
+  flex: 1;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .modalContentLarge {
+    width: 98%;
+    max-width: none;
+    height: 95vh;
+    margin: 10px;
+  }
+  
+  .modalOverlay {
+    padding: 10px;
+    align-items: flex-start;
+  }
+}
+
+/* Убедимся, что контейнер редактора занимает всю доступную высоту */
+.modalContentLarge .container {
+  max-height: calc(95vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalContentLarge .editorContainer {
+  flex: 1;
+  min-height: 300px;
+  max-height: calc(95vh - 200px);
+  overflow: auto;
+}
+
+/* Улучшим отображение редактора внутри модального окна */
+.modalContentLarge .rdw-editor-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalContentLarge .rdw-editor-main {
+  flex: 1;
+  min-height: 300px;
+  max-height: calc(95vh - 300px);
+  overflow-y: auto;
+}

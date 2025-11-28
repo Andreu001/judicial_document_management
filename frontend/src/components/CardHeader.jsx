@@ -20,7 +20,6 @@ const CardHeader = ({ card }) => {
         <h5 className={styles.categoryTitle}>{card.case_category_title}</h5>
         <div className={styles.caseInfo}>
           <p className={styles.caseNumber}>№ {card.original_name}</p>
-          <p className={styles.caseArticle}>Ст. {card.article}</p>
         </div>
       </div>
     </div>

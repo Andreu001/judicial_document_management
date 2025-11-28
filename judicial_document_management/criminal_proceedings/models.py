@@ -595,3 +595,48 @@ def get_registered_case_info(self):
             'status': case.get_status_display()
         }
     return None
+
+
+class CriminalRuling(models.Model):
+    """Модель для хранения постановлений по уголовным делам"""
+    
+    RULING_TYPES = [
+        ('preliminary_hearing', 'О назначении предварительного слушания'),
+        ('court_session', 'О назначении судебного заседания'),
+        ('case_appointment', 'О назначении дела'),
+        ('other', 'Иное постановление'),
+    ]
+    
+    criminal_proceedings = models.ForeignKey(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        related_name="rulings",
+        verbose_name="Уголовное производство"
+    )
+    
+    ruling_type = models.CharField(
+        max_length=50,
+        choices=RULING_TYPES,
+        verbose_name="Тип постановления"
+    )
+    
+    title = models.CharField(max_length=500, verbose_name="Заголовок постановления")
+    content = models.TextField(verbose_name="Содержание постановления (HTML)")
+    content_raw = models.TextField(verbose_name="Сырое содержимое (Draft.js)")
+    
+    # Метаданные
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+    created_by = models.CharField(max_length=255, null=True, blank=True, verbose_name="Кем создано")
+    
+    # Статус
+    is_draft = models.BooleanField(default=True, verbose_name="Черновик")
+    signed_date = models.DateField(null=True, blank=True, verbose_name="Дата подписания")
+    
+    class Meta:
+        verbose_name = "Постановление по уголовному делу"
+        verbose_name_plural = "Постановления по уголовным делам"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.criminal_proceedings.business_card.original_name}"

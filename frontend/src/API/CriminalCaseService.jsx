@@ -13,6 +13,67 @@ class CriminalCaseService {
     return cleaned;
   }
 
+  static async getRulings(businesscardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}${businesscardId}/rulings/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return [];
+      }
+      console.error('Error fetching rulings:', error);
+      throw error;
+    }
+  }
+
+  static async getRulingById(businesscardId, rulingId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}${businesscardId}/rulings/${rulingId}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Постановление не найдено');
+      }
+      console.error('Error fetching ruling:', error);
+      throw error;
+    }
+  }
+
+  static async createRuling(businesscardId, rulingData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}${businesscardId}/rulings/`, 
+        rulingData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating ruling:', error);
+      throw error;
+    }
+  }
+
+  static async updateRuling(businesscardId, rulingId, rulingData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}${businesscardId}/rulings/${rulingId}/`, 
+        rulingData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating ruling:', error);
+      throw error;
+    }
+  }
+
+  static async deleteRuling(businesscardId, rulingId) {
+    try {
+      await baseService.delete(`${BASE_URL}${businesscardId}/rulings/${rulingId}/`);
+    } catch (error) {
+      console.error('Error deleting ruling:', error);
+      throw error;
+    }
+  }
+
   static async update(businesscardId, criminalData) {
     try {
       // Получаем существующую запись

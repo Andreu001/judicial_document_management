@@ -4,13 +4,14 @@ from rest_framework.response import Response
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from business_card.models import BusinessCard
-from .models import CriminalProceedings, Defendant, CriminalDecision
+from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling
 from .serializers import (  CriminalProceedingsSerializer,
                             DefendantSerializer,
                             CriminalDecisionSerializer,
                             CriminalOptionsSerializer,
                             DefendantOptionsSerializer,
-                            CriminalDecisionOptionsSerializer)
+                            CriminalDecisionOptionsSerializer,
+                            CriminalRulingSerializer)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -143,3 +144,25 @@ def criminal_decision_options(request):
     """Получение всех опций для судебного решения из choices полей модели"""
     choices_data = CriminalDecisionOptionsSerializer.get_choices_from_model()
     return Response(choices_data)
+
+
+class CriminalRulingViewSet(viewsets.ModelViewSet):
+    serializer_class = CriminalRulingSerializer
+
+    def get_queryset(self):
+        businesscard_id = self.kwargs.get("businesscard_id")
+        try:
+            proceedings = CriminalProceedings.objects.get(business_card_id=businesscard_id)
+            return CriminalRuling.objects.filter(criminal_proceedings=proceedings)
+        except CriminalProceedings.DoesNotExist:
+            return CriminalRuling.objects.none()
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get("businesscard_id")
+        proceedings, created = CriminalProceedings.objects.get_or_create(
+            business_card_id=businesscard_id,
+            defaults={
+                'case_number': f'Уголовное дело {businesscard_id}'
+            }
+        )
+        serializer.save(criminal_proceedings=proceedings)

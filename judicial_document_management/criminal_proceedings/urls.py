@@ -1,6 +1,8 @@
 from rest_framework import routers
 from django.urls import path, include
-from .views import CriminalProceedingsViewSet, DefendantViewSet, CriminalDecisionViewSet, criminal_options, defendant_options, criminal_decision_options
+from .views import (CriminalProceedingsViewSet, DefendantViewSet, CriminalDecisionViewSet,
+                    criminal_options, defendant_options, criminal_decision_options,
+                    CriminalRulingViewSet)
 
 router = routers.DefaultRouter()
 router.register(

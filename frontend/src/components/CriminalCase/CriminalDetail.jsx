@@ -4,6 +4,7 @@ import baseService from '../../API/baseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import styles from './CriminalDetail.module.css';
 import CriminalNotifications from './CriminalNotifications';
+import RulingEditor from './RulingEditor';
 
 const CriminalDetail = () => {
   const { cardId } = useParams();
@@ -32,6 +33,9 @@ const CriminalDetail = () => {
   const [showRulingModal, setShowRulingModal] = useState(false);
   const [rulingType, setRulingType] = useState('');
   const [preliminaryHearingGrounds, setPreliminaryHearingGrounds] = useState([]);
+  const [showRulingEditor, setShowRulingEditor] = useState(false);
+  const [currentRuling, setCurrentRuling] = useState(null);
+  const [card, setCard] = useState(null);
 
   // Проверка, нужно ли показывать поле оснований предварительного слушания
   const showPreliminaryHearingGrounds = () => {
@@ -48,25 +52,37 @@ const CriminalDetail = () => {
     return formData.judge_decision === hearingAppointmentOption.value;
   };
 
-  // Функция для формирования постановления
-  const generateRuling = (type) => {
-    setRulingType(type);
-    setShowRulingModal(true);
-    
-    // Логика формирования постановления будет здесь
-    console.log(`Формирование постановления: ${type}`);
-    
-    // Можно добавить вызов API для генерации документа
-    // generateRulingDocument(cardId, type);
+    const generateRuling = async (type) => {
+      setRulingType(type);
+      setShowRulingModal(false);
+      setShowRulingEditor(true);
+      
+      // Создаем новое постановление с шаблоном
+      setCurrentRuling(null);
+    };
+
+    const handleSaveRuling = async (rulingData) => {
+    try {
+      if (currentRuling && currentRuling.id) {
+        // Обновление существующего
+        await CriminalCaseService.updateRuling(cardId, currentRuling.id, rulingData);
+      } else {
+        // Создание нового
+        await CriminalCaseService.createRuling(cardId, rulingData);
+      }
+      setShowRulingEditor(false);
+      setCurrentRuling(null);
+    } catch (error) {
+      console.error('Error saving ruling:', error);
+      alert('Ошибка сохранения постановления');
+    }
   };
 
-  // Проверка, можно ли формировать постановление (должны быть заполнены обязательные поля)
-  const canGenerateRuling = () => {
-    return criminalData && 
-           criminalData.incoming_date && 
-           criminalData.judge_acceptance_date && 
-           criminalData.judge_name &&
-           criminalData.case_number;
+  // Функция отмены редактирования
+  const handleCancelRuling = () => {
+    setShowRulingEditor(false);
+    setCurrentRuling(null);
+    setRulingType('');
   };
 
   // CriminalDetail.jsx - исправленная функция checkDeadlines
@@ -111,13 +127,19 @@ const CriminalDetail = () => {
     const fetchCriminalDetails = async () => {
       try {
         setLoading(true);
+            const cardResponse = await baseService.get(`/business_card/businesscard/${cardId}/`);
+            setCard(cardResponse.data);
+            
+            const criminalResponse = await CriminalCaseService.getByBusinessCardId(cardId);
+       
+          if (criminalResponse) {
+            const criminalDataWithCaseNumber = {
+              ...criminalResponse,
+              case_number: criminalResponse.case_number || card?.original_name || ''
+            };
         
-        const criminalResponse = await CriminalCaseService.getByBusinessCardId(cardId);
-        
-        // criminalResponse теперь объект или null
-        if (criminalResponse) {
-          setCriminalData(criminalResponse);
-          setFormData(criminalResponse);
+        setCriminalData(criminalDataWithCaseNumber);
+        setFormData(criminalDataWithCaseNumber);
           
           const defendantsResponse = await CriminalCaseService.getDefendants(cardId);
           
@@ -293,7 +315,7 @@ const CriminalDetail = () => {
           <div className={styles.field}>
             <div className={styles.field}>
               <label>№ дела</label>
-              <span>{criminalData.case_number || 'Не указано'}</span>
+              <span>{criminalData.case_number || card?.original_name}</span>
             </div>
 
             <div className={styles.field}>
@@ -584,16 +606,9 @@ const CriminalDetail = () => {
             <button 
               className={styles.generateRulingButton}
               onClick={() => setShowRulingModal(true)}
-              disabled={!canGenerateRuling()}
-              title={!canGenerateRuling() ? "Заполните обязательные поля: дата поступления, дата принятия судьей, ФИО судьи, номер дела" : ""}
             >
-              📄 Сформировать постановление о назначении дела
+              Сформировать постановление о назначении дела
             </button>
-            {!canGenerateRuling() && (
-              <p className={styles.rulingWarning}>
-                Для формирования постановления заполните: дату поступления, дату принятия судьей, ФИО судьи и номер дела
-              </p>
-            )}
           </div>
 
           <div className={styles.field}>
@@ -1308,7 +1323,7 @@ if (loading) {
           >
             ← Назад
           </button>
-          <h1 className={styles.title}>Уголовное дело №{criminalData.case_number}</h1>
+          <h1 className={styles.title}>Уголовное дело №{card.original_name}</h1>
         </div>
         
         <div className={styles.headerRight}>
@@ -1421,8 +1436,26 @@ if (loading) {
           />
       </div>
 
-      {/* Модальное окно для формирования постановления */}
       {showRulingModal && <RulingModal />}
+
+      {showRulingEditor && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContentLarge}>
+            <RulingEditor
+              rulingData={currentRuling}
+              onSave={handleSaveRuling}
+              onCancel={handleCancelRuling}
+              templateVariables={{
+                caseNumber: criminalData.case_number,
+                judgeName: criminalData.judge_name,
+                incomingDate: criminalData.incoming_date,
+                defendants: defendants
+              }}
+              rulingType={rulingType}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

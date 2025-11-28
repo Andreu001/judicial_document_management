@@ -881,11 +881,6 @@ const createMove = async (newMove) => {
               {activeTab === 0 && (
                 <div>
                   <strong>АЙДИ карточки: {props.card.id}</strong>
-                  {registeredCase && (
-                    <div>
-                      <strong>Зарегистрированный номер: {registeredCase.full_number}</strong>
-                    </div>
-                  )}
                   <div>Автор: {authorName || 'Не указан'}</div>
                   <div>Дата создания: {formatDateTime(props.card.pub_date)}</div>
                   <div>Дата редактирования: {formatDateTime(props.card.updated_at)}</div>
