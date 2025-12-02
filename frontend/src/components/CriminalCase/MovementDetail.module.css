@@ -142,7 +142,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #6c757d;
   border-bottom: 2px solid transparent;
@@ -280,6 +280,26 @@
   margin: 0.25rem 0;
   font-size: 0.8rem;
   color: #6c757d;
+}
+
+.infoField {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.infoField label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.infoField span {
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  color: #495057;
 }
 
 /* Состояния загрузки и ошибок */

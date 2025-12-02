@@ -50,14 +50,9 @@ const About = () => {
                 <div className="contact-section">
                     <h2>Контакты</h2>
                     <div className="contact-info">
-                        <p>📧 Email: andrey.kisik@yandex.ru</p>
+                        <p>📧 Email: andrey@yandex.ru</p>
                         <p>📞 Телефон: +7 (999) 123-45-67</p>
                         <p>🏢 Адрес: г. Москва, ул. Юридическая, д. 15</p>
-                    </div>
-                    <div className="social-links">
-                        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
-                        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter</a>
-                        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                     </div>
                 </div>
             </div>

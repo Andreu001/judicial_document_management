@@ -8,7 +8,7 @@ import CardForm from "./CardForm";
 import Cards from "../pages/cards/Cards";
 import CardIdPage from "../pages/cards/CardIdPage";
 import SideDetail from "../pages/sides/SideDetail";
-import MovementDetail from "../pages/movement/MovementDetail";
+import MovementDetail from "./CriminalCase/MovementDetail";
 import PetitionDetail from "../pages/petitions/PetitionDetail";
 import ConsideredDetail from "../pages/considered/ConsideredDetail";
 import Layout from './Layout';

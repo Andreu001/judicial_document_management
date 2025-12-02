@@ -2,43 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalDecisionDetail.module.css';
+import styles from './MovementDetail.module.css';
 import {
-  AppealTab,
-  CourtInstanceTab,
-  ConsiderationTab,
-  ExecutionTab,
-  SpecialMarksTab
+  MovementHearingTab,
+  MovementComplianceTab,
+  MovementPostponementTab
 } from './CriminalTabComponents';
 
-const CriminalDecisionDetail = () => {
-  const { cardId, decisionId } = useParams();
+const MovementDetail = () => {
+  const { cardId, moveId } = useParams();
   const navigate = useNavigate();
-  const [decisionData, setDecisionData] = useState(null);
+  const [movementData, setMovementData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState({
-    appeal_present: [],
-    court_instance: [],
-    appeal_consideration_result: [],
-    civil_claim_result: []
+    preliminaryHearingResult: [],
+    hearingCompliance: [],
+    hearingPostponedReason: [],
+    suspensionReason: []
   });
   const [defendants, setDefendants] = useState([]);
-  const [activeTab, setActiveTab] = useState('appeal');
+  const [activeTab, setActiveTab] = useState('hearing');
 
   useEffect(() => {
-    const fetchDecisionDetails = async () => {
+    const fetchMovementDetails = async () => {
       try {
         setLoading(true);
         
-        const decisionResponse = await CriminalCaseService.getDecisionById(cardId, decisionId);
+        const movementResponse = await CriminalCaseService.getMoveById(cardId, moveId);
         
-        if (decisionResponse) {
-          setDecisionData(decisionResponse);
-          setFormData(decisionResponse);
+        if (movementResponse) {
+          setMovementData(movementResponse);
+          setFormData(movementResponse);
         }
         
         // Загрузка опций для выпадающих списков
@@ -49,16 +47,16 @@ const CriminalDecisionDetail = () => {
         
         setLoading(false);
       } catch (err) {
-        console.error('Ошибка загрузки данных судебного решения:', err);
-        setError('Не удалось загрузить данные судебного решения');
+        console.error('Ошибка загрузки данных движения:', err);
+        setError('Не удалось загрузить данные движения');
         setLoading(false);
       }
     };
 
-    fetchDecisionDetails();
-  }, [decisionId]);
+    fetchMovementDetails();
+  }, [cardId, moveId]);
 
-    const loadDefendants = async () => {
+  const loadDefendants = async () => {
     try {
       const defendantsResponse = await CriminalCaseService.getDefendants(cardId);
       
@@ -89,23 +87,23 @@ const CriminalDecisionDetail = () => {
 
   const loadOptions = async () => {
     try {
-      // Загрузка всех опций из одного эндпоинта для CriminalDecision
-      const response = await baseService.get('/criminal_proceedings/criminal-decision-options/');
+      // Загрузка всех опций из одного эндпоинта для Movement
+      const response = await baseService.get('/criminal_proceedings/movement-options/');
       
       setOptions({
-        appeal_present: response.data.appeal_present || [],
-        court_instance: response.data.court_instance || [],
-        appeal_consideration_result: response.data.appeal_consideration_result || [],
-        civil_claim_result: response.data.civil_claim_result || []
+        preliminaryHearingResult: response.data.preliminary_hearing_result || [],
+        hearingCompliance: response.data.hearing_compliance || [],
+        hearingPostponedReason: response.data.hearing_postponed_reason || [],
+        suspensionReason: response.data.suspension_reason || []
       });
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
       // Устанавливаем пустые массивы вместо ошибки
       setOptions({
-        appeal_present: [],
-        court_instance: [],
-        appeal_consideration_result: [],
-        civil_claim_result: []
+        preliminaryHearingResult: [],
+        hearingCompliance: [],
+        hearingPostponedReason: [],
+        suspensionReason: []
       });
     }
   };
@@ -124,13 +122,13 @@ const CriminalDecisionDetail = () => {
       
       const dataToSend = { ...formData };
       delete dataToSend.id;
-      delete dataToSend.criminal_proceedings;
+      delete dataToSend.business_card;
       delete dataToSend.created_at;
       delete dataToSend.updated_at;
       
-      const updatedData = await CriminalCaseService.updateDecision(decisionId, dataToSend);
+      const updatedData = await CriminalCaseService.updateMove(cardId, moveId, dataToSend);
       
-      setDecisionData(updatedData);
+      setMovementData(updatedData);
       setFormData(updatedData);
       setIsEditing(false);
       setSaving(false);
@@ -149,7 +147,7 @@ const CriminalDecisionDetail = () => {
   };
 
   const handleCancel = () => {
-    setFormData(decisionData);
+    setFormData(movementData);
     setIsEditing(false);
   };
 
@@ -169,7 +167,7 @@ const CriminalDecisionDetail = () => {
   if (loading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>Загрузка данных судебного решения...</div>
+        <div className={styles.loading}>Загрузка данных движения...</div>
       </div>
     );
   }
@@ -185,10 +183,10 @@ const CriminalDecisionDetail = () => {
     );
   }
 
-  if (!decisionData) {
+  if (!movementData) {
     return (
       <div className={styles.container}>
-        <div className={styles.error}>Данные судебного решения не найдены</div>
+        <div className={styles.error}>Данные движения не найдены</div>
         <button onClick={() => navigate(-1)} className={styles.backButton}>
           Назад
         </button>
@@ -203,7 +201,7 @@ const CriminalDecisionDetail = () => {
           <button onClick={() => navigate(-1)} className={styles.backButton}>
             ← Назад
           </button>
-          <h1 className={styles.title}>Судебное решение</h1>
+          <h1 className={styles.title}>Движение дела</h1>
         </div>
         
         <div className={styles.headerRight}>
@@ -230,92 +228,61 @@ const CriminalDecisionDetail = () => {
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
               <button 
-                className={`${styles.tab} ${activeTab === 'appeal' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('appeal')}
+                className={`${styles.tab} ${activeTab === 'hearing' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('hearing')}
               >
-                13. Обжалование
+                6. Результат предварительного слушания
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'court' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('court')}
+                className={`${styles.tab} ${activeTab === 'compliance' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('compliance')}
               >
-                14. Суд II инстанции
+                7. Соблюдение сроков
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'consideration' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('consideration')}
+                className={`${styles.tab} ${activeTab === 'postponement' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('postponement')}
               >
-                15. Рассмотрение
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'execution' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('execution')}
-              >
-                16-17. Исполнение
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'special' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('special')}
-              >
-                18-20. Особые отметки
+                8. Причины отложения дела
               </button>
             </div>
 
             <div className={styles.tabContentWrapper}>
-              {activeTab === 'appeal' && (
-                 <AppealTab
-                    isEditing={isEditing}
-                    formData={formData}
-                    options={options}
-                    handleInputChange={handleInputChange}
-                    getOptionLabel={getOptionLabel}
-                    decisionData={decisionData}
-                    handleDateChange={handleDateChange}
-                    formatDate={formatDate}
-                 />
-                )}
-              {activeTab === 'court' && (
-                <CourtInstanceTab
-                    isEditing={isEditing}
-                    formData={formData}
-                    options={options}
-                    handleInputChange={handleInputChange}
-                    getOptionLabel={getOptionLabel}
-                    decisionData={decisionData}
-                    handleDateChange={handleDateChange}
-                    formatDate={formatDate}
-                />)}
-              {activeTab === 'consideration' && (
-                <ConsiderationTab
-                    isEditing={isEditing}
-                    formData={formData}
-                    options={options}
-                    handleInputChange={handleInputChange}
-                    getOptionLabel={getOptionLabel}
-                    decisionData={decisionData}
-                    handleDateChange={handleDateChange}
-                    formatDate={formatDate}
-                />)}
-              {activeTab === 'execution' && (
-                <ExecutionTab
-                    isEditing={isEditing}
-                    formData={formData}
-                    options={options}
-                    handleInputChange={handleInputChange}
-                    getOptionLabel={getOptionLabel}
-                    decisionData={decisionData}
-                    handleDateChange={handleDateChange}
-                    formatDate={formatDate}
-                />)}
-              {activeTab === 'special' && (
-                <SpecialMarksTab
-                    isEditing={isEditing}
-                    formData={formData}
-                    handleInputChange={handleInputChange}
-                    decisionData={decisionData}
-                    handleDateChange={handleDateChange}
-                    formatDate={formatDate}
-                />)}
+              {activeTab === 'hearing' && (
+                <MovementHearingTab
+                  isEditing={isEditing}
+                  formData={formData}
+                  options={options}
+                  handleInputChange={handleInputChange}
+                  getOptionLabel={getOptionLabel}
+                  movementData={movementData}
+                  handleDateChange={handleDateChange}
+                  formatDate={formatDate}
+                  formatBoolean={formatBoolean}
+                />
+              )}
+              {activeTab === 'compliance' && (
+                <MovementComplianceTab
+                  isEditing={isEditing}
+                  formData={formData}
+                  options={options}
+                  handleInputChange={handleInputChange}
+                  getOptionLabel={getOptionLabel}
+                  movementData={movementData}
+                />
+              )}
+              {activeTab === 'postponement' && (
+                <MovementPostponementTab
+                  isEditing={isEditing}
+                  formData={formData}
+                  options={options}
+                  handleInputChange={handleInputChange}
+                  getOptionLabel={getOptionLabel}
+                  movementData={movementData}
+                  handleDateChange={handleDateChange}
+                  formatDate={formatDate}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -340,10 +307,22 @@ const CriminalDecisionDetail = () => {
               <p>Обвиняемые не добавлены</p>
             )}
           </div>
+          
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Информация о движении</h2>
+            <div className={styles.infoField}>
+              <label>Дата создания:</label>
+              <span>{formatDate(movementData.created_at)}</span>
+            </div>
+            <div className={styles.infoField}>
+              <label>Последнее обновление:</label>
+              <span>{formatDate(movementData.updated_at)}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default CriminalDecisionDetail;
+export default MovementDetail;
