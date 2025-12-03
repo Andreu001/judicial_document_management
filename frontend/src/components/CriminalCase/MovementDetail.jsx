@@ -87,8 +87,8 @@ const MovementDetail = () => {
 
   const loadOptions = async () => {
     try {
-      // Загрузка всех опций из одного эндпоинта для Movement
-      const response = await baseService.get('/criminal_proceedings/movement-options/');
+      // Загрузка всех опций из нового эндпоинта для Movement
+      const response = await baseService.get('/criminal_proceedings/criminal-case-movement-options/');
       
       setOptions({
         preliminaryHearingResult: response.data.preliminary_hearing_result || [],

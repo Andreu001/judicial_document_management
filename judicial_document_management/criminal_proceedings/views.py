@@ -4,14 +4,15 @@ from rest_framework.response import Response
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from business_card.models import BusinessCard
-from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling
+from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement
 from .serializers import (  CriminalProceedingsSerializer,
                             DefendantSerializer,
                             CriminalDecisionSerializer,
                             CriminalOptionsSerializer,
                             DefendantOptionsSerializer,
                             CriminalDecisionOptionsSerializer,
-                            CriminalRulingSerializer)
+                            CriminalRulingSerializer,
+                            CriminalCaseMovementSerializer)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,8 +27,6 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
 
     def get_object(self):
         queryset = self.get_queryset()
-        # Используем get_object_or_404 только если объект должен существовать
-        # Для случаев, когда объект может не существовать, лучше использовать другую логику
         filter_kwargs = self.kwargs.copy()
         filter_kwargs.pop('businesscard_id', None)
         obj = get_object_or_404(queryset, **filter_kwargs)
@@ -146,6 +145,14 @@ def criminal_decision_options(request):
     return Response(choices_data)
 
 
+@api_view(['GET'])
+def criminal_case_movement_options(request):
+    """Получение всех опций для движения дела из choices полей модели"""
+    from .serializers import CriminalCaseMovementOptionsSerializer
+    choices_data = CriminalCaseMovementOptionsSerializer.get_choices_from_model()
+    return Response(choices_data)
+
+
 class CriminalRulingViewSet(viewsets.ModelViewSet):
     serializer_class = CriminalRulingSerializer
 
@@ -156,6 +163,28 @@ class CriminalRulingViewSet(viewsets.ModelViewSet):
             return CriminalRuling.objects.filter(criminal_proceedings=proceedings)
         except CriminalProceedings.DoesNotExist:
             return CriminalRuling.objects.none()
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get("businesscard_id")
+        proceedings, created = CriminalProceedings.objects.get_or_create(
+            business_card_id=businesscard_id,
+            defaults={
+                'case_number': f'Уголовное дело {businesscard_id}'
+            }
+        )
+        serializer.save(criminal_proceedings=proceedings)
+
+
+class CriminalCaseMovementViewSet(viewsets.ModelViewSet):
+    serializer_class = CriminalCaseMovementSerializer
+
+    def get_queryset(self):
+        businesscard_id = self.kwargs.get("businesscard_id")
+        try:
+            proceedings = CriminalProceedings.objects.get(business_card_id=businesscard_id)
+            return CriminalCaseMovement.objects.filter(criminal_proceedings=proceedings)
+        except CriminalProceedings.DoesNotExist:
+            return CriminalCaseMovement.objects.none()
 
     def perform_create(self, serializer):
         businesscard_id = self.kwargs.get("businesscard_id")

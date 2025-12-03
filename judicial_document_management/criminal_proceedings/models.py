@@ -95,106 +95,7 @@ class CriminalProceedings(models.Model):
             ('4', 'о назначении закрытого судебного заседания в соответствии со ст. 241 УПК РФ'),
         ],
         verbose_name="Решение судьи при назначении дела"
-    )
-    preliminary_hearing = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('evidence_exclusion', 'Ходатайство стороны об исключении доказательства'),
-            ('return_to_prosecutor', 'Основание для возвращения дела прокурору (ст. 237 УПК РФ)'),
-            ('suspension_termination', 'Основание для приостановления или прекращения дела'),
-            ('special_trial_procedure', 'Ходатайство о проведении судебного разбирательства в особом порядке'),
-            ('jury_trial', 'Решение вопроса о рассмотрении дела с участием присяжных заседателей'),
-            ('conditional_conviction', 'Наличие не вступившего в законную силу приговора с условным осуждением'),
-            ('case_separation', 'Основание для выделения уголовного дела'),
-            ('case_combination', 'Ходатайство стороны о соединении уголовных дел'),
-        ],
-        verbose_name="Основания для предварительного слушания"
-    )
-    
-    # Дополнительные поля для пункта 5
-    case_transfer_date = models.DateField(null=True, blank=True, verbose_name="Дата направления дела")
-    case_transfer_destination = models.CharField(max_length=255, null=True, blank=True, 
-                                               verbose_name="Куда направлено дело")
-    vks_used = models.BooleanField(null=True, blank=True, verbose_name="С использованием ВКС")
-    
-    preliminary_hearing_date = models.DateField(null=True, blank=True, verbose_name="Дата предварительного слушания")
-    
-    # Пункт 6 - Результат предварительного слушания
-    preliminary_hearing_result = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'о направлении уголовного дела по подсудности'),
-            ('2', 'о возвращении уголовного дела прокурору'),
-            ('3', 'о приостановлении производства по делу'),
-            ('4', 'о прекращении уголовного дела'),
-            ('5', 'о назначении судебного заседания'),
-            ('6', 'о назначении закрытого судебного заседания'),
-        ],
-        verbose_name="Результат предварительного слушания"
-    )
-    
-    first_hearing_date = models.DateField(null=True, blank=True, verbose_name="Дата первого заседания")
-    
-    # Пункт 7 (только для информации - будет в другой модели)
-    hearing_compliance = models.CharField(
-        max_length=1,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'с соблюдением сроков, установленных УПК РФ'),
-            ('2', 'по делам с нарушением сроков'),
-        ],
-        verbose_name="Соблюдение сроков"
-    )
-    
-    # Пункт 8 - Причины отложения дела
-    hearing_postponed_reason = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'неявка подсудимого'),
-            ('2', 'неявка защитника'),
-            ('3', 'неявка прокурора'),
-            ('4', 'неявка потерпевшего'),
-            ('5', 'неявка других участников процесса'),
-            ('6', 'неявка свидетелей'),
-            ('7', 'необходимость истребования новых доказательств'),
-            ('8', 'недоставление подсудимого'),
-            ('9', 'назначение экспертизы'),
-            ('10', 'другие основания'),
-        ],
-        verbose_name="Причина отложения"
-    )
-    
-    # Дополнительное поле для текстового описания причины
-    hearing_postponed_reason_text = models.TextField(null=True, blank=True, 
-                                                   verbose_name="Текст причины отложения")
-    
-    suspension_date = models.DateField(null=True, blank=True, verbose_name="Дата приостановления производства")
-    
-    # Пункт 8 - Основания приостановления
-    suspension_reason = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'розыск подсудимого'),
-            ('2', 'психическое заболевание'),
-            ('3', 'другое тяжкое заболевание'),
-            ('4', 'запрос в Конституционный Суд РФ'),
-            ('5', 'невозможность участия обвиняемого в судебном разбирательстве'),
-            ('6', 'невозможность раздельного судебного разбирательства'),
-        ],
-        verbose_name="Причина приостановления"
-    )
-    
-    resumption_date = models.DateField(null=True, blank=True, verbose_name="Дата возобновления производства")
-    
+    )  
     # Пункт 9 - Результат рассмотрения дела в целом
     case_result = models.CharField(
         max_length=255,
@@ -578,6 +479,98 @@ class CriminalDecision(models.Model):
     
     def __str__(self):
         return f"Решение по делу {self.criminal_proceedings.business_card.original_name} - {self.get_court_instance_display()}"
+
+
+class CriminalCaseMovement(models.Model):
+    """
+    Модель для отслеживания движения уголовного дела (пункты 6-9 раздела А)
+    """
+    criminal_proceedings = models.OneToOneField(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        related_name="case_movement",
+        verbose_name="Уголовное производство"
+    )
+    
+    # Пункт 6 - Результат предварительного слушания
+    preliminary_hearing_result = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=[
+            ('1', 'о направлении уголовного дела по подсудности'),
+            ('2', 'о возвращении уголовного дела прокурору'),
+            ('3', 'о приостановлении производства по делу'),
+            ('4', 'о прекращении уголовного дела'),
+            ('5', 'о назначении судебного заседания'),
+            ('6', 'о назначении закрытого судебного заседания'),
+        ],
+        verbose_name="Результат предварительного слушания"
+    )
+    
+    first_hearing_date = models.DateField(null=True, blank=True, verbose_name="Дата первого заседания")
+
+    hearing_compliance = models.CharField(
+        max_length=1,
+        null=True,
+        blank=True,
+        choices=[
+            ('1', 'с соблюдением сроков, установленных УПК РФ'),
+            ('2', 'по делам с нарушением сроков'),
+        ],
+        verbose_name="Соблюдение сроков"
+    )
+    
+    # Пункт 8 - Причины отложения дела
+    hearing_postponed_reason = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=[
+            ('1', 'неявка подсудимого'),
+            ('2', 'неявка защитника'),
+            ('3', 'неявка прокурора'),
+            ('4', 'неявка потерпевшего'),
+            ('5', 'неявка других участников процесса'),
+            ('6', 'неявка свидетелей'),
+            ('7', 'необходимость истребования новых доказательств'),
+            ('8', 'недоставление подсудимого'),
+            ('9', 'назначение экспертизы'),
+            ('10', 'другие основания'),
+        ],
+        verbose_name="Причина отложения"
+    )
+    
+    # Дополнительное поле для текстового описания причины
+    hearing_postponed_reason_text = models.TextField(null=True, blank=True, 
+                                                   verbose_name="Текст причины отложения")
+    
+    suspension_date = models.DateField(null=True, blank=True, verbose_name="Дата приостановления производства")
+    
+    # Пункт 8 - Основания приостановления
+    suspension_reason = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=[
+            ('1', 'розыск подсудимого'),
+            ('2', 'психическое заболевание'),
+            ('3', 'другое тяжкое заболевание'),
+            ('4', 'запрос в Конституционный Суд РФ'),
+            ('5', 'невозможность участия обвиняемого в судебном разбирательстве'),
+            ('6', 'невозможность раздельного судебного разбирательства'),
+        ],
+        verbose_name="Причина приостановления"
+    )
+    
+    resumption_date = models.DateField(null=True, blank=True, verbose_name="Дата возобновления производства")
+
+    class Meta:
+        verbose_name = "Движение дела"
+        verbose_name_plural = "Движения дел"
+
+    def __str__(self):
+        return f"Движение дела {self.criminal_proceedings.business_card.original_name}"
 
 
 @property

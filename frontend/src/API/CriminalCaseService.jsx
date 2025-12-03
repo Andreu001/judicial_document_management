@@ -306,6 +306,71 @@ class CriminalCaseService {
       throw error;
     }
   }
+
+  static async getCaseMovement(businesscardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}${businesscardId}/criminal-case-movement/`);
+      // Возвращаем первую запись, так как она одна (OneToOne)
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        return response.data[0];
+      }
+      return null;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error fetching case movement:', error);
+      throw error;
+    }
+  }
+
+  static async getMoveById(businesscardId, moveId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}${businesscardId}/criminal-case-movement/${moveId}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Движение дела не найдено');
+      }
+      console.error('Error fetching case movement:', error);
+      throw error;
+    }
+  }
+
+  static async createMove(businesscardId, moveData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}${businesscardId}/criminal-case-movement/`, 
+        moveData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating case movement:', error);
+      throw error;
+    }
+  }
+
+  static async updateMove(businesscardId, moveId, moveData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}${businesscardId}/criminal-case-movement/${moveId}/`, 
+        moveData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating case movement:', error);
+      throw error;
+    }
+  }
+
+  static async deleteMove(businesscardId, moveId) {
+    try {
+      await baseService.delete(`${BASE_URL}${businesscardId}/criminal-case-movement/${moveId}/`);
+    } catch (error) {
+      console.error('Error deleting case movement:', error);
+      throw error;
+    }
+  }
 }
 
 export default CriminalCaseService;

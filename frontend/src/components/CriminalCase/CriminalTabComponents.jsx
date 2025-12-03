@@ -2077,15 +2077,15 @@ export const DefendantAdditionalTab = ({ isEditing,
 
 // =================== ДВИЖЕНИЕ (DefendantDetail) ===================
 export const MovementHearingTab = ({ 
-  isEditing, 
-  formData, 
-  options, 
-  handleInputChange, 
-  getOptionLabel, 
-  movementData, 
-  handleDateChange, 
-  formatDate, 
-  formatBoolean 
+                                  isEditing, 
+                                  formData, 
+                                  options, 
+                                  handleInputChange, 
+                                  getOptionLabel, 
+                                  movementData, 
+                                  handleDateChange, 
+                                  formatDate, 
+                                  formatBoolean 
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -2167,12 +2167,12 @@ export const MovementHearingTab = ({
 );
 
 export const MovementComplianceTab = ({ 
-  isEditing, 
-  formData, 
-  options, 
-  handleInputChange, 
-  getOptionLabel, 
-  movementData 
+                                  isEditing, 
+                                  formData, 
+                                  options, 
+                                  handleInputChange, 
+                                  getOptionLabel, 
+                                  movementData 
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -2250,14 +2250,14 @@ export const MovementComplianceTab = ({
 );
 
 export const MovementPostponementTab = ({ 
-  isEditing, 
-  formData, 
-  options, 
-  handleInputChange, 
-  getOptionLabel, 
-  movementData, 
-  handleDateChange, 
-  formatDate 
+                                        isEditing, 
+                                        formData, 
+                                        options, 
+                                        handleInputChange, 
+                                        getOptionLabel, 
+                                        movementData, 
+                                        handleDateChange, 
+                                        formatDate 
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>

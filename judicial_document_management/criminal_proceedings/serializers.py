@@ -1,6 +1,6 @@
 # criminal_proceedings/serializers.py
 from rest_framework import serializers
-from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling
+from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement
 
 class DefendantSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,9 +16,18 @@ class CriminalDecisionSerializer(serializers.ModelSerializer):
         read_only_fields = ("criminal_proceedings",)
 
 
+class CriminalCaseMovementSerializer(serializers.ModelSerializer):
+    """Сериализатор для движения дела"""
+    class Meta:
+        model = CriminalCaseMovement
+        fields = "__all__"
+        read_only_fields = ("criminal_proceedings",)
+
+
 class CriminalProceedingsSerializer(serializers.ModelSerializer):
     defendants = DefendantSerializer(many=True, read_only=True)
     criminal_decisions = CriminalDecisionSerializer(many=True, read_only=True)
+    case_movement = CriminalCaseMovementSerializer(read_only=True)
 
     class Meta:
         model = CriminalProceedings
@@ -73,6 +82,27 @@ class CriminalDecisionOptionsSerializer(serializers.Serializer):
     def get_choices_from_model():
         """Получает все choices опции из модели CriminalDecision"""
         model_fields = CriminalDecision._meta.get_fields()
+        choices_data = {}
+        
+        for field in model_fields:
+            if hasattr(field, 'choices') and field.choices:
+                field_name = field.name
+                choices_data[field_name] = [
+                    {'value': choice[0], 'label': choice[1]}
+                    for choice in field.choices
+                ]
+        
+        return choices_data
+
+
+class CriminalCaseMovementOptionsSerializer(serializers.Serializer):
+    """Сериализатор для получения опций из choices полей модели CriminalCaseMovement"""
+    
+    @staticmethod
+    def get_choices_from_model():
+        """Получает все choices опции из модели CriminalCaseMovement"""
+        from .models import CriminalCaseMovement
+        model_fields = CriminalCaseMovement._meta.get_fields()
         choices_data = {}
         
         for field in model_fields:
