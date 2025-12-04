@@ -17,7 +17,7 @@ import PetitionList from '../pages/petitions/PetitionList';
 import ConsideredForm from '../pages/considered/ConsideredForm';
 import ConsideredList from '../pages/considered/ConsideredList';
 import SideService from '../API/SideService';
-import MovementService from '../API/MovementService';
+import MovementService, {updateMove} from '../API/MovementService';
 import ConsideredService from '../API/ConsideredService';
 import MovementForm from '../pages/movement/MovementForm';
 import MovementList from '../pages/movement/MovementList';
@@ -176,6 +176,38 @@ const BusinessCard = (props) => {
       loadCriminalDecisions();
     }
   }, [criminalCase, cardId]);
+
+  const handleEditPetition = (
+      petitionId, 
+      cardId, 
+      setPetitions, 
+      setIsEditingPetition, 
+      setEditedPetitionData
+    ) => {
+      console.log('Редактирование ходатайства ID:', petitionId, 'Card ID:', cardId);
+      
+      if (!cardId) {
+        console.error('Card ID is undefined');
+        return;
+      }
+      
+      // Получаем данные ходатайства для редактирования
+      const fetchPetitionData = async () => {
+        try {
+          const response = await baseService.get(
+            `/business_card/businesscard/${cardId}/petitionsincase/${petitionId}/`
+          );
+          console.log('Загруженные данные для редактирования:', response.data);
+          setEditedPetitionData(response.data);
+          setIsEditingPetition(true);
+          setShowPetitionForm(true); // Добавляем эту строку
+        } catch (error) {
+          console.error('Ошибка загрузки ходатайства для редактирования:', error);
+        }
+      };
+      
+      fetchPetitionData();
+  };
 
   const handleAddCriminalDecision = () => {
     setShowCriminalDecisionForm(true);
@@ -607,23 +639,27 @@ useEffect(() => {
   };
 
   const handleAddMovementToState = () => {
+    setEditedMoveData({}); // Очищаем данные для редактирования
+    setEditedMoveId(null); // Сбрасываем ID редактирования
     setShowMovementForm(true);
   };
 
   const handleAddPetitionToState = () => {
-    console.log('Button Clicked');
+    console.log('Добавление ходатайства');
     setShowPetitionForm(true);
     setIsEditingPetition(true);
-    console.log('showPetitionForm:', showPetitionForm);
+    setEditedPetitionData({});
+    setEditedPetitionId(null);
   };
 
-  const handleEditMoveForm = (isEditing, setIsEditingMove, setEditedMoveData, moveId) => {
-    setIsEditingMove(isEditing);
-
+  const handleEditMoveForm = (moveId) => {
+    // Находим движение по ID
     const editedMove = movements.find((move) => move.id === moveId);
-  
-    setEditedMoveData({ ...editedMove });
-    setShowMovementForm(true);
+    
+    // Устанавливаем данные для редактирования
+    setEditedMoveData(editedMove);
+    setEditedMoveId(moveId); // Сохраняем ID для обновления
+    setShowMovementForm(true); // Показываем форму
   };
   
   const handleCancel = () => {
@@ -737,43 +773,62 @@ const createMove = async (newMove) => {
     <div className={styles.card}>
       {showPetitionForm && isEditingPetition ? (
         <PetitionForm
-          create={createPetition} // Передаем функцию создания
+          create={createPetition}
           editPetitionData={editedPetitionData}
-          onSave={async (newPetition) => {
-            if (editedPetitionId) {
-              const updatedPetition = await PetitionService.updatedPetition(cardId, editedPetitionId, newPetition);
-              setEditedPetitionData(updatedPetition);
-              setIsEditingPetition(false);
-              setEditedPetitionId(null);
-            } else {
-              await createPetition(newPetition);
+          onSave={async (savedPetition) => {
+            // Обновляем список ходатайств
+            try {
+              const response = await PetitionService.getAllPetitions(cardId);
+              if (Array.isArray(response.data)) {
+                setPetitions(response.data);
+              }
+            } catch (error) {
+              console.error("Ошибка обновления списка ходатайств:", error);
             }
+            
+            // Скрываем форму
+            setShowPetitionForm(false);
+            setIsEditingPetition(false);
+            setEditedPetitionId(null);
+            setEditedPetitionData({});
           }}
           onCancel={() => {
             setShowPetitionForm(false);
             setIsEditingPetition(false);
             setEditedPetitionId(null);
+            setEditedPetitionData({});
           }}
-          setNewPetition={setNewPetition}
           cardId={cardId}
+          isCriminalCase={!!criminalCase}
         />
       ) : null}
 
       {showMovementForm && activeTab === 2 ? (
         <MovementForm
           create={createMove}
-          editMovementData={editedMoveData}
+          editMovementData={editedMoveData} // Передаем данные для редактирования
           onSave={async (newMove) => {
             if (editedMoveId) {
-              const updatedMove = await MovementService.updateMove(cardId, editedMoveId, newMove);
-              setEditedMoveData(updatedMove);
-              setIsEditingMove(false);
-              setEditedMoveId(null);
+              // Обновляем существующее движение
+              const updatedMove = await updateMove(cardId, editedMoveId, newMove);
+              // Обновляем состояние
+              setMovements(movements.map(move => 
+                move.id === editedMoveId ? updatedMove : move
+              ));
             } else {
-              await createMove(newMove); // Вызываем функцию создания
+              // Создаем новое движение
+              await createMove(newMove);
             }
+            // Сбрасываем состояние
+            setShowMovementForm(false);
+            setEditedMoveData({});
+            setEditedMoveId(null);
           }}
-          onCancel={() => setShowMovementForm(false)}
+          onCancel={() => {
+            setShowMovementForm(false);
+            setEditedMoveData({});
+            setEditedMoveId(null);
+          }}
           cardId={cardId}
         />
       ) : null}
@@ -964,20 +1019,30 @@ const createMove = async (newMove) => {
               cardId={cardId}
               setMovements={setMovements}
               router={router}
+              setIsEditingMove={setIsEditingMove}
+              setEditedMoveData={setEditedMoveData}
             />
           ) : null}
 
-          {activeTab === 3 && petitions ? (
-              <PetitionList
-                petitions={petitions}
-                handleShowDetailsPetition={handleShowDetailsPetition}
-                handleDeletePetition={handleDeletePetition}
-                handleEditPetition={handleEditPetition}
-                cardId={cardId}
-                setPetitions={setPetitions}
-                router={router}
-              />
-          ) : null}
+{activeTab === 3 && petitions ? (
+  <PetitionList
+    petitions={petitions}
+    handleShowDetailsPetition={handleShowDetailsPetition}
+    handleDeletePetition={handleDeletePetition}
+    handleEditPetition={(petitionId) => handleEditPetition(
+      petitionId, 
+      cardId, // Передаем cardId
+      setPetitions, 
+      setIsEditingPetition, 
+      setEditedPetitionData
+    )}
+    cardId={cardId}
+    setPetitions={setPetitions}
+    setIsEditingPetition={setIsEditingPetition}
+    setEditedPetitionData={setEditedPetitionData}
+    router={router}
+  />
+) : null}
 
           {activeTab === 4 && (
             <div>

@@ -6,7 +6,7 @@ import axios from 'axios';
 import baseService from '../../API/baseService';
 
 export const handleShowDetailsPetition = (props, router) => {
-  router(`/business_card/businesscard/:id/petitionsincase/${props.petition.id}`);
+  router(`/business_card/businesscard/${props.card.id}/petitionsincase/${props.petition.id}`);
   console.log("Передается в МУВВВВ!!!!", props.petition);
 };
 
@@ -17,8 +17,35 @@ export const handleAddPetitions = (newPetition, setPetitions) => {
   }
 };
 
-export const handleEditPetition = (isEditing, setIsEditing) => {
-  setIsEditing(isEditing);
+export const handleEditPetition = (
+  petitionId, 
+  cardId, 
+  setPetitions, 
+  setIsEditingPetition, 
+  setEditedPetitionData
+) => {
+  console.log('Редактирование ходатайства ID:', petitionId, 'Card ID:', cardId);
+  
+  if (!cardId) {
+    console.error('Card ID is undefined');
+    return;
+  }
+  
+  // Получаем данные ходатайства для редактирования
+  const fetchPetitionData = async () => {
+    try {
+      const response = await baseService.get(
+        `/business_card/businesscard/${cardId}/petitionsincase/${petitionId}/`
+      );
+      console.log('Загруженные данные для редактирования:', response.data);
+      setEditedPetitionData(response.data);
+      setIsEditingPetition(true);
+    } catch (error) {
+      console.error('Ошибка загрузки ходатайства для редактирования:', error);
+    }
+  };
+  
+  fetchPetitionData();
 };
 
 export const handleDeletePetition = async (petitionId, cardId, setPetitions) => {
@@ -27,7 +54,7 @@ export const handleDeletePetition = async (petitionId, cardId, setPetitions) => 
     console.log('cardId:', cardId);
 
     if (!petitionId || !cardId) {
-      console.error('ID стороны или карточки не определены');
+      console.error('ID ходатайства или карточки не определены');
       return;
     }
 
@@ -45,58 +72,110 @@ export const handleDeletePetition = async (petitionId, cardId, setPetitions) => 
 };
 
 const Petition = (props) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedPetitionsDataState, setEditedPetitionsDataState] = useState({ ...props.petitions });
-  const [petitions, setPetitions] = useState(props.petitions); // Изначально принимаем спискок через props
+  const [isEditingPetition, setIsEditingPetition] = useState(false);
+  const [editedPetitionData, setEditedPetitionData] = useState({});
+  const [petitions, setPetitions] = useState([]);
+  const [isCriminalCase, setIsCriminalCase] = useState(false);
+  
+  const cardId = props.card?.id;
 
-  const handleSave = async (editedPetitionsData) => {
-    try {
-      const petitionId = String(editedPetitionsData.id);
-      const updatedPetitions = await updatedPetitions(petitionId, editedPetitionsData);
-  
-      setEditedPetitionsDataState(updatedPetitions);
-      setIsEditing(false);
-  
-      handleAddPetitions(updatedPetitions, setPetitions); // Обновляем список
-
-      console.log('Состояние Petitions после сохранения:', updatedPetitions);
-    } catch (error) {
-      console.error('Ошибка при обновлении движения:', error);
-    }
-  };
-  
   useEffect(() => {
     const fetchPetitions = async () => {
       try {
-        const response = await baseService.get(`http://127.0.0.1:8000/business_card/petitions/`);
-        console.log('Response:', response);
-        setPetitions(response.data); // Обновляем состояние списка при загрузке
+        if (!cardId) return;
+        
+        console.log('Fetching petitions for card ID:', cardId);
+        const response = await baseService.get(`http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`);
+        console.log('Loaded petitions:', response.data);
+        setPetitions(response.data);
+        
+        // Проверяем тип дела (добавьте логику определения типа дела)
+        // Например, если есть какое-то поле в card, указывающее на тип дела
+        // setIsCriminalCase(props.card.is_criminal || false);
+        
       } catch (error) {
         console.error('Error fetching Petitions:', error);
       }
     };
     
-    fetchPetitions();
-  }, []);
+    if (cardId) {
+      fetchPetitions();
+    }
+  }, [cardId]);
+
+  const handleSave = (savedPetition) => {
+    if (editedPetitionData.id) {
+      // Обновление существующего ходатайства
+      setPetitions(prevPetitions => 
+        prevPetitions.map(p => p.id === savedPetition.id ? savedPetition : p)
+      );
+    } else {
+      // Добавление нового ходатайства
+      setPetitions(prevPetitions => [...prevPetitions, savedPetition]);
+    }
+    
+    setIsEditingPetition(false);
+    setEditedPetitionData({});
+  };
 
   const handleCancel = () => {
-    setEditedPetitionsDataState({ ...props.petitions });
-    setIsEditing(false);
-    console.log('Отменено. Состояние Petitions:', petitions);
+    setIsEditingPetition(false);
+    setEditedPetitionData({});
+  };
+
+  const handleCreatePetition = () => {
+    setEditedPetitionData({});
+    setIsEditingPetition(true);
   };
 
   return (
     <div className='App'>
-      {isEditing ? (
+      {isEditingPetition ? (
         <PetitionForm
-          create={props.create}
-          editPetitionsData={editedPetitionsDataState}
+          create={handleAddPetitions}
+          editPetitionData={editedPetitionData}
           onSave={handleSave}
           onCancel={handleCancel}
-          setPetitions={setPetitions}
+          cardId={cardId}
+          isCriminalCase={isCriminalCase}
         />
       ) : (
-        <PetitionList petitions={petitions} remove={handleDeletePetition} />
+        <>
+          <button 
+            onClick={handleCreatePetition}
+            style={{
+              marginBottom: '15px',
+              padding: '10px 15px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Добавить ходатайство
+          </button>
+          
+          <PetitionList 
+            petitions={petitions}
+            handleShowDetailsPetition={handleShowDetailsPetition}
+            handleDeletePetition={handleDeletePetition}
+            handleEditPetition={(petitionId) => 
+              handleEditPetition(
+                petitionId, 
+                cardId, 
+                setPetitions, 
+                setIsEditingPetition, 
+                setEditedPetitionData
+              )
+            }
+            cardId={cardId}
+            setPetitions={setPetitions}
+            setIsEditingPetition={setIsEditingPetition}
+            setEditedPetitionData={setEditedPetitionData}
+            router={props.router}
+          />
+        </>
       )}
     </div>
   );

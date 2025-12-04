@@ -1,5 +1,5 @@
 import React from 'react';
-import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
+import styles from '../../components/UI/Card/BusinessCard.module.css';
 
 const MovementList = ({
     movements,
@@ -9,44 +9,83 @@ const MovementList = ({
     handleEditMoveForm,
     cardId,
     setMovements,
-    router
+    router,
+    setIsEditingMove,
+    setEditedMoveData
 }) => {
+  // Функция для форматирования даты
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Не указано';
+    
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}.${month}.${year}`;
+  };
+
+  // Функция для получения названия решения
+  const getDecisionName = (decisionId) => {
+    if (!decisionId || !decisionCases.length) return 'Не указано';
+    
+    const decision = decisionCases.find((decision) => decision.id === decisionId);
+    return decision?.name_case || 'Неизвестно';
+  };
 
   return (
     <>
-      {movements.map((movement, index) => (
-        <div key={index} style={{ marginBottom: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <strong>Дата заседания: {movement.date_meeting}.</strong>
-              <div>Время заседания: {movement.meeting_time}</div>
-              <div>
-                Решение по поступившему делу: {movement.decision_case && movement.decision_case.length > 0
-                  ? decisionCases.find((decision) => decision.id === movement.decision_case[0])?.name_case || 'Неизвестно'
-                  : 'Неизвестно'}
+      {movements.length > 0 ? (
+        movements.map((movement, index) => (
+          <div key={movement.id || index} className={styles.defendantItem}>
+            <div className={styles.defendantInfo}>
+              <strong>Дата заседания: {formatDate(movement.date_meeting)}</strong>
+              
+              <div className={styles.infoRow}>
+                <div className={styles.infoLabel}>Время заседания:</div>
+                <div className={styles.infoValue}>{movement.meeting_time || 'Не указано'}</div>
               </div>
-              <div>Состав коллегии: {movement.composition_colleges}</div>
-              <div>Результат судебного заседания: {movement.result_court_session}</div>
-              <div>Причина отложения: {movement.reason_deposition}</div>
+              
+              <div className={styles.infoRow}>
+                <div className={styles.infoLabel}>Результат заседания:</div>
+                <div className={styles.infoValue}>{movement.result_court_session || 'Не указан'}</div>
+              </div>              
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <IoMdEye
-                onClick={() => handleShowDetailsMovement({ move: movement }, router)}
-                style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
-              />
-              <IoMdTrash
-                onClick={() => handleDeleteMove(movement.id, cardId, setMovements)} // Передаем правильные параметры
-                style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-              />
-              <IoMdCreate
-                onClick={() => handleEditMoveForm(true, movement.id)}
-                style={{ cursor: 'pointer', color: 'green' }}
-              />
+            
+            <div className={styles.verticalActionButtons}>
+              <button 
+                onClick={() => handleShowDetailsMovement({ 
+                  move: movement, 
+                  card: { id: cardId } // Передаем cardId
+                }, router)} // Передаем router как navigate
+                className={`${styles.verticalActionButton} ${styles.viewButton}`}
+                title="Просмотреть подробнее"
+              >
+                <span className={styles.buttonIcon}>👁️</span>
+                Просмотр
+              </button>
+              <button 
+                onClick={() => handleEditMoveForm(movement.id)}
+                className={`${styles.verticalActionButton} ${styles.editButton}`}
+                title="Редактировать"
+              >
+                <span className={styles.buttonIcon}>✏️</span>
+                Изменить
+              </button>
+              <button 
+                onClick={() => handleDeleteMove(movement.id, cardId, setMovements)}
+                className={`${styles.verticalActionButton} ${styles.deleteButton}`}
+                title="Удалить"
+              >
+                <span className={styles.buttonIcon}>🗑️</span>
+                Удалить
+              </button>
             </div>
           </div>
-          <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
-        </div>
-      ))}
+        ))
+      ) : (
+        <p>Движения по делу не добавлены</p>
+      )}
     </>
   );
 };

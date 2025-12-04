@@ -7,7 +7,7 @@ import axios from 'axios';
 import baseService from '../../API/baseService';
 
 export const handleShowDetailsMovement = (props, router) => {
-  router(`/business_card/businesscard/:id/businessmovement/${props.move.id}`);
+  router(`/business_card/businesscard/${props.card.id}/businessmovement/${props.move.id}`);
   console.log("Передается в МУВВВВ!!!!", props.move);
 };
 

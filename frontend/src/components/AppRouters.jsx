@@ -8,7 +8,7 @@ import CardForm from "./CardForm";
 import Cards from "../pages/cards/Cards";
 import CardIdPage from "../pages/cards/CardIdPage";
 import SideDetail from "../pages/sides/SideDetail";
-import MovementDetail from "./CriminalCase/MovementDetail";
+import MovementDetail from "../pages/movement/MovementDetail";
 import PetitionDetail from "../pages/petitions/PetitionDetail";
 import ConsideredDetail from "../pages/considered/ConsideredDetail";
 import Layout from './Layout';
@@ -30,8 +30,8 @@ const AppRouter = () => {
                 <Route path="business_card" element={<CardForm />} />
                 <Route path="business_card/businesscard/" element={<CardList />} />
                 <Route path="business_card/businesscard/:id/sidescaseincase/:id" element={<SideDetail />} />
-                <Route path="business_card/businesscard/:id/businessmovement/:id" element={<MovementDetail />} />
-                <Route path="business_card/businesscard/:id/petitionsincase/:id" element={<PetitionDetail />} />
+                <Route path="business_card/businesscard/:cardId/businessmovement/:movementId"  element={<MovementDetail />} />
+                <Route path="business_card/businesscard/:cardId/petitionsincase/:petitionId" element={<PetitionDetail />} />
                 <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
                 <Route path="/businesscard/:cardId/defendants/:defendantId" element={<DefendantDetail />} />
                 <Route path="/businesscard/:cardId/criminal-details" element={<CriminalDetail />} />
