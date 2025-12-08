@@ -1,6 +1,6 @@
-// CriminalNotifications.jsx
 import React, { useState, useEffect } from 'react';
 import NotificationService from '../../API/NotificationService';
+import baseService from '../../API/baseService';
 import styles from './CriminalNotifications.module.css';
 
 const CriminalNotifications = ({ cardId, criminalData }) => {
@@ -14,13 +14,66 @@ const CriminalNotifications = ({ cardId, criminalData }) => {
     petitions: { total: 0, considered: 0, granted: 0, denied: 0 }
   });
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [petitionsCount, setPetitionsCount] = useState(0);
+  const [loadingPetitions, setLoadingPetitions] = useState(false);
 
   useEffect(() => {
-    if (criminalData) {
+    if (criminalData && cardId) {
       loadCaseNotifications();
       calculateCaseStats();
+      fetchPetitionsCount();
     }
   }, [criminalData, cardId]);
+
+  // Загрузка количества ходатайств
+  const fetchPetitionsCount = async () => {
+    if (!cardId) return;
+    
+    try {
+      setLoadingPetitions(true);
+      const response = await baseService.get(
+        `/business_card/businesscard/${cardId}/petitionsincase/`
+      );
+      const petitions = response.data || [];
+      setPetitionsCount(petitions.length);
+      
+      // Обновляем статистику с реальным количеством ходатайств
+      setCaseStats(prevStats => ({
+        ...prevStats,
+        petitions: {
+          ...prevStats.petitions,
+          total: petitions.length
+        }
+      }));
+      
+      // Дополнительно можно посчитать статусы ходатайств, если есть данные
+      if (petitions.length > 0) {
+        const considered = petitions.filter(p => p.decision_rendered && p.decision_rendered.length > 0).length;
+        const granted = petitions.filter(p => {
+          const decision = p.decision_rendered;
+          if (!decision || !Array.isArray(decision) || decision.length === 0) return false;
+          const firstDecision = decision[0];
+          return firstDecision.decisions && firstDecision.decisions.toLowerCase().includes('удовлетворен');
+        }).length;
+        const denied = considered - granted;
+        
+        setCaseStats(prevStats => ({
+          ...prevStats,
+          petitions: {
+            total: petitions.length,
+            considered,
+            granted,
+            denied
+          }
+        }));
+      }
+      
+      setLoadingPetitions(false);
+    } catch (error) {
+      console.error('Ошибка загрузки ходатайств:', error);
+      setLoadingPetitions(false);
+    }
+  };
 
   const loadCaseNotifications = async () => {
     try {
@@ -109,7 +162,15 @@ const CriminalNotifications = ({ cardId, criminalData }) => {
           <div className={styles.statItem}>
             <span className={styles.statLabel}>Ходатайства:</span>
             <span className={styles.statValue}>
-              {caseStats.petitions.total}/{caseStats.petitions.considered}
+              {loadingPetitions ? (
+                <span className={styles.loadingText}>загрузка...</span>
+              ) : (
+                <span>
+                  {caseStats.petitions.total} зарегистрировано
+                  {caseStats.petitions.considered > 0 && `, ${caseStats.petitions.considered} рассмотрено`}
+                  {caseStats.petitions.granted > 0 && ` (${caseStats.petitions.granted} удовлетворено)`}
+                </span>
+              )}
             </span>
           </div>
         </div>

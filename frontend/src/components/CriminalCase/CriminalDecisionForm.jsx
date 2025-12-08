@@ -47,7 +47,7 @@ const CriminalDecisionForm = ({ decisionData, onDecisionDataChange, onCancel, on
 
   return (
     <div className={styles.decisionForm}>
-      <h4>Данные решения</h4>
+      <h4>Данные по решению</h4>
       
       <form onSubmit={handleSubmit}>
         <div className={styles.formRow}>

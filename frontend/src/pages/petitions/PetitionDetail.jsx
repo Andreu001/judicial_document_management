@@ -17,8 +17,6 @@ const PetitionDetail = () => {
   const [petitionsList, setPetitionsList] = useState([]);
   const [sidesList, setSidesList] = useState([]);
   const [decisionsList, setDecisionsList] = useState([]);
-  const [defendantsList, setDefendantsList] = useState([]);
-  const [isCriminalCase, setIsCriminalCase] = useState(false);
 
   // Для отладки
   useEffect(() => {
@@ -34,17 +32,29 @@ const PetitionDetail = () => {
       try {
         setLoading(true);
         
-        // Проверяем тип дела (уголовное или гражданское)
-        await checkCaseType();
-        
-        // Загрузка списков для выбора
-        await loadSelectLists();
-        
-        // Загрузка данных ходатайства
+        // Загружаем данные ходатайства
         const petitionResponse = await baseService.get(
           `/business_card/businesscard/${cardId}/petitionsincase/${petitionId}/`
         );
         
+        // ПАРАЛЛЕЛЬНО загружаем списки для выбора
+        const [
+          petitionsResponse,
+          decisionsResponse,
+          sidesResponse
+        ] = await Promise.all([
+          baseService.get('/business_card/petitions/'),
+          baseService.get('/business_card/decisions/'),
+          // Пробуем оба варианта - сначала стороны, потом обвиняемых
+          getSidesOrDefendants(cardId)
+        ]);
+        
+        // Устанавливаем списки для выбора
+        setPetitionsList(petitionsResponse.data || []);
+        setDecisionsList(decisionsResponse.data || []);
+        setSidesList(sidesResponse || []);
+        
+        // Устанавливаем данные ходатайства
         if (petitionResponse.data) {
           const data = petitionResponse.data;
           console.log('Загруженные данные ходатайства:', data);
@@ -80,44 +90,44 @@ const PetitionDetail = () => {
     fetchPetitionDetails();
   }, [cardId, petitionId]);
 
-  const checkCaseType = async () => {
+  // Функция для получения сторон или обвиняемых
+  const getSidesOrDefendants = async (cardId) => {
     try {
-      // Здесь можно добавить логику определения типа дела
-      // Например, проверку определенных полей карточки дела
-      // Пока оставим false для примера
-      setIsCriminalCase(false);
-    } catch (error) {
-      console.error('Ошибка определения типа дела:', error);
-      setIsCriminalCase(false);
-    }
-  };
-
-  const loadSelectLists = async () => {
-    try {
-      // Загрузка списка типов ходатайств
-      const petitionsResponse = await baseService.get('/business_card/petitions/');
-      setPetitionsList(petitionsResponse.data || []);
-
-      // Загрузка списка решений
-      const decisionsResponse = await baseService.get('/business_card/decisions/');
-      setDecisionsList(decisionsResponse.data || []);
-
-      // Загрузка сторон или обвиняемых в зависимости от типа дела
-      if (isCriminalCase) {
-        // Для уголовных дел
-        const defendantsResponse = await baseService.get(
-          `/criminal_proceedings/businesscard/${cardId}/defendants/`
-        );
-        setDefendantsList(defendantsResponse.data || []);
-      } else {
-        // Для гражданских дел
-        const sidesResponse = await baseService.get(
-          `/business_card/businesscard/${cardId}/sidescaseincase/`
-        );
-        setSidesList(sidesResponse.data || []);
+      // Сначала пробуем загрузить стороны
+      console.log('Пытаемся загрузить стороны...');
+      const sidesResponse = await baseService.get(
+        `http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`
+      );
+      
+      if (sidesResponse.data && sidesResponse.data.length > 0) {
+        console.log('Загружены стороны:', sidesResponse.data);
+        return sidesResponse.data;
       }
+      
+      // Если сторон нет, пробуем загрузить обвиняемых
+      console.log('Сторон нет, пытаемся загрузить обвиняемых...');
+      const defendantsResponse = await baseService.get(
+        `http://localhost:8000/criminal_proceedings/businesscard/${cardId}/defendants/`
+      );
+      
+      if (defendantsResponse.data && defendantsResponse.data.length > 0) {
+        console.log('Загружены обвиняемые:', defendantsResponse.data);
+        // Преобразуем обвиняемых в формат, совместимый с отображением
+        return defendantsResponse.data.map(defendant => ({
+          ...defendant,
+          // Добавляем поле name для совместимости
+          name: defendant.full_name || 'Неизвестный',
+          // Добавляем поле sides_case_name для совместимости
+          sides_case_name: defendant.side_case_name || ''
+        }));
+      }
+      
+      console.log('Нет ни сторон, ни обвиняемых');
+      return [];
+      
     } catch (error) {
-      console.error('Ошибка загрузки списков:', error);
+      console.error('Ошибка загрузки сторон/обвиняемых:', error);
+      return [];
     }
   };
 
@@ -252,6 +262,18 @@ const PetitionDetail = () => {
     return petitionData.decision_rendered;
   };
 
+  // Функция для получения имени стороны/обвиняемого из списка
+  const getSideName = (side) => {
+    if (side.full_name) {
+      // Это обвиняемый
+      return `${side.full_name} ${side.side_case_name ? `(${side.side_case_name})` : ''}`;
+    } else if (side.name) {
+      // Это сторона
+      return `${side.name} ${side.sides_case_name ? `(${side.sides_case_name})` : ''}`;
+    }
+    return 'Неизвестный';
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -344,41 +366,22 @@ const PetitionDetail = () => {
               <div className={styles.field}>
                 <label htmlFor="notification_parties">Сторона подавшая ходатайство *</label>
                 {isEditing ? (
-                  isCriminalCase ? (
-                    <select
-                      id="notification_parties"
-                      name="notification_parties"
-                      value={formData.notification_parties || ''}
-                      onChange={handleInputChange}
-                      className={styles.select}
-                      required
-                      disabled={defendantsList.length === 0}
-                    >
-                      <option value="">Выберите обвиняемого</option>
-                      {defendantsList.map((defendant) => (
-                        <option key={defendant.id} value={defendant.id}>
-                          {defendant.full_name} {defendant.side_case_name ? `(${defendant.side_case_name})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <select
-                      id="notification_parties"
-                      name="notification_parties"
-                      value={formData.notification_parties || ''}
-                      onChange={handleInputChange}
-                      className={styles.select}
-                      required
-                      disabled={sidesList.length === 0}
-                    >
-                      <option value="">Выберите сторону</option>
-                      {sidesList.map((side) => (
-                        <option key={side.id} value={side.id}>
-                          {side.name} {side.sides_case_name ? `(${side.sides_case_name})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  )
+                  <select
+                    id="notification_parties"
+                    name="notification_parties"
+                    value={formData.notification_parties || ''}
+                    onChange={handleInputChange}
+                    className={styles.select}
+                    required
+                    disabled={sidesList.length === 0}
+                  >
+                    <option value="">Выберите сторону</option>
+                    {sidesList.map((side) => (
+                      <option key={side.id} value={side.id}>
+                        {getSideName(side)}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <span>{getPartyName()}</span>
                 )}
@@ -492,13 +495,6 @@ const PetitionDetail = () => {
                   <span className={styles.readonly}>{petitionData.business_card.original_name}</span>
                 </div>
               )}
-
-              <div className={styles.field}>
-                <label>Тип дела</label>
-                <span className={styles.readonly}>
-                  {isCriminalCase ? 'Уголовное' : 'Гражданское'}
-                </span>
-              </div>
             </div>
           </div>
         </div>

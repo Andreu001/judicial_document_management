@@ -442,172 +442,6 @@ export const CaseCategoryTab = ({ isEditing,
     </div>
 );
 
-export const HearingTab = ({ isEditing,
-                            formData,
-                            options,
-                            handleInputChange,
-                            getOptionLabel,
-                            criminalData,
-                            handleDateChange,
-                            formatDate }) => (
-    <div className={styles.tabContent}>
-      <div className={styles.tabGrid}>
-        <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>6. Результат предварительного слушания</h3>
-          <div className={styles.field}>
-            <label>Результат слушания</label>
-            {isEditing ? (
-              <select
-                name="preliminary_hearing_result"
-                value={formData.preliminary_hearing_result || ''}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="">Выберите</option>
-                {options.preliminaryHearingResult.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>{getOptionLabel(options.preliminaryHearingResult, criminalData.preliminary_hearing_result)}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>Дата первого заседания</label>
-            {isEditing ? (
-              <input
-                type="date"
-                name="first_hearing_date"
-                value={formData.first_hearing_date || ''}
-                onChange={(e) => handleDateChange('first_hearing_date', e.target.value)}
-                className={styles.input}
-              />
-            ) : (
-              <span>{formatDate(criminalData.first_hearing_date)}</span>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>7. Соблюдение сроков</h3>
-          <div className={styles.field}>
-            <label>Соблюдение сроков</label>
-            {isEditing ? (
-              <select
-                name="hearing_compliance"
-                value={formData.hearing_compliance || ''}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="">Выберите</option>
-                {options.hearingCompliance.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>{getOptionLabel(options.hearingCompliance, criminalData.hearing_compliance)}</span>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>8. Причины отложения дела</h3>
-          <div className={styles.field}>
-            <label>Причина отложения</label>
-            {isEditing ? (
-              <select
-                name="hearing_postponed_reason"
-                value={formData.hearing_postponed_reason || ''}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="">Выберите</option>
-                {options.hearingPostponedReason.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>{getOptionLabel(options.hearingPostponedReason, criminalData.hearing_postponed_reason)}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>Текст причины отложения</label>
-            {isEditing ? (
-              <textarea
-                name="hearing_postponed_reason_text"
-                value={formData.hearing_postponed_reason_text || ''}
-                onChange={handleInputChange}
-                className={styles.textarea}
-                rows={2}
-              />
-            ) : (
-              <span>{criminalData.hearing_postponed_reason_text || 'Не указано'}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>Дата приостановления производства</label>
-            {isEditing ? (
-              <input
-                type="date"
-                name="suspension_date"
-                value={formData.suspension_date || ''}
-                onChange={(e) => handleDateChange('suspension_date', e.target.value)}
-                className={styles.input}
-              />
-            ) : (
-              <span>{formatDate(criminalData.suspension_date)}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>Причина приостановления</label>
-            {isEditing ? (
-              <select
-                name="suspension_reason"
-                value={formData.suspension_reason || ''}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="">Выберите</option>
-                {options.suspensionReason.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>{getOptionLabel(options.suspensionReason, criminalData.suspension_reason)}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>Дата возобновления производства</label>
-            {isEditing ? (
-              <input
-                type="date"
-                name="resumption_date"
-                value={formData.resumption_date || ''}
-                onChange={(e) => handleDateChange('resumption_date', e.target.value)}
-                className={styles.input}
-              />
-            ) : (
-              <span>{formatDate(criminalData.resumption_date)}</span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-);
-
 export const ResultTab = ({ isEditing,
                             formData,
                             options,
@@ -878,7 +712,7 @@ export const AppealTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>13. Обжалование приговора</h3>
+          <h3 className={styles.subsectionTitle}>Обжалование приговора</h3>
           
           <div className={styles.field}>
             <label>Обжалование приговора</label>
@@ -963,7 +797,7 @@ export const CourtInstanceTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>14. Направление в суд II инстанции</h3>
+          <h3 className={styles.subsectionTitle}>Направление в суд II инстанции</h3>
           
           <div className={styles.field}>
             <label>Суд II инстанции</label>
@@ -1063,7 +897,7 @@ export const ConsiderationTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>15. Рассмотрение во II инстанции</h3>
+          <h3 className={styles.subsectionTitle}>Рассмотрение во II инстанции</h3>
           
           <div className={styles.field}>
             <label>Дата рассмотрения во II инстанции</label>
@@ -1148,7 +982,7 @@ export const ExecutionTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>16-17. Вступление в силу и исполнение</h3>
+          <h3 className={styles.subsectionTitle}>Вступление в силу и исполнение</h3>
           
           <div className={styles.field}>
             <label>Дата вступления в силу</label>
@@ -1182,7 +1016,7 @@ export const ExecutionTab = ({ isEditing,
         </div>
 
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>15.1. Результаты гражданского иска</h3>
+          <h3 className={styles.subsectionTitle}>Результаты гражданского иска</h3>
           
           <div className={styles.field}>
             <label>Результат гражданского иска</label>
@@ -1315,7 +1149,7 @@ export const SpecialMarksTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>18-20. Особые отметки</h3>
+          <h3 className={styles.subsectionTitle}>Особые отметки</h3>
           
           <div className={styles.field}>
             <label>Копия направлена</label>
@@ -1605,7 +1439,22 @@ export const DefendantBasicInfoTab = ({ isEditing,
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
           <h3 className={styles.subsectionTitle}>1. Основные сведения</h3>
-          
+
+          <div className={styles.field}>
+            <label>ФИО подсудимого</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="full_name"
+                value={formData.full_name || ''}
+                onChange={handleInputChange}
+                className={styles.input}
+              />
+            ) : (
+              <span>{defendantData.full_name || 'Не указано'}</span>
+            )}
+          </div>
+
           <div className={styles.field}>
             <label>Статья</label>
             {isEditing ? (
@@ -1632,21 +1481,6 @@ export const DefendantBasicInfoTab = ({ isEditing,
               />
             ) : (
               <span>{defendantData.maximum_penalty_article || 'Не указано'}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>ФИО подсудимого</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="full_name"
-                value={formData.full_name || ''}
-                onChange={handleInputChange}
-                className={styles.input}
-              />
-            ) : (
-              <span>{defendantData.full_name || 'Не указано'}</span>
             )}
           </div>
 

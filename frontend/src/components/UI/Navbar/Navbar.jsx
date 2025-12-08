@@ -27,6 +27,7 @@ const Navbar = () => {
   return (
     <div className={styles.navbar}>
       <div className={styles.navbar__header}>
+        <div className={styles.navbar__title}>Автоматизированное</div>
         <div className={styles.navbar__title}>Судопроизводство</div>
       </div>
 

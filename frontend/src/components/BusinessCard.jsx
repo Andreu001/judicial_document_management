@@ -935,8 +935,7 @@ const createMove = async (newMove) => {
             <CardNavbar onTabChange={handleTabChange} />
               {activeTab === 0 && (
                 <div>
-                  <strong>АЙДИ карточки: {props.card.id}</strong>
-                  <div>Автор: {authorName || 'Не указан'}</div>
+                  <div>Пользователь: {authorName || 'Не указан'}</div>
                   <div>Дата создания: {formatDateTime(props.card.pub_date)}</div>
                   <div>Дата редактирования: {formatDateTime(props.card.updated_at)}</div>
                 </div>
@@ -1054,55 +1053,12 @@ const createMove = async (newMove) => {
                       <div key={decision.id} className={styles.defendantItem}>
                         <div className={styles.defendantInfo}>
                           <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}><strong>Решение:</strong></div>
-                            <div className={styles.infoValue} ><strong>{decision.name_case || 'Не указано'}</strong></div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Дата апелляции:</div>
-                            <div className={styles.infoValue}>{formatDate(decision.appeal_date) || 'Не указано'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Заявитель:</div>
-                            <div className={styles.infoValue}>{decision.appeal_applicant || 'Не указан'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Процессуальное положение:</div>
-                            <div className={styles.infoValue}>{decision.appeal_applicant_status || 'Не указано'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Суд:</div>
-                            <div className={styles.infoValue}>{getCourtInstanceText(decision.court_instance) || 'Не указан'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Дата направления:</div>
-                            <div className={styles.infoValue}>{formatDate(decision.court_sent_date) || 'Не указана'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Дата возвращения:</div>
-                            <div className={styles.infoValue}>{formatDate(decision.court_return_date) || 'Не указана'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Причина возвращения:</div>
-                            <div className={styles.infoValue}>{decision.court_return_reason || 'Не указана'}</div>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Дата повторного направления:</div>
-                            <div className={styles.infoValue}>{formatDate(decision.court_resend_date) || 'Не указана'}</div>
+                            <div className={styles.infoLabel}><strong>Решение: {decision.name_case || 'Не указано'}</strong></div>
                           </div>
                           <div className={styles.infoRow}>
                             <div className={styles.infoLabel}>Дата рассмотрения:</div>
                             <div className={styles.infoValue}>{formatDate(decision.court_consideration_date) || 'Не указана'}</div>
                           </div>
-                          <div className={styles.infoRow}>
-                            <div className={styles.infoLabel}>Результат:</div>
-                            <div className={styles.infoValue}>{decision.appeal_name || 'Не указан'}</div>
-                          </div>
-                          {decision.consideration_changes && (
-                            <div className={styles.infoRow}>
-                              <div className={styles.infoLabel}>Сущность изменений:</div>
-                              <div className={styles.infoValue}>{decision.consideration_changes}</div>
-                            </div>
-                          )}
                         </div>
                         <div className={styles.verticalActionButtons}>
                           <button 

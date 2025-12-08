@@ -233,31 +233,31 @@ const CriminalDecisionDetail = () => {
                 className={`${styles.tab} ${activeTab === 'appeal' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('appeal')}
               >
-                13. Обжалование
+                Обжалование решения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'court' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('court')}
               >
-                14. Суд II инстанции
+                Суд II инстанции
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'consideration' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('consideration')}
               >
-                15. Рассмотрение
+                Рассмотрение судом второй инстанции
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'execution' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('execution')}
               >
-                16-17. Исполнение
+                Исполнение
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'special' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('special')}
               >
-                18-20. Особые отметки
+                Особые отметки
               </button>
             </div>
 

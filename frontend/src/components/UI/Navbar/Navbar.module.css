@@ -17,7 +17,7 @@
 
 .navbar__title {
   font-family: 'Georgia', serif; /* Шрифт с засечками */
-  font-size: 20px; /* Размер текста */
+  font-size: 18px; /* Размер текста */
   color: #c9f8cf; /* Темно-серый цвет */
   font-weight: bold; /* Жирный текст */
 }

@@ -52,6 +52,7 @@ class PetitionsViewSet(viewsets.ModelViewSet):
     """
     Список ходатайств
     """
+    allow_null=True
     queryset = Petitions.objects.all()
     serializer_class = PetitionsSerializer
 

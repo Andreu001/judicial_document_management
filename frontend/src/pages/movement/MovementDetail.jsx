@@ -14,7 +14,7 @@ const MovementDetail = () => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [decisions, setDecisions] = useState([]);
-  const [selectedDecisions, setSelectedDecisions] = useState([]);
+  const [selectedDecision, setSelectedDecision] = useState(null);
   
   // ДЛЯ ОТЛАДКИ
   useEffect(() => {
@@ -38,9 +38,18 @@ const MovementDetail = () => {
           setMovementData(data);
           setFormData(data);
           
-          // Извлекаем ID решений из ManyToMany поля
-          if (data.decision_case && Array.isArray(data.decision_case)) {
-            setSelectedDecisions(data.decision_case.map(dec => dec.id || dec));
+          // ИЗМЕНЕНО: Берем первый элемент массива как выбранное решение
+          if (data.decision_case && Array.isArray(data.decision_case) && data.decision_case.length > 0) {
+            // Предполагаем, что решение одно (как в MovementForm)
+            const decision = data.decision_case[0];
+            setSelectedDecision(decision.id || decision);
+            
+            // ДЛЯ ОТЛАДКИ: посмотрим что приходит
+            console.log('Decision data received:', decision);
+            console.log('Decision name_case:', decision.name_case);
+            console.log('Decision object:', decision);
+          } else {
+            setSelectedDecision(null);
           }
         }
         
@@ -69,35 +78,27 @@ const MovementDetail = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
   };
 
   const handleDecisionChange = (e) => {
-    const { value, checked } = e.target;
-    const decisionId = parseInt(value);
-    
-    if (checked) {
-      setSelectedDecisions(prev => [...prev, decisionId]);
-    } else {
-      setSelectedDecisions(prev => prev.filter(id => id !== decisionId));
-    }
+    const value = e.target.value;
+    setSelectedDecision(value === '' ? null : parseInt(value));
   };
 
   const handleSave = async () => {
     try {
       setSaving(true);
       
-      // Подготовка данных для отправки
       const dataToSend = {
         ...formData,
-        decision_case: selectedDecisions
+        decision_case: selectedDecision ? [selectedDecision] : []
       };
       
-      // Удаляем лишние поля, которые не должны отправляться
       delete dataToSend.id;
       delete dataToSend.business_card;
       
@@ -108,6 +109,14 @@ const MovementDetail = () => {
       
       setMovementData(updatedData.data);
       setFormData(updatedData.data);
+      
+      if (updatedData.data.decision_case && updatedData.data.decision_case.length > 0) {
+        const decision = updatedData.data.decision_case[0];
+        setSelectedDecision(decision.id || decision);
+      } else {
+        setSelectedDecision(null);
+      }
+      
       setIsEditing(false);
       setSaving(false);
     } catch (err) {
@@ -117,23 +126,14 @@ const MovementDetail = () => {
     }
   };
 
-  const handleDateChange = (name, dateString) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: dateString || null
-    }));
-  };
-
-  const handleTimeChange = (name, timeString) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: timeString || null
-    }));
-  };
-
   const handleCancel = () => {
     setFormData(movementData);
-    setSelectedDecisions(movementData.decision_case?.map(dec => dec.id || dec) || []);
+    if (movementData?.decision_case && movementData.decision_case.length > 0) {
+      const decision = movementData.decision_case[0];
+      setSelectedDecision(decision.id || decision);
+    } else {
+      setSelectedDecision(null);
+    }
     setIsEditing(false);
   };
 
@@ -144,17 +144,45 @@ const MovementDetail = () => {
 
   const formatTime = (timeString) => {
     if (!timeString) return 'Не указано';
-    return timeString.slice(0, 5); // Формат HH:mm
+    return timeString.slice(0, 5);
   };
 
-  const getDecisionNames = () => {
+  // ИСПРАВЛЕНО: Функция для получения названия решения
+  const getDecisionName = () => {
     if (!movementData?.decision_case || !Array.isArray(movementData.decision_case)) {
-      return 'Не указаны';
+      return 'Не указано';
     }
     
-    return movementData.decision_case
-      .map(dec => dec.name_case || dec)
-      .join(', ');
+    if (movementData.decision_case.length === 0) {
+      return 'Не выбрано';
+    }
+    
+    // Берем первое решение
+    const decision = movementData.decision_case[0];
+    
+    // Если decision - это объект с полем name_case
+    if (typeof decision === 'object' && decision.name_case) {
+      return decision.name_case;
+    }
+    
+    // Если decision - это просто ID (число или строка), ищем название в списке решений
+    if (decisions.length > 0) {
+      const decisionId = typeof decision === 'object' ? decision.id : decision;
+      const foundDecision = decisions.find(d => d.id == decisionId);
+      return foundDecision ? foundDecision.name_case : `ID: ${decisionId}`;
+    }
+    
+    // Если ничего не нашли
+    return typeof decision === 'object' ? JSON.stringify(decision) : String(decision);
+  };
+
+  // НОВАЯ ФУНКЦИЯ: Получить текущее выбранное решение для отображения в режиме редактирования
+  const getCurrentDecisionForEdit = () => {
+    if (movementData?.decision_case && movementData.decision_case.length > 0) {
+      const decision = movementData.decision_case[0];
+      return typeof decision === 'object' ? decision.id : decision;
+    }
+    return '';
   };
 
   if (loading) {
@@ -217,7 +245,6 @@ const MovementDetail = () => {
 
       <div className={styles.content}>
         <div className={styles.formContainer}>
-          {/* Основная информация */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Основная информация</h2>
             
@@ -257,32 +284,29 @@ const MovementDetail = () => {
               </div>
 
               <div className={styles.field}>
-                <label>Решение по поступившему делу</label>
+                <label htmlFor="decision_case">Решение по поступившему делу</label>
                 {isEditing ? (
-                  <div className={styles.checkboxGroup}>
+                  <select
+                    id="decision_case"
+                    name="decision_case"
+                    value={selectedDecision || ''}
+                    onChange={handleDecisionChange}
+                    className={styles.select}
+                  >
+                    <option value="">Выберите решение</option>
                     {decisions.map(decision => (
-                      <div key={decision.id} className={styles.checkboxItem}>
-                        <input
-                          type="checkbox"
-                          id={`decision-${decision.id}`}
-                          value={decision.id}
-                          checked={selectedDecisions.includes(decision.id)}
-                          onChange={handleDecisionChange}
-                        />
-                        <label htmlFor={`decision-${decision.id}`}>
-                          {decision.name_case}
-                        </label>
-                      </div>
+                      <option key={decision.id} value={decision.id}>
+                        {decision.name_case}
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 ) : (
-                  <span>{getDecisionNames()}</span>
+                  <span>{getDecisionName()}</span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Состав коллегии и результаты */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Состав коллегии и результаты</h2>
             
@@ -340,7 +364,6 @@ const MovementDetail = () => {
             </div>
           </div>
 
-          {/* Служебная информация */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Служебная информация</h2>
             

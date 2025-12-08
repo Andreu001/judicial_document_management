@@ -276,7 +276,7 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId,
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Дата вынесения решения</label>
+              <label>Дата рассмотрения ходатайства</label>
               <MyInput
                 type="date"
                 name="date_decision"

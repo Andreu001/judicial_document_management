@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement
 
+
 class DefendantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Defendant
@@ -10,6 +11,9 @@ class DefendantSerializer(serializers.ModelSerializer):
 
 
 class CriminalDecisionSerializer(serializers.ModelSerializer):
+
+    name_case = serializers.CharField(read_only=True)
+
     class Meta:
         model = CriminalDecision
         fields = "__all__"

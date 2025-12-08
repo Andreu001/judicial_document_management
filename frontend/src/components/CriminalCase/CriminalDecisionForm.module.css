@@ -1,21 +1,18 @@
-.decisionForm {
+.defendantForm {
   background: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  margin-bottom: 25px;
-  max-width: 800px;
-  margin: 0 auto;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 15px 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
 }
 
-.decisionForm h4 {
-  margin-bottom: 25px;
+.defendantForm h4 {
   color: #2c3e50;
-  font-size: 20px;
-  font-weight: 600;
-  text-align: center;
+  margin-bottom: 20px;
   border-bottom: 2px solid #3498db;
-  padding-bottom: 15px;
+  padding-bottom: 10px;
+  font-size: 18px;
 }
 
 .formRow {
@@ -27,7 +24,7 @@
 
 .formGroup {
   flex: 1;
-  min-width: 280px;
+  min-width: 250px;
 }
 
 .formGroup label {
@@ -38,84 +35,65 @@
   font-size: 14px;
 }
 
-.select,
-.input,
-.dateInput,
-.textarea {
+/* Стили для инпутов */
+.formGroup input,
+.formGroup select {
   width: 100%;
   padding: 12px;
   border: 2px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
-  transition: all 0.3s ease;
-  background: white;
+  transition: border-color 0.3s ease;
 }
 
-.select:focus,
-.input:focus,
-.dateInput:focus,
-.textarea:focus {
+.formGroup input:focus,
+.formGroup select:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.textarea {
-  min-height: 100px;
-  resize: vertical;
-  font-family: inherit;
-}
-
 .buttonGroup {
   display: flex;
-  gap: 15px;
-  margin-top: 30px;
-  justify-content: center;
+  gap: 12px;
+  margin-top: 25px;
+  justify-content: flex-end;
 }
 
 .submitButton {
-  padding: 12px 30px;
-  background: linear-gradient(135deg, #27ae60, #229954);
+  background: #27ae60;
   color: white;
   border: none;
+  padding: 12px 24px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.submitButton:hover {
-  background: linear-gradient(135deg, #229954, #1e7e34);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  transition: background 0.3s ease;
 }
 
 .cancelButton {
-  padding: 12px 30px;
-  background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+  background: #95a5a6;
   color: white;
   border: none;
+  padding: 12px 24px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease;
+}
+
+.submitButton:hover {
+  background: #229954;
 }
 
 .cancelButton:hover {
-  background: linear-gradient(135deg, #7f8c8d, #6c7b7d);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
+  background: #7f8c8d;
 }
 
 /* Адаптивность */
 @media (max-width: 768px) {
-  .decisionForm {
-    padding: 20px;
-    margin: 10px;
-  }
-  
   .formRow {
     flex-direction: column;
     gap: 15px;
@@ -127,10 +105,5 @@
   
   .buttonGroup {
     flex-direction: column;
-  }
-  
-  .submitButton,
-  .cancelButton {
-    width: 100%;
   }
 }

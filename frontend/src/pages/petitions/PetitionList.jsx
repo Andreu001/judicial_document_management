@@ -32,44 +32,75 @@ const PetitionList = ({
     return names.join(', ') || 'Не указано';
   };
 
-const getNotificationParties = (parties) => {
-  // Если parties - это массив объектов
-  if (Array.isArray(parties)) {
-    const partyNames = parties.map((party) => {
-      // Проверяем различные варианты структуры объекта
-      if (party && typeof party === 'object') {
-        // Проверяем разные возможные поля с именем
-        return (
-          party.full_name || 
-          party.name || 
-          party.side_case_name || 
-          party.sides_case_name || 
-          'Неизвестно'
-        );
+  // Функция для получения имени стороны/обвиняемого (как в PetitionDetail)
+  const getPartyName = (party) => {
+    if (!party) return 'Не указано';
+    
+    if (Array.isArray(party)) {
+      if (party.length === 0) return 'Не указано';
+      
+      // Берем первый элемент массива
+      const firstParty = party[0];
+      
+      if (firstParty?.full_name) {
+        // Это обвиняемый
+        return `${firstParty.full_name} ${firstParty.side_case_name ? `(${firstParty.side_case_name})` : ''}`;
       }
-      return party || 'Неизвестно';
-    });
-    return partyNames.filter(name => name !== 'Неизвестно').join(', ') || 'Не указано';
-  }
-  
-  // Если parties - это один объект (не массив)
-  if (parties && typeof parties === 'object') {
-    return (
-      parties.full_name || 
-      parties.name || 
-      parties.side_case_name || 
-      parties.sides_case_name || 
-      'Не указано'
-    );
-  }
-  
-  // Если parties - это строка или число
-  if (parties !== undefined && parties !== null) {
-    return String(parties);
-  }
-  
-  return 'Не указано';
-};
+      if (firstParty?.name) {
+        // Это сторона
+        return `${firstParty.name} ${firstParty.sides_case_name ? `(${firstParty.sides_case_name})` : ''}`;
+      }
+      return firstParty || 'Не указано';
+    }
+    
+    // Если не массив, а объект
+    if (party && typeof party === 'object') {
+      if (party.full_name) {
+        // Это обвиняемый
+        return `${party.full_name} ${party.side_case_name ? `(${party.side_case_name})` : ''}`;
+      }
+      if (party.name) {
+        // Это сторона
+        return `${party.name} ${party.sides_case_name ? `(${party.sides_case_name})` : ''}`;
+      }
+      return party || 'Не указано';
+    }
+    
+    // Если это строка или число
+    return String(party || 'Не указано');
+  };
+
+  // Функция для получения решений
+  const getDecisionName = (decision) => {
+    if (!decision) return 'Не указано';
+    
+    if (Array.isArray(decision)) {
+      if (decision.length === 0) return 'Не указано';
+      
+      const firstDecision = decision[0];
+      if (firstDecision?.decisions) {
+        return firstDecision.decisions;
+      }
+      if (firstDecision?.name_case) {
+        return firstDecision.name_case;
+      }
+      return firstDecision || 'Не указано';
+    }
+    
+    // Если не массив, а объект
+    if (decision && typeof decision === 'object') {
+      if (decision.decisions) {
+        return decision.decisions;
+      }
+      if (decision.name_case) {
+        return decision.name_case;
+      }
+      return decision || 'Не указано';
+    }
+    
+    // Если это строка или число
+    return String(decision || 'Не указано');
+  };
 
   return (
     <>
@@ -82,7 +113,7 @@ const getNotificationParties = (parties) => {
               <div className={styles.infoRow}>
                 <div className={styles.infoLabel}>Заявитель ходатайства:</div>
                 <div className={styles.infoValue}>
-                  {getNotificationParties(petition.notification_parties)}
+                  {getPartyName(petition.notification_parties)}
                 </div>
               </div>
               
@@ -93,7 +124,9 @@ const getNotificationParties = (parties) => {
               
               <div className={styles.infoRow}>
                 <div className={styles.infoLabel}>Вынесенное решение:</div>
-                <div className={styles.infoValue}>{petition.decision_rendered || 'Не указано'}</div>
+                <div className={styles.infoValue}>
+                  {getDecisionName(petition.decision_rendered)}
+                </div>
               </div>
               
               <div className={styles.infoRow}>

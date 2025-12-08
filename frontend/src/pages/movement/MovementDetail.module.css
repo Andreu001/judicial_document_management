@@ -207,6 +207,7 @@
   min-height: 100px;
 }
 
+/* УДАЛЕНО: Стили для чекбоксов
 .checkboxGroup {
   display: flex;
   flex-direction: column;
@@ -234,6 +235,40 @@
   margin: 0;
   font-weight: normal;
   cursor: pointer;
+}
+*/
+
+/* ДОБАВЛЕНО: Стили для multi-select */
+.multiSelect {
+  width: 100%;
+}
+
+.select {
+  height: 42px;
+}
+
+.select[multiple] {
+  height: auto;
+  min-height: 100px;
+  padding: 8px 10px;
+}
+
+.select option {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.select option:last-child {
+  border-bottom: none;
+}
+
+.select option:hover {
+  background-color: #f8f9fa;
+}
+
+.select option:checked {
+  background-color: #007bff;
+  color: white;
 }
 
 /* Состояния загрузки и ошибок */

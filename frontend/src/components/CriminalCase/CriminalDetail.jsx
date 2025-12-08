@@ -421,22 +421,16 @@ if (loading) {
                 4-6. Категория и решение
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'hearing' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('hearing')}
-              >
-                7-9. Слушания
-              </button>
-              <button 
                 className={`${styles.tab} ${activeTab === 'result' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('result')}
               >
-                10-11. Результат и состав
+                7-8. Результат и состав
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('additional')}
               >
-                12-13. Дополнительно
+                9-10. Дополнительно
               </button>
             </div>
             <div className={styles.tabContentWrapper}>
@@ -477,18 +471,6 @@ if (loading) {
                   setShowRulingModal={setShowRulingModal}
                   showPreliminaryHearingGrounds={showPreliminaryHearingGrounds}
                   formatBoolean={formatBoolean}
-                />
-              )}
-              {activeTab === 'hearing' && (
-                <HearingTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  options={options}
-                  handleInputChange={handleInputChange}
-                  handleDateChange={handleDateChange}
-                  getOptionLabel={getOptionLabel}
-                  criminalData={criminalData}
-                  formatDate={formatDate}
                 />
               )}
               {activeTab === 'result' && (
