@@ -211,7 +211,7 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId,
                   required
                   disabled={defendantsList.length === 0}
                 >
-                  <option value="">Выберите обвиняемого</option>
+                  <option value="">Выберите сторону</option>
                   {defendantsList.map((defendant) => (
                     <option key={defendant.id} value={defendant.id}>
                       {defendant.full_name} {defendant.side_case_name ? `(${defendant.side_case_name})` : ''}

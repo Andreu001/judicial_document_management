@@ -153,3 +153,115 @@ class NumberAdjustment(models.Model):
 
     def __str__(self):
         return f"Корректировка {self.index.index}: {self.old_number} -> {self.new_number}"
+
+
+class Correspondence(models.Model):
+    """Базовая модель для корреспонденции"""
+    
+    TYPE_CHOICES = [
+        ('incoming', 'Входящая'),
+        ('outgoing', 'Исходящая'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('received', 'Получено'),
+        ('registered', 'Зарегистрировано'),
+        ('processed', 'Обработано'),
+        ('sent', 'Отправлено'),
+        ('archived', 'В архиве'),
+    ]
+    
+    correspondence_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        verbose_name="Тип корреспонденции"
+    )
+    registration_number = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Регистрационный номер"
+    )
+    registration_date = models.DateField(
+        default=timezone.now,
+        verbose_name="Дата регистрации"
+    )
+    sender = models.CharField(
+        max_length=500,
+        verbose_name="Отправитель"
+    )
+    recipient = models.CharField(
+        max_length=500,
+        verbose_name="Получатель"
+    )
+    document_type = models.CharField(
+        max_length=200,
+        verbose_name="Тип документа"
+    )
+    summary = models.TextField(
+        verbose_name="Краткое содержание"
+    )
+    pages_count = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Количество листов"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='received',
+        verbose_name="Статус"
+    )
+    business_card = models.ForeignKey(
+        'business_card.BusinessCard',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='correspondence',
+        verbose_name="Связанная карточка дела"
+    )
+    attached_files = models.FileField(
+        upload_to='correspondence/',
+        null=True,
+        blank=True,
+        verbose_name="Прикрепленные файлы"
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Примечания"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Корреспонденция"
+        verbose_name_plural = "Корреспонденция"
+        ordering = ['-registration_date', '-created_at']
+        indexes = [
+            models.Index(fields=['correspondence_type', 'registration_date']),
+            models.Index(fields=['registration_number']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.registration_number} - {self.sender} → {self.recipient}"
+
+class CorrespondenceCounter(models.Model):
+    """Счетчик для регистрационных номеров корреспонденции"""
+    
+    year = models.IntegerField(verbose_name="Год")
+    incoming_counter = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Счетчик входящей"
+    )
+    outgoing_counter = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Счетчик исходящей"
+    )
+    
+    class Meta:
+        verbose_name = "Счетчик корреспонденции"
+        verbose_name_plural = "Счетчики корреспонденции"
+        unique_together = ['year']
+    
+    def __str__(self):
+        return f"Счетчик {self.year}: Вх.={self.incoming_counter}, Исх.={self.outgoing_counter}"

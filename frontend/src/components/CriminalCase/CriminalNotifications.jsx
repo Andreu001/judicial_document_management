@@ -143,7 +143,7 @@ const CriminalNotifications = ({ cardId, criminalData }) => {
         {/* Статистика */}
         <div className={styles.statsSection}>
           <div className={styles.statItem}>
-            <span className={styles.statLabel}>Общий срок:</span>
+            <span className={styles.statLabel}>Общий срок производства:</span>
             <span className={styles.statValue}>{caseStats.daysInProgress} дней</span>
           </div>
           

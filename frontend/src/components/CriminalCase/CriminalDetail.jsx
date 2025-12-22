@@ -202,7 +202,18 @@ const CriminalDetail = () => {
         caseResult: response.data.case_result || [],
         caseDurationCategory: response.data.case_duration_category || [],
         compositionCourt: response.data.composition_court || [],
-        preliminaryHearingGrounds: response.data.preliminary_hearing || []
+        preliminaryHearingGrounds: response.data.preliminary_hearing || [],
+        preliminaryHearingGrounds: response.data.preliminary_hearing_grounds || [
+        {value: '1', label: 'ходатайство стороны об исключении доказательства (ч. 3 ст. 229 УПК РФ)'},
+        {value: '2', label: 'основание для возвращения дела прокурору (ст. 237 УПК РФ)'},
+        {value: '3', label: 'основание для приостановления или прекращения дела'},
+        {value: '4', label: 'ходатайство о проведении судебного разбирательства (ч. 5 ст. 247 УПК РФ)'},
+        {value: '5', label: 'решение вопроса о рассмотрении дела с участием присяжных заседателей'},
+        {value: '6', label: 'наличие не вступившего в силу приговора с условным осуждением'},
+        {value: '7', label: 'основание для выделения уголовного дела'},
+        {value: '8', label: 'ходатайство стороны о соединении уголовных дел'},
+        {value: '9', label: 'иные основания'},
+            ],
       });
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);

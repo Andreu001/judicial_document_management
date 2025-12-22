@@ -97,7 +97,7 @@ const DefendantForm = ({ defendantData, onDefendantDataChange, onCancel, onSubmi
               <option value="">Выберите сторону по делу</option>
               {sidesCaseList.map((sideCase, index) => (
                 <option key={index} value={sideCase.id}>
-                  {sideCase.sides_case}
+                  {sideCase.name}
                 </option>
               ))}
             </select>

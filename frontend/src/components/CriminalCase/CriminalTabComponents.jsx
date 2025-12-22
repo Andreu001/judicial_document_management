@@ -355,8 +355,8 @@ export const CaseCategoryTab = ({ isEditing,
                   <label>Основания проведения предварительного слушания</label>
                   {isEditing ? (
                       <select
-                          name="preliminary_hearing"
-                          value={formData.preliminary_hearing || ''}
+                          name="preliminary_hearing_grounds"
+                          value={formData.preliminary_hearing_grounds || ''}
                           onChange={handleInputChange}
                           className={styles.select}
                       >
@@ -369,26 +369,25 @@ export const CaseCategoryTab = ({ isEditing,
                       </select>
                   ) : (
                       <span>
-                          {options.preliminaryHearingGrounds.find(opt => opt.value === criminalData.preliminary_hearing)?.label || 'Не указано'}
+                          {options.preliminaryHearingGrounds.find(opt => opt.value === criminalData.preliminary_hearing_grounds)?.label || 'Не указано'}
                       </span>
                   )}
+                    <div className={styles.field}>
+                      <label>Дата предварительного слушания</label>
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          name="case_transfer_date"
+                          value={formData.case_transfer_date || ''}
+                          onChange={(e) => handleDateChange('case_transfer_date', e.target.value)}
+                          className={styles.input}
+                        />
+                      ) : (
+                        <span>{formatDate(criminalData.case_transfer_date)}</span>
+                      )}
+                    </div>
               </div>
           )}
-
-          <div className={styles.field}>
-            <label>Дата предварительного слушания</label>
-            {isEditing ? (
-              <input
-                type="date"
-                name="case_transfer_date"
-                value={formData.case_transfer_date || ''}
-                onChange={(e) => handleDateChange('case_transfer_date', e.target.value)}
-                className={styles.input}
-              />
-            ) : (
-              <span>{formatDate(criminalData.case_transfer_date)}</span>
-            )}
-          </div>
 
           <div className={styles.field}>
             <label>Куда направлено дело</label>

@@ -137,7 +137,25 @@ class CriminalProceedings(models.Model):
             ('4', 'о назначении закрытого судебного заседания в соответствии со ст. 241 УПК РФ'),
         ],
         verbose_name="Решение судьи при назначении дела"
-    )  
+    )
+
+    preliminary_hearing_grounds = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=[
+            ('229.2.1', 'Ходатайство об исключении доказательства (ч. 3 ст. 229 УПК РФ)'),
+            ('229.2.2', 'Основания для возвращения дела прокурору (ст. 237 УПК РФ)'),
+            ('229.2.3', 'Основания для приостановления или прекращения дела'),
+            ('229.2.4.1', 'Ходатайство о проведении заседания без участия подсудимого (ч. 5 ст. 247 УПК РФ)'),
+            ('229.2.5', 'Решение вопроса о рассмотрении дела с участием присяжных заседателей'),
+            ('229.2.6', 'Наличие приговора с условным осуждением за ранее совершенное преступление'),
+            ('229.2.7', 'Основания для выделения уголовного дела'),
+            ('229.2.8', 'Ходатайство о соединении уголовных дел'),
+            ('other', 'Иные основания по решению судьи'),
+        ],
+        verbose_name="Основания проведения предварительного слушания"
+    )
     # Пункт 9 - Результат рассмотрения дела в целом
     case_result = models.CharField(
         max_length=255,
@@ -245,7 +263,7 @@ class CriminalProceedings(models.Model):
 
 class Defendant(models.Model):
     """
-    Раздел Б. Сведения об обвиняемом лице (много на одно дело).
+    Раздел Б. Сведения о лице (много на одно дело).
     """
     criminal_proceedings = models.ForeignKey(
         CriminalProceedings,
@@ -341,11 +359,11 @@ class Defendant(models.Model):
         ],
         verbose_name="Изменение меры пресечения"
     )
-    
+
     restraint_change_date = models.DateField(null=True, blank=True, verbose_name="Дата изменения меры пресечения")
-    restraint_change_to = models.CharField(max_length=255, null=True, blank=True, 
+    restraint_change_to = models.CharField(max_length=255, null=True, blank=True,
                                          verbose_name="Изменена на меру")
-    
+
     conviction_article = models.CharField(max_length=255, null=True, blank=True, verbose_name="Статья по приговору")
     punishment_type = models.CharField(max_length=255, null=True, blank=True, verbose_name="Вид наказания")
     punishment_term = models.CharField(max_length=255, null=True, blank=True, verbose_name="Срок наказания")
@@ -604,7 +622,7 @@ class CriminalCaseMovement(models.Model):
         ],
         verbose_name="Причина приостановления"
     )
-    
+
     resumption_date = models.DateField(null=True, blank=True, verbose_name="Дата возобновления производства")
 
     class Meta:
@@ -621,6 +639,7 @@ def registered_case_number(self):
         return self.registered_case.full_number
     return None
 
+
 def get_registered_case_info(self):
     if hasattr(self, 'registered_case'):
         case = self.registered_case
@@ -634,21 +653,21 @@ def get_registered_case_info(self):
 
 class CriminalRuling(models.Model):
     """Модель для хранения постановлений по уголовным делам"""
-    
+
     RULING_TYPES = [
         ('preliminary_hearing', 'О назначении предварительного слушания'),
         ('court_session', 'О назначении судебного заседания'),
         ('case_appointment', 'О назначении дела'),
         ('other', 'Иное постановление'),
     ]
-    
+
     criminal_proceedings = models.ForeignKey(
         CriminalProceedings,
         on_delete=models.CASCADE,
         related_name="rulings",
         verbose_name="Уголовное производство"
     )
-    
+
     ruling_type = models.CharField(
         max_length=50,
         choices=RULING_TYPES,
