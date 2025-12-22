@@ -4,7 +4,10 @@ from rest_framework.response import Response
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from business_card.models import BusinessCard
-from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement
+from .models import (CriminalProceedings, Defendant,
+                    CriminalDecision, CriminalRuling,
+                    CriminalCaseMovement, CriminalSidesCase,
+                    CriminalDecisions, CriminalAppeal)
 from .serializers import (  CriminalProceedingsSerializer,
                             DefendantSerializer,
                             CriminalDecisionSerializer,

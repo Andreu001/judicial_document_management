@@ -1,6 +1,48 @@
 # criminal_proceedings/models.py
 from django.db import models
-from business_card.models import BusinessCard, SidesCase, Decisions, Appeal
+from business_card.models import BusinessCard
+
+
+# criminal_proceedings/models.py
+# Добавить эти модели в начало файла, перед CriminalProceedings
+
+class CriminalSidesCase(models.Model):
+    """Стороны по уголовному делу"""
+    name = models.CharField(max_length=255, verbose_name="Название стороны")
+    code = models.CharField(max_length=50, verbose_name="Код", unique=True)
+    
+    class Meta:
+        verbose_name = "Сторона по уголовному делу"
+        verbose_name_plural = "Стороны по уголовным делам"
+    
+    def __str__(self):
+        return self.name
+
+
+class CriminalDecisions(models.Model):
+    """Решения по уголовному делу"""
+    name = models.CharField(max_length=255, verbose_name="Название решения")
+    code = models.CharField(max_length=50, verbose_name="Код", unique=True)
+    
+    class Meta:
+        verbose_name = "Решение по уголовному делу"
+        verbose_name_plural = "Решения по уголовным делам"
+    
+    def __str__(self):
+        return self.name
+
+
+class CriminalAppeal(models.Model):
+    """Апелляции по уголовному делу"""
+    name = models.CharField(max_length=255, verbose_name="Название апелляции")
+    code = models.CharField(max_length=50, verbose_name="Код", unique=True)
+    
+    class Meta:
+        verbose_name = "Апелляция по уголовному делу"
+        verbose_name_plural = "Апелляции по уголовным делам"
+    
+    def __str__(self):
+        return self.name
 
 
 class CriminalProceedings(models.Model):
@@ -226,7 +268,7 @@ class Defendant(models.Model):
 
     full_name = models.CharField(max_length=255, verbose_name="ФИО обвиняемого")
     side_case = models.ForeignKey(
-        SidesCase,
+        CriminalSidesCase,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -340,7 +382,7 @@ class CriminalDecision(models.Model):
     )
 
     name_case = models.ForeignKey(
-        Decisions,
+        CriminalDecisions,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -386,7 +428,7 @@ class CriminalDecision(models.Model):
     court_consideration_date = models.DateField(null=True, blank=True, verbose_name="Дата рассмотрения во II инстанции")
     
     decision_appeal_criminal = models.ForeignKey(
-        Appeal,
+        CriminalAppeal,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

@@ -1,6 +1,13 @@
 # criminal_proceedings/serializers.py
 from rest_framework import serializers
-from .models import CriminalProceedings, Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement
+from .models import (CriminalProceedings,
+                    Defendant,
+                    CriminalDecision,
+                    CriminalRuling,
+                    CriminalCaseMovement,
+                    CriminalSidesCase,
+                    CriminalDecisions,
+                    CriminalAppeal)
 
 
 class DefendantSerializer(serializers.ModelSerializer):
@@ -125,3 +132,19 @@ class CriminalRulingSerializer(serializers.ModelSerializer):
         model = CriminalRuling
         fields = "__all__"
         read_only_fields = ("criminal_proceedings", "created_at", "updated_at")
+
+
+class CriminalSidesCaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CriminalSidesCase
+        fields = '__all__'
+
+class CriminalDecisionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CriminalDecisions
+        fields = '__all__'
+
+class CriminalAppealSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CriminalAppeal
+        fields = '__all__'
