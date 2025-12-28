@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import correspondenceService from '../../API/CorrespondenceService';
 import styles from './Correspondence.module.css';
@@ -6,25 +6,24 @@ import styles from './Correspondence.module.css';
 const CorrespondenceIn = () => {
   const [correspondence, setCorrespondence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
-    startDate: '',
-    endDate: '',
+    start_date: '',
+    end_date: '',
     search: ''
   });
   
   const navigate = useNavigate();
+  const type = 'incoming';
 
-  useEffect(() => {
-    fetchCorrespondence();
-  }, [filters]);
-
-  const fetchCorrespondence = async () => {
+  // Функция загрузки данных с мемоизацией
+  const fetchCorrespondence = useCallback(async (currentFilters) => {
     try {
       setLoading(true);
       const params = {
         type: 'incoming',
-        ...filters
+        ...currentFilters
       };
       
       const data = await correspondenceService.getCorrespondence(params);
@@ -34,7 +33,31 @@ const CorrespondenceIn = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот документ?')) {
+      return;
+    }
+
+    try {
+      setDeletingId(id);
+      await correspondenceService.deleteCorrespondence(id);
+      // Обновляем список после удаления
+      fetchCorrespondence(filters);
+      alert('Документ успешно удален');
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      alert('Не удалось удалить документ');
+    } finally {
+      setDeletingId(null);
+    }
   };
+
+  // Основной эффект для загрузки данных при монтировании
+  useEffect(() => {
+    fetchCorrespondence(filters);
+  }, [fetchCorrespondence]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -44,8 +67,35 @@ const CorrespondenceIn = () => {
     }));
   };
 
+  // Кнопка для применения фильтров
+  const handleApplyFilters = () => {
+    fetchCorrespondence(filters);
+  };
+
   const handleAddNew = () => {
     navigate('/in/new');
+  };
+
+  // Сброс фильтров с обновлением данных
+  const handleResetFilters = () => {
+    const resetFilters = {
+      status: '',
+      start_date: '',
+      end_date: '',
+      search: ''
+    };
+    setFilters(resetFilters);
+    fetchCorrespondence(resetFilters);
+  };
+
+  // Форматирование даты документа отправителя
+  const formatSenderDocumentDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('ru-RU');
+    } catch {
+      return dateString;
+    }
   };
 
   return (
@@ -53,7 +103,7 @@ const CorrespondenceIn = () => {
       <div className={styles.header}>
         <h1>Входящая корреспонденция</h1>
         <div className={styles.headerActions}>
-          <button onClick={handleAddNew} className={styles.addButton}>
+          <button onClick={handleAddNew} className={styles.addButtonIn}>
             + Добавить входящий документ
           </button>
         </div>
@@ -84,8 +134,8 @@ const CorrespondenceIn = () => {
 
         <input
           type="date"
-          name="startDate"
-          value={filters.startDate}
+          name="start_date"
+          value={filters.start_date}
           onChange={handleFilterChange}
           className={styles.dateInput}
           placeholder="С даты"
@@ -93,14 +143,19 @@ const CorrespondenceIn = () => {
 
         <input
           type="date"
-          name="endDate"
-          value={filters.endDate}
+          name="end_date"
+          value={filters.end_date}
           onChange={handleFilterChange}
           className={styles.dateInput}
           placeholder="По дату"
         />
 
-        <button onClick={() => setFilters({})} className={styles.resetButton}>
+        {/* Добавляем кнопку применения фильтров */}
+        <button onClick={handleApplyFilters} className={styles.applyButton}>
+          Применить
+        </button>
+
+        <button onClick={handleResetFilters} className={styles.resetButton}>
           Сбросить фильтры
         </button>
       </div>
@@ -115,6 +170,8 @@ const CorrespondenceIn = () => {
                 <th>Рег. номер</th>
                 <th>Дата</th>
                 <th>Отправитель</th>
+                <th>Исх. № отправителя</th>
+                <th>Исх. дата отправителя</th>
                 <th>Тип документа</th>
                 <th>Краткое содержание</th>
                 <th>Статус</th>
@@ -130,6 +187,24 @@ const CorrespondenceIn = () => {
                   </td>
                   <td>{new Date(item.registration_date).toLocaleDateString('ru-RU')}</td>
                   <td>{item.sender}</td>
+                  <td>
+                    {item.number_sender_document ? (
+                      <span className={styles.senderDocNumber}>
+                        {item.number_sender_document}
+                      </span>
+                    ) : (
+                      <span className={styles.emptyField}>-</span>
+                    )}
+                  </td>
+                  <td>
+                    {item.outgoing_date_document ? (
+                      <span className={styles.senderDocDate}>
+                        {formatSenderDocumentDate(item.outgoing_date_document)}
+                      </span>
+                    ) : (
+                      <span className={styles.emptyField}>-</span>
+                    )}
+                  </td>
                   <td>{item.document_type}</td>
                   <td className={styles.summary}>{item.summary}</td>
                   <td>
@@ -148,16 +223,23 @@ const CorrespondenceIn = () => {
                       'Не связано'
                     )}
                   </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <Link 
-                        to={`/correspondence/in/${item.id}`}
-                        className={styles.viewButton}
-                      >
-                        Просмотр
-                      </Link>
-                    </div>
-                  </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <Link 
+                          to={`/correspondence/${type === 'incoming' ? 'in' : 'out'}/${item.id}`}
+                          className={styles.viewButton}
+                        >
+                          Просмотр
+                        </Link>
+                        <button 
+                          onClick={() => handleDelete(item.id)}
+                          className={styles.deleteButton}
+                          disabled={deletingId === item.id}
+                        >
+                          {deletingId === item.id ? 'Удаление...' : 'Удалить'}
+                        </button>
+                      </div>
+                    </td>
                 </tr>
               ))}
             </tbody>

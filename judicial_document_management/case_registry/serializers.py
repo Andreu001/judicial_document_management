@@ -51,6 +51,9 @@ class CorrespondenceSerializer(serializers.ModelSerializer):
             'id',
             'correspondence_type',
             'registration_number',
+            'number_sender_document',
+            'outgoing_date_document',
+            'method_of_receipt',
             'registration_date',
             'sender',
             'recipient',
@@ -63,7 +66,10 @@ class CorrespondenceSerializer(serializers.ModelSerializer):
             'attached_files',
             'notes',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'executor',
+            'execution_deadline',
+            'actual_execution_date'
         ]
         read_only_fields = ['registration_number', 'created_at', 'updated_at']
 
@@ -80,5 +86,11 @@ class CorrespondenceCreateSerializer(serializers.ModelSerializer):
             'pages_count',
             'business_card',
             'attached_files',
-            'notes'
+            'notes',
+            'number_sender_document',
+            'outgoing_date_document',
+            'method_of_receipt',
+            'executor',
+            'execution_deadline',
+            'actual_execution_date'
         ]

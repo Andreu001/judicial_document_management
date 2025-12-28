@@ -18,6 +18,7 @@ import CriminalDecisionDetail from "./CriminalCase//CriminalDecisionDetail";
 import CorrespondenceIn from "./Correspondence/CorrespondenceIn";
 import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
+import CorrespondenceDetail from "./Correspondence/CorrespondenceDetail";
 
 const AppRouter = () => {
     return (
@@ -35,6 +36,8 @@ const AppRouter = () => {
                 <Route path="out" element={<CorrespondenceOut />} />
                 <Route path="out/new" element={<CorrespondenceForm type="outgoing" />} />
                 <Route path="out/:id/edit" element={<CorrespondenceForm type="outgoing" mode="edit" />} />
+                <Route path="correspondence/in/:id" element={<CorrespondenceDetail type="incoming" />} />
+                <Route path="correspondence/out/:id" element={<CorrespondenceDetail type="outgoing" />} />
                 <Route path="cards/:id" element={<CardIdPage />} />
                 <Route path="business_card" element={<CardForm />} />
                 <Route path="business_card/businesscard/" element={<CardList />} />

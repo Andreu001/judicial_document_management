@@ -1,15 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import MyInput from '../UI/input/MyInput';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import baseService from '../../API/baseService';
 import styles from './CorrespondenceForm.module.css';
 
 const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
   const navigate = useNavigate();
-  const { type } = useParams(); // 'incoming' или 'outgoing'
+  const location = useLocation();
+  const { type } = useParams(); // 'incoming' или 'outgoing' из URL
+  
+  // Определяем тип корреспонденции из URL или location
+  const getCorrespondenceType = () => {
+    // 1. Сначала проверяем URL path
+    if (location.pathname.includes('/out/')) {
+      return 'outgoing';
+    } else if (location.pathname.includes('/in/')) {
+      return 'incoming';
+    }
+    // 2. Потом проверяем параметры URL
+    else if (type === 'outgoing') {
+      return 'outgoing';
+    } else if (type === 'incoming') {
+      return 'incoming';
+    }
+    // 3. По умолчанию возвращаем incoming
+    return 'incoming';
+  };
+  
+  const correspondenceType = getCorrespondenceType();
   
   const [formData, setFormData] = useState({
-    correspondence_type: type || 'incoming',
+    correspondence_type: correspondenceType,
     registration_number: '',
     registration_date: new Date().toISOString().split('T')[0],
     sender: '',
@@ -17,10 +37,13 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     document_type: '',
     summary: '',
     pages_count: 1,
-    status: type === 'incoming' ? 'received' : 'registered',
+    status: correspondenceType === 'incoming' ? 'received' : 'registered',
     business_card: '',
     notes: '',
     attached_files: null,
+    // Новые поля только для входящих документов
+    number_sender_document: '',
+    outgoing_date_document: '',
     ...initialData
   });
 
@@ -28,27 +51,20 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
   const [documentTypes, setDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    fetchBusinessCards();
-    loadDocumentTypes();
-    
-    if (mode === 'edit' && initialData.id) {
-      setFormData(initialData);
-    }
-  }, [initialData, mode]);
-
-  const fetchBusinessCards = async () => {
+  // Мемоизированная функция загрузки визиток
+  const fetchBusinessCards = useCallback(async () => {
     try {
       const response = await baseService.get('/business_card/businesscard/');
       setBusinessCards(response.data);
     } catch (error) {
       console.error('Ошибка загрузки дел:', error);
     }
-  };
+  }, []);
 
-  const loadDocumentTypes = () => {
-    // Используем строковые значения для document_type
+  // Мемоизированная функция загрузки типов документов
+  const loadDocumentTypes = useCallback(() => {
     const types = [
       { value: 'Заявление', label: 'Заявление' },
       { value: 'Жалоба', label: 'Жалоба' },
@@ -69,7 +85,45 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
       { value: 'Иные документы', label: 'Иные документы' },
     ];
     setDocumentTypes(types);
-  };
+  }, []);
+
+  // Инициализация - один раз при монтировании
+  useEffect(() => {
+    if (!isInitialized) {
+      fetchBusinessCards();
+      loadDocumentTypes();
+      setIsInitialized(true);
+    }
+  }, [fetchBusinessCards, loadDocumentTypes, isInitialized]);
+
+  // Обновление formData только при изменении initialData или mode
+  useEffect(() => {
+    if (mode === 'edit' && initialData.id && isInitialized) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        // Убедимся, что дата в правильном формате
+        registration_date: initialData.registration_date 
+          ? new Date(initialData.registration_date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        // Убедимся, что дата документа отправителя в правильном формате
+        outgoing_date_document: initialData.outgoing_date_document 
+          ? new Date(initialData.outgoing_date_document).toISOString().split('T')[0]
+          : ''
+      }));
+    }
+  }, [initialData, mode, isInitialized]);
+
+  // Обновляем correspondence_type при изменении URL
+  useEffect(() => {
+    if (isInitialized && mode === 'create') {
+      setFormData(prev => ({
+        ...prev,
+        correspondence_type: correspondenceType,
+        status: correspondenceType === 'incoming' ? 'received' : 'registered'
+      }));
+    }
+  }, [correspondenceType, mode, isInitialized]);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -107,11 +161,11 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.sender.trim() && type === 'incoming') {
+    if (!formData.sender.trim() && formData.correspondence_type === 'incoming') {
       newErrors.sender = 'Укажите отправителя';
     }
     
-    if (!formData.recipient.trim() && type === 'outgoing') {
+    if (!formData.recipient.trim() && formData.correspondence_type === 'outgoing') {
       newErrors.recipient = 'Укажите получателя';
     }
     
@@ -132,7 +186,8 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
   };
 
   const handleCancel = () => {
-    navigate(`/${type}`);
+    const redirectType = formData.correspondence_type === 'incoming' ? 'in' : 'out';
+    navigate(`/${redirectType}`);
   };
 
   const handleSubmit = async (e) => {
@@ -168,6 +223,16 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
         formDataToSend.append('attached_files', formData.attached_files);
       }
       
+      // Добавляем новые поля только для входящих документов
+      if (formData.correspondence_type === 'incoming') {
+        if (formData.number_sender_document) {
+          formDataToSend.append('number_sender_document', formData.number_sender_document);
+        }
+        if (formData.outgoing_date_document) {
+          formDataToSend.append('outgoing_date_document', formData.outgoing_date_document);
+        }
+      }
+      
       let response;
       if (mode === 'edit' && formData.id) {
         response = await baseService.patch(
@@ -191,8 +256,9 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
         );
       }
       
-      // Перенаправляем на страницу списка
-      navigate(`/${type}`);
+      // ФИКС: Используем formData.correspondence_type вместо type
+      const redirectType = formData.correspondence_type === 'incoming' ? 'in' : 'out';
+      navigate(`/${redirectType}`);
       
     } catch (error) {
       console.error('Ошибка сохранения корреспонденции:', error);
@@ -218,12 +284,46 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     }
   };
 
+  // Рендерим поля для данных отправителя только для входящей корреспонденции
+  const renderSenderFields = () => {
+    if (formData.correspondence_type !== 'incoming') return null;
+    
+    return (
+      <div className={styles.formRow}>
+        <div className={styles.formGroup}>
+          <label htmlFor="number_sender_document">Исх. номер документа</label>
+          <input
+            id="number_sender_document"
+            type="text"
+            name="number_sender_document"
+            value={formData.number_sender_document || ''}
+            onChange={handleChange}
+            placeholder="Номер документа отправителя"
+            className={styles.input}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="outgoing_date_document">Исх. дата документа</label>
+          <input
+            id="outgoing_date_document"
+            type="date"
+            name="outgoing_date_document"
+            value={formData.outgoing_date_document || ''}
+            onChange={handleChange}
+            className={styles.input}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>
           {mode === 'edit' ? 'Редактирование' : 'Регистрация'} 
-          {type === 'incoming' ? ' входящей' : ' исходящей'} корреспонденции
+          {formData.correspondence_type === 'incoming' ? ' входящей' : ' исходящей'} корреспонденции
         </h1>
         <div className={styles.headerInfo}>
           {mode === 'edit' && formData.registration_number && (
@@ -247,14 +347,17 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
                   id="correspondence_type"
                   type="text"
                   name="correspondence_type"
-                  value={type === 'incoming' ? 'Входящая' : 'Исходящая'}
+                  value={formData.correspondence_type === 'incoming' ? 'Входящая' : 'Исходящая'}
                   readOnly
                   className={styles.input}
                   style={{ background: '#f8f9fa', cursor: 'not-allowed' }}
                 />
               </div>
               
-              {type === 'incoming' ? (
+              {/* Поля данных отправителя для входящей корреспонденции */}
+              {renderSenderFields()}
+              
+              {formData.correspondence_type === 'incoming' ? (
                 <div className={styles.formGroup}>
                   <label htmlFor="sender">Отправитель *</label>
                   <input
@@ -265,7 +368,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
                     onChange={handleChange}
                     placeholder="Наименование отправителя"
                     className={`${styles.input} ${errors.sender ? styles.error : ''}`}
-                    required={type === 'incoming'}
+                    required={formData.correspondence_type === 'incoming'}
                   />
                   {errors.sender && (
                     <span className={styles.errorText}>{errors.sender}</span>
@@ -282,7 +385,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
                     onChange={handleChange}
                     placeholder="Наименование получателя"
                     className={`${styles.input} ${errors.recipient ? styles.error : ''}`}
-                    required={type === 'outgoing'}
+                    required={formData.correspondence_type === 'outgoing'}
                   />
                   {errors.recipient && (
                     <span className={styles.errorText}>{errors.recipient}</span>
@@ -351,7 +454,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
                     onChange={handleChange}
                     className={styles.select}
                   >
-                    {type === 'incoming' ? (
+                    {formData.correspondence_type === 'incoming' ? (
                       <>
                         <option value="received">Получено</option>
                         <option value="registered">Зарегистрировано</option>

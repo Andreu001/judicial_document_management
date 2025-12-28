@@ -170,7 +170,12 @@ class Correspondence(models.Model):
         ('sent', 'Отправлено'),
         ('archived', 'В архиве'),
     ]
-    
+    ADMISSION_METOD = [
+        ('purpose', 'Нарочно'),
+        ('e-mail', 'Электронной почтой'),
+        ('mail', 'Почтовой корреспонденцией'),
+    ]
+
     correspondence_type = models.CharField(
         max_length=20,
         choices=TYPE_CHOICES,
@@ -181,17 +186,60 @@ class Correspondence(models.Model):
         unique=True,
         verbose_name="Регистрационный номер"
     )
+    number_sender_document = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Исх. номер документа отправителя"
+    )
+    outgoing_date_document = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Исх. дата документа отправителя"
+    )
+    method_of_receipt = models.CharField(
+        max_length=20,
+        choices=ADMISSION_METOD,
+        blank=True,
+        null=True,
+        verbose_name="Способ получения/отправки"
+    )
     registration_date = models.DateField(
         default=timezone.now,
         verbose_name="Дата регистрации"
     )
     sender = models.CharField(
         max_length=500,
-        verbose_name="Отправитель"
+        verbose_name="Отправитель",
+        blank=True,
+        default=''
     )
     recipient = models.CharField(
         max_length=500,
-        verbose_name="Получатель"
+        verbose_name="Получатель",
+        blank=True,
+        default=''
+    )
+    execution_deadline = models.DateField(
+        verbose_name="Срок исполнения",
+        blank=True,
+        null=True
+    )
+    executor = models.CharField(
+        max_length=255,
+        verbose_name="Исполнитель",
+        blank=True,
+        null=True    
+    )
+    actual_execution_date = models.DateField(
+        verbose_name="Дата исполнения",
+        blank=True,
+        null=True
+    )
+    document_type = models.CharField(
+        max_length=200,
+        verbose_name="Тип документа"
     )
     document_type = models.CharField(
         max_length=200,
@@ -244,6 +292,7 @@ class Correspondence(models.Model):
     
     def __str__(self):
         return f"{self.registration_number} - {self.sender} → {self.recipient}"
+
 
 class CorrespondenceCounter(models.Model):
     """Счетчик для регистрационных номеров корреспонденции"""

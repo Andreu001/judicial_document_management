@@ -40,11 +40,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'core',
-    'users', # 'users.apps.UsersConfig',
+    'users',
     'corsheaders',
     'djoser',
     'notifications',
     'case_registry',
+    'django_filters',
 ]
 
 MIDDLEWARE = [

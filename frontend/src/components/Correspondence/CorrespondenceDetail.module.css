@@ -1,0 +1,298 @@
+.container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem 0 0 15rem;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Заголовок */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1rem 2rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Кнопки */
+.backButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background: #5a6268;
+}
+
+.editButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.editButton:hover {
+  background: #218838;
+}
+
+.deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.deleteButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Основной контент */
+.detailContent {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 0 2rem;
+  padding: 2rem;
+}
+
+.detailCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.detailSection {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.detailSection:last-child {
+  border-bottom: none;
+}
+
+.detailSection h2 {
+  color: #2c3e50;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #007bff;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.detailField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailField label {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.detailField span {
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  color: #495057;
+}
+
+/* Статус */
+.status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status.received {
+  background: #ffeaa7;
+  color: #e17055;
+}
+
+.status.registered {
+  background: #a29bfe;
+  color: #6c5ce7;
+}
+
+.status.processed {
+  background: #55efc4;
+  color: #00b894;
+}
+
+.status.sent {
+  background: #74b9ff;
+  color: #0984e3;
+}
+
+.status.archived {
+  background: #dfe6e9;
+  color: #636e72;
+}
+
+.regNumber {
+  font-family: 'Courier New', monospace;
+  color: #007bff;
+  font-weight: bold;
+}
+
+/* Ссылки */
+.caseLink {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.caseLink:hover {
+  text-decoration: underline;
+}
+
+.filesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fileLink {
+  color: #007bff;
+  text-decoration: none;
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.fileLink:hover {
+  background: #f8f9fa;
+  text-decoration: underline;
+}
+
+/* Состояния */
+.emptyField {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.senderDocNumber, .senderDocDate {
+  font-family: 'Courier New', monospace;
+  color: #28a745;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.loading {
+  color: #007bff;
+}
+
+.error {
+  color: #dc3545;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  margin: 1rem 2rem;
+  padding: 1.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0 0 3.2rem;
+  }
+  
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detailContent {
+    margin: 0 1rem;
+    padding: 1rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .headerLeft {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .headerActions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .editButton,
+  .deleteButton,
+  .backButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1200px) {
+  .container {
+    padding-left: 12rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .container {
+    padding-left: 8rem;
+  }
+}

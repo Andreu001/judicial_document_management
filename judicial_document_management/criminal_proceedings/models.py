@@ -1,10 +1,6 @@
-# criminal_proceedings/models.py
 from django.db import models
 from business_card.models import BusinessCard
 
-
-# criminal_proceedings/models.py
-# Добавить эти модели в начало файла, перед CriminalProceedings
 
 class CriminalSidesCase(models.Model):
     """Стороны по уголовному делу"""

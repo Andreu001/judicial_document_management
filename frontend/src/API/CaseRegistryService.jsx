@@ -5,11 +5,14 @@ class CaseRegistryService {
   async getIndexes() {
     try {
       const response = await baseService.get('/case-registry/indexes/');
+      console.log('Indexes API response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching registry indexes:', error);
       console.error('Error details:', error.response?.data);
-      throw error;
+      
+      // В случае ошибки вернем пустой массив
+      return [];
     }
   }
 
@@ -23,14 +26,13 @@ class CaseRegistryService {
     } catch (error) {
       console.error('Error fetching next number:', error);
       console.error('Error details:', error.response?.data);
-      throw error;
+      return null;
     }
   }
 
   async registerCase(caseData) {
     try {
       console.log('Registering case:', caseData);
-      // ИСПРАВИТЕ URL на правильный
       const response = await baseService.post('/case-registry/cases/register/', caseData);
       console.log('Case registration response:', response.data);
       return response.data;
@@ -52,14 +54,33 @@ class CaseRegistryService {
     }
   }
 
-  // Получить зарегистрированные дела
+  // Получить зарегистрированные дела - ИСПРАВЛЕННЫЙ МЕТОД
   async getCases(params = {}) {
     try {
+      console.log('Getting cases with params:', params);
+      
+      // Проверяем, есть ли фильтр по business_card
+      if (params.business_card) {
+        // Формируем URL для фильтрации по business_card
+        const response = await baseService.get('/case-registry/cases/', { 
+          params: {
+            business_card: params.business_card
+          }
+        });
+        console.log('Cases response:', response.data);
+        return response.data;
+      }
+      
+      // Если фильтра нет, получаем все дела
       const response = await baseService.get('/case-registry/cases/', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching cases:', error);
-      throw error;
+      console.error('Error URL:', error.config?.url);
+      console.error('Error status:', error.response?.status);
+      
+      // В случае ошибки возвращаем пустой массив
+      return [];
     }
   }
 

@@ -12,7 +12,6 @@ class CaseRegistryManager:
     """
     Менеджер для работы с регистрацией дел
     """
-# case_registry/managers.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
 
     class CaseRegistryManager:
         @transaction.atomic

@@ -1,8 +1,8 @@
-# case_registry/urls.py
 from django.urls import path, include
 from rest_framework import routers
 from . import views
 from .views import CorrespondenceViewSet
+
 router = routers.DefaultRouter()
 router.register(r'indexes', views.RegistryIndexViewSet)
 router.register(r'cases', views.RegisteredCaseViewSet)
@@ -16,4 +16,7 @@ urlpatterns = [
     path('next-number/<str:index_code>/',
          views.get_next_number,
          name='get-next-number'),
+    path('correspondence/statistics/',
+         views.CorrespondenceViewSet.as_view({'get': 'statistics'}),
+         name='correspondence-statistics'),
 ]

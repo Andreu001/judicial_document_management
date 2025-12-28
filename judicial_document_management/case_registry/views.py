@@ -1,7 +1,8 @@
-# case_registry/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
+from django.db.models import Q
+from django_filters import rest_framework as filters
 from .models import RegisteredCase, RegistryIndex, Correspondence
 from .serializers import (  RegisteredCaseSerializer,
                             RegistryIndexSerializer,
@@ -9,6 +10,7 @@ from .serializers import (  RegisteredCaseSerializer,
                             NumberAdjustmentSerializer,
                             CorrespondenceSerializer,
                             CorrespondenceCreateSerializer)
+from .filters import CorrespondenceFilter
 from .managers import case_registry
 import logging
 
@@ -158,7 +160,13 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления корреспонденцией
     """
+class CorrespondenceViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для управления корреспонденцией
+    """
     queryset = Correspondence.objects.all()
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = CorrespondenceFilter
     
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -166,38 +174,18 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
         return CorrespondenceSerializer
     
     def get_queryset(self):
-        queryset = Correspondence.objects.all()
+        queryset = super().get_queryset()
         
-        # Фильтрация по типу корреспонденции
+        # ДОБАВЬТЕ ФИЛЬТРАЦИЮ ПО ТИПУ КОРРЕСПОНДЕНЦИИ
         correspondence_type = self.request.query_params.get('type')
-        if correspondence_type in ['incoming', 'outgoing']:
+        if correspondence_type:
             queryset = queryset.filter(correspondence_type=correspondence_type)
         
-        # Фильтрация по статусу
-        status = self.request.query_params.get('status')
-        if status:
-            queryset = queryset.filter(status=status)
-        
-        # Фильтрация по дате
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
-        if start_date:
-            queryset = queryset.filter(registration_date__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(registration_date__lte=end_date)
-        
-        # Поиск по отправителю/получателю
-        search = self.request.query_params.get('search')
-        if search:
-            queryset = queryset.filter(
-                models.Q(sender__icontains=search) |
-                models.Q(recipient__icontains=search) |
-                models.Q(summary__icontains=search) |
-                models.Q(registration_number__icontains=search)
-            )
+        # Применяем фильтры из filterset_class
+        queryset = self.filter_queryset(queryset)
         
         return queryset.order_by('-registration_date', '-created_at')
-    
+     
     def perform_create(self, serializer):
         """Автоматическая генерация регистрационного номера"""
         from django.utils import timezone
@@ -262,4 +250,39 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
             'monthly_statistics': monthly_stats,
             'status_statistics': status_stats,
             'current_year': current_year
+        })
+    
+    @action(detail=False, methods=['get'])
+    def filter_options(self, request):
+        """Получение доступных опций для фильтров"""
+        from django.db.models import Count
+        
+        return Response({
+            'correspondence_types': dict(Correspondence.TYPE_CHOICES),
+            'statuses': dict(Correspondence.STATUS_CHOICES),
+            'admission_methods': dict(Correspondence.ADMISSION_METOD),
+            'executors': list(Correspondence.objects
+                .exclude(executor__isnull=True)
+                .exclude(executor='')
+                .values_list('executor', flat=True)
+                .distinct()
+                .order_by('executor')),
+            'document_types': list(Correspondence.objects
+                .exclude(document_type__isnull=True)
+                .exclude(document_type='')
+                .values_list('document_type', flat=True)
+                .distinct()
+                .order_by('document_type')),
+            'senders': list(Correspondence.objects
+                .exclude(sender__isnull=True)
+                .exclude(sender='')
+                .values_list('sender', flat=True)
+                .distinct()
+                .order_by('sender')),
+            'recipients': list(Correspondence.objects
+                .exclude(recipient__isnull=True)
+                .exclude(recipient='')
+                .values_list('recipient', flat=True)
+                .distinct()
+                .order_by('recipient'))
         })
