@@ -1,66 +1,78 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import correspondenceService from '../../API/CorrespondenceService';
 import styles from './Correspondence.module.css';
+import InlineStatusEdit from './InlineStatusEdit';
 
 const CorrespondenceOut = () => {
   const [correspondence, setCorrespondence] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
-    start_date: '',
-    end_date: '',
+    startDate: '',
+    endDate: '',
     search: ''
   });
+  const [updatingStatus, setUpdatingStatus] = useState({});
   
-  const type = 'outgoing';
-  // Функция загрузки данных с мемоизацией
-  const fetchCorrespondence = useCallback(async (currentFilters) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchCorrespondence();
+  }, [filters]);
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      setUpdatingStatus(prev => ({ ...prev, [id]: true }));
+      await correspondenceService.updateStatus(id, newStatus);
+      
+      setCorrespondence(prev => 
+        prev.map(item => 
+          item.id === id 
+            ? { ...item, status: newStatus, updated_at: new Date().toISOString() }
+            : item
+        )
+      );
+      
+      const item = correspondence.find(c => c.id === id);
+      console.log(`Статус документа ${item?.registration_number} изменен на: ${newStatus}`);
+      
+    } catch (error) {
+      console.error('Ошибка обновления статуса:', error);
+      alert('Не удалось обновить статус');
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const fetchCorrespondence = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const params = {
-        type: 'outgoing',
-        ...currentFilters
-      };
+        const params = {
+          type: 'outgoing',
+          status: filters.status,
+          start_date: filters.startDate,
+          end_date: filters.endDate,
+          search: filters.search
+        };
+
+      const cleanParams = {};
+      Object.keys(params).forEach(key => {
+        if (params[key] !== '' && params[key] !== null) {
+          cleanParams[key] = params[key];
+        }
+      });
       
-      // Используем метод getCorrespondence из CorrespondenceService
-      const data = await correspondenceService.getCorrespondence(params);
-      setCorrespondence(data || []); // Добавляем fallback на пустой массив
+      console.log('Параметры запроса:', cleanParams);
+      
+      const data = await correspondenceService.getCorrespondence(cleanParams);
+      setCorrespondence(data);
     } catch (error) {
       console.error('Ошибка загрузки исходящей корреспонденции:', error);
-      setError('Не удалось загрузить данные');
-      setCorrespondence([]); // Устанавливаем пустой массив при ошибке
     } finally {
       setLoading(false);
     }
-  }, []);
-
-    const handleDelete = async (id) => {
-      if (!window.confirm('Вы уверены, что хотите удалить этот документ?')) {
-        return;
-      }
-    
-      try {
-        setDeletingId(id);
-        await correspondenceService.deleteCorrespondence(id);
-        // Обновляем список после удаления
-        fetchCorrespondence(filters);
-        alert('Документ успешно удален');
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-        alert('Не удалось удалить документ');
-      } finally {
-        setDeletingId(null);
-      }
-    };
-
-  // Основной эффект для загрузки данных при монтировании
-  useEffect(() => {
-    fetchCorrespondence(filters);
-  }, [fetchCorrespondence]);
+  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -70,21 +82,29 @@ const CorrespondenceOut = () => {
     }));
   };
 
-  // Кнопка для применения фильтров
-  const handleApplyFilters = () => {
-    fetchCorrespondence(filters);
+  const handleResetFilters = () => {
+    setFilters({
+      status: '',
+      startDate: '',
+      endDate: '',
+      search: ''
+    });
   };
 
-  // Сброс фильтров с обновлением данных
-  const handleResetFilters = () => {
-    const resetFilters = {
-      status: '',
-      start_date: '',
-      end_date: '',
-      search: ''
-    };
-    setFilters(resetFilters);
-    fetchCorrespondence(resetFilters);
+  const handleAddNew = () => {
+    navigate('/out/new');
+  };
+
+  const handleDelete = async (id, registrationNumber) => {
+    if (window.confirm(`Вы уверены, что хотите удалить документ № ${registrationNumber}?`)) {
+      try {
+        await correspondenceService.delete(id);
+        fetchCorrespondence();
+      } catch (err) {
+        console.error('Ошибка удаления:', err);
+        alert('Не удалось удалить документ');
+      }
+    }
   };
 
   return (
@@ -92,9 +112,9 @@ const CorrespondenceOut = () => {
       <div className={styles.header}>
         <h1>Исходящая корреспонденция</h1>
         <div className={styles.headerActions}>
-          <Link to="/out/new" className={styles.addButtonOut}>
-            + Создать исходящий документ
-          </Link>
+          <button onClick={handleAddNew} className={styles.addButtonOut}>
+            + Добавить исходящий документ
+          </button>
         </div>
       </div>
 
@@ -122,8 +142,8 @@ const CorrespondenceOut = () => {
 
         <input
           type="date"
-          name="start_date"
-          value={filters.start_date}
+          name="startDate"
+          value={filters.startDate}
           onChange={handleFilterChange}
           className={styles.dateInput}
           placeholder="С даты"
@@ -131,27 +151,17 @@ const CorrespondenceOut = () => {
 
         <input
           type="date"
-          name="end_date"
-          value={filters.end_date}
+          name="endDate"
+          value={filters.endDate}
           onChange={handleFilterChange}
           className={styles.dateInput}
           placeholder="По дату"
         />
 
-        <button onClick={handleApplyFilters} className={styles.applyButton}>
-          Применить фильтры
-        </button>
-
         <button onClick={handleResetFilters} className={styles.resetButton}>
           Сбросить фильтры
         </button>
       </div>
-
-      {error && (
-        <div className={styles.error}>
-          {error}
-        </div>
-      )}
 
       {loading ? (
         <div className={styles.loading}>Загрузка...</div>
@@ -171,24 +181,26 @@ const CorrespondenceOut = () => {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(correspondence) && correspondence.map((item) => (
+              {correspondence.map((item) => (
                 <tr key={item.id}>
                   <td className={styles.regNumber}>
                     <strong>{item.registration_number}</strong>
                   </td>
-                  <td>{item.registration_date ? new Date(item.registration_date).toLocaleDateString('ru-RU') : ''}</td>
-                  <td>{item.recipient || ''}</td>
-                  <td>{item.document_type || ''}</td>
-                  <td className={styles.summary}>{item.summary || ''}</td>
+                  <td>{new Date(item.registration_date).toLocaleDateString('ru-RU')}</td>
+                  <td>{item.recipient || 'Не указан'}</td>
+                  <td>{item.document_type}</td>
+                  <td className={styles.summary}>{item.summary}</td>
                   <td>
-                    <span className={`${styles.status} ${styles[item.status] || ''}`}>
-                      {item.status === 'registered' ? 'Зарегистрировано' : 
-                       item.status === 'sent' ? 'Отправлено' : 'В архиве'}
-                    </span>
+                    <InlineStatusEdit
+                      currentStatus={item.status}
+                      correspondenceType="outgoing"
+                      onSave={(newStatus) => handleUpdateStatus(item.id, newStatus)}
+                      disabled={updatingStatus[item.id]}
+                    />
                   </td>
                   <td>
-                    {item.business_card && item.business_card_name ? (
-                      <Link to={`/cards/${item.business_card}`}>
+                    {item.business_card_name ? (
+                      <Link to={`/businesscard/${item.business_card}/criminal-details/`}>
                         {item.business_card_name}
                       </Link>
                     ) : (
@@ -198,17 +210,16 @@ const CorrespondenceOut = () => {
                   <td>
                     <div className={styles.actions}>
                       <Link 
-                        to={`/correspondence/${type === 'incoming' ? 'in' : 'out'}/${item.id}`}
+                        to={`/out/${item.id}`}
                         className={styles.viewButton}
                       >
                         Просмотр
                       </Link>
                       <button 
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => handleDelete(item.id, item.registration_number)}
                         className={styles.deleteButton}
-                        disabled={deletingId === item.id}
                       >
-                        {deletingId === item.id ? 'Удаление...' : 'Удалить'}
+                        Удалить
                       </button>
                     </div>
                   </td>
@@ -217,9 +228,9 @@ const CorrespondenceOut = () => {
             </tbody>
           </table>
           
-          {(!Array.isArray(correspondence) || correspondence.length === 0) && !loading && (
+          {correspondence.length === 0 && (
             <div className={styles.noData}>
-              {error ? 'Произошла ошибка при загрузке данных' : 'Нет данных об исходящей корреспонденции'}
+              Нет данных об исходящей корреспонденции
             </div>
           )}
         </div>

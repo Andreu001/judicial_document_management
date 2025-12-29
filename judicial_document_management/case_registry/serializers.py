@@ -94,3 +94,30 @@ class CorrespondenceCreateSerializer(serializers.ModelSerializer):
             'execution_deadline',
             'actual_execution_date'
         ]
+
+
+class CorrespondenceUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор для обновления корреспонденции"""
+    class Meta:
+        model = Correspondence
+        fields = [
+            'correspondence_type',
+            'registration_number',
+            'number_sender_document',
+            'outgoing_date_document',
+            'method_of_receipt',
+            'registration_date',
+            'sender',
+            'recipient',
+            'document_type',
+            'summary',
+            'pages_count',
+            'status',
+            'business_card',
+            'attached_files',
+            'notes',
+            'executor',
+            'execution_deadline',
+            'actual_execution_date'
+        ]
+        read_only_fields = ['registration_number']

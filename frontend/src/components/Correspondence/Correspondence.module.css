@@ -30,19 +30,19 @@
   background: #28a745;
   color: white;
   text-decoration: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.4rem 0.7rem;
   border-radius: 4px;
-  font-weight: 500;
+  font-weight: 400;
   transition: background-color 0.2s;
 }
 
 .addButtonOut {
-  background: #b12424;
+  background: #a72828;
   color: white;
   text-decoration: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.4rem 0.7rem;
   border-radius: 4px;
-  font-weight: 500;
+  font-weight: 400;
   transition: background-color 0.2s;
 }
 
@@ -167,12 +167,12 @@
 
 .status.processed {
   background: #55efc4;
-  color: #00b894;
+  color: #00614e;
 }
 
 .status.sent {
-  background: #74b9ff;
-  color: #0984e3;
+  background: #55efc4;
+  color: #00614e;
 }
 
 .status.archived {
@@ -240,50 +240,189 @@
     min-width: 800px;
   }
 }
+/* Добавьте эти стили в существующий Correspondence.module.css */
 
-.applyButton {
-  padding: 0.75rem 1.5rem;
-  background: #007bff;
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.viewButton {
+  padding: 4px 12px;
+  background-color: #007bff;
   color: white;
-  border: none;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.applyButton {
-  padding: 0.75rem 1.5rem;
-  background: #007bff;
-  color: white;
+  text-decoration: none;
+  font-size: 14px;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
+  display: inline-block;
+  text-align: center;
 }
 
-.applyButton:hover {
-  background: #0056b3;
+.viewButton:hover {
+  background-color: #0056b3;
+  text-decoration: none;
 }
 
-/* Стили для кнопки "Удалить" */
 .deleteButton {
-  background: #dc3545;
+  padding: 4px 12px;
+  background-color: #dc3545;
   color: white;
-  border: none;
-  padding: 0.5rem 1rem;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 14px;
+  border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
 }
 
-.deleteButton:hover:not(:disabled) {
-  background: #c82333;
+.deleteButton:hover {
+  background-color: #c82333;
 }
 
-.deleteButton:disabled {
-  background: #6c757d;
+/* Стили для inline редактирования */
+.clickableStatus {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.clickableStatus:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.inlineEditContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inlineSelect {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 120px;
+  background-color: white;
+}
+
+.inlineSelect:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.inlineEditButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.inlineSaveButton,
+.inlineCancelButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.inlineSaveButton {
+  background-color: #28a745;
+  color: white;
+}
+
+.inlineSaveButton:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.inlineSaveButton:disabled {
+  background-color: #6c757d;
   cursor: not-allowed;
+}
+
+.inlineCancelButton {
+  background-color: #dc3545;
+  color: white;
+}
+
+.inlineCancelButton:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+/* Стиль для строки, которая обновляется */
+.updatingRow {
+  opacity: 0.7;
+  background-color: #f8f9fa;
+  transition: opacity 0.3s ease;
+}
+
+/* Стили статусов */
+.status.received {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.status.registered {
+  background-color: #007bff;
+  color: white;
+}
+
+.status.processed {
+  background-color: #28a745;
+  color: white;
+}
+
+.status.sent {
+  background-color: #20c997;
+  color: white;
+}
+
+.status.archived {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Для таблицы */
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewButton,
+.deleteButton {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.viewButton {
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.viewButton:hover {
+  background-color: #0056b3;
+}
+
+.deleteButton {
+  background-color: #dc3545;
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: #c82333;
 }

@@ -70,7 +70,6 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     try {
       console.log('Loading registry indexes...');
       const indexes = await CaseRegistryService.getIndexes();
-      console.log('Loaded indexes:', indexes);
       setRegistryIndexes(indexes || []);
     } catch (error) {
       console.error('Ошибка загрузки индексов:', error);

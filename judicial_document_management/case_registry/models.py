@@ -192,7 +192,7 @@ class Correspondence(models.Model):
         null=True,
         verbose_name="Исх. номер документа отправителя"
     )
-    outgoing_date_document = models.CharField(
+    outgoing_date_document = models.DateField(
         max_length=100,
         blank=True,
         null=True,
@@ -236,10 +236,6 @@ class Correspondence(models.Model):
         verbose_name="Дата исполнения",
         blank=True,
         null=True
-    )
-    document_type = models.CharField(
-        max_length=200,
-        verbose_name="Тип документа"
     )
     document_type = models.CharField(
         max_length=200,

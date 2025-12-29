@@ -1,64 +1,86 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import correspondenceService from '../../API/CorrespondenceService';
+import InlineStatusEdit from './InlineStatusEdit';
 import styles from './Correspondence.module.css';
 
 const CorrespondenceIn = () => {
   const [correspondence, setCorrespondence] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
-    start_date: '',
-    end_date: '',
+    startDate: '',
+    endDate: '',
     search: ''
   });
+  const [updatingStatus, setUpdatingStatus] = useState({});
   
   const navigate = useNavigate();
-  const type = 'incoming';
 
-  // Функция загрузки данных с мемоизацией
-  const fetchCorrespondence = useCallback(async (currentFilters) => {
+  useEffect(() => {
+    fetchCorrespondence();
+  }, [filters]);
+
+  const fetchCorrespondence = async () => {
     try {
       setLoading(true);
       const params = {
         type: 'incoming',
-        ...currentFilters
+        status: filters.status,
+        start_date: filters.startDate,
+        end_date: filters.endDate,
+        search: filters.search
       };
       
-      const data = await correspondenceService.getCorrespondence(params);
+      const cleanParams = {};
+      Object.keys(params).forEach(key => {
+        if (params[key] !== '' && params[key] !== null) {
+          cleanParams[key] = params[key];
+        }
+      });
+      
+      console.log('Параметры запроса:', cleanParams);
+      
+      const data = await correspondenceService.getCorrespondence(cleanParams);
       setCorrespondence(data);
     } catch (error) {
       console.error('Ошибка загрузки входящей корреспонденции:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этот документ?')) {
-      return;
-    }
-
+  const handleUpdateStatus = async (id, newStatus) => {
     try {
-      setDeletingId(id);
-      await correspondenceService.deleteCorrespondence(id);
-      // Обновляем список после удаления
-      fetchCorrespondence(filters);
-      alert('Документ успешно удален');
+      // Устанавливаем флаг обновления для этой записи
+      setUpdatingStatus(prev => ({ ...prev, [id]: true }));
+      
+      // Обновляем статус на сервере
+      await correspondenceService.updateStatus(id, newStatus);
+      
+      // Обновляем локальное состояние
+      setCorrespondence(prev => 
+        prev.map(item => 
+          item.id === id 
+            ? { ...item, status: newStatus, updated_at: new Date().toISOString() }
+            : item
+        )
+      );
+      
+      // Показываем уведомление (опционально)
+      const item = correspondence.find(c => c.id === id);
+      console.log(`Статус документа ${item?.registration_number} изменен на: ${newStatus}`);
+      
     } catch (error) {
-      console.error('Ошибка удаления:', error);
-      alert('Не удалось удалить документ');
+      console.error('Ошибка обновления статуса:', error);
+      alert('Не удалось обновить статус');
     } finally {
-      setDeletingId(null);
+      // Снимаем флаг обновления
+      setUpdatingStatus(prev => ({ ...prev, [id]: false }));
     }
   };
 
-  // Основной эффект для загрузки данных при монтировании
-  useEffect(() => {
-    fetchCorrespondence(filters);
-  }, [fetchCorrespondence]);
-
+  // Остальные обработчики остаются без изменений...
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({
@@ -67,34 +89,28 @@ const CorrespondenceIn = () => {
     }));
   };
 
-  // Кнопка для применения фильтров
-  const handleApplyFilters = () => {
-    fetchCorrespondence(filters);
+  const handleResetFilters = () => {
+    setFilters({
+      status: '',
+      startDate: '',
+      endDate: '',
+      search: ''
+    });
   };
 
   const handleAddNew = () => {
     navigate('/in/new');
   };
 
-  // Сброс фильтров с обновлением данных
-  const handleResetFilters = () => {
-    const resetFilters = {
-      status: '',
-      start_date: '',
-      end_date: '',
-      search: ''
-    };
-    setFilters(resetFilters);
-    fetchCorrespondence(resetFilters);
-  };
-
-  // Форматирование даты документа отправителя
-  const formatSenderDocumentDate = (dateString) => {
-    if (!dateString) return '';
-    try {
-      return new Date(dateString).toLocaleDateString('ru-RU');
-    } catch {
-      return dateString;
+  const handleDelete = async (id, registrationNumber) => {
+    if (window.confirm(`Вы уверены, что хотите удалить документ № ${registrationNumber}?`)) {
+      try {
+        await correspondenceService.delete(id);
+        fetchCorrespondence();
+      } catch (err) {
+        console.error('Ошибка удаления:', err);
+        alert('Не удалось удалить документ');
+      }
     }
   };
 
@@ -134,8 +150,8 @@ const CorrespondenceIn = () => {
 
         <input
           type="date"
-          name="start_date"
-          value={filters.start_date}
+          name="startDate"
+          value={filters.startDate}
           onChange={handleFilterChange}
           className={styles.dateInput}
           placeholder="С даты"
@@ -143,17 +159,12 @@ const CorrespondenceIn = () => {
 
         <input
           type="date"
-          name="end_date"
-          value={filters.end_date}
+          name="endDate"
+          value={filters.endDate}
           onChange={handleFilterChange}
           className={styles.dateInput}
           placeholder="По дату"
         />
-
-        {/* Добавляем кнопку применения фильтров */}
-        <button onClick={handleApplyFilters} className={styles.applyButton}>
-          Применить
-        </button>
 
         <button onClick={handleResetFilters} className={styles.resetButton}>
           Сбросить фильтры
@@ -169,9 +180,6 @@ const CorrespondenceIn = () => {
               <tr>
                 <th>Рег. номер</th>
                 <th>Дата</th>
-                <th>Отправитель</th>
-                <th>Исх. № отправителя</th>
-                <th>Исх. дата отправителя</th>
                 <th>Тип документа</th>
                 <th>Краткое содержание</th>
                 <th>Статус</th>
@@ -181,65 +189,46 @@ const CorrespondenceIn = () => {
             </thead>
             <tbody>
               {correspondence.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} className={updatingStatus[item.id] ? styles.updatingRow : ''}>
                   <td className={styles.regNumber}>
                     <strong>{item.registration_number}</strong>
                   </td>
                   <td>{new Date(item.registration_date).toLocaleDateString('ru-RU')}</td>
-                  <td>{item.sender}</td>
-                  <td>
-                    {item.number_sender_document ? (
-                      <span className={styles.senderDocNumber}>
-                        {item.number_sender_document}
-                      </span>
-                    ) : (
-                      <span className={styles.emptyField}>-</span>
-                    )}
-                  </td>
-                  <td>
-                    {item.outgoing_date_document ? (
-                      <span className={styles.senderDocDate}>
-                        {formatSenderDocumentDate(item.outgoing_date_document)}
-                      </span>
-                    ) : (
-                      <span className={styles.emptyField}>-</span>
-                    )}
-                  </td>
                   <td>{item.document_type}</td>
                   <td className={styles.summary}>{item.summary}</td>
                   <td>
-                    <span className={`${styles.status} ${styles[item.status]}`}>
-                      {item.status === 'received' ? 'Получено' : 
-                       item.status === 'registered' ? 'Зарегистрировано' : 
-                       item.status === 'processed' ? 'Обработано' : 'В архиве'}
-                    </span>
+                    <InlineStatusEdit
+                      currentStatus={item.status}
+                      correspondenceType="incoming"
+                      onSave={(newStatus) => handleUpdateStatus(item.id, newStatus)}
+                      disabled={updatingStatus[item.id]}
+                    />
                   </td>
                   <td>
                     {item.business_card_name ? (
-                      <Link to={`/cards/${item.business_card}`}>
+                      <Link to={`/businesscard/${item.business_card}/criminal-details/`}>
                         {item.business_card_name}
                       </Link>
                     ) : (
                       'Не связано'
                     )}
                   </td>
-                    <td>
-                      <div className={styles.actions}>
-                        <Link 
-                          to={`/correspondence/${type === 'incoming' ? 'in' : 'out'}/${item.id}`}
-                          className={styles.viewButton}
-                        >
-                          Просмотр
-                        </Link>
-                        <button 
-                          onClick={() => handleDelete(item.id)}
-                          className={styles.deleteButton}
-                          disabled={deletingId === item.id}
-                        >
-                          {deletingId === item.id ? 'Удаление...' : 'Удалить'}
-                        </button>
-                      </div>
-                    </td>
+                  <td>
+                    <div className={styles.actions}>
+                      <Link 
+                        to={`/in/${item.id}`}
+                        className={styles.viewButton}
+                      >
+                        Просмотр
+                      </Link>
+                      <button 
+                        onClick={() => handleDelete(item.id, item.registration_number)}
+                        className={styles.deleteButton}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

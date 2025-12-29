@@ -1,23 +1,22 @@
 .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 2rem 0 0 15rem;
-  margin: 0;
-  width: 100%;
   box-sizing: border-box;
+  width: 100%;
 }
 
-/* Заголовок */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 0 2rem;
+  margin-bottom: 20px;
+  padding: 20px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 1rem 2rem;
 }
 
 .headerLeft {
@@ -26,43 +25,43 @@
   gap: 1rem;
 }
 
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.headerActions {
-  display: flex;
-  gap: 1rem;
-}
-
-/* Кнопки */
 .backButton {
   background: #6c757d;
-  color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 14px;
   transition: background-color 0.2s;
+  min-width: 120px;
 }
 
 .backButton:hover {
-  background: #5a6268;
+  background-color: #5a6268;
+}
+
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.headerRight {
+  display: flex;
+  gap: 1rem;
 }
 
 .editButton {
   background: #28a745;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-size: 14px;
+  min-width: 120px;
 }
 
 .editButton:hover {
@@ -73,226 +72,297 @@
   background: #dc3545;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-size: 14px;
+  min-width: 120px;
 }
 
-.deleteButton:hover:not(:disabled) {
+.deleteButton:hover {
   background: #c82333;
 }
 
-.deleteButton:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
+.content {
+  padding: 0;
 }
 
-/* Основной контент */
-.detailContent {
+.infoCard {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin: 0 2rem;
-  padding: 2rem;
+  overflow: hidden;
 }
 
-.detailCard {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.section {
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
 }
 
-.detailSection {
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.detailSection:last-child {
+.section:last-child {
   border-bottom: none;
 }
 
-.detailSection h2 {
+.sectionTitle {
   color: #2c3e50;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  padding-bottom: 10px;
   border-bottom: 2px solid #007bff;
 }
 
-.detailGrid {
+.fieldGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 20px;
 }
 
-.detailField {
+.field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
 
-.detailField label {
+.field label {
   font-weight: 500;
+  margin-bottom: 5px;
   color: #495057;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
-.detailField span {
-  padding: 0.5rem;
+.field .value {
+  padding: 10px;
   background: #f8f9fa;
   border-radius: 4px;
-  color: #495057;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  color: #212529;
 }
 
-/* Статус */
+.textContent {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  min-height: 100px;
+  line-height: 1.6;
+  color: #212529;
+  white-space: pre-wrap;
+}
+
 .status {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
+  padding: 5px 10px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 12px;
   font-weight: 500;
+  text-transform: uppercase;
 }
 
 .status.received {
-  background: #ffeaa7;
-  color: #e17055;
+  background: #ffc107;
+  color: #212529;
 }
 
 .status.registered {
-  background: #a29bfe;
-  color: #6c5ce7;
+  background: #17a2b8;
+  color: white;
 }
 
 .status.processed {
-  background: #55efc4;
-  color: #00b894;
-}
-
-.status.sent {
-  background: #74b9ff;
-  color: #0984e3;
+  background: #28a745;
+  color: white;
 }
 
 .status.archived {
-  background: #dfe6e9;
-  color: #636e72;
+  background: #6c757d;
+  color: white;
 }
 
-.regNumber {
-  font-family: 'Courier New', monospace;
-  color: #007bff;
-  font-weight: bold;
-}
-
-/* Ссылки */
-.caseLink {
+.link {
   color: #007bff;
   text-decoration: none;
 }
 
-.caseLink:hover {
+.link:hover {
   text-decoration: underline;
 }
 
 .filesList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 10px;
 }
 
-.fileLink {
-  color: #007bff;
-  text-decoration: none;
-  padding: 0.5rem;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.fileLink:hover {
+.fileItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
   background: #f8f9fa;
-  text-decoration: underline;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
 }
 
-/* Состояния */
-.emptyField {
-  color: #6c757d;
-  font-style: italic;
+.fileName {
+  font-weight: 500;
+  color: #495057;
 }
 
-.senderDocNumber, .senderDocDate {
-  font-family: 'Courier New', monospace;
-  color: #28a745;
+.downloadButton {
+  background: #007bff;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
 }
 
-.loading, .error {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1rem;
-  color: #6c757d;
+.downloadButton:hover {
+  background: #0056b3;
 }
 
 .loading {
-  color: #007bff;
+  text-align: center;
+  padding: 50px;
+  color: #6c757d;
+  font-size: 18px;
 }
 
 .error {
+  text-align: center;
+  padding: 50px;
   color: #dc3545;
   background: #f8d7da;
   border: 1px solid #f5c6cb;
   border-radius: 6px;
-  margin: 1rem 2rem;
-  padding: 1.5rem;
+  margin: 20px;
 }
 
 /* Адаптивность */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
   .container {
-    padding: 1rem 0 0 3.2rem;
+    padding-left: 20px;
   }
   
-  .detailGrid {
+  .fieldGrid {
     grid-template-columns: 1fr;
   }
-  
-  .detailContent {
-    margin: 0 1rem;
-    padding: 1rem;
-  }
-  
+}
+
+@media (max-width: 768px) {
   .header {
     flex-direction: column;
     gap: 1rem;
-    padding: 1rem;
+    text-align: center;
   }
   
   .headerLeft {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 0.5rem;
   }
   
-  .headerActions {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .editButton,
-  .deleteButton,
-  .backButton {
-    width: 100%;
+  .headerRight {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 }
 
-@media (max-width: 1200px) {
-  .container {
-    padding-left: 12rem;
-  }
+/* Добавьте эти стили в существующий файл */
+
+.editButtons {
+  display: flex;
+  gap: 10px;
 }
 
-@media (max-width: 992px) {
-  .container {
-    padding-left: 8rem;
-  }
+.saveButton {
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.saveButton:hover {
+  background-color: #218838;
+}
+
+.saveButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancelButton:hover {
+  background-color: #5a6268;
+}
+
+/* Стили для полей ввода в режиме редактирования */
+.input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.fileInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.removeFileButton {
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.removeFileButton:hover {
+  background-color: #c82333;
 }

@@ -4,12 +4,15 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django_filters import rest_framework as filters
 from .models import RegisteredCase, RegistryIndex, Correspondence
-from .serializers import (  RegisteredCaseSerializer,
-                            RegistryIndexSerializer,
-                            CaseRegistrationSerializer,
-                            NumberAdjustmentSerializer,
-                            CorrespondenceSerializer,
-                            CorrespondenceCreateSerializer)
+from .serializers import (
+    RegisteredCaseSerializer,
+    RegistryIndexSerializer,
+    CaseRegistrationSerializer,
+    NumberAdjustmentSerializer,
+    CorrespondenceSerializer,
+    CorrespondenceCreateSerializer,
+    CorrespondenceUpdateSerializer  # ДОБАВИТЬ
+)
 from .filters import CorrespondenceFilter
 from .managers import case_registry
 import logging
@@ -38,6 +41,10 @@ class RegisteredCaseViewSet(viewsets.ModelViewSet):
         status = self.request.query_params.get('status')
         if status:
             queryset = queryset.filter(status=status)
+
+        business_card = self.request.query_params.get('business_card')
+        if business_card:
+            queryset = queryset.filter(business_card_id=business_card)
 
         return queryset
 
@@ -83,8 +90,6 @@ class RegisteredCaseViewSet(viewsets.ModelViewSet):
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ВЫНЕСИТЕ ЭТИ ФУНКЦИИ ИЗ КЛАССА - ОНИ ДОЛЖНЫ БЫТЬ ОТДЕЛЬНЫМИ ФУНКЦИЯМИ
 
 @api_view(['POST'])
 def register_case(request):
@@ -160,23 +165,21 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления корреспонденцией
     """
-class CorrespondenceViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для управления корреспонденцией
-    """
     queryset = Correspondence.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = CorrespondenceFilter
     
     def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.action == 'create':
             return CorrespondenceCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return CorrespondenceUpdateSerializer  # Используем отдельный сериализатор для обновления
         return CorrespondenceSerializer
     
     def get_queryset(self):
         queryset = super().get_queryset()
         
-        # ДОБАВЬТЕ ФИЛЬТРАЦИЮ ПО ТИПУ КОРРЕСПОНДЕНЦИИ
+        # ФИЛЬТРАЦИЯ ПО ТИПУ КОРРЕСПОНДЕНЦИИ
         correspondence_type = self.request.query_params.get('type')
         if correspondence_type:
             queryset = queryset.filter(correspondence_type=correspondence_type)
@@ -219,6 +222,10 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
         # Формат: Префикс-номер/год
         instance.registration_number = f"{prefix}-{number}/{current_year}"
         instance.save()
+    
+    def perform_update(self, serializer):
+        """Обновление корреспонденции"""
+        serializer.save()
     
     @action(detail=False, methods=['get'])
     def statistics(self, request):

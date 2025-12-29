@@ -11,5 +11,5 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('criminal_proceedings/', include('criminal_proceedings.urls')),
     path('notifications/', include('notifications.urls')),
-    path('case_registry/', include('case_registry.urls')),
+    path('case-registry/', include('case_registry.urls')),
 ]
