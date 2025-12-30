@@ -417,31 +417,31 @@ if (loading) {
                 className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('basic')}
               >
-                1-2. Основные сведения
+                Основные сведения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'evidence' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('evidence')}
               >
-                3. Вещественные доказательства
+                Вещественные доказательства
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'category' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('category')}
               >
-                4-6. Категория и решение
+                Категория и решение
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'result' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('result')}
               >
-                7-8. Результат и состав
+                Результат и состав
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('additional')}
               >
-                9-10. Дополнительно
+                Дополнительно
               </button>
             </div>
             <div className={styles.tabContentWrapper}>

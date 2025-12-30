@@ -216,37 +216,37 @@ const DefendantDetail = () => {
                 className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('basic')}
               >
-                1. Основные сведения
+                Основные сведения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'restraint' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('restraint')}
               >
-                2. Меры пресечения
+                Меры пресечения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'punishment' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('punishment')}
               >
-                3. Наказание
+                Наказание
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'damage' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('damage')}
               >
-                4. Ущерб и взыскания
+                Ущерб и взыскания
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'detention' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('detention')}
               >
-                5. Место содержания
+                Место содержания
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('additional')}
               >
-                6. Дополнительно
+                Дополнительно
               </button>
             </div>
 

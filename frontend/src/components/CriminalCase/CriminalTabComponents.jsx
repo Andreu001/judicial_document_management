@@ -16,7 +16,7 @@ export const BasicInfoTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>1. Основные сведения</h3>
+          <h3 className={styles.subsectionTitle}>Основные сведения</h3>
           <div className={styles.field}>
             <div className={styles.field}>
               <label>№ дела</label>
@@ -67,7 +67,7 @@ export const BasicInfoTab = ({ isEditing,
         </div>
 
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>2. Порядок поступления дела</h3>
+          <h3 className={styles.subsectionTitle}>Порядок поступления дела</h3>
           <div className={styles.field}>
             <label>Порядок поступления</label>
             {isEditing ? (
@@ -247,7 +247,7 @@ export const CaseCategoryTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>3. Категория дела</h3>
+          <h3 className={styles.subsectionTitle}>Категория дела</h3>
           <div className={styles.field}>
             <label>Категория дела</label>
             {isEditing ? (
@@ -316,7 +316,7 @@ export const CaseCategoryTab = ({ isEditing,
         </div>
 
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>5. Решение судьи при назначении дела</h3>
+          <h3 className={styles.subsectionTitle}>Решение судьи при назначении дела</h3>
           
           {/* Кнопка формирования постановления */}
           <div className={styles.rulingSection}>
@@ -451,7 +451,7 @@ export const ResultTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>9. Результат рассмотрения дела</h3>
+          <h3 className={styles.subsectionTitle}>Результат рассмотрения дела</h3>
           <div className={styles.field}>
             <label>Результат рассмотрения</label>
             {isEditing ? (
@@ -511,7 +511,7 @@ export const ResultTab = ({ isEditing,
         </div>
 
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>10. Состав суда</h3>
+          <h3 className={styles.subsectionTitle}>Состав суда</h3>
           <div className={styles.field}>
             <label>Состав суда</label>
             {isEditing ? (
@@ -636,7 +636,7 @@ export const AdditionalTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>11. Частные определения</h3>
+          <h3 className={styles.subsectionTitle}>Частные определения</h3>
           <div className={styles.field}>
             <label>Количество частных определений</label>
             {isEditing ? (
@@ -669,7 +669,7 @@ export const AdditionalTab = ({ isEditing,
         </div>
 
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>12. Дополнительные сведения</h3>
+          <h3 className={styles.subsectionTitle}>Дополнительные сведения</h3>
           <div className={styles.field}>
             <label>Примечание</label>
             {isEditing ? (
@@ -1437,7 +1437,7 @@ export const DefendantBasicInfoTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>1. Основные сведения</h3>
+          <h3 className={styles.subsectionTitle}>Основные сведения</h3>
 
           <div className={styles.field}>
             <label>ФИО подсудимого</label>
@@ -1564,7 +1564,7 @@ export const DefendantRestraintTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>2. Меры пресечения</h3>
+          <h3 className={styles.subsectionTitle}>Меры пресечения</h3>
           
           <div className={styles.field}>
             <label>Мера пресечения</label>
@@ -1685,7 +1685,7 @@ export const DefendantRestraintTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>3. Наказание</h3>
+          <h3 className={styles.subsectionTitle}>Наказание</h3>
           
           <div className={styles.field}>
             <label>Статья по приговору</label>
@@ -1773,7 +1773,7 @@ export const DefendantDamageTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>4. Ущерб и взыскания</h3>
+          <h3 className={styles.subsectionTitle}>Ущерб и взыскания</h3>
           
           <div className={styles.field}>
             <label>Сумма ущерба</label>
@@ -1818,7 +1818,7 @@ export const DefendantDetentionTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>5. Место содержания</h3>
+          <h3 className={styles.subsectionTitle}>Место содержания</h3>
           
           <div className={styles.field}>
             <label>Содержится в учреждении</label>
@@ -1862,7 +1862,7 @@ export const DefendantAdditionalTab = ({ isEditing,
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
-          <h3 className={styles.subsectionTitle}>6. Дополнительные сведения</h3>
+          <h3 className={styles.subsectionTitle}>Дополнительные сведения</h3>
           
           <div className={styles.field}>
             <label>Результат рассмотрения по данному лицу</label>
@@ -1923,7 +1923,7 @@ export const MovementHearingTab = ({
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
       <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>6. Результат предварительного слушания</h3>
+        <h3 className={styles.subsectionTitle}>Результат предварительного слушания</h3>
         
         <div className={styles.field}>
           <label>Результат слушания</label>
@@ -2010,7 +2010,7 @@ export const MovementComplianceTab = ({
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
       <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>7. Соблюдение сроков</h3>
+        <h3 className={styles.subsectionTitle}>Соблюдение сроков</h3>
         
         <div className={styles.field}>
           <label>Соблюдение сроков</label>
@@ -2095,7 +2095,7 @@ export const MovementPostponementTab = ({
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
       <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>8. Причины отложения дела</h3>
+        <h3 className={styles.subsectionTitle}>Причины отложения дела</h3>
         
         <div className={styles.field}>
           <label>Причина отложения</label>
