@@ -1,13 +1,14 @@
-# criminal_proceedings/serializers.py
 from rest_framework import serializers
+from users.models import User
 from .models import (CriminalProceedings,
-                    Defendant,
-                    CriminalDecision,
-                    CriminalRuling,
-                    CriminalCaseMovement,
-                    CriminalSidesCase,
-                    CriminalDecisions,
-                    CriminalAppeal)
+                     Defendant,
+                     CriminalDecision,
+                     CriminalRuling,
+                     CriminalCaseMovement,
+                     CriminalSidesCase,
+                     CriminalDecisions,
+                     CriminalAppeal,
+                     ReferringAuthority)
 
 
 class DefendantSerializer(serializers.ModelSerializer):
@@ -15,6 +16,12 @@ class DefendantSerializer(serializers.ModelSerializer):
         model = Defendant
         fields = "__all__"
         read_only_fields = ("criminal_proceedings",)
+
+
+class ReferringAuthoritySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReferringAuthority
+        fields = '__all__'
 
 
 class CriminalDecisionSerializer(serializers.ModelSerializer):
@@ -39,6 +46,7 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
     defendants = DefendantSerializer(many=True, read_only=True)
     criminal_decisions = CriminalDecisionSerializer(many=True, read_only=True)
     case_movement = CriminalCaseMovementSerializer(read_only=True)
+    referring_authority = ReferringAuthoritySerializer(read_only=True)
 
     class Meta:
         model = CriminalProceedings
@@ -47,14 +55,15 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
 
 
 class CriminalOptionsSerializer(serializers.Serializer):
-    """Сериализатор для получения опций из choices полей модели CriminalProceedings"""
-    
+    """Сериализатор для получения опций из choices
+            полей модели CriminalProceedings"""
+
     @staticmethod
     def get_choices_from_model():
         """Получает все choices опции из модели CriminalProceedings"""
         model_fields = CriminalProceedings._meta.get_fields()
         choices_data = {}
-        
+
         for field in model_fields:
             if hasattr(field, 'choices') and field.choices:
                 field_name = field.name
@@ -62,19 +71,19 @@ class CriminalOptionsSerializer(serializers.Serializer):
                     {'value': choice[0], 'label': choice[1]}
                     for choice in field.choices
                 ]
-        
+
         return choices_data
 
 
 class DefendantOptionsSerializer(serializers.Serializer):
     """Сериализатор для получения опций из choices полей модели Defendant"""
-    
+
     @staticmethod
     def get_choices_from_model():
         """Получает все choices опции из модели Defendant"""
         model_fields = Defendant._meta.get_fields()
         choices_data = {}
-        
+
         for field in model_fields:
             if hasattr(field, 'choices') and field.choices:
                 field_name = field.name
@@ -82,19 +91,20 @@ class DefendantOptionsSerializer(serializers.Serializer):
                     {'value': choice[0], 'label': choice[1]}
                     for choice in field.choices
                 ]
-        
+
         return choices_data
 
 
 class CriminalDecisionOptionsSerializer(serializers.Serializer):
-    """Сериализатор для получения опций из choices полей модели CriminalDecision"""
-    
+    """Сериализатор для получения опций из choices
+              полей модели CriminalDecision"""
+
     @staticmethod
     def get_choices_from_model():
         """Получает все choices опции из модели CriminalDecision"""
         model_fields = CriminalDecision._meta.get_fields()
         choices_data = {}
-        
+
         for field in model_fields:
             if hasattr(field, 'choices') and field.choices:
                 field_name = field.name
@@ -102,20 +112,21 @@ class CriminalDecisionOptionsSerializer(serializers.Serializer):
                     {'value': choice[0], 'label': choice[1]}
                     for choice in field.choices
                 ]
-        
+
         return choices_data
 
 
 class CriminalCaseMovementOptionsSerializer(serializers.Serializer):
-    """Сериализатор для получения опций из choices полей модели CriminalCaseMovement"""
-    
+    """Сериализатор для получения опций из choices
+         полей модели CriminalCaseMovement"""
+
     @staticmethod
     def get_choices_from_model():
         """Получает все choices опции из модели CriminalCaseMovement"""
         from .models import CriminalCaseMovement
         model_fields = CriminalCaseMovement._meta.get_fields()
         choices_data = {}
-        
+
         for field in model_fields:
             if hasattr(field, 'choices') and field.choices:
                 field_name = field.name
@@ -123,7 +134,7 @@ class CriminalCaseMovementOptionsSerializer(serializers.Serializer):
                     {'value': choice[0], 'label': choice[1]}
                     for choice in field.choices
                 ]
-        
+
         return choices_data
 
 
@@ -139,12 +150,26 @@ class CriminalSidesCaseSerializer(serializers.ModelSerializer):
         model = CriminalSidesCase
         fields = '__all__'
 
+
 class CriminalDecisionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CriminalDecisions
         fields = '__all__'
 
+
 class CriminalAppealSerializer(serializers.ModelSerializer):
     class Meta:
         model = CriminalAppeal
         fields = '__all__'
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'court', 'role']
+
+
+class ReferringAuthorityListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReferringAuthority
+        fields = ['id', 'name', 'code']

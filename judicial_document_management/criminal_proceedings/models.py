@@ -1,5 +1,20 @@
 from django.db import models
 from business_card.models import BusinessCard
+from users.models import User
+
+
+class ReferringAuthority(models.Model):
+    """Органы, направившие материалы"""
+    name = models.CharField(max_length=255, verbose_name="Название органа")
+    code = models.CharField(max_length=50, verbose_name="Код", unique=True)
+    
+    class Meta:
+        verbose_name = "Орган, направивший материалы"
+        verbose_name_plural = "Органы, направившие материалы"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
 
 
 class CriminalSidesCase(models.Model):
@@ -58,7 +73,14 @@ class CriminalProceedings(models.Model):
     evidence_reg_number = models.CharField(max_length=100, null=True, blank=True, verbose_name="Рег. номер вещдока")
     incoming_date = models.DateField(null=True, blank=True, verbose_name="Дата поступления дела в суд")
     incoming_from = models.CharField(max_length=255, null=True, blank=True, verbose_name="Откуда поступило")
-    
+    volume_count = models.PositiveIntegerField(null=True, blank=True, verbose_name="Количество томов")
+    referring_authority = models.ForeignKey(
+        'ReferringAuthority',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Орган, направивший материалы"
+    )
     # Пункт 2 - Порядок поступления дела (обновленный)
     case_order = models.CharField(
         max_length=255,
@@ -116,11 +138,9 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Категория дела"
     )
-    
-    judge_name = models.CharField(max_length=255, null=True, blank=True, verbose_name="ФИО судьи")
-    judge_code = models.CharField(max_length=50, null=True, blank=True, verbose_name="Код судьи")
+
     judge_acceptance_date = models.DateField(null=True, blank=True, verbose_name="Дата принятия дела судьей")
-    
+
     # Пункт 5 - Решение судьи при назначении дела
     judge_decision = models.CharField(
         max_length=255,
@@ -186,7 +206,15 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Категория длительности рассмотрения"
     )
-    
+    judge_code = models.CharField(max_length=50, null=True, blank=True, verbose_name="Код судьи")
+    presiding_judge = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Председательствующий",
+        limit_choices_to={'role': 'judge'}
+    )
     # Пункт 10 - Состав суда
     composition_court = models.CharField(
         max_length=255,
@@ -194,18 +222,19 @@ class CriminalProceedings(models.Model):
         blank=True,
         choices=[
             ('1', 'единолично судьей'),
-            ('2', 'коллегией профессиональных судей'),
+            ('2', 'коллегией судей'),
             ('3', 'с участием присяжных заседателей'),
         ],
         verbose_name="Состав суда"
     )
-    
+    consideration_date = models.DateField(null=True, blank=True, verbose_name="Дата рассмотрения")
+
     # Пункт 10.1 - Участие в процессе
     participation_prosecutor = models.BooleanField(null=True, blank=True, verbose_name="Участие прокурора")
     participation_translator = models.BooleanField(null=True, blank=True, verbose_name="Участие переводчика")
     participation_expert = models.BooleanField(null=True, blank=True, verbose_name="Участие эксперта")
     participation_specialist = models.BooleanField(null=True, blank=True, verbose_name="Участие специалиста")
-    
+
     # Пункт 10.2 - Отсутствие участия
     absence_defendant = models.BooleanField(null=True, blank=True, 
                                           verbose_name="Без участия подсудимого (ч. 5 ст. 247 УПК РФ)")

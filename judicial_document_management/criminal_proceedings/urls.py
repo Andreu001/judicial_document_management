@@ -1,8 +1,12 @@
 from rest_framework import routers
 from django.urls import path, include
-from .views import (CriminalProceedingsViewSet, DefendantViewSet, CriminalDecisionViewSet,
-                    criminal_options, defendant_options, criminal_decision_options,
-                    CriminalRulingViewSet, CriminalCaseMovementViewSet, criminal_case_movement_options)
+from .views import (CriminalProceedingsViewSet, DefendantViewSet,
+                    CriminalDecisionViewSet,
+                    criminal_options, defendant_options,
+                    criminal_decision_options,
+                    CriminalRulingViewSet, CriminalCaseMovementViewSet,
+                    criminal_case_movement_options,
+                    referring_authorities_list, judges_list)
 
 router = routers.DefaultRouter()
 router.register(
@@ -30,6 +34,14 @@ urlpatterns = [
     path("", include(router.urls)),
     path("criminal-options/", criminal_options, name="criminal-options"),
     path("defendant-options/", defendant_options, name="defendant-options"),
-    path("criminal-decision-options/", criminal_decision_options, name="criminal-decision-options"),
-    path("criminal-case-movement-options/", criminal_case_movement_options, name="criminal-case-movement-options"),
+    path("criminal-decision-options/",
+         criminal_decision_options,
+         name="criminal-decision-options"),
+    path("criminal-case-movement-options/",
+         criminal_case_movement_options,
+         name="criminal-case-movement-options"),
+    path('referring-authorities/',
+         referring_authorities_list,
+         name='referring-authorities'),
+    path('judges/', judges_list, name='judges'),
 ]

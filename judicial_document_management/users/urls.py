@@ -7,4 +7,6 @@ router.register('users', views.UserViewSet, basename='users')
 
 urlpatterns = [
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
+    path('profile/change-password/', views.UserChangePasswordView.as_view(),
+         name='user-change-password'),
 ] + router.urls

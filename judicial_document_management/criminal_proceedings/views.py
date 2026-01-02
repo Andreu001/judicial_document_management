@@ -4,18 +4,20 @@ from rest_framework.response import Response
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from business_card.models import BusinessCard
+from users.models import User
 from .models import (CriminalProceedings, Defendant,
-                    CriminalDecision, CriminalRuling,
-                    CriminalCaseMovement, CriminalSidesCase,
-                    CriminalDecisions, CriminalAppeal)
-from .serializers import (  CriminalProceedingsSerializer,
-                            DefendantSerializer,
-                            CriminalDecisionSerializer,
-                            CriminalOptionsSerializer,
-                            DefendantOptionsSerializer,
-                            CriminalDecisionOptionsSerializer,
-                            CriminalRulingSerializer,
-                            CriminalCaseMovementSerializer)
+                     CriminalDecision, CriminalRuling,
+                     CriminalCaseMovement, ReferringAuthority,)
+from .serializers import (CriminalProceedingsSerializer,
+                          DefendantSerializer,
+                          CriminalDecisionSerializer,
+                          CriminalOptionsSerializer,
+                          DefendantOptionsSerializer,
+                          CriminalDecisionOptionsSerializer,
+                          CriminalRulingSerializer,
+                          CriminalCaseMovementSerializer,
+                          ReferringAuthorityListSerializer,
+                          UserSerializer)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -198,3 +200,17 @@ class CriminalCaseMovementViewSet(viewsets.ModelViewSet):
             }
         )
         serializer.save(criminal_proceedings=proceedings)
+
+
+@api_view(['GET'])
+def referring_authorities_list(request):
+    authorities = ReferringAuthority.objects.all()
+    serializer = ReferringAuthorityListSerializer(authorities, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def judges_list(request):
+    judges = User.objects.filter(role='judge')
+    serializer = UserSerializer(judges, many=True)
+    return Response(serializer.data)

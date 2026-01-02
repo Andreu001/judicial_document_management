@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import CriminalSidesCase, CriminalDecisions, CriminalAppeal
+from .models import ReferringAuthority
+
 
 @admin.register(CriminalSidesCase)
 class CriminalSidesCaseAdmin(admin.ModelAdmin):
@@ -9,6 +11,7 @@ class CriminalSidesCaseAdmin(admin.ModelAdmin):
     list_per_page = 20  # Количество записей на странице
     ordering = ('name',)  # Сортировка по умолчанию
 
+
 @admin.register(CriminalDecisions)
 class CriminalDecisionsAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'code',)
@@ -17,8 +20,18 @@ class CriminalDecisionsAdmin(admin.ModelAdmin):
     list_per_page = 20
     ordering = ('name',)
 
+
 @admin.register(CriminalAppeal)
 class CriminalAppealAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'code',)
+    list_display_links = ('name',)
+    search_fields = ('name', 'code',)
+    list_per_page = 20
+    ordering = ('name',)
+
+
+@admin.register(ReferringAuthority)
+class ReferringAuthorityAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'code',)
     list_display_links = ('name',)
     search_fields = ('name', 'code',)
