@@ -19,6 +19,7 @@ import CorrespondenceIn from "./Correspondence/CorrespondenceIn";
 import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
 import CorrespondenceDetail from "./Correspondence/CorrespondenceDetail";
+import LawyerDetails from "../pages/sides/LawyerDetails";
 
 const AppRouter = () => {
     return (
@@ -46,12 +47,14 @@ const AppRouter = () => {
                 <Route path="business_card" element={<CardForm />} />
                 <Route path="business_card/businesscard/" element={<CardList />} />
                 <Route path="business_card/businesscard/:id/sidescaseincase/:id" element={<SideDetail />} />
+                <Route path="/businesscard/:cardId/sides/:sideId" element={<SideDetail />} />
                 <Route path="business_card/businesscard/:cardId/businessmovement/:movementId"  element={<MovementDetail />} />
                 <Route path="business_card/businesscard/:cardId/petitionsincase/:petitionId" element={<PetitionDetail />} />
                 <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
-                <Route path="/businesscard/:cardId/defendants/:defendantId" element={<DefendantDetail />} />
+                <Route path="/cases/:businesscardId/defendants/:defendantId/details" element={<DefendantDetail />} />
                 <Route path="/businesscard/:cardId/criminal-details" element={<CriminalDetail />} />
                 <Route path="/businesscard/:cardId/criminal-decisions/:decisionId" element={<CriminalDecisionDetail />} />
+                <Route path="/cases/:businesscardId/lawyers/:lawyerId" element={<LawyerDetails />} />
             </Route>
         </Routes>
     );

@@ -13,6 +13,16 @@ class CriminalCaseService {
     return cleaned;
   }
 
+  static async getReferringAuthorities() {
+    try {
+      const response = await baseService.get('/criminal_proceedings/referring-authorities/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referring authorities:', error);
+      return [];
+    }
+  }
+
   static async getRulings(businesscardId) {
     try {
       const response = await baseService.get(`${BASE_URL}${businesscardId}/rulings/`);
@@ -167,17 +177,79 @@ class CriminalCaseService {
     }
   }
 
+  static async getReferringAuthorities() {
+    try {
+      const response = await baseService.get('/criminal_proceedings/referring-authorities/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching referring authorities:', error);
+      return [];
+    }
+  }
+
+  static async getJudges() {
+    try {
+      const response = await baseService.get('auth/users/');
+      
+      // Фильтруем только пользователей с ролью судьи
+      const judges = response.data.filter(user => 
+        user.role === 'judge' || user.role === 'судья' || user.role?.toLowerCase().includes('judge')
+      );
+      
+      // Форматируем данные для отображения
+      return judges.map(judge => ({
+        id: judge.id,
+        // Форматируем ФИО правильно
+        name: `${judge.last_name || ''} ${judge.first_name || ''} ${judge.middle_name || ''}`.trim(),
+        role: judge.role,
+        judge_code: judge.judge_code || ''
+      }));
+    } catch (error) {
+      console.error('Error fetching judges:', error);
+      return [];
+    }
+  }
+
   static async getByBusinessCardId(businesscardId) {
     try {
       const response = await baseService.get(`/criminal_proceedings/businesscard/${businesscardId}/criminal/`);
-      console.log('Ответ от сервера:', response.data);
       
-      // Сервер возвращает массив, берем первый элемент
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        return response.data[0]; // Возвращаем первый объект из массива
+        const proceeding = response.data[0];
+        
+        // Если есть FK, загружаем связанные данные
+        if (proceeding.referring_authority) {
+          try {
+            const authorityResponse = await baseService.get(`/criminal_proceedings/referring-authorities/${proceeding.referring_authority}/`);
+            proceeding.referring_authority_name = authorityResponse.data.name;
+            proceeding.referring_authority_code = authorityResponse.data.code;
+          } catch (error) {
+            console.error('Error loading referring authority:', error);
+            proceeding.referring_authority_name = '';
+          }
+        }
+        
+        if (proceeding.presiding_judge) {
+          try {
+            const judgeResponse = await baseService.get(`auth/users/${proceeding.presiding_judge}/`);
+
+            const lastName = judgeResponse.data.last_name || '';
+            const firstName = judgeResponse.data.first_name || '';
+            const middleName = judgeResponse.data.middle_name || '';
+            
+            proceeding.presiding_judge_name = `${lastName} ${firstName} ${middleName}`.trim();
+            proceeding.presiding_judge_role = judgeResponse.data.role;
+            
+          } catch (error) {
+            console.error('Error loading judge:', error);
+            proceeding.presiding_judge_name = '';
+            proceeding.presiding_judge_role = '';
+          }
+        }
+        
+        return proceeding;
       }
       
-      // Если массив пустой или null, возвращаем null
       console.log('Уголовное дело не найдено, возвращаем null');
       return null;
     } catch (error) {
@@ -189,6 +261,7 @@ class CriminalCaseService {
       throw error;
     }
   }
+
 
   static async getDefendants(businesscardId) {
     try {

@@ -135,10 +135,29 @@ class BusinessCard(models.Model):
 
 
 class SidesCaseInCase(models.Model):
-    '''5. Модель добавления сторон по делу сторон по делу'''
+    '''5. Модель добавления сторон по делу'''
+
+    STATUS_CHOICES = [
+        ('individual', 'Физическое лицо'),
+        ('legal', 'Юридическое лицо'),
+        ('government', 'Орган власти'),
+        ('other', 'Иное'),
+    ]
+
+    GENDER_CHOICES = [
+        ('male', 'Мужской'),
+        ('female', 'Женский'),
+    ]
+
     name = models.CharField(
         max_length=150,
-        verbose_name='ФИО'
+        verbose_name='ФИО / Наименование'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='individual',
+        verbose_name='Статус лица'
     )
     sides_case = models.ManyToManyField(
         SidesCase,
@@ -151,17 +170,226 @@ class SidesCaseInCase(models.Model):
     )
     business_card = models.ForeignKey(
         BusinessCard,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name='sidescaseincase',
         verbose_name='Карточка на дело',
     )
 
+    # Для физических лиц
+    birth_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата рождения'
+    )
+    gender = models.CharField(
+        max_length=10,
+        choices=GENDER_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name='Пол'
+    )
+    document_type = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Документ удостоверяющий личность'
+    )
+    document_number = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='Номер документа'
+    )
+    document_series = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Серия документа'
+    )
+    document_issued_by = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Кем выдан документ'
+    )
+    document_issue_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата выдачи документа'
+    )
+
+    # Для юридических лиц
+    inn = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='ИНН'
+    )
+    kpp = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='КПП'
+    )
+    ogrn = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='ОГРН'
+    )
+    legal_address = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Юридический адрес'
+    )
+    director_name = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        verbose_name='ФИО руководителя'
+    )
+
+    # Общие поля
+    address = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Адрес проживания/нахождения'
+    )
+    phone = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='Номер телефона'
+    )
+    email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name='Электронная почта'
+    )
+    additional_info = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Дополнительная информация'
+    )
+
     class Meta:
-        verbose_name = 'Новое лицо'
-        verbose_name_plural = 'Новое лицо'
+        verbose_name = 'Сторона по делу'
+        verbose_name_plural = 'Стороны по делу'
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['inn']),
+            models.Index(fields=['status']),
+        ]
 
     def __str__(self):
-        return f'{self.sides_case} {self.name}'
+        return f'{self.name} ({self.get_status_display()})'
+
+
+class Lawyer(models.Model):
+    '''Модель для адвокатов с информацией об оплате'''
+
+    sides_case_incase = models.OneToOneField(
+        SidesCaseInCase,
+        on_delete=models.CASCADE,
+        related_name='lawyer_info',
+        verbose_name='Сторона (адвокат)',
+        blank=True,
+        null=True,
+    )
+
+    law_firm_name = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        verbose_name='Название адвокатского образования'
+    )
+    law_firm_address = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Адрес'
+    )
+    law_firm_phone = models.CharField(
+        blank=True,
+        null=True,
+        max_length=50,
+        verbose_name='Телефон '
+    )
+    law_firm_email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name='Email'
+    )
+
+    # Реквизиты для оплаты
+    bank_name = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        verbose_name='Наименование банка'
+    )
+    bank_bik = models.CharField(
+        blank=True,
+        null=True,
+        max_length=20,
+        verbose_name='БИК банка'
+    )
+    correspondent_account = models.CharField(
+        blank=True,
+        null=True,
+        max_length=30,
+        verbose_name='Корреспондентский счет'
+    )
+    payment_account = models.CharField(
+        blank=True,
+        null=True,
+        max_length=30,
+        verbose_name='Расчетный счет'
+    )
+
+    # Статус адвоката
+    lawyer_certificate_number = models.CharField(
+        blank=True,
+        null=True,
+        max_length=50,
+        verbose_name='Номер адвокатского удостоверения'
+    )
+    lawyer_certificate_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата выдачи удостоверения'
+    )
+
+    # Для оплаты за счет федерального бюджета
+    days_for_payment = models.IntegerField(
+        blank=True,
+        null=True,
+        default=0,
+        verbose_name='Количество дней для оплаты'
+    )
+    payment_amount = models.DecimalField(
+        blank=True,
+        null=True,
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Сумма оплаты (руб.)'
+    )
+    payment_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Дата постановления об оплате'
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Примечания'
+    )
+
+    class Meta:
+        verbose_name = 'Адвокат'
+        verbose_name_plural = 'Адвокаты'
+
+    def __str__(self):
+        return f'Адвокат: {self.sides_case_incase.name}'
 
 
 class PetitionsInCase(models.Model):

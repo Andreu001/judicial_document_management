@@ -44,6 +44,8 @@ const CriminalDetail = () => {
   const [showRulingEditor, setShowRulingEditor] = useState(false);
   const [currentRuling, setCurrentRuling] = useState(null);
   const [card, setCard] = useState(null);
+  const [referringAuthorities, setReferringAuthorities] = useState([]);
+  const [judges, setJudges] = useState([]);
 
   // Проверка, нужно ли показывать поле оснований предварительного слушания
   const showPreliminaryHearingGrounds = () => {
@@ -131,26 +133,49 @@ const CriminalDetail = () => {
     };
   };
 
+  const fetchReferringAuthorities = async () => {
+    try {
+      const response = await CriminalCaseService.getReferringAuthorities();
+      setReferringAuthorities(response);
+    } catch (error) {
+      console.error('Ошибка загрузки списка органов:', error);
+      setReferringAuthorities([]);
+    }
+  };
+
+  const fetchJudges = async () => {
+    try {
+      const response = await CriminalCaseService.getJudges();
+      setJudges(response);
+    } catch (error) {
+      console.error('Ошибка загрузки списка судей:', error);
+      setJudges([]);
+    }
+  };
+
   useEffect(() => {
     const fetchCriminalDetails = async () => {
       try {
         setLoading(true);
-            const cardResponse = await baseService.get(`/business_card/businesscard/${cardId}/`);
-            setCard(cardResponse.data);
-            
-            const criminalResponse = await CriminalCaseService.getByBusinessCardId(cardId);
-       
-          if (criminalResponse) {
-            const criminalDataWithCaseNumber = {
-              ...criminalResponse,
-              case_number: criminalResponse.case_number || card?.original_name || ''
-            };
+        const cardResponse = await baseService.get(`/business_card/businesscard/${cardId}/`);
+        setCard(cardResponse.data);
         
-        setCriminalData(criminalDataWithCaseNumber);
-        setFormData(criminalDataWithCaseNumber);
+        const criminalResponse = await CriminalCaseService.getByBusinessCardId(cardId);
+        
+        if (criminalResponse) {
+          const criminalDataWithCaseNumber = {
+            ...criminalResponse,
+            case_number: criminalResponse.case_number || cardResponse.data?.original_name || ''
+          };
           
+          setCriminalData(criminalDataWithCaseNumber);
+          setFormData(criminalDataWithCaseNumber);
+          
+        await fetchReferringAuthorities();
+        await fetchJudges();
+          
+          // Загрузка подсудимых (оставляем как было)
           const defendantsResponse = await CriminalCaseService.getDefendants(cardId);
-          
           const defendantsWithSideNames = await Promise.all(
             defendantsResponse.map(async (defendant) => {
               if (defendant.side_case) {
@@ -458,6 +483,8 @@ if (loading) {
                   handleFieldChange={handleFieldChange}
                   getOptionLabel={getOptionLabel}
                   formatBoolean ={formatBoolean}
+                  referringAuthorities={referringAuthorities}
+                  judges={judges}
                 />
               )}
               {activeTab === 'evidence' && (

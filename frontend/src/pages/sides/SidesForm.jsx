@@ -135,14 +135,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
             </select>
           </div>
           <div className={styles.formGroup}>
-          <label>Дата повестки</label>
-            <MyInput
-              type="text"
-              name="date_sending_agenda"
-              value={side.date_sending_agenda || editSideData.date_sending_agenda}
-              onChange={handleChange}
-              placeholder="Дата направления повестки Г.М.Д."
-            />
           </div>
           {isEditing ? (
             <>

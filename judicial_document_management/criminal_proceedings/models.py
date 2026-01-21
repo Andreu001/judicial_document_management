@@ -7,25 +7,12 @@ class ReferringAuthority(models.Model):
     """Органы, направившие материалы"""
     name = models.CharField(max_length=255, verbose_name="Название органа")
     code = models.CharField(max_length=50, verbose_name="Код", unique=True)
-    
+
     class Meta:
         verbose_name = "Орган, направивший материалы"
         verbose_name_plural = "Органы, направившие материалы"
         ordering = ['name']
-    
-    def __str__(self):
-        return self.name
 
-
-class CriminalSidesCase(models.Model):
-    """Стороны по уголовному делу"""
-    name = models.CharField(max_length=255, verbose_name="Название стороны")
-    code = models.CharField(max_length=50, verbose_name="Код", unique=True)
-    
-    class Meta:
-        verbose_name = "Сторона по уголовному делу"
-        verbose_name_plural = "Стороны по уголовным делам"
-    
     def __str__(self):
         return self.name
 
@@ -34,11 +21,11 @@ class CriminalDecisions(models.Model):
     """Решения по уголовному делу"""
     name = models.CharField(max_length=255, verbose_name="Название решения")
     code = models.CharField(max_length=50, verbose_name="Код", unique=True)
-    
+
     class Meta:
         verbose_name = "Решение по уголовному делу"
         verbose_name_plural = "Решения по уголовным делам"
-    
+
     def __str__(self):
         return self.name
 
@@ -47,11 +34,11 @@ class CriminalAppeal(models.Model):
     """Апелляции по уголовному делу"""
     name = models.CharField(max_length=255, verbose_name="Название апелляции")
     code = models.CharField(max_length=50, verbose_name="Код", unique=True)
-    
+
     class Meta:
         verbose_name = "Апелляция по уголовному делу"
         verbose_name_plural = "Апелляции по уголовным делам"
-    
+
     def __str__(self):
         return self.name
 
@@ -68,12 +55,24 @@ class CriminalProceedings(models.Model):
     )
 
     # --- Раздел А. Сведения по делу ---
-    number_of_persons = models.PositiveIntegerField(null=True, blank=True, verbose_name="Число лиц по делу")
-    evidence_present = models.BooleanField(null=True, blank=True, verbose_name="Наличие вещдоков")
-    evidence_reg_number = models.CharField(max_length=100, null=True, blank=True, verbose_name="Рег. номер вещдока")
-    incoming_date = models.DateField(null=True, blank=True, verbose_name="Дата поступления дела в суд")
-    incoming_from = models.CharField(max_length=255, null=True, blank=True, verbose_name="Откуда поступило")
-    volume_count = models.PositiveIntegerField(null=True, blank=True, verbose_name="Количество томов")
+    number_of_persons = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Число лиц по делу"
+    )
+    evidence_present = models.BooleanField(
+        null=True, blank=True, verbose_name="Наличие вещдоков"
+    )
+    evidence_reg_number = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Рег. номер вещдок"
+    )
+    incoming_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата поступления дела в суд"
+    )
+    incoming_from = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Откуда поступило"
+    )
+    volume_count = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Количество томов"
+    )
     referring_authority = models.ForeignKey(
         'ReferringAuthority',
         on_delete=models.SET_NULL,
@@ -112,20 +111,32 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Порядок поступления дела"
     )
-    
+
     # Дополнительные поля для пункта 2
-    separated_case_number = models.CharField(max_length=100, null=True, blank=True, 
-                                           verbose_name="Номер дела, из которого выделено")
-    separated_case_date = models.DateField(null=True, blank=True, 
-                                         verbose_name="Дата выделения дела")
-    repeated_court_code = models.CharField(max_length=50, null=True, blank=True, 
-                                         verbose_name="Код суда при повторном поступлении")
-    repeated_primary_reg_number = models.CharField(max_length=100, null=True, blank=True, 
-                                                 verbose_name="№ производства по первичной регистрации")
-    
-    repeat_case = models.BooleanField(null=True, blank=True, verbose_name="Повторное поступление дела")
-    repeat_case_date = models.DateField(null=True, blank=True, verbose_name="Дата повторного поступления")
-    
+    separated_case_number = models.CharField(
+        max_length=100, null=True, blank=True,
+        verbose_name="Номер дела, из которого выделено"
+    )
+    separated_case_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата выделения дела"
+    )
+    repeated_court_code = models.CharField(
+        max_length=50, null=True, blank=True,
+        verbose_name="Код суда при повторном поступлении"
+    )
+    repeated_primary_reg_number = models.CharField(
+        max_length=100, null=True, blank=True,
+        verbose_name="№ производства по первичной регистрации"
+    )
+
+    repeat_case = models.BooleanField(
+        null=True, blank=True, verbose_name="Повторное поступление дела"
+    )
+    repeat_case_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата повторного поступления"
+    )
+
     # Пункт 3 - Категория дела
     case_category = models.CharField(
         max_length=255,
@@ -139,7 +150,9 @@ class CriminalProceedings(models.Model):
         verbose_name="Категория дела"
     )
 
-    judge_acceptance_date = models.DateField(null=True, blank=True, verbose_name="Дата принятия дела судьей")
+    judge_acceptance_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата принятия дела судьей"
+    )
 
     # Пункт 5 - Решение судьи при назначении дела
     judge_decision = models.CharField(
@@ -189,9 +202,11 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Результат рассмотрения дела в целом"
     )
-    
-    total_duration_days = models.IntegerField(null=True, blank=True, verbose_name="Общая продолжительность (дни)")
-    
+
+    total_duration_days = models.IntegerField(
+        null=True, blank=True, verbose_name="Общая продолжительность (дни)"
+    )
+
     # Длительность рассмотрения дела
     case_duration_category = models.CharField(
         max_length=1,
@@ -206,7 +221,9 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Категория длительности рассмотрения"
     )
-    judge_code = models.CharField(max_length=50, null=True, blank=True, verbose_name="Код судьи")
+    judge_code = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Код судьи"
+    )
     presiding_judge = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -227,56 +244,105 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Состав суда"
     )
-    consideration_date = models.DateField(null=True, blank=True, verbose_name="Дата рассмотрения")
+    consideration_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата рассмотрения"
+    )
 
     # Пункт 10.1 - Участие в процессе
-    participation_prosecutor = models.BooleanField(null=True, blank=True, verbose_name="Участие прокурора")
-    participation_translator = models.BooleanField(null=True, blank=True, verbose_name="Участие переводчика")
-    participation_expert = models.BooleanField(null=True, blank=True, verbose_name="Участие эксперта")
-    participation_specialist = models.BooleanField(null=True, blank=True, verbose_name="Участие специалиста")
+    participation_prosecutor = models.BooleanField(
+        null=True, blank=True, verbose_name="Участие прокурора"
+    )
+    participation_translator = models.BooleanField(
+        null=True, blank=True, verbose_name="Участие переводчика"
+    )
+    participation_expert = models.BooleanField(
+        null=True, blank=True, verbose_name="Участие эксперта"
+    )
+    participation_specialist = models.BooleanField(
+        null=True, blank=True, verbose_name="Участие специалиста"
+    )
 
     # Пункт 10.2 - Отсутствие участия
-    absence_defendant = models.BooleanField(null=True, blank=True, 
-                                          verbose_name="Без участия подсудимого (ч. 5 ст. 247 УПК РФ)")
-    absence_lawyer = models.BooleanField(null=True, blank=True, 
-                                       verbose_name="Без участия адвоката у подсудимого")
-    absence_pmmh_person = models.BooleanField(null=True, blank=True, 
-                                            verbose_name="Без участия лица по делам о ПММХ (ч. 1 ст. 437 УПК РФ)")
-    
+    absence_defendant = models.BooleanField(
+        null=True, blank=True,
+        verbose_name="Без участия подсудимого (ч. 5 ст. 247 УПК РФ)"
+    )
+    absence_lawyer = models.BooleanField(
+        null=True, blank=True,
+        verbose_name="Без участия адвоката у подсудимого"
+    )
+    absence_pmmh_person = models.BooleanField(
+        null=True, blank=True,
+        verbose_name="Без участия лица по делам о ПММХ (ч. 1 ст. 437 УПК РФ)"
+    )
+
     # Пункт 10.3 - Закрытое заседание
-    closed_hearing = models.BooleanField(null=True, blank=True, 
-                                       verbose_name="Рассмотрено в закрытом судебном заседании")
-    
+    closed_hearing = models.BooleanField(
+        null=True, blank=True,
+        verbose_name="Рассмотрено в закрытом судебном заседании"
+    )
+
     # Пункт 10.4 - Использование технологий
-    vks_technology = models.BooleanField(null=True, blank=True, verbose_name="Использование ВКС")
-    audio_recording = models.BooleanField(null=True, blank=True, verbose_name="Использование аудиозаписи")
-    video_recording = models.BooleanField(null=True, blank=True, verbose_name="Использование видеозаписи")
-    
+    vks_technology = models.BooleanField(
+        null=True, blank=True, verbose_name="Использование ВКС"
+        )
+    audio_recording = models.BooleanField(
+        null=True, blank=True, verbose_name="Использование аудиозаписи"
+    )
+    video_recording = models.BooleanField(
+        null=True, blank=True, verbose_name="Использование видеозаписи"
+    )
+
     # Особый порядок
-    special_procedure_consent = models.BooleanField(null=True, blank=True, 
-                                                  verbose_name="Особый порядок при согласии обвиняемого")
-    special_procedure_agreement = models.BooleanField(null=True, blank=True, 
-                                                    verbose_name="Особый порядок при заключении досудебного соглашения")
-    
+    special_procedure_consent = models.BooleanField(
+        null=True, blank=True,
+        verbose_name="Особый порядок при согласии обвиняемого"
+    )
+    special_procedure_agreement = models.BooleanField(
+        null=True, blank=True,
+        verbose_name="Особый порядок при заключении досудебного соглашения"
+    )
+
     # Пункт 11 - Частные определения
-    private_rulings_count = models.PositiveIntegerField(null=True, blank=True, 
-                                                      verbose_name="Количество частных определений (постановлений)")
-    
+    private_rulings_count = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name="Количество частных определений (постановлений)"
+    )
+
     # Пункт 12 - Сдача в делопроизводство
-    case_to_office_date = models.DateField(null=True, blank=True, 
-                                         verbose_name="Дата сдачи дела в отдел делопроизводства")
-    
+    case_to_office_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата сдачи дела в отдел делопроизводства"
+    )
+
     # --- Раздел C. Приговор и исполнение (общие) ---
-    sentence_date = models.DateField(null=True, blank=True, verbose_name="Дата вынесения приговора")
-    sentence_result = models.CharField(max_length=255, null=True, blank=True, verbose_name="Результат рассмотрения (приговор, прекращение и др.)")
-    appeal_date = models.DateField(null=True, blank=True, verbose_name="Дата обжалования")
-    appeal_result = models.CharField(max_length=255, null=True, blank=True, verbose_name="Результат обжалования")
-    cassation_date = models.DateField(null=True, blank=True, verbose_name="Дата кассации/надзора")
-    cassation_result = models.CharField(max_length=255, null=True, blank=True, verbose_name="Результат кассации/надзора")
-    case_to_archive_date = models.DateField(null=True, blank=True, verbose_name="Дата сдачи дела в архив")
+    sentence_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата вынесения приговора"
+    )
+    sentence_result = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Результат рассмотрения (приговор, прекращение и др.)"
+    )
+    appeal_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата обжалования"
+    )
+    appeal_result = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Результат обжалования"
+    )
+    cassation_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата кассации/надзора"
+    )
+    cassation_result = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Результат кассации/надзора"
+        )
+    case_to_archive_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата сдачи дела в архив"
+    )
 
     # --- Особые отметки ---
-    special_notes = models.TextField(null=True, blank=True, verbose_name="Особые отметки")
+    special_notes = models.TextField(
+        null=True, blank=True, verbose_name="Особые отметки"
+    )
 
     class Meta:
         verbose_name = "Уголовное производство"
@@ -310,16 +376,19 @@ class Defendant(models.Model):
     )
 
     full_name = models.CharField(max_length=255, verbose_name="ФИО обвиняемого")
-    side_case = models.ForeignKey(
-        CriminalSidesCase,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+    sides_case_person = models.ForeignKey(
+        'business_card.SidesCaseInCase',
+        on_delete=models.CASCADE,
+        related_name='criminal_defendants',
         verbose_name='Сторона по делу'
     )
-    address = models.CharField(max_length=500, null=True, blank=True, verbose_name="Адрес проживания")
-    birth_date = models.DateField(null=True, blank=True, verbose_name="Дата рождения")
-    
+    address = models.CharField(
+        max_length=500, null=True, blank=True, verbose_name="Адрес проживания"
+    )
+    birth_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата рождения"
+    )
+
     # Пункт 1 - Пол
     sex = models.CharField(
         max_length=10,
@@ -331,13 +400,18 @@ class Defendant(models.Model):
         ],
         verbose_name="Пол"
     )
-    
+
     # Пункт 1 - Гражданство
-    citizenship = models.CharField(max_length=50, null=True, blank=True, verbose_name="Гражданство")
-    
+    citizenship = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Гражданство"
+    )
+
     # Пункт 2 - Результат рассмотрения дела (будет из CSV)
-    trial_result = models.CharField(max_length=255, null=True, blank=True, verbose_name="Результат рассмотрения по данному лицу")
-    
+    trial_result = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Результат рассмотрения по данному лицу"
+    )
+
     # Пункт 3 - Мера пресечения
     restraint_measure = models.CharField(
         max_length=255,
@@ -356,9 +430,11 @@ class Defendant(models.Model):
         ],
         verbose_name="Мера пресечения"
     )
-    
-    restraint_date = models.DateField(null=True, blank=True, verbose_name="Дата избрания меры пресечения")
-    
+
+    restraint_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата избрания меры пресечения"
+        )
+
     # Применение меры пресечения
     restraint_application = models.CharField(
         max_length=1,
@@ -372,7 +448,7 @@ class Defendant(models.Model):
         ],
         verbose_name="Мера пресечения применена"
     )
-    
+
     # Изменение меры пресечения
     restraint_change = models.CharField(
         max_length=1,
@@ -385,25 +461,54 @@ class Defendant(models.Model):
         verbose_name="Изменение меры пресечения"
     )
 
-    restraint_change_date = models.DateField(null=True, blank=True, verbose_name="Дата изменения меры пресечения")
-    restraint_change_to = models.CharField(max_length=255, null=True, blank=True,
-                                         verbose_name="Изменена на меру")
+    restraint_change_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата изменения меры пресечения"
+    )
+    restraint_change_to = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Изменена на меру"
+    )
 
-    conviction_article = models.CharField(max_length=255, null=True, blank=True, verbose_name="Статья по приговору")
-    punishment_type = models.CharField(max_length=255, null=True, blank=True, verbose_name="Вид наказания")
-    punishment_term = models.CharField(max_length=255, null=True, blank=True, verbose_name="Срок наказания")
-    additional_punishment = models.CharField(max_length=255, null=True, blank=True, verbose_name="Дополнительное наказание")
-    parole_info = models.CharField(max_length=255, null=True, blank=True, verbose_name="Условно-досрочное освобождение / испытательный срок")
-    property_damage = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма ущерба")
-    moral_damage = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма морального вреда")
-    
+    conviction_article = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Статья по приговору"
+    )
+    punishment_type = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Вид наказания"
+    )
+    punishment_term = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Срок наказания"
+    )
+    additional_punishment = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Дополнительное наказание"
+    )
+    parole_info = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Условно-досрочное освобождение / испытательный срок"
+    )
+    property_damage = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True,
+        blank=True, verbose_name="Сумма ущерба"
+    )
+    moral_damage = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True,
+        blank=True, verbose_name="Сумма морального вреда"
+    )
+
     # Пункт 5 - Исполнение приговора (будет из CSV)
-    detention_institution = models.CharField(max_length=500, null=True, blank=True, 
-                                           verbose_name="Содержится в учреждении")
-    detention_address = models.CharField(max_length=500, null=True, blank=True, 
-                                       verbose_name="Адрес учреждения")
-    
-    special_notes = models.TextField(null=True, blank=True, verbose_name="Особые отметки по лицу")
+    detention_institution = models.CharField(
+        max_length=500, null=True, blank=True,
+        verbose_name="Содержится в учреждении"
+    )
+    detention_address = models.CharField(
+        max_length=500, null=True, blank=True,
+        verbose_name="Адрес учреждения"
+        )
+
+    special_notes = models.TextField(
+        null=True, blank=True, verbose_name="Особые отметки по лицу"
+    )
 
     class Meta:
         verbose_name = "Обвиняемый"
@@ -431,7 +536,7 @@ class CriminalDecision(models.Model):
         blank=True,
         verbose_name='Решение по поступившему делу'
     )
-    
+
     # Пункт 13 - Обжалование приговора
     appeal_present = models.CharField(
         max_length=1,
@@ -445,11 +550,19 @@ class CriminalDecision(models.Model):
         ],
         verbose_name="Обжалование приговора"
     )
-    
-    appeal_date = models.DateField(null=True, blank=True, verbose_name="Дата поступления апелляции")
-    appeal_applicant = models.CharField(max_length=255, null=True, blank=True, verbose_name="ФИО заявителя апелляции")
-    appeal_applicant_status = models.CharField(max_length=255, null=True, blank=True, verbose_name="Процессуальное положение заявителя")
-    
+
+    appeal_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата поступления апелляции"
+    )
+    appeal_applicant = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="ФИО заявителя апелляции"
+    )
+    appeal_applicant_status = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Процессуальное положение заявителя"
+    )
+
     # Пункт 14 - Направление в суд II инстанции
     court_instance = models.CharField(
         max_length=1,
@@ -461,15 +574,27 @@ class CriminalDecision(models.Model):
         blank=True,
         verbose_name="Суд II инстанции"
     )
-    
-    court_sent_date = models.DateField(null=True, blank=True, verbose_name="Дата направления в суд II инстанции")
-    court_return_date = models.DateField(null=True, blank=True, verbose_name="Дата возвращения из суда II инстанции")
-    court_return_reason = models.TextField(null=True, blank=True, verbose_name="Причина возвращения")
-    court_resend_date = models.DateField(null=True, blank=True, verbose_name="Дата повторного направления")
-    
+
+    court_sent_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата направления в суд II инстанции"
+    )
+    court_return_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата возвращения из суда II инстанции"
+    )
+    court_return_reason = models.TextField(
+        null=True, blank=True, verbose_name="Причина возвращения"
+    )
+    court_resend_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата повторного направления"
+    )
+
     # Пункт 15 - Рассмотрение во II инстанции
-    court_consideration_date = models.DateField(null=True, blank=True, verbose_name="Дата рассмотрения во II инстанции")
-    
+    court_consideration_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата рассмотрения во II инстанции"
+    )
+
     decision_appeal_criminal = models.ForeignKey(
         CriminalAppeal,
         on_delete=models.SET_NULL,
@@ -477,7 +602,7 @@ class CriminalDecision(models.Model):
         blank=True,
         verbose_name="Результат рассмотрения во II инстанции"
     )
-    
+
     # Результат рассмотрения во II инстанции
     appeal_consideration_result = models.CharField(
         max_length=1,
@@ -495,16 +620,24 @@ class CriminalDecision(models.Model):
         ],
         verbose_name="Результат рассмотрения во II инстанции"
     )
-    
-    consideration_changes = models.TextField(null=True, blank=True, verbose_name="Сущность изменений")
-    higher_court_receipt_date = models.DateField(null=True, blank=True, verbose_name="Дата поступления из вышестоящего суда")
-    
+
+    consideration_changes = models.TextField(
+        null=True, blank=True, verbose_name="Сущность изменений"
+    )
+    higher_court_receipt_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата поступления из вышестоящего суда"
+    )
+
     # Пункт 16 - Вступление в силу
-    sentence_effective_date = models.DateField(null=True, blank=True, verbose_name="Дата вступления в силу")
-    
+    sentence_effective_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата вступления в силу"
+    )
+
     # Пункт 17 - Обращение к исполнению
-    sentence_execution_date = models.DateField(null=True, blank=True, verbose_name="Дата обращения к исполнению")
-    
+    sentence_execution_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата обращения к исполнению"
+    )
+
     # Пункт 15.1 - Результаты рассмотрения гражданского иска
     civil_claim_result = models.CharField(
         max_length=1,
@@ -519,49 +652,119 @@ class CriminalDecision(models.Model):
         blank=True,
         verbose_name="Результат гражданского иска"
     )
-    
-    civil_claim_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма иска")
-    state_duty_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма госпошлины")
-    theft_damage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма ущерба от хищения")
-    other_damage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма ущерба от др. преступлений")
-    moral_damage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма морального вреда")
-    moral_damage_article = models.CharField(max_length=50, null=True, blank=True, verbose_name="Статья УК РФ по моральному вреду")
-    
+
+    civil_claim_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True,
+        blank=True, verbose_name="Сумма иска"
+    )
+    state_duty_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True,
+        blank=True, verbose_name="Сумма госпошлины"
+    )
+    theft_damage_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name="Сумма ущерба от хищения"
+    )
+    other_damage_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name="Сумма ущерба от др. преступлений"
+    )
+    moral_damage_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name="Сумма морального вреда"
+    )
+    moral_damage_article = models.CharField(
+        max_length=50, null=True, blank=True,
+        verbose_name="Статья УК РФ по моральному вреду"
+    )
+
     # Копии приговора
-    copy_sent_to_1 = models.CharField(max_length=255, null=True, blank=True, verbose_name="Копия направлена 1")
-    copy_sent_date_1 = models.DateField(null=True, blank=True, verbose_name="Дата направления 1")
-    copy_sent_to_2 = models.CharField(max_length=255, null=True, blank=True, verbose_name="Копия направлена 2")
-    copy_sent_date_2 = models.DateField(null=True, blank=True, verbose_name="Дата направления 2")
-    copy_sent_to_3 = models.CharField(max_length=255, null=True, blank=True, verbose_name="Копия направлена 3")
-    copy_sent_date_3 = models.DateField(null=True, blank=True, verbose_name="Дата направления 3")
-    
+    copy_sent_to_1 = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Копия направлена 1"
+    )
+    copy_sent_date_1 = models.DateField(
+        null=True, blank=True, verbose_name="Дата направления 1"
+    )
+    copy_sent_to_2 = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Копия направлена 2"
+    )
+    copy_sent_date_2 = models.DateField(
+        null=True, blank=True, verbose_name="Дата направления 2"
+    )
+    copy_sent_to_3 = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Копия направлена 3"
+    )
+    copy_sent_date_3 = models.DateField(
+        null=True, blank=True, verbose_name="Дата направления 3"
+    )
+
     # Пункт 18 - Особые отметки
-    joined_with_case = models.CharField(max_length=100, null=True, blank=True, verbose_name="Соединено с делом №")
-    separated_to_case = models.CharField(max_length=100, null=True, blank=True, verbose_name="Выделено в дело №")
-    expertise_type = models.CharField(max_length=255, null=True, blank=True, verbose_name="Вид экспертизы")
-    expertise_sent_date = models.DateField(null=True, blank=True, verbose_name="Дата направления экспертизы")
-    expertise_received_date = models.DateField(null=True, blank=True, verbose_name="Дата поступления экспертизы")
-    confiscation_article = models.CharField(max_length=50, null=True, blank=True, verbose_name="Статья УК РФ о конфискации")
-    court_fine_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Сумма судебного штрафа")
-    court_fine_article = models.CharField(max_length=50, null=True, blank=True, verbose_name="Статья УК РФ о штрафе")
-    procedural_coercion = models.TextField(null=True, blank=True, verbose_name="Меры процессуального принуждения")
-    procedural_coercion_date = models.DateField(null=True, blank=True, verbose_name="Дата применения мер")
-    procedural_costs = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Процессуальные издержки")
-    
+    joined_with_case = models.CharField(
+        max_length=100, null=True, blank=True,
+        verbose_name="Соединено с делом №"
+    )
+    separated_to_case = models.CharField(
+        max_length=100, null=True, blank=True,
+        verbose_name="Выделено в дело №"
+    )
+    expertise_type = models.CharField(
+        max_length=255, null=True, blank=True,
+        verbose_name="Вид экспертизы"
+    )
+    expertise_sent_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата направления экспертизы"
+    )
+    expertise_received_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата поступления экспертизы"
+    )
+    confiscation_article = models.CharField(
+        max_length=50, null=True, blank=True,
+        verbose_name="Статья УК РФ о конфискации"
+    )
+    court_fine_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name="Сумма судебного штрафа"
+    )
+    court_fine_article = models.CharField(
+        max_length=50, null=True, blank=True,
+        verbose_name="Статья УК РФ о штрафе"
+    )
+    procedural_coercion = models.TextField(
+        null=True, blank=True, verbose_name="Меры процессуального принуждения"
+    )
+    procedural_coercion_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата применения мер"
+    )
+    procedural_costs = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name="Процессуальные издержки"
+    )
+
     # Пункт 19 - Ходатайства
-    petitions_info = models.TextField(null=True, blank=True, verbose_name="Информация о ходатайствах")
-    petitions_withdrawal_date = models.DateField(null=True, blank=True, verbose_name="Дата отзыва ходатайства")
-    
+    petitions_info = models.TextField(
+        null=True, blank=True, verbose_name="Информация о ходатайствах"
+    )
+    petitions_withdrawal_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата отзыва ходатайства"
+    )
+
     # Пункт 20 - Другие отметки
-    other_notes = models.TextField(null=True, blank=True, verbose_name="Другие отметки")
-    
-    archive_date = models.DateField(null=True, blank=True, verbose_name="Дата сдачи в архив")
-    
+    other_notes = models.TextField(
+        null=True, blank=True, verbose_name="Другие отметки"
+    )
+
+    archive_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата сдачи в архив"
+    )
+
     class Meta:
         verbose_name = "Решение по уголовному делу"
         verbose_name_plural = "Решения по уголовным делам"
         ordering = ['-appeal_date']
-    
+
     def __str__(self):
         return f"Решение по делу {self.criminal_proceedings.business_card.original_name} - {self.get_court_instance_display()}"
 
@@ -576,7 +779,7 @@ class CriminalCaseMovement(models.Model):
         related_name="case_movement",
         verbose_name="Уголовное производство"
     )
-    
+
     # Пункт 6 - Результат предварительного слушания
     preliminary_hearing_result = models.CharField(
         max_length=255,
@@ -592,8 +795,10 @@ class CriminalCaseMovement(models.Model):
         ],
         verbose_name="Результат предварительного слушания"
     )
-    
-    first_hearing_date = models.DateField(null=True, blank=True, verbose_name="Дата первого заседания")
+
+    first_hearing_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата первого заседания"
+    )
 
     hearing_compliance = models.CharField(
         max_length=1,
@@ -605,7 +810,7 @@ class CriminalCaseMovement(models.Model):
         ],
         verbose_name="Соблюдение сроков"
     )
-    
+
     # Пункт 8 - Причины отложения дела
     hearing_postponed_reason = models.CharField(
         max_length=255,
@@ -625,13 +830,17 @@ class CriminalCaseMovement(models.Model):
         ],
         verbose_name="Причина отложения"
     )
-    
+
     # Дополнительное поле для текстового описания причины
-    hearing_postponed_reason_text = models.TextField(null=True, blank=True, 
-                                                   verbose_name="Текст причины отложения")
-    
-    suspension_date = models.DateField(null=True, blank=True, verbose_name="Дата приостановления производства")
-    
+    hearing_postponed_reason_text = models.TextField(
+        null=True, blank=True,
+        verbose_name="Текст причины отложения"
+    )
+
+    suspension_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата приостановления производства"
+    )
+
     # Пункт 8 - Основания приостановления
     suspension_reason = models.CharField(
         max_length=255,
@@ -648,7 +857,9 @@ class CriminalCaseMovement(models.Model):
         verbose_name="Причина приостановления"
     )
 
-    resumption_date = models.DateField(null=True, blank=True, verbose_name="Дата возобновления производства")
+    resumption_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата возобновления производства"
+    )
 
     class Meta:
         verbose_name = "Движение дела"
@@ -698,24 +909,36 @@ class CriminalRuling(models.Model):
         choices=RULING_TYPES,
         verbose_name="Тип постановления"
     )
-    
-    title = models.CharField(max_length=500, verbose_name="Заголовок постановления")
-    content = models.TextField(verbose_name="Содержание постановления (HTML)")
+
+    title = models.CharField(
+        max_length=500, verbose_name="Заголовок постановления"
+    )
+    content = models.TextField(
+        verbose_name="Содержание постановления (HTML)"
+    )
     content_raw = models.TextField(verbose_name="Сырое содержимое (Draft.js)")
-    
+
     # Метаданные
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-    created_by = models.CharField(max_length=255, null=True, blank=True, verbose_name="Кем создано")
-    
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата создания"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="Дата обновления"
+    )
+    created_by = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Кем создано"
+    )
+
     # Статус
     is_draft = models.BooleanField(default=True, verbose_name="Черновик")
-    signed_date = models.DateField(null=True, blank=True, verbose_name="Дата подписания")
-    
+    signed_date = models.DateField(
+        null=True, blank=True, verbose_name="Дата подписания"
+    )
+
     class Meta:
         verbose_name = "Постановление по уголовному делу"
         verbose_name_plural = "Постановления по уголовным делам"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"{self.title} - {self.criminal_proceedings.business_card.original_name}"

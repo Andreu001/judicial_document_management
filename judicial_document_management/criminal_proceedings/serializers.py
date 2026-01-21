@@ -5,7 +5,6 @@ from .models import (CriminalProceedings,
                      CriminalDecision,
                      CriminalRuling,
                      CriminalCaseMovement,
-                     CriminalSidesCase,
                      CriminalDecisions,
                      CriminalAppeal,
                      ReferringAuthority)
@@ -143,12 +142,6 @@ class CriminalRulingSerializer(serializers.ModelSerializer):
         model = CriminalRuling
         fields = "__all__"
         read_only_fields = ("criminal_proceedings", "created_at", "updated_at")
-
-
-class CriminalSidesCaseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CriminalSidesCase
-        fields = '__all__'
 
 
 class CriminalDecisionsSerializer(serializers.ModelSerializer):

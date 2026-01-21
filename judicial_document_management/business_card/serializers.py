@@ -1,13 +1,11 @@
 
-# from drf_extra_fields.fields import Base64ImageField
-# from djoser.serializers import UserCreateSerializer, UserSerializer
-# from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework import serializers
 
 from .models import (FamiliarizationCase, SidesCase,
                      Petitions, ConsideredCase, Decisions,
                      Category, BusinessCard, PetitionsInCase,
-                     SidesCaseInCase, Appeal, BusinessMovement, ExecutionCase)
+                     SidesCaseInCase, Appeal, BusinessMovement,
+                     Lawyer, ExecutionCase)
 from django.contrib.auth import get_user_model
 from criminal_proceedings.serializers import CriminalProceedingsSerializer
 
@@ -25,12 +23,28 @@ class SidesCaseInCaseSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    status_display = serializers.CharField(
+        source='get_status_display',
+        read_only=True
+    )
+
+    gender_display = serializers.CharField(
+        source='get_gender_display',
+        read_only=True
+    )
+
     class Meta:
         model = SidesCaseInCase
-        fields = ('name', 'id',
-                  'sides_case', 'sides_case_name',
-                  'date_sending_agenda'
-                  )
+        fields = (
+            'id', 'name', 'status', 'status_display',
+            'sides_case', 'sides_case_name',
+            'date_sending_agenda',
+            'birth_date', 'gender', 'gender_display',
+            'document_type', 'document_number', 'document_series',
+            'document_issued_by', 'document_issue_date',
+            'inn', 'kpp', 'ogrn', 'legal_address', 'director_name',
+            'address', 'phone', 'email', 'additional_info'
+        )
 
 
 class FamiliarizationCaseSerializer(serializers.ModelSerializer):
@@ -72,7 +86,7 @@ class DecisionsSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Decisions
-        fields = ('id', 'name_case', 'date_consideration', 
+        fields = ('id', 'name_case', 'date_consideration',
                   'notation',
                   )
 
@@ -110,7 +124,7 @@ class BusinessCardSerializer(serializers.ModelSerializer):
     case_category_title = serializers.CharField(
         source='case_category.title_category', read_only=True
         )
-    
+
     criminal_proceedings = CriminalProceedingsSerializer(read_only=True)
 
     class Meta:
@@ -133,12 +147,11 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
 
     notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
     petitions_name = PetitionsSerializer(many=True, read_only=True)
-    # Изменено: добавляем поле ввода с allow_empty=True
     decision_rendered = serializers.PrimaryKeyRelatedField(
         queryset=Decisions.objects.all(),
         many=True,
         required=False,
-        allow_empty=True  # Добавлено
+        allow_empty=True
     )
 
     class Meta:
@@ -198,3 +211,23 @@ class ExecutionCaseSerializer(serializers.ModelSerializer):
                   'notification_parties',
                   'executive_lists',
                   )
+
+
+class LawyerSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для адвокатов
+    """
+
+    sides_case_info = SidesCaseInCaseSerializer(
+        source='sides_case_incase',
+        read_only=True
+    )
+
+    payment_status_display = serializers.CharField(
+        source='get_payment_status_display',
+        read_only=True
+    )
+
+    class Meta:
+        model = Lawyer
+        fields = '__all__'

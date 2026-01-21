@@ -12,7 +12,9 @@ export const BasicInfoTab = ({ isEditing,
                                 handleInputChange,
                                 handleFieldChange,
                                 getOptionLabel,
-                                formatBoolean }) => (
+                                formatBoolean,
+                                referringAuthorities = [],
+                                judges = [] }) => (
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
@@ -50,20 +52,93 @@ export const BasicInfoTab = ({ isEditing,
               <span>{criminalData.number_of_persons || 'Не указано'}</span>
             )}
           </div>
-            <div className={styles.field}>
-              <label>Откуда поступило</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="incoming_from"
-                  value={formData.incoming_from || ''}
-                  onChange={handleInputChange}
-                  className={styles.input}
-                />
-              ) : (
-                <span>{criminalData.incoming_from || 'Не указано'}</span>
-              )}
-            </div>
+        
+        {/* Количество томов */}
+        <div className={styles.field}>
+          <label>Количество томов</label>
+          {isEditing ? (
+            <input
+              type="number"
+              name="volume_count"
+              value={formData.volume_count || ''}
+              onChange={handleInputChange}
+              className={styles.input}
+              min="0"
+            />
+          ) : (
+            <span>{criminalData.volume_count || criminalData.volume_count === 0 ? criminalData.volume_count : 'Не указано'}</span>
+          )}
+        </div>
+
+        {/* Орган, направивший материалы */}
+        <div className={styles.field}>
+          <label>Орган, направивший материалы</label>
+          {isEditing ? (
+            <select
+              name="referring_authority"
+              value={formData.referring_authority || ''}
+              onChange={handleInputChange}
+              className={styles.input}
+            >
+              <option value="">Выберите орган</option>
+              {referringAuthorities.map(authority => (
+                <option key={authority.id} value={authority.id}>
+                  {authority.name} {authority.code ? `(${authority.code})` : ''}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>
+              {criminalData.referring_authority_name || 'Не указано'}
+              {criminalData.referring_authority_code ? ` (${criminalData.referring_authority_code})` : ''}
+            </span>
+          )}
+        </div>
+
+          <div className={styles.field}>
+            <label>Состав суда</label>
+            {isEditing ? (
+              <select
+                name="composition_court"
+                value={formData.composition_court || ''}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                {options.compositionCourt.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>{getOptionLabel(options.compositionCourt, criminalData.composition_court)}</span>
+            )}
+          </div>
+
+        {/* Председательствующий */}
+        <div className={styles.field}>
+          <label>Председательствующий</label>
+            {isEditing ? (
+              <select
+                name="presiding_judge"
+                value={formData.presiding_judge || ''}
+                onChange={handleInputChange}
+                className={styles.input}
+              >
+                <option value="">Выберите судью</option>
+                {judges.map(judge => (
+                  <option key={judge.id} value={judge.id}>
+                    {judge.role} ({judge.judge_code})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>
+                {formData.presiding_judge_name || 'Не указано'}
+              </span>
+            )}
+        </div>
         </div>
 
         <div className={styles.fieldGroup}>
@@ -266,36 +341,6 @@ export const CaseCategoryTab = ({ isEditing,
               </select>
             ) : (
               <span>{getOptionLabel(options.caseCategory, criminalData.case_category)}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>ФИО судьи</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="judge_name"
-                value={formData.judge_name || ''}
-                onChange={handleInputChange}
-                className={styles.input}
-              />
-            ) : (
-              <span>{criminalData.judge_name || 'Не указано'}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
-            <label>Код судьи</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="judge_code"
-                value={formData.judge_code || ''}
-                onChange={handleInputChange}
-                className={styles.input}
-              />
-            ) : (
-              <span>{criminalData.judge_code || 'Не указано'}</span>
             )}
           </div>
 
@@ -512,27 +557,6 @@ export const ResultTab = ({ isEditing,
 
         <div className={styles.fieldGroup}>
           <h3 className={styles.subsectionTitle}>Состав суда</h3>
-          <div className={styles.field}>
-            <label>Состав суда</label>
-            {isEditing ? (
-              <select
-                name="composition_court"
-                value={formData.composition_court || ''}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="">Выберите</option>
-                {options.compositionCourt.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>{getOptionLabel(options.compositionCourt, criminalData.composition_court)}</span>
-            )}
-          </div>
-
           <div className={styles.field}>
             <label>Без участия подсудимого</label>
             {isEditing ? (

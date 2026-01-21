@@ -1,3 +1,4 @@
+// SideService.jsx
 import baseService from './baseService';
 
 export const updateSide = async (cardId, sideId, updatedData) => {
@@ -17,6 +18,16 @@ class SideService {
       return response;
     } catch (error) {
       console.error('Ошибка при выполнении запроса getAllSide:', error);
+      throw error;
+    }
+  }
+
+  static async getSideById(cardId, sideId) {
+    try {
+      const response = await baseService.get(`/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/`);
+      return response;
+    } catch (error) {
+      console.error('Ошибка при получении конкретной стороны:', error);
       throw error;
     }
   }

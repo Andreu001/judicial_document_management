@@ -13,34 +13,16 @@ const CardFooter = ({
   handleRemove,
   handleEditToggle,
   isEditingCard,
-  cardId,
-  hasCriminalCase,
   handleShowDetails,
   card,
   }) => {
   const router = useNavigate();
   
-const isCriminalCase = () => {
-  // Проверяем по ID категории - это самый надежный способ
-  if (card && card.case_category === 4) {
-    return true;
-  }
-  
-  // Дополнительная проверка по названию (если нужно)
-  if (card && card.case_category_title && 
-      card.case_category_title.toLowerCase().includes('уголов')) {
-    return true;
-  }
-  
-  return false;
-};
-
   const renderButtons = () => {
     if (activeTab === 1) {
       return (
         <div className={styles.cardButtons}>
-          <MyButton className={styles.add} onClick={handleAddSideToState}>
-            {isCriminalCase() ? 'Добавить стороны' : 'Добавить сторону'}
+          <MyButton className={styles.add} onClick={handleAddSideToState}>Добавить сторону
           </MyButton>
         </div>
       );
@@ -60,7 +42,7 @@ const isCriminalCase = () => {
       return (
         <div className={styles.cardButtons}>
           <MyButton className={styles.add} onClick={handleAddConsideredToState}>
-            {hasCriminalCase ? 'Добавить решение по УД' : 'Добавить решение'}
+            Добавить решение
           </MyButton>
         </div>
       );
