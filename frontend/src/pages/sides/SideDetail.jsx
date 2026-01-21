@@ -2,27 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   User,
-  Building,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  FileText,
-  Users,
-  Briefcase,
-  Home,
-  Globe,
+  ArrowLeft,
   Edit2,
   Save,
-  X,
-  ArrowLeft,
-  UserCheck,
-  Shield,
-  Award
+  X
 } from 'lucide-react';
 import baseService from '../../API/baseService';
 import SideService from '../../API/SideService';
-import './SideDetails.module.css';
+import styles from './SideDetails.module.css'; // Исправленный импорт
 
 const SideDetails = () => {
   const { cardId, sideId } = useParams();
@@ -44,9 +31,10 @@ const SideDetails = () => {
   const loadSideDetails = async () => {
     try {
       setLoading(true);
-      const response = await SideService.getSideById(cardId, sideId);
-      setSide(response.data);
-      setFormData(response.data);
+      const response = await SideService.getAllSide(cardId);
+      const sideData = response.data.find(s => s.id === parseInt(sideId));
+      setSide(sideData);
+      setFormData(sideData || {});
       setLoading(false);
     } catch (error) {
       console.error('Ошибка загрузки данных стороны:', error);
@@ -57,7 +45,7 @@ const SideDetails = () => {
   const loadSidesCaseOptions = async () => {
     try {
       const response = await baseService.get('/business_card/sides/');
-      setSidesCaseOptions(response.data);
+      setSidesCaseOptions(response.data || []);
     } catch (error) {
       console.error('Ошибка загрузки опций сторон:', error);
     }
@@ -114,78 +102,72 @@ const SideDetails = () => {
 
   if (loading) {
     return (
-      <div className="side-details loading">
-        <div className="loading-spinner"></div>
-        <p>Загрузка данных стороны...</p>
+      <div className={styles.container}>
+        <div className={styles.loading}>
+          <div className={styles.loadingSpinner}></div>
+          <p>Загрузка данных стороны...</p>
+        </div>
       </div>
     );
   }
 
   if (!side) {
     return (
-      <div className="side-details not-found">
-        <h2>Сторона не найдена</h2>
-        <button 
-          onClick={() => navigate(`/cases/${cardId}`)}
-          className="back-button"
-        >
-          ← Вернуться к списку
-        </button>
+      <div className={styles.container}>
+        <div className={styles.notFound}>
+          <h2>Сторона не найдена</h2>
+          <button 
+            onClick={() => navigate(`/cases/${cardId}`)}
+            className={styles.backButton}
+          >
+            <ArrowLeft size={20} />
+            Вернуться к делу
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="side-details">
-      <div className="side-header">
-        <div className="header-left">
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
           <button 
-            onClick={() => navigate(`/cases/${cardId}`)}
-            className="back-button"
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
           >
             <ArrowLeft size={20} />
-            Назад к списку
+            Назад к делу
           </button>
-          <h1>
+          <h1 className={styles.title}>
             <User size={24} />
-            {side.name}
-            <span className="side-status">
-              <Shield size={14} />
-              {getStatusDisplay(side.status)}
-            </span>
+            {side.name || 'Сторона по делу'}
           </h1>
-          <div className="side-roles">
-            {side.sides_case?.map((role, index) => (
-              <span key={index} className="role-badge">
-                <UserCheck size={12} />
-                {role.sides_case}
-              </span>
-            ))}
-          </div>
+          <span className={styles.defendantId}>ID: {side.id}</span>
         </div>
         
-        <div className="header-right">
+        <div className={styles.headerRight}>
           {!isEditing ? (
             <button 
               onClick={() => setIsEditing(true)}
-              className="edit-button"
+              className={styles.editButton}
             >
               <Edit2 size={18} />
               Редактировать
             </button>
           ) : (
-            <div className="edit-actions">
+            <div className={styles.editActions}>
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="save-button"
+                className={styles.saveButton}
               >
                 <Save size={18} />
                 {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
               <button 
                 onClick={handleCancel}
-                className="cancel-button"
+                className={styles.cancelButton}
               >
                 <X size={18} />
                 Отмена
@@ -195,17 +177,24 @@ const SideDetails = () => {
         </div>
       </div>
 
-      <div className="side-content">
-        {/* Левая колонка - Основная информация */}
-        <div className="main-info">
-          {/* Общая информация */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><User size={20} /> Основная информация</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
+      <div className={styles.tabsContainer}>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${styles.activeTab}`}>
+            <User size={18} />
+            Основная информация
+          </button>
+        </div>
+
+        <div className={styles.tabContentWrapper}>
+          <div className={styles.tabContent}>
+            {/* Основная информация */}
+            <div className={styles.fieldGroup}>
+              <h3 className={styles.subsectionTitle}>
+                <User size={20} />
+                Основные данные
+              </h3>
+              <div className={styles.tabGrid}>
+                <div className={styles.field}>
                   <label>ФИО / Наименование</label>
                   {isEditing ? (
                     <input
@@ -213,33 +202,34 @@ const SideDetails = () => {
                       name="name"
                       value={formData.name || ''}
                       onChange={handleInputChange}
-                      className="form-control"
+                      className={styles.input}
                     />
                   ) : (
-                    <div className="display-value">{side.name}</div>
+                    <span>{side.name || 'Не указано'}</span>
                   )}
                 </div>
 
-                <div className="form-group">
+                <div className={styles.field}>
                   <label>Статус лица</label>
                   {isEditing ? (
                     <select
                       name="status"
                       value={formData.status || ''}
                       onChange={handleInputChange}
-                      className="form-control"
+                      className={styles.select}
                     >
+                      <option value="">Выберите статус</option>
                       <option value="individual">Физическое лицо</option>
                       <option value="legal">Юридическое лицо</option>
                       <option value="government">Орган власти</option>
                       <option value="other">Иное</option>
                     </select>
                   ) : (
-                    <div className="display-value">{getStatusDisplay(side.status)}</div>
+                    <span>{getStatusDisplay(side.status)}</span>
                   )}
                 </div>
 
-                <div className="form-group">
+                <div className={styles.field}>
                   <label>Стороны по делу</label>
                   {isEditing ? (
                     <select
@@ -250,7 +240,7 @@ const SideDetails = () => {
                         const selected = Array.from(e.target.selectedOptions, option => option.value);
                         setFormData(prev => ({ ...prev, sides_case: selected }));
                       }}
-                      className="form-control"
+                      className={styles.select}
                     >
                       {sidesCaseOptions.map(option => (
                         <option key={option.id} value={option.id}>
@@ -259,127 +249,127 @@ const SideDetails = () => {
                       ))}
                     </select>
                   ) : (
-                    <div className="display-value">
-                      {side.sides_case?.map(role => role.sides_case).join(', ') || 'Не указано'}
-                    </div>
+                    <span>
+                      {Array.isArray(side.sides_case) 
+                        ? side.sides_case.map(role => 
+                            typeof role === 'object' ? role.sides_case : role
+                          ).join(', ') 
+                        : 'Не указано'}
+                    </span>
                   )}
                 </div>
 
-                <div className="form-group">
-                  <label><Calendar size={16} /> Дата направления повестки</label>
+                <div className={styles.field}>
+                  <label>Дата направления повестки</label>
                   {isEditing ? (
                     <input
                       type="date"
                       name="date_sending_agenda"
                       value={formData.date_sending_agenda || ''}
                       onChange={handleInputChange}
-                      className="form-control"
+                      className={styles.input}
                     />
                   ) : (
-                    <div className="display-value">{formatDate(side.date_sending_agenda)}</div>
+                    <span>{formatDate(side.date_sending_agenda)}</span>
                   )}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Контактная информация */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><Phone size={20} /> Контактная информация</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label><Phone size={16} /> Телефон</label>
+            {/* Контактная информация */}
+            <div className={styles.fieldGroup}>
+              <h3 className={styles.subsectionTitle}>
+                Контактная информация
+              </h3>
+              <div className={styles.tabGrid}>
+                <div className={styles.field}>
+                  <label>Телефон</label>
                   {isEditing ? (
                     <input
                       type="tel"
                       name="phone"
                       value={formData.phone || ''}
                       onChange={handleInputChange}
-                      className="form-control"
+                      className={styles.input}
                     />
                   ) : (
-                    <div className="display-value">{side.phone || 'Не указано'}</div>
+                    <span>{side.phone || 'Не указано'}</span>
                   )}
                 </div>
 
-                <div className="form-group">
-                  <label><Mail size={16} /> Email</label>
+                <div className={styles.field}>
+                  <label>Email</label>
                   {isEditing ? (
                     <input
                       type="email"
                       name="email"
                       value={formData.email || ''}
                       onChange={handleInputChange}
-                      className="form-control"
+                      className={styles.input}
                     />
                   ) : (
-                    <div className="display-value">{side.email || 'Не указано'}</div>
+                    <span>{side.email || 'Не указано'}</span>
                   )}
                 </div>
 
-                <div className="form-group full-width">
-                  <label><MapPin size={16} /> Адрес</label>
+                <div className={styles.field}>
+                  <label>Адрес</label>
                   {isEditing ? (
                     <textarea
                       name="address"
                       value={formData.address || ''}
                       onChange={handleInputChange}
-                      className="form-control"
+                      className={styles.textarea}
                       rows="2"
                     />
                   ) : (
-                    <div className="display-value">{side.address || 'Не указано'}</div>
+                    <span>{side.address || 'Не указано'}</span>
                   )}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Для физических лиц */}
-          {side.status === 'individual' && (
-            <div className="info-card">
-              <div className="card-header">
-                <h2><User size={20} /> Данные физического лица</h2>
-              </div>
-              <div className="card-body">
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label><Calendar size={16} /> Дата рождения</label>
+            {/* Данные физического лица */}
+            {side.status === 'individual' && (
+              <div className={styles.fieldGroup}>
+                <h3 className={styles.subsectionTitle}>
+                  Данные физического лица
+                </h3>
+                <div className={styles.tabGrid}>
+                  <div className={styles.field}>
+                    <label>Дата рождения</label>
                     {isEditing ? (
                       <input
                         type="date"
                         name="birth_date"
                         value={formData.birth_date || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{formatDate(side.birth_date)}</div>
+                      <span>{formatDate(side.birth_date)}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>Пол</label>
                     {isEditing ? (
                       <select
                         name="gender"
                         value={formData.gender || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.select}
                       >
                         <option value="">Выберите пол</option>
                         <option value="male">Мужской</option>
                         <option value="female">Женский</option>
                       </select>
                     ) : (
-                      <div className="display-value">{getGenderDisplay(side.gender)}</div>
+                      <span>{getGenderDisplay(side.gender)}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>Тип документа</label>
                     {isEditing ? (
                       <input
@@ -387,14 +377,14 @@ const SideDetails = () => {
                         name="document_type"
                         value={formData.document_type || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.document_type || 'Не указано'}</div>
+                      <span>{side.document_type || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>Серия документа</label>
                     {isEditing ? (
                       <input
@@ -402,14 +392,14 @@ const SideDetails = () => {
                         name="document_series"
                         value={formData.document_series || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.document_series || 'Не указано'}</div>
+                      <span>{side.document_series || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>Номер документа</label>
                     {isEditing ? (
                       <input
@@ -417,29 +407,29 @@ const SideDetails = () => {
                         name="document_number"
                         value={formData.document_number || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.document_number || 'Не указано'}</div>
+                      <span>{side.document_number || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group full-width">
+                  <div className={styles.field}>
                     <label>Кем выдан</label>
                     {isEditing ? (
                       <textarea
                         name="document_issued_by"
                         value={formData.document_issued_by || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.textarea}
                         rows="2"
                       />
                     ) : (
-                      <div className="display-value">{side.document_issued_by || 'Не указано'}</div>
+                      <span>{side.document_issued_by || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>Дата выдачи</label>
                     {isEditing ? (
                       <input
@@ -447,29 +437,24 @@ const SideDetails = () => {
                         name="document_issue_date"
                         value={formData.document_issue_date || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{formatDate(side.document_issue_date)}</div>
+                      <span>{formatDate(side.document_issue_date)}</span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* Правая колонка - Дополнительная информация */}
-        <div className="side-info">
-          {/* Для юридических лиц */}
-          {side.status === 'legal' && (
-            <div className="info-card">
-              <div className="card-header">
-                <h2><Building size={20} /> Данные юридического лица</h2>
-              </div>
-              <div className="card-body">
-                <div className="form-grid">
-                  <div className="form-group">
+            {/* Данные юридического лица */}
+            {side.status === 'legal' && (
+              <div className={styles.fieldGroup}>
+                <h3 className={styles.subsectionTitle}>
+                  Данные юридического лица
+                </h3>
+                <div className={styles.tabGrid}>
+                  <div className={styles.field}>
                     <label>ИНН</label>
                     {isEditing ? (
                       <input
@@ -477,14 +462,14 @@ const SideDetails = () => {
                         name="inn"
                         value={formData.inn || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.inn || 'Не указано'}</div>
+                      <span>{side.inn || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>КПП</label>
                     {isEditing ? (
                       <input
@@ -492,14 +477,14 @@ const SideDetails = () => {
                         name="kpp"
                         value={formData.kpp || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.kpp || 'Не указано'}</div>
+                      <span>{side.kpp || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>ОГРН</label>
                     {isEditing ? (
                       <input
@@ -507,29 +492,29 @@ const SideDetails = () => {
                         name="ogrn"
                         value={formData.ogrn || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.ogrn || 'Не указано'}</div>
+                      <span>{side.ogrn || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group full-width">
+                  <div className={styles.field}>
                     <label>Юридический адрес</label>
                     {isEditing ? (
                       <textarea
                         name="legal_address"
                         value={formData.legal_address || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.textarea}
                         rows="2"
                       />
                     ) : (
-                      <div className="display-value">{side.legal_address || 'Не указано'}</div>
+                      <span>{side.legal_address || 'Не указано'}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
+                  <div className={styles.field}>
                     <label>ФИО руководителя</label>
                     {isEditing ? (
                       <input
@@ -537,94 +522,39 @@ const SideDetails = () => {
                         name="director_name"
                         value={formData.director_name || ''}
                         onChange={handleInputChange}
-                        className="form-control"
+                        className={styles.input}
                       />
                     ) : (
-                      <div className="display-value">{side.director_name || 'Не указано'}</div>
+                      <span>{side.director_name || 'Не указано'}</span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Дополнительная информация */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><FileText size={20} /> Дополнительная информация</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-group full-width">
-                <label>Примечания</label>
-                {isEditing ? (
-                  <textarea
-                    name="additional_info"
-                    value={formData.additional_info || ''}
-                    onChange={handleInputChange}
-                    className="form-control"
-                    rows="4"
-                  />
-                ) : (
-                  <div className="display-value">{side.additional_info || 'Нет дополнительной информации'}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Информация о связанном деле */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><Briefcase size={20} /> Информация о деле</h2>
-            </div>
-            <div className="card-body">
-              <div className="case-info">
-                <div className="info-row">
-                  <strong>ID дела:</strong> {side.business_card?.id}
-                </div>
-                <div className="info-row">
-                  <strong>Номер дела:</strong> {side.business_card?.original_name}
-                </div>
-                <div className="info-row">
-                  <strong>Категория:</strong> {side.business_card?.case_category?.title_category || 'Не указано'}
-                </div>
-                <button 
-                  onClick={() => navigate(`/cases/${side.business_card?.id}`)}
-                  className="view-case-button"
-                >
-                  <Globe size={16} />
-                  Перейти к делу
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Связанный адвокат */}
-          {side.lawyer_info && (
-            <div className="info-card">
-              <div className="card-header">
-                <h2><Award size={20} /> Связанный адвокат</h2>
-              </div>
-              <div className="card-body">
-                <div className="lawyer-info">
-                  <div className="info-row">
-                    <strong>Адвокатское образование:</strong> {side.lawyer_info.law_firm_name}
-                  </div>
-                  {side.lawyer_info.lawyer_certificate_number && (
-                    <div className="info-row">
-                      <strong>Номер удостоверения:</strong> {side.lawyer_info.lawyer_certificate_number}
-                    </div>
+            {/* Дополнительная информация */}
+            <div className={styles.fieldGroup}>
+              <h3 className={styles.subsectionTitle}>
+                Дополнительная информация
+              </h3>
+              <div className={styles.tabGrid}>
+                <div className={styles.field} style={{ gridColumn: 'span 2' }}>
+                  <label>Примечания</label>
+                  {isEditing ? (
+                    <textarea
+                      name="additional_info"
+                      value={formData.additional_info || ''}
+                      onChange={handleInputChange}
+                      className={styles.textarea}
+                      rows="4"
+                    />
+                  ) : (
+                    <span>{side.additional_info || 'Нет дополнительной информации'}</span>
                   )}
-                  <button 
-                    onClick={() => navigate(`/cases/${cardId}/lawyers/${side.lawyer_info.id}`)}
-                    className="view-lawyer-button"
-                  >
-                    <Award size={16} />
-                    Просмотреть адвоката
-                  </button>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
