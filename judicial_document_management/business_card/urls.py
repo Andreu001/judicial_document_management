@@ -5,7 +5,7 @@ from .views import (FamiliarizationCaseViewSet, SidesCaseViewSet,
                     ConsideredCaseViewSet, CategoryViewSet,
                     BusinessCardViewSet, AppealViewSet,
                     BusinessMovementViewSet, SidesCaseInCaseViewSet,
-                    ExecutionCaseViewSet, DecisionsViewSet
+                    ExecutionCaseViewSet, DecisionsViewSet, LawyerViewSet
                     )
 
 
@@ -47,6 +47,16 @@ router.register(
     r'businesscard/(?P<businesscard_id>\d+)/executioncase',
     ExecutionCaseViewSet, basename='executioncase'
     )
+router.register(
+    r'businesscard/(?P<businesscard_id>\d+)/lawyers',
+    LawyerViewSet,
+    basename='lawyers'
+)
+router.register(
+    r'sidescaseincase/search',
+    SidesCaseInCaseViewSet,
+    basename='sidescaseincase-search'
+)
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -20,6 +20,9 @@ import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
 import CorrespondenceDetail from "./Correspondence/CorrespondenceDetail";
 import LawyerDetails from "../pages/sides/LawyerDetails";
+import PersonSearch from "./ParticipantsProcess/PersonSearch";
+import CivilDecisionDetail from "./CivilCase//CivilDecisionDetail";
+import CivilDetail from "./CivilCase/CivilDetail";
 
 const AppRouter = () => {
     return (
@@ -30,6 +33,7 @@ const AppRouter = () => {
                 <Route path="cards" element={<Cards />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="archive" element={<Archive />} />
+                <Route path="person-search" element={<PersonSearch />} />
                 
                 {/* Входящая корреспонденция */}
                 <Route path="/in" element={<CorrespondenceIn />} />
@@ -46,15 +50,23 @@ const AppRouter = () => {
                 <Route path="cards/:id" element={<CardIdPage />} />
                 <Route path="business_card" element={<CardForm />} />
                 <Route path="business_card/businesscard/" element={<CardList />} />
+
                 <Route path="business_card/businesscard/:id/sidescaseincase/:id" element={<SideDetail />} />
                 <Route path="/businesscard/:cardId/sides/:sideId" element={<SideDetail />} />
                 <Route path="business_card/businesscard/:cardId/businessmovement/:movementId"  element={<MovementDetail />} />
                 <Route path="business_card/businesscard/:cardId/petitionsincase/:petitionId" element={<PetitionDetail />} />
                 <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
-                <Route path="/cases/:businesscardId/defendants/:defendantId/details" element={<DefendantDetail />} />
+
+                <Route path="business_card/businesscard/:businesscardId/lawyers/:lawyerId" element={<LawyerDetails />} />
+
+                {/* Уголовное судопроизводство */}
                 <Route path="/businesscard/:cardId/criminal-details" element={<CriminalDetail />} />
                 <Route path="/businesscard/:cardId/criminal-decisions/:decisionId" element={<CriminalDecisionDetail />} />
-                <Route path="/cases/:businesscardId/lawyers/:lawyerId" element={<LawyerDetails />} />
+                <Route path="/businesscard/:businesscardId/defendants/:defendantId" element={<DefendantDetail />} />
+
+                {/* Гражданское судопроизводство */}
+                <Route path="/businesscard/:cardId/civil-details" element={<CivilDetail />} />
+                <Route path="/businesscard/:cardId/civil-decisions/:decisionId" element={<CivilDecisionDetail />} />
             </Route>
         </Routes>
     );

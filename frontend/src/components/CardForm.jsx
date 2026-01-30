@@ -3,8 +3,10 @@ import MyInput from './UI/input/MyInput';
 import MyButton from './UI/button/MyButton';
 import CardService from '../API/CardService';
 import CriminalCaseService from '../API/CriminalCaseService';
+import CivilCaseService from '../API/CivilCaseService';
 import CaseRegistryService from '../API/CaseRegistryService';
 import CriminalCaseForm from './CriminalCase/CriminalCaseForm';
+import CivilCaseForm from './CivilCase/CivilCaseForm';
 import styles from './UI/input/Input.module.css';
 import { useProtectedFetching } from '../hooks/useProtectedFetching';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showCriminalForm, setShowCriminalForm] = useState(false);
+  const [showCivilForm, setShowCivilForm] = useState(false); // Добавляем состояние для гражданского дела
   const [editedCardData, setEditedCardData] = useState({ ...editCardData });
   const [card, setCard] = useState({
     original_name: '',
@@ -22,6 +25,7 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   });
   
   const [criminalData, setCriminalData] = useState({});
+  const [civilData, setCivilData] = useState({}); // Добавляем состояние для данных гражданского дела
   const [categoryList, setCategoryList] = useState([]);
   const [registryIndexes, setRegistryIndexes] = useState([]);
   const [nextNumber, setNextNumber] = useState('');
@@ -38,6 +42,13 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
       cat.id === parseInt(card.case_category)
     );
     return selectedCategory && selectedCategory.title_category.toLowerCase().includes('уголов');
+  };
+
+  const isCivilCategory = () => {
+    const selectedCategory = categoryList.find(cat => 
+      cat.id === parseInt(card.case_category)
+    );
+    return selectedCategory && selectedCategory.title_category.toLowerCase().includes('граждан');
   };
 
   useEffect(() => {
@@ -99,9 +110,20 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     const categoryId = e.target.value;
     setCard({ ...card, case_category: categoryId });
     
+    // Сбрасываем формы специфичных производств
+    setShowCriminalForm(false);
+    setShowCivilForm(false);
+    
     const selectedCategory = categoryList.find(cat => cat.id === parseInt(categoryId));
     if (selectedCategory) {
       await autoSelectIndex(selectedCategory);
+      
+      // Показываем соответствующую форму в зависимости от категории
+      if (selectedCategory.title_category.toLowerCase().includes('уголов')) {
+        setShowCriminalForm(true);
+      } else if (selectedCategory.title_category.toLowerCase().includes('граждан')) {
+        setShowCivilForm(true);
+      }
     }
   };
 
@@ -168,6 +190,10 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     setCriminalData(newData);
   };
 
+  const handleCivilDataChange = (newData) => {
+    setCivilData(newData);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     try {
@@ -184,6 +210,7 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
   const handleCancel = () => {
     setIsEditing(false);
     setShowCriminalForm(false);
+    setShowCivilForm(false);
     onCancel();
   };
 
@@ -195,9 +222,23 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
       return;
     }
 
-    if (isCriminalCategory() && !showCriminalForm) {
-      setShowCriminalForm(true);
-      return;
+    // Проверяем, нужно ли показывать форму дополнительного производства
+    const selectedCategory = categoryList.find(cat => 
+      cat.id === parseInt(card.case_category)
+    );
+    
+    if (selectedCategory) {
+      const categoryName = selectedCategory.title_category.toLowerCase();
+      
+      if (categoryName.includes('уголов') && !showCriminalForm) {
+        setShowCriminalForm(true);
+        return;
+      }
+      
+      if (categoryName.includes('граждан') && !showCivilForm) {
+        setShowCivilForm(true);
+        return;
+      }
     }
 
     await handleAddNewCard();
@@ -239,11 +280,28 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
         }
       }
 
-      if (isCriminalCategory() && response.id) {
-        try {
-          await CriminalCaseService.create(response.id, criminalData);
-        } catch (criminalError) {
-          console.error('Ошибка создания уголовного производства:', criminalError);
+      // Создаем соответствующее производство в зависимости от категории
+      if (response.id) {
+        const selectedCategory = categoryList.find(cat => 
+          cat.id === parseInt(card.case_category)
+        );
+        
+        if (selectedCategory) {
+          const categoryName = selectedCategory.title_category.toLowerCase();
+          
+          if (categoryName.includes('уголов')) {
+            try {
+              await CriminalCaseService.create(response.id, criminalData);
+            } catch (criminalError) {
+              console.error('Ошибка создания уголовного производства:', criminalError);
+            }
+          } else if (categoryName.includes('граждан')) {
+            try {
+              await CivilCaseService.create(response.id, civilData);
+            } catch (civilError) {
+              console.error('Ошибка создания гражданского производства:', civilError);
+            }
+          }
         }
       }
 
@@ -259,7 +317,9 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
       });
       
       setCriminalData({});
+      setCivilData({});
       setShowCriminalForm(false);
+      setShowCivilForm(false);
       setSelectedIndex('');
       setNextNumber('');
 
@@ -384,6 +444,16 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
           </div>
         )}
 
+        {/* Форма гражданского производства */}
+        {showCivilForm && (
+          <div className={styles.civilFormContainer}>
+            <CivilCaseForm
+              civilData={civilData}
+              onCivilDataChange={handleCivilDataChange}
+            />
+          </div>
+        )}
+
         <div className={styles.buttonGroup}>
           {isEditing ? (
             <>
@@ -393,11 +463,16 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
           ) : (
             <>
               <MyButton onClick={handleCreateCard}>
-                {showCriminalForm ? 'Создать карточку с уголовным делом' : 'Создать карточку'}
+                {showCriminalForm ? 'Создать карточку с уголовным делом' : 
+                 showCivilForm ? 'Создать карточку с гражданским делом' : 
+                 'Создать карточку'}
               </MyButton>
-              {showCriminalForm && (
-                <MyButton onClick={() => setShowCriminalForm(false)} style={{background: '#6c757d'}}>
-                  Отменить уголовное дело
+              {(showCriminalForm || showCivilForm) && (
+                <MyButton onClick={() => {
+                  setShowCriminalForm(false);
+                  setShowCivilForm(false);
+                }} style={{background: '#6c757d'}}>
+                  Отменить {showCriminalForm ? 'уголовное' : 'гражданское'} дело
                 </MyButton>
               )}
             </>

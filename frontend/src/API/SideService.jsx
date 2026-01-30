@@ -1,17 +1,16 @@
-// SideService.jsx
 import baseService from './baseService';
 
-export const updateSide = async (cardId, sideId, updatedData) => {
-  try {
-    const response = await baseService.patch(`/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/`, updatedData);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating side:', error);
-    throw error;
-  }
-};
-
 class SideService {
+  static async updateSide(cardId, sideId, updatedData) {
+    try {
+      const response = await baseService.patch(`/business_card/businesscard/${cardId}/sidescaseincase/${sideId}/`, updatedData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating side:', error);
+      throw error;
+    }
+  }
+
   static async getAllSide(cardId) {
     try {
       const response = await baseService.get(`/business_card/businesscard/${cardId}/sidescaseincase/`);
@@ -41,6 +40,8 @@ class SideService {
       throw new Error(`Ошибка удаления стороны: ${error.message}`);
     }
   }
+
+  
 }
 
 export default SideService;

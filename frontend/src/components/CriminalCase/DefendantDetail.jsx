@@ -1,21 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
-  User, 
-  MapPin, 
-  Scale, 
-  Award, 
-  Shield,
-  FileText,
-  Edit2,
-  Save,
-  X,
-  ArrowLeft
-} from 'lucide-react';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import './DefendantDetail.module.css';
+import styles from './DefendantDetail.module.css';
 
 const DefendantDetails = () => {
   const { businesscardId, defendantId } = useParams();
@@ -25,6 +12,8 @@ const DefendantDetails = () => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic');
+  const [decisions, setDecisions] = useState([]);
   const [options, setOptions] = useState({
     sex: [],
     restraint_measure: [],
@@ -36,18 +25,44 @@ const DefendantDetails = () => {
   useEffect(() => {
     loadDefendantDetails();
     loadOptions();
+    loadDecisions();
   }, [businesscardId, defendantId]);
 
   const loadDefendantDetails = async () => {
     try {
       setLoading(true);
       const data = await CriminalCaseService.getDefendantById(businesscardId, defendantId);
-      setDefendant(data);
-      setFormData(data);
+      
+      // Если в данных есть name, используем его, иначе вычисляем
+      const defendantData = {
+        ...data,
+        // Используем name из API, если есть, иначе используем sides_case_person.name
+        name: data.name || data.sides_case_person?.name || 'Не указано'
+      };
+      
+      setDefendant(defendantData);
+      setFormData(defendantData);
       setLoading(false);
     } catch (error) {
       console.error('Ошибка загрузки данных подсудимого:', error);
       setLoading(false);
+    }
+  };
+
+  const loadDecisions = async () => {
+    try {
+      const response = await CriminalCaseService.getDecisionsByCardId(businesscardId);
+      if (response && response.length > 0) {
+        // Фильтруем решения, относящиеся к данному подсудимому
+        const defendantDecisions = response.filter(decision => 
+          decision.defendants?.some(def => def.id === parseInt(defendantId)) || 
+          decision.defendant_id === parseInt(defendantId)
+        );
+        setDecisions(defendantDecisions);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки решений:', error);
+      setDecisions([]);
     }
   };
 
@@ -72,13 +87,6 @@ const DefendantDetails = () => {
     setFormData(prev => ({
       ...prev,
       [field]: date || null
-    }));
-  };
-
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
     }));
   };
 
@@ -111,71 +119,85 @@ const DefendantDetails = () => {
     return option?.label || value;
   };
 
+  const formatBoolean = (value) => {
+    return value ? 'Да' : 'Нет';
+  };
+
+  const getOptionLabel = (optionsArray, value) => {
+    return optionsArray.find(opt => opt.value === value)?.label || 'Не указано';
+  };
+
   if (loading) {
     return (
-      <div className="defendant-details loading">
-        <div className="loading-spinner"></div>
-        <p>Загрузка данных подсудимого...</p>
+      <div className={styles.container}>
+        <div className={styles.loading}>
+          <div className={styles.loadingSpinner}></div>
+          <p>Загрузка данных подсудимого...</p>
+        </div>
       </div>
     );
   }
+  console.log('Defendant data:', defendant);
+console.log('Sides case person:', defendant.sides_case_person);
+console.log('Sides cases:', defendant.sides_case_person?.sides_case);
 
   if (!defendant) {
     return (
-      <div className="defendant-details not-found">
-        <h2>Подсудимый не найден</h2>
-        <button 
-          onClick={() => navigate(`/cases/${businesscardId}/defendants`)}
-          className="back-button"
-        >
-          ← Вернуться к списку
-        </button>
+      <div className={styles.container}>
+        <div className={styles.error}>
+          <h2>Подсудимый не найден</h2>
+          <button 
+            onClick={() => navigate(`/cases/${businesscardId}/defendants`)}
+            className={styles.backButton}
+          >
+            Вернуться к списку
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="defendant-details">
-      <div className="defendant-header">
-        <div className="header-left">
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
           <button 
-            onClick={() => navigate(`/cases/${businesscardId}/defendants`)}
-            className="back-button"
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
           >
-            <ArrowLeft size={20} />
-            Назад к списку
+            ← Назад
           </button>
-          <h1>
-            <User size={24} />
-            {defendant.full_name}
+          <h1 className={styles.title}>
+            {defendant.name || defendant.sides_case_person?.name || 'Имя не указано'}
           </h1>
-          <span className="defendant-id">ID: {defendant.id}</span>
+          
+Вид стороны: {
+  defendant.sides_case_person?.sides_case?.map(side => side.sides_case).join(', ') || 
+  'Не указан'
+}
         </div>
         
-        <div className="header-right">
+        <div className={styles.headerRight}>
           {!isEditing ? (
             <button 
               onClick={() => setIsEditing(true)}
-              className="edit-button"
+              className={styles.editButton}
             >
-              <Edit2 size={18} />
               Редактировать
             </button>
           ) : (
-            <div className="edit-actions">
+            <div className={styles.editActions}>
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="save-button"
+                className={styles.saveButton}
               >
-                <Save size={18} />
                 {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
               <button 
                 onClick={handleCancel}
-                className="cancel-button"
+                className={styles.cancelButton}
               >
-                <X size={18} />
                 Отмена
               </button>
             </div>
@@ -183,426 +205,481 @@ const DefendantDetails = () => {
         </div>
       </div>
 
-      <div className="defendant-content">
-        {/* Левая колонка - Основная информация */}
-        <div className="main-info">
-          <div className="info-card">
-            <div className="card-header">
-              <h2><User size={20} /> Основные данные</h2>
+      <div className={styles.content}>
+        {/* Основной контент с вкладками */}
+        <div className={styles.mainContent}>
+          <div className={styles.tabsContainer}>
+            <div className={styles.tabs}>
+              <button 
+                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('basic')}
+              >
+                Основные данные
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'restraint' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('restraint')}
+              >
+                Меры пресечения
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'punishment' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('punishment')}
+              >
+                Наказание
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'financial' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('financial')}
+              >
+                Финансовые взыскания
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'special' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('special')}
+              >
+                Особые отметки
+              </button>
             </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label><User size={16} /> Полное ФИО</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="full_name"
-                      value={formData.full_name || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.full_name || 'Не указано'}</div>
-                  )}
-                </div>
 
-                <div className="form-group">
-                  <label><Calendar size={16} /> Дата рождения</label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      name="birth_date"
-                      value={formData.birth_date || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{formatDate(defendant.birth_date)}</div>
-                  )}
-                </div>
+            <div className={styles.tabContentWrapper}>
+              {/* Вкладка: Основные данные */}
+              {activeTab === 'basic' && (
+                <div className={styles.tabContent}>
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>Личные данные</h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Полное ФИО</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.name || 'Не указано'}</span>
+                        )}
+                      </div>
 
-                <div className="form-group">
-                  <label>Пол</label>
-                  {isEditing ? (
-                    <select
-                      name="sex"
-                      value={formData.sex || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    >
-                      <option value="">Выберите пол</option>
-                      {options.sex?.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="display-value">
-                      {getDisplayValue(defendant.sex, options.sex)}
+                      <div className={styles.field}>
+                        <label>Дата рождения</label>
+                        {isEditing ? (
+                          <input
+                            type="date"
+                            name="birth_date"
+                            value={formData.birth_date || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(defendant.birth_date)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Пол</label>
+                        {isEditing ? (
+                          <select
+                            name="sex"
+                            value={formData.sex || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Выберите пол</option>
+                            {options.sex?.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{getDisplayValue(defendant.sex, options.sex)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Гражданство</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="citizenship"
+                            value={formData.citizenship || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.citizenship || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={`${styles.field} ${styles.fullWidth}`}>
+                        <label>Адрес проживания</label>
+                        {isEditing ? (
+                          <textarea
+                            name="address"
+                            value={formData.address || ''}
+                            onChange={handleInputChange}
+                            className={styles.textarea}
+                            rows="3"
+                          />
+                        ) : (
+                          <span>{defendant.address || 'Не указано'}</span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <div className="form-group">
-                  <label>Гражданство</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="citizenship"
-                      value={formData.citizenship || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.citizenship || 'Не указано'}</div>
-                  )}
-                </div>
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>Уголовная статья</h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Статья УК РФ</label>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            name="article"
+                            value={formData.article || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>ст. {defendant.article || 'Не указана'}</span>
+                        )}
+                      </div>
 
-                <div className="form-group full-width">
-                  <label><MapPin size={16} /> Адрес проживания</label>
-                  {isEditing ? (
-                    <textarea
-                      name="address"
-                      value={formData.address || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                      rows="3"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.address || 'Не указано'}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Меры пресечения */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><Shield size={20} /> Меры пресечения</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Мера пресечения</label>
-                  {isEditing ? (
-                    <select
-                      name="restraint_measure"
-                      value={formData.restraint_measure || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    >
-                      <option value="">Выберите меру</option>
-                      {options.restraint_measure?.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="display-value">
-                      {getDisplayValue(defendant.restraint_measure, options.restraint_measure)}
+                      <div className={styles.field}>
+                        <label>Максимальное наказание</label>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            name="maximum_penalty_article"
+                            value={formData.maximum_penalty_article || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>
+                            {defendant.maximum_penalty_article ? `${defendant.maximum_penalty_article} лет` : 'Не указано'}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
+              )}
 
-                <div className="form-group">
-                  <label>Дата избрания</label>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      name="restraint_date"
-                      value={formData.restraint_date || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{formatDate(defendant.restraint_date)}</div>
-                  )}
-                </div>
+              {/* Вкладка: Меры пресечения */}
+              {activeTab === 'restraint' && (
+                <div className={styles.tabContent}>
+                  <div className={styles.fieldGroup}>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Мера пресечения</label>
+                        {isEditing ? (
+                          <select
+                            name="restraint_measure"
+                            value={formData.restraint_measure || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Выберите меру</option>
+                            {options.restraint_measure?.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{getDisplayValue(defendant.restraint_measure, options.restraint_measure)}</span>
+                        )}
+                      </div>
 
-                <div className="form-group">
-                  <label>Мера применена</label>
-                  {isEditing ? (
-                    <select
-                      name="restraint_application"
-                      value={formData.restraint_application || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    >
-                      <option value="">Выберите момент</option>
-                      {options.restraint_application?.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="display-value">
-                      {getDisplayValue(defendant.restraint_application, options.restraint_application)}
-                    </div>
-                  )}
-                </div>
+                      <div className={styles.field}>
+                        <label>Дата избрания</label>
+                        {isEditing ? (
+                          <input
+                            type="date"
+                            name="restraint_date"
+                            value={formData.restraint_date || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(defendant.restraint_date)}</span>
+                        )}
+                      </div>
 
-                <div className="form-group">
-                  <label>Изменение меры</label>
-                  {isEditing ? (
-                    <select
-                      name="restraint_change"
-                      value={formData.restraint_change || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    >
-                      <option value="">Выберите статус</option>
-                      {options.restraint_change?.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="display-value">
-                      {getDisplayValue(defendant.restraint_change, options.restraint_change)}
-                    </div>
-                  )}
-                </div>
+                      <div className={styles.field}>
+                        <label>Мера применена</label>
+                        {isEditing ? (
+                          <select
+                            name="restraint_application"
+                            value={formData.restraint_application || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Выберите момент</option>
+                            {options.restraint_application?.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{getDisplayValue(defendant.restraint_application, options.restraint_application)}</span>
+                        )}
+                      </div>
 
-                {defendant.restraint_change === '1' && (
-                  <>
-                    <div className="form-group">
-                      <label>Дата изменения</label>
-                      {isEditing ? (
-                        <input
-                          type="date"
-                          name="restraint_change_date"
-                          value={formData.restraint_change_date || ''}
-                          onChange={handleInputChange}
-                          className="form-control"
-                        />
-                      ) : (
-                        <div className="display-value">{formatDate(defendant.restraint_change_date)}</div>
+                      <div className={styles.field}>
+                        <label>Изменение меры</label>
+                        {isEditing ? (
+                          <select
+                            name="restraint_change"
+                            value={formData.restraint_change || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Выберите статус</option>
+                            {options.restraint_change?.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{getDisplayValue(defendant.restraint_change, options.restraint_change)}</span>
+                        )}
+                      </div>
+
+                      {defendant.restraint_change === '1' && (
+                        <>
+                          <div className={styles.field}>
+                            <label>Дата изменения</label>
+                            {isEditing ? (
+                              <input
+                                type="date"
+                                name="restraint_change_date"
+                                value={formData.restraint_change_date || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                              />
+                            ) : (
+                              <span>{formatDate(defendant.restraint_change_date)}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Изменена на меру</label>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                name="restraint_change_to"
+                                value={formData.restraint_change_to || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                              />
+                            ) : (
+                              <span>{defendant.restraint_change_to || 'Не указано'}</span>
+                            )}
+                          </div>
+                        </>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
 
-                    <div className="form-group">
-                      <label>Изменена на меру</label>
+              {/* Вкладка: Наказание */}
+              {activeTab === 'punishment' && (
+                <div className={styles.tabContent}>
+                  <div className={styles.fieldGroup}>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Статья по приговору</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="conviction_article"
+                            value={formData.conviction_article || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.conviction_article || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Вид наказания</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="punishment_type"
+                            value={formData.punishment_type || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.punishment_type || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Срок наказания</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="punishment_term"
+                            value={formData.punishment_term || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.punishment_term || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дополнительное наказание</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="additional_punishment"
+                            value={formData.additional_punishment || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.additional_punishment || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Условно-досрочное освобождение</label>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="parole_info"
+                            value={formData.parole_info || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{defendant.parole_info || 'Не указано'}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Вкладка: Финансовые взыскания */}
+              {activeTab === 'financial' && (
+                <div className={styles.tabContent}>
+                  <div className={styles.fieldGroup}>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Сумма ущерба</label>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            name="property_damage"
+                            value={formData.property_damage || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>
+                            {defendant.property_damage ? `${defendant.property_damage} руб.` : 'Не указано'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Сумма морального вреда</label>
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            name="moral_damage"
+                            value={formData.moral_damage || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>
+                            {defendant.moral_damage ? `${defendant.moral_damage} руб.` : 'Не указано'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Вкладка: Особые отметки */}
+              {activeTab === 'special' && (
+                <div className={styles.tabContent}>
+                  <div className={styles.fieldGroup}>
+                    <div className={`${styles.field} ${styles.fullWidth}`}>
+                      <label>Заметки по лицу</label>
                       {isEditing ? (
-                        <input
-                          type="text"
-                          name="restraint_change_to"
-                          value={formData.restraint_change_to || ''}
+                        <textarea
+                          name="special_notes"
+                          value={formData.special_notes || ''}
                           onChange={handleInputChange}
-                          className="form-control"
+                          className={styles.textarea}
+                          rows="6"
                         />
                       ) : (
-                        <div className="display-value">{defendant.restraint_change_to || 'Не указано'}</div>
+                        <span>{defendant.special_notes || 'Нет особых отметок'}</span>
                       )}
                     </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Правая колонка - Дополнительная информация */}
-        <div className="side-info">
-          {/* Уголовная статья */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><Scale size={20} /> Уголовная статья</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Статья УК РФ</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      name="article"
-                      value={formData.article || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">ст. {defendant.article || 'Не указана'}</div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Максимальное наказание</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      name="maximum_penalty_article"
-                      value={formData.maximum_penalty_article || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">
-                      {defendant.maximum_penalty_article ? `${defendant.maximum_penalty_article} лет` : 'Не указано'}
-                    </div>
-                  )}
-                </div>
+        {/* Правая колонка - Решения */}
+        <div className={styles.sidebar}>
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Судебные решения</h2>
+            
+            {decisions.length > 0 ? (
+              <div className={styles.decisionsList}>
+                {decisions.map(decision => (
+                  <div key={decision.id} className={styles.decisionItem}>
+                    <h4>Решение #{decision.id}</h4>
+                    <p>Дата: {decision.decision_date ? formatDate(decision.decision_date) : 'Не указана'}</p>
+                    <p>Суд: {decision.court_name || 'Не указан'}</p>
+                    <p>Статус: {getOptionLabel(options.trial_result, decision.trial_result)}</p>
+                    <p>Обжалование: {decision.appeal_present ? 'Есть' : 'Нет'}</p>
+                    <button 
+                      onClick={() => navigate(`/cases/${businesscardId}/decisions/${decision.id}`)}
+                      className={styles.viewButton}
+                    >
+                      Просмотреть
+                    </button>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-
-          {/* Наказание */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><Award size={20} /> Наказание</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Статья по приговору</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="conviction_article"
-                      value={formData.conviction_article || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.conviction_article || 'Не указано'}</div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Вид наказания</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="punishment_type"
-                      value={formData.punishment_type || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.punishment_type || 'Не указано'}</div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Срок наказания</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="punishment_term"
-                      value={formData.punishment_term || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.punishment_term || 'Не указано'}</div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Дополнительное наказание</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="additional_punishment"
-                      value={formData.additional_punishment || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.additional_punishment || 'Не указано'}</div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Условно-досрочное освобождение</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="parole_info"
-                      value={formData.parole_info || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">{defendant.parole_info || 'Не указано'}</div>
-                  )}
-                </div>
+            ) : (
+              <div className={styles.noDecisions}>
+                <p>Судебных решений не найдено</p>
+                <button 
+                  onClick={() => navigate(`/cases/${businesscardId}/decisions/new`)}
+                  className={styles.addButton}
+                >
+                  Добавить решение
+                </button>
               </div>
-            </div>
-          </div>
-
-          {/* Финансовые взыскания */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><FileText size={20} /> Финансовые взыскания</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Сумма ущерба</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      step="0.01"
-                      name="property_damage"
-                      value={formData.property_damage || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">
-                      {defendant.property_damage ? `${defendant.property_damage} руб.` : 'Не указано'}
-                    </div>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Сумма морального вреда</label>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      step="0.01"
-                      name="moral_damage"
-                      value={formData.moral_damage || ''}
-                      onChange={handleInputChange}
-                      className="form-control"
-                    />
-                  ) : (
-                    <div className="display-value">
-                      {defendant.moral_damage ? `${defendant.moral_damage} руб.` : 'Не указано'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Особые отметки */}
-          <div className="info-card">
-            <div className="card-header">
-              <h2><FileText size={20} /> Особые отметки</h2>
-            </div>
-            <div className="card-body">
-              <div className="form-group full-width">
-                <label>Заметки по лицу</label>
-                {isEditing ? (
-                  <textarea
-                    name="special_notes"
-                    value={formData.special_notes || ''}
-                    onChange={handleInputChange}
-                    className="form-control"
-                    rows="4"
-                  />
-                ) : (
-                  <div className="display-value">{defendant.special_notes || 'Нет особых отметок'}</div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

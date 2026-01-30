@@ -276,9 +276,12 @@ class CriminalCaseService {
     }
   }
 
-  static async createDefendant(businesscardId, defendantData) {
+  static async createDefendant(cardId, defendantData) {
     try {
-      const response = await baseService.post(`${BASE_URL}${businesscardId}/defendants/`, defendantData);
+      const response = await baseService.post(
+        `/criminal_proceedings/businesscard/${cardId}/defendants/`,
+        defendantData
+      );
       return response.data;
     } catch (error) {
       console.error('Error creating defendant:', error);
@@ -286,9 +289,12 @@ class CriminalCaseService {
     }
   }
 
-  static async updateDefendant(businesscardId, defendantId, defendantData) {
+  static async updateDefendant(cardId, defendantId, defendantData) {
     try {
-      const response = await baseService.patch(`${BASE_URL}${businesscardId}/defendants/${defendantId}/`, defendantData);
+      const response = await baseService.patch(
+        `/criminal_proceedings/businesscard/${cardId}/defendants/${defendantId}/`,
+        defendantData
+      );
       return response.data;
     } catch (error) {
       console.error('Error updating defendant:', error);

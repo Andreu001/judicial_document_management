@@ -6,22 +6,19 @@ from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework import status
 from users.permissions import IsCourtStaff, IsLawyer
-# from rest_framework.decorators import action
-
-# from rest_framework.views import APIView
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.decorators import api_view, permission_classes
-# from rest_framework.authentication import TokenAuthentication
 
 from .models import (SidesCase, Petitions, Category, BusinessCard,
-                     Appeal, SidesCaseInCase, Decisions)
+                     Appeal, SidesCaseInCase, Decisions, Lawyer)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           ConsideredCaseSerializer, ExecutionCaseSerializer,
                           CategorySerializer, BusinessCardSerializer,
                           PetitionsInCaseSerializer, SidesCaseInCaseSerializer,
-                          AppealSerializer, BusinessMovementSerializer, DecisionsSerializer)
-# from .utils import paginator_list
+                          AppealSerializer, BusinessMovementSerializer,
+                          LawyerSerializer, DecisionsSerializer, LawyerCreateSerializer)
+from django_filters import rest_framework as django_filters
+from rest_framework.decorators import action
+from .filters import SidesCaseInCaseFilter
 
 
 POSTS_NUMBER = 6
@@ -103,41 +100,72 @@ class SidesCaseInCaseViewSet(viewsets.ModelViewSet):
     API endpoint для работы с моделью SidesCaseInCase.
     """
     serializer_class = SidesCaseInCaseSerializer
+    filter_backends = [django_filters.DjangoFilterBackend]
+    filterset_class = SidesCaseInCaseFilter
 
     def get_queryset(self):
-        businesscard = get_object_or_404(
-            BusinessCard, pk=self.kwargs.get('businesscard_id')
+        businesscard_id = self.kwargs.get('businesscard_id')
+        if businesscard_id:
+            businesscard = get_object_or_404(
+                BusinessCard, pk=businesscard_id
             )
-        new_queryset = businesscard.sidescaseincase.all()
-        return new_queryset
+            return businesscard.sidescaseincase.all()
+        
+        # Для глобального поиска возвращаем все записи
+        return SidesCaseInCase.objects.all()
 
-    def perform_create(self, serializer):
-        businesscard_id = self.kwargs.get('businesscard_id')
-        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+    @action(detail=False, methods=['get'], url_path='search/physical')
+    def search_physical(self, request):
+        """Поиск физических лиц"""
+        queryset = SidesCaseInCase.objects.filter(status='individual')
+        
+        # Применяем фильтры
+        filtered_queryset = self.filter_queryset(queryset)
+        
+        # Пагинация
+        page = self.paginate_queryset(filtered_queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        return Response(serializer.data)
 
-        sides_case_data = self.request.data.get('sides_case', [])
-        sides_case_ids = [
-            int(side_id) for side_id in sides_case_data if isinstance(
-                side_id, (int, str)
-                )]
-        sides_case = SidesCase.objects.filter(id__in=sides_case_ids)
+    @action(detail=False, methods=['get'], url_path='search/legal')
+    def search_legal(self, request):
+        """Поиск юридических лиц"""
+        queryset = SidesCaseInCase.objects.filter(status='legal')
+        
+        # Применяем фильтры
+        filtered_queryset = self.filter_queryset(queryset)
+        
+        # Пагинация
+        page = self.paginate_queryset(filtered_queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        return Response(serializer.data)
 
-        instance = serializer.save(business_card=businesscard)
-        instance.sides_case.set(sides_case)
+    @action(detail=False, methods=['get'], url_path='export/physical')
+    def export_physical(self, request):
+        """Экспорт физических лиц в Excel"""
+        queryset = SidesCaseInCase.objects.filter(status='individual')
+        filtered_queryset = self.filter_queryset(queryset)
+        
+        # Здесь должна быть логика экспорта в Excel
+        # Например, с использованием библиотеки openpyxl или pandas
+        return Response({"message": "Export endpoint - implement Excel generation"})
 
-    def perform_update(self, serializer):
-        businesscard_id = self.kwargs.get('businesscard_id')
-        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
-
-        sides_case_data = self.request.data.get('sides_case', [])
-        sides_case_ids = [
-            int(side_id) for side_id in sides_case_data if isinstance(
-                side_id, (int, str)
-                )
-            ]
-        sides_case = SidesCase.objects.filter(id__in=sides_case_ids)
-        instance = serializer.save(business_card=businesscard)
-        instance.sides_case.set(sides_case)
+    @action(detail=False, methods=['get'], url_path='export/legal')
+    def export_legal(self, request):
+        """Экспорт юридических лиц в Excel"""
+        queryset = SidesCaseInCase.objects.filter(status='legal')
+        filtered_queryset = self.filter_queryset(queryset)
+        
+        # Здесь должна быть логика экспорта в Excel
+        return Response({"message": "Export endpoint - implement Excel generation"})
 
 
 class PetitionsInCaseViewSet(viewsets.ModelViewSet):
@@ -397,3 +425,34 @@ class ExecutionCaseViewSet(viewsets.ModelViewSet):
 
         instance = serializer.save(business_card=businesscard)
         instance.notification_parties.set(executioncase)
+
+
+class LawyerViewSet(viewsets.ModelViewSet):
+    serializer_class = LawyerSerializer
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return LawyerCreateSerializer
+        return LawyerSerializer
+    
+    def get_queryset(self):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        if businesscard_id:
+            return Lawyer.objects.filter(
+                sides_case_incase__business_card_id=businesscard_id
+            )
+        return Lawyer.objects.all()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        businesscard_id = self.kwargs.get('businesscard_id')
+        if businesscard_id:
+            context['business_card'] = get_object_or_404(
+                BusinessCard, pk=businesscard_id
+            )
+        return context
+    
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        business_card = get_object_or_404(BusinessCard, pk=businesscard_id)
+        serializer.save()

@@ -1,5 +1,5 @@
 from django.db import models
-from business_card.models import BusinessCard
+from business_card.models import BusinessCard, SidesCaseInCase
 from users.models import User
 
 
@@ -375,9 +375,8 @@ class Defendant(models.Model):
         verbose_name='Максимальное наказание по статье'
     )
 
-    full_name = models.CharField(max_length=255, verbose_name="ФИО обвиняемого")
     sides_case_person = models.ForeignKey(
-        'business_card.SidesCaseInCase',
+        SidesCaseInCase,
         on_delete=models.CASCADE,
         related_name='criminal_defendants',
         verbose_name='Сторона по делу'
@@ -513,9 +512,6 @@ class Defendant(models.Model):
     class Meta:
         verbose_name = "Обвиняемый"
         verbose_name_plural = "Обвиняемые"
-
-    def __str__(self):
-        return self.full_name
 
 
 class CriminalDecision(models.Model):

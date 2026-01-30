@@ -1,0 +1,169 @@
+/* components/CivilCase/CivilCaseForm.module.css */
+.civilForm {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  width: 100%;
+}
+
+.civilForm h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #27ae60;
+  padding-bottom: 10px;
+  font-size: 18px;
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  padding: 10px 0;
+  z-index: 10;
+}
+
+.section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section h4 {
+  color: #34495e;
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.formRow {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.formGroup {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 12px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="number"],
+.formGroup input[type="date"],
+.formGroup input[type="time"],
+.formGroup textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.3s ease;
+  background: white;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #27ae60;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+.formGroup textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.formGroup input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.2);
+  vertical-align: middle;
+}
+
+.formGroup label.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: normal;
+  margin-bottom: 0;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #27ae60;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .formGroup {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .civilForm {
+    padding: 15px;
+  }
+  
+  .section {
+    padding: 15px;
+  }
+  
+  .formRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .formGroup {
+    min-width: auto;
+  }
+  
+  .civilForm h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+  
+  .section h4 {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .civilForm {
+    padding: 10px;
+  }
+  
+  .section {
+    padding: 12px;
+  }
+  
+  .formGroup input[type="text"],
+  .formGroup input[type="number"],
+  .formGroup input[type="date"],
+  .formGroup input[type="time"],
+  .formGroup textarea {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}

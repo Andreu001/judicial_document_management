@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from users.models import User
+from business_card.models import SidesCaseInCase, SidesCase
 from .models import (CriminalProceedings,
                      Defendant,
                      CriminalDecision,
@@ -11,10 +12,42 @@ from .models import (CriminalProceedings,
 
 
 class DefendantSerializer(serializers.ModelSerializer):
+
+    name = serializers.CharField(source='sides_case_person.name', read_only=True)
+    full_name = serializers.CharField(source='sides_case_person.name', read_only=True)
+
+    sides_case_person_id = serializers.PrimaryKeyRelatedField(
+        queryset=SidesCaseInCase.objects.all(),
+        source='sides_case_person',
+        required=True
+    )
+
+    edit_name = serializers.CharField(write_only=True, required=False)
+    edit_address = serializers.CharField(write_only=True, required=False)
+    edit_birth_date = serializers.DateField(write_only=True, required=False)
+    
     class Meta:
         model = Defendant
         fields = "__all__"
         read_only_fields = ("criminal_proceedings",)
+    
+    def update(self, instance, validated_data):
+        sides_case_person_data = {}
+        
+        if 'edit_name' in validated_data:
+            sides_case_person_data['name'] = validated_data.pop('edit_name')
+        
+        if 'edit_address' in validated_data:
+            sides_case_person_data['address'] = validated_data.pop('edit_address')
+        
+        if 'edit_birth_date' in validated_data:
+            sides_case_person_data['birth_date'] = validated_data.pop('edit_birth_date')
+
+        if sides_case_person_data:
+            instance.sides_case_person.__dict__.update(sides_case_person_data)
+            instance.sides_case_person.save()
+
+        return super().update(instance, validated_data)
 
 
 class ReferringAuthoritySerializer(serializers.ModelSerializer):
@@ -166,3 +199,66 @@ class ReferringAuthorityListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferringAuthority
         fields = ['id', 'name', 'code']
+
+
+class DefendantCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания обвиняемых"""
+    
+    # Поля для создания связанного SidesCaseInCase
+    name = serializers.CharField(write_only=True, required=True)
+    sides_case = serializers.PrimaryKeyRelatedField(
+        queryset=SidesCase.objects.filter(
+            sides_case__in=['Обвиняемый', 'Осужденный', 'Подозреваемый', 'Подсудимый']
+        ),
+        many=True,
+        write_only=True,
+        required=True
+    )
+    status = serializers.CharField(write_only=True, default='individual')
+    birth_date = serializers.DateField(write_only=True, required=False)
+    address = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    
+    class Meta:
+        model = Defendant
+        fields = [
+            'id', 'name', 'sides_case', 'status', 'birth_date', 'address', 'phone',
+            'article', 'maximum_penalty_article', 'address', 'birth_date',
+            'sex', 'citizenship', 'trial_result', 'restraint_measure', 'restraint_date',
+            'restraint_application', 'restraint_change', 'restraint_change_date',
+            'restraint_change_to', 'conviction_article', 'punishment_type',
+            'punishment_term', 'additional_punishment', 'parole_info',
+            'property_damage', 'moral_damage', 'detention_institution',
+            'detention_address', 'special_notes'
+        ]
+    
+    def create(self, validated_data):
+        # Извлекаем данные для SidesCaseInCase
+        criminal_proceedings = self.context['criminal_proceedings']
+        business_card = criminal_proceedings.business_card
+        name = validated_data.pop('name')
+        sides_case_ids = validated_data.pop('sides_case')
+        status = validated_data.pop('status')
+        birth_date = validated_data.pop('birth_date', None)
+        address = validated_data.pop('address', '')
+        phone = validated_data.pop('phone', '')
+        
+        # Создаем SidesCaseInCase для обвиняемого
+        sides_case_incase = SidesCaseInCase.objects.create(
+            name=name,
+            status=status,
+            birth_date=birth_date,
+            address=address,
+            phone=phone,
+            business_card=business_card
+        )
+        sides_case_incase.sides_case.set(sides_case_ids)
+        
+        # Создаем Defendant
+        defendant = Defendant.objects.create(
+            criminal_proceedings=criminal_proceedings,
+            sides_case_person=sides_case_incase,
+            **validated_data
+        )
+        
+        return defendant

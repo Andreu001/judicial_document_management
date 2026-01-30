@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import SideService from '../../API/SideService';
 import SidesForm from './SidesForm';
-import { updateSide } from '../../API/SideService';
+import SideService from '../../API/SideService';
 import SideList from './SidesList';
 import axios from 'axios';
 import baseService from '../../API/baseService';
@@ -53,7 +52,7 @@ const Sides = (props) => {
   const handleSave = async (editedSideData) => {
     try {
       const sideId = String(editedSideData.id);
-      const updatedSide = await updateSide(sideId, editedSideData);
+      const updatedSide = await SideService.updateSide(sideId, editedSideData);
   
       setEditedSideDataState(updatedSide);
       setIsEditing(false);

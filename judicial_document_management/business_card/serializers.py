@@ -16,35 +16,37 @@ class SidesCaseInCaseSerializer(serializers.ModelSerializer):
     """
     Модель добавления сторон по делу
     """
-
-    sides_case_name = serializers.StringRelatedField(
-        many=True,
-        source='sides_case',
-        read_only=True
-    )
-
+    
+    sides_case_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(
         source='get_status_display',
         read_only=True
     )
-
     gender_display = serializers.CharField(
         source='get_gender_display',
         read_only=True
     )
-
+    lawyer_id = serializers.SerializerMethodField()
+    is_lawyer = serializers.SerializerMethodField()
+    
     class Meta:
         model = SidesCaseInCase
-        fields = (
-            'id', 'name', 'status', 'status_display',
-            'sides_case', 'sides_case_name',
-            'date_sending_agenda',
-            'birth_date', 'gender', 'gender_display',
-            'document_type', 'document_number', 'document_series',
-            'document_issued_by', 'document_issue_date',
-            'inn', 'kpp', 'ogrn', 'legal_address', 'director_name',
-            'address', 'phone', 'email', 'additional_info'
-        )
+        fields = '__all__'
+    
+    def get_sides_case_name(self, obj):
+        return [side.sides_case for side in obj.sides_case.all()]
+    
+    def get_lawyer_id(self, obj):
+        # Получаем ID связанного адвоката, если он существует
+        try:
+            lawyer = obj.lawyer_info
+            return lawyer.id if lawyer else None
+        except Lawyer.DoesNotExist:
+            return None
+    
+    def get_is_lawyer(self, obj):
+        # Проверяем, является ли сторона адвокатом
+        return obj.sides_case.filter(sides_case__icontains='Адвокат').exists()
 
 
 class FamiliarizationCaseSerializer(serializers.ModelSerializer):
@@ -214,20 +216,75 @@ class ExecutionCaseSerializer(serializers.ModelSerializer):
 
 
 class LawyerSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для адвокатов
-    """
-
-    sides_case_info = SidesCaseInCaseSerializer(
-        source='sides_case_incase',
-        read_only=True
+    sides_case_incase = serializers.PrimaryKeyRelatedField(
+        queryset=SidesCaseInCase.objects.all()
     )
+    
 
-    payment_status_display = serializers.CharField(
-        source='get_payment_status_display',
-        read_only=True
-    )
-
+    sides_case_incase_name = serializers.SerializerMethodField()
+    
     class Meta:
         model = Lawyer
         fields = '__all__'
+        read_only_fields = ('id',)
+    
+    def get_sides_case_incase_name(self, obj):
+        if obj.sides_case_incase:
+            return obj.sides_case_incase.name
+        return None
+
+
+class LawyerCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания адвокатов"""
+    
+    # Поля для создания связанного SidesCaseInCase
+    name = serializers.CharField(write_only=True, required=True)
+    status = serializers.CharField(write_only=True, default='individual')
+    sides_case = serializers.PrimaryKeyRelatedField(
+        queryset=SidesCase.objects.filter(sides_case='Адвокат(защитник)'),
+        many=True,
+        write_only=True,
+        required=True
+    )
+    address = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    email = serializers.EmailField(write_only=True, required=False, allow_blank=True)
+    
+    class Meta:
+        model = Lawyer
+        fields = [
+            'id', 'name', 'status', 'sides_case', 'address', 'phone', 'email',
+            'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
+            'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
+            'lawyer_certificate_number', 'lawyer_certificate_date',
+            'days_for_payment', 'payment_amount', 'payment_date', 'notes'
+        ]
+    
+    def create(self, validated_data):
+        # Извлекаем данные для SidesCaseInCase
+        business_card = self.context['business_card']
+        name = validated_data.pop('name')
+        status = validated_data.pop('status')
+        sides_case_ids = validated_data.pop('sides_case')
+        address = validated_data.pop('address', '')
+        phone = validated_data.pop('phone', '')
+        email = validated_data.pop('email', '')
+        
+        # Создаем SidesCaseInCase для адвоката
+        sides_case_incase = SidesCaseInCase.objects.create(
+            name=name,
+            status=status,
+            address=address,
+            phone=phone,
+            email=email,
+            business_card=business_card
+        )
+        sides_case_incase.sides_case.set(sides_case_ids)
+        
+        # Создаем Lawyer
+        lawyer = Lawyer.objects.create(
+            sides_case_incase=sides_case_incase,
+            **validated_data
+        )
+        
+        return lawyer

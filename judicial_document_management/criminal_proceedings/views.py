@@ -87,7 +87,13 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
 
 class DefendantViewSet(viewsets.ModelViewSet):
     serializer_class = DefendantSerializer
-
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            from .serializers import DefendantCreateSerializer
+            return DefendantCreateSerializer
+        return DefendantSerializer
+    
     def get_queryset(self):
         businesscard_id = self.kwargs.get("businesscard_id")
         try:
@@ -95,16 +101,24 @@ class DefendantViewSet(viewsets.ModelViewSet):
             return Defendant.objects.filter(criminal_proceedings=proceedings)
         except CriminalProceedings.DoesNotExist:
             return Defendant.objects.none()
-
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        businesscard_id = self.kwargs.get("businesscard_id")
+        try:
+            proceedings = CriminalProceedings.objects.get(business_card_id=businesscard_id)
+            context['criminal_proceedings'] = proceedings
+        except CriminalProceedings.DoesNotExist:
+            pass
+        return context
+    
     def perform_create(self, serializer):
         businesscard_id = self.kwargs.get("businesscard_id")
         proceedings, created = CriminalProceedings.objects.get_or_create(
             business_card_id=businesscard_id,
-            defaults={
-                'case_number': f'Уголовное дело {businesscard_id}'
-            }
+            defaults={'case_number': f'Уголовное дело {businesscard_id}'}
         )
-        serializer.save(criminal_proceedings=proceedings)
+        serializer.save()
 
 
 class CriminalDecisionViewSet(viewsets.ModelViewSet):

@@ -1,0 +1,117 @@
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+.sectionTitle {
+  color: #495057;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #007bff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notificationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notification {
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification.error {
+  background: #f8d7da;
+  border-left-color: #dc3545;
+}
+
+.notification.warning {
+  background: #fff3cd;
+  border-left-color: #ffc107;
+}
+
+.notification.info {
+  background: #d1ecf1;
+  border-left-color: #17a2b8;
+}
+
+.notification.success {
+  background: #d4edda;
+  border-left-color: #28a745;
+}
+
+.notificationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.notificationHeader h4 {
+  margin: 0;
+  color: #343a40;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.notificationDate {
+  font-size: 12px;
+  color: #6c757d;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.notificationMessage {
+  margin: 0;
+  font-size: 13px;
+  color: #495057;
+  line-height: 1.4;
+}
+
+.noNotifications {
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 2px dashed #dee2e6;
+}
+
+.noNotifications p {
+  margin: 0;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .notificationHeader {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .notificationDate {
+    margin-left: 0;
+    align-self: flex-start;
+  }
+}

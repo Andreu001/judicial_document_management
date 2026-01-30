@@ -185,7 +185,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny', # 'rest_framework.permissions.IsAuthenticated',
     ),
 }
 
@@ -210,7 +210,7 @@ NOTIFICATIONS_TARGETS = [
         "app_label": "criminal_proceedings",
         "model": "CriminalProceedings",
         "human_name": "Уголовное судопроизводство",
-        # поля даты которые надо отслеживать (заполни по реальным названиям в твоих моделях)
+        # поля даты которые надо отслеживать (заполни по реальным названиям моделях)
         "date_fields": ["hearing_date", "decision_date", "copy_sent_date"],
         # можно задать глобальные фильтры для queryset (опционально)
         "filters": {},

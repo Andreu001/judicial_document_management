@@ -29,6 +29,7 @@ import baseService from '../API/baseService';
 import CriminalDecisionForm from './CriminalCase/CriminalDecisionForm';
 import CriminalDecisionDetail from './CriminalCase/CriminalDecisionDetail';
 import CaseRegistryService from '../API/CaseRegistryService';
+import CivilCaseService from '../API/CivilCaseService';
 
 const BusinessCard = (props) => {
   const router = useNavigate();
@@ -71,6 +72,7 @@ const BusinessCard = (props) => {
   const [editedCriminalDecisionData, setEditedCriminalDecisionData] = useState({});
   const [editedCriminalDecisionId, setEditedCriminalDecisionId] = useState(null);
   const [registeredCase, setRegisteredCase] = useState(null);
+  const [civilCase, setCivilCase] = useState(null);
 
   const handleAddCriminalDecisionToState = () => {
     console.log("Adding criminal decision to state");
@@ -79,39 +81,163 @@ const BusinessCard = (props) => {
     setEditedCriminalDecisionData({});
   };
 
-  const handleShowDetails = () => {
-    if (isCriminalCategory) {
+const handleShowDetails = () => {
+  const categoryId = card.case_category;
+  
+  switch(categoryId) {
+    case 1: // Административное судопроизводство
+      router(`/businesscard/${cardId}/administrative-details`);
+      break;
+    case 2: // Административное правнарушение
+      router(`/businesscard/${cardId}/administrative-offense-details`);
+      break;
+    case 3: // Гражданское судопроизводство
+      router(`/businesscard/${cardId}/civil-details`);
+      break;
+    case 4: // Уголовное судопроизводство
       router(`/businesscard/${cardId}/criminal-details`);
-    } else {
+      break;
+    default:
       router(`/cards/${cardId}`);
-    }
-  };
+  }
+};
 
-  const handleShowSideDetails = (sideId, sideType) => {
-    console.log('Opening side details:', { sideId, sideType, cardId });
+  const handleShowSideDetails = (sideId, sideTypes) => {
+      console.log('Opening side details:', { sideId, sideTypes, cardId });
+      
+      const selectedSide = sides.find(s => s.id === sideId);
+      console.log('Selected side:', selectedSide);
+      
+      if (!selectedSide) {
+          console.error('Side not found');
+          return;
+      }
 
-    if (!sideType) {
-      router(`/businesscard/${cardId}/sides/${sideId}`);
-      return;
-    }
+      // Проверяем, является ли сторона адвокатом/защитником
+      const isLawyer = selectedSide?.sides_case_name?.some(name => 
+          name.toLowerCase().includes('адвокат') || 
+          name.toLowerCase().includes('защитник')
+      );
+      
+      // Проверяем, является ли сторона обвиняемым/осужденным/подозреваемым/подсудимым
+      // Используем sides_case_name для проверки
+      const isDefendant = selectedSide?.sides_case_name?.some(name => {
+          const lowerName = name.toLowerCase();
+          return lowerName.includes('обвиняемый') || 
+                lowerName.includes('осужденный') || 
+                lowerName.includes('подозреваемый') || 
+                lowerName.includes('подсудимый');
+      });
+      
+      const lawyerId = selectedSide?.lawyer_id;
+      
+      console.log('Is lawyer?', isLawyer);
+      console.log('Is defendant?', isDefendant);
+      console.log('Lawyer ID:', lawyerId);
+      console.log('Selected side name:', selectedSide?.name);
+      console.log('All defendants:', defendants);
+      console.log('Selected side sides_case_name:', selectedSide?.sides_case_name);
 
-    const criminalSideTypes = ['Обвиняемый', 'Осужденный', 'Подозреваемый', 'Подсудимый'];
-    const lawyerType = 'Адвокат';
+      if (isDefendant) {
+          console.log('This is a defendant side, looking for defendant record');
 
-    const normalizedSideType = String(sideType).trim();
-    
-    console.log('Normalized side type:', normalizedSideType);
-    
-    if (criminalSideTypes.some(type => normalizedSideType.includes(type))) {
+          const defendant = defendants.find(def => {
+              // Проверяем соответствие по имени
+              const sideNameMatch = def.name === selectedSide.name;
+              
+              // Проверяем соответствие по ID стороны
+              const sideIdMatch = def.sides_case_person === selectedSide.id;
+              
+              console.log('Comparing defendant:', {
+                  defendantName: def.name,
+                  sideName: selectedSide.name,
+                  sideNameMatch,
+                  defSideCasePerson: def.sides_case_person,
+                  sideId: selectedSide.id,
+                  sideIdMatch
+              });
+              
+              return sideNameMatch || sideIdMatch;
+          });
+          
+          if (defendant) {
+              console.log('Found defendant record, navigating to defendant page:', defendant.id);
+              router(`/businesscard/${cardId}/defendants/${defendant.id}`);
+          } else {
+              console.log('No defendant record found, creating one automatically');
 
-      router(`/businesscard/${cardId}/defendants/${sideId}`);
-    } else if (normalizedSideType.includes(lawyerType)) {
+              const createDefendantAndRedirect = async () => {
+                  try {
+                      // Находим ID стороны дела для обвиняемого
+                      let sideCaseId = null;
+                      
+                      // Проверяем sides_case (может быть массивом объектов или массивом ID)
+                      if (selectedSide.sides_case && Array.isArray(selectedSide.sides_case)) {
+                          // Если это массив объектов
+                          if (selectedSide.sides_case.length > 0 && typeof selectedSide.sides_case[0] === 'object') {
+                              // Ищем среди объектов side с нужным названием
+                              const defendantSide = selectedSide.sides_case.find(sc => {
+                                  const lowerName = sc.sides_case?.toLowerCase() || '';
+                                  return lowerName.includes('обвиняемый') || 
+                                        lowerName.includes('осужденный') || 
+                                        lowerName.includes('подозреваемый') || 
+                                        lowerName.includes('подсудимый');
+                              });
+                              sideCaseId = defendantSide?.id;
+                          } else {
+                              // Если это массив ID, берем первый
+                              sideCaseId = selectedSide.sides_case[0];
+                          }
+                      }
+                      
+                      if (!sideCaseId) {
+                          console.error('No valid side case ID found, redirecting to side page');
+                          router(`/businesscard/${cardId}/sides/${sideId}`);
+                          return;
+                      }
+                      
+                      const defendantData = {
+                          name: selectedSide.name,
+                          sides_case: [sideCaseId],
+                          address: selectedSide.address || '',
+                          birth_date: selectedSide.birth_date || null,
+                          phone: selectedSide.phone || '',
+                          status: selectedSide.status || 'individual'
+                      };
+                      
+                      console.log('Creating defendant with data:', defendantData);
 
-      router(`/cases/${cardId}/lawyers/${sideId}`);
-    } else {
+                      const newDefendant = await CriminalCaseService.createDefendant(cardId, defendantData);
+                      
+                      console.log('Defendant created:', newDefendant);
 
-      router(`/businesscard/${cardId}/sides/${sideId}`);
-    }
+                      // Обновляем список обвиняемых
+                      const updatedDefendants = await CriminalCaseService.getDefendants(cardId);
+                      setDefendants(updatedDefendants);
+
+                      router(`/businesscard/${cardId}/defendants/${newDefendant.id}`);
+                      
+                  } catch (error) {
+                      console.error('Error creating defendant:', error);
+                      router(`/businesscard/${cardId}/sides/${sideId}`);
+                  }
+              };
+
+              createDefendantAndRedirect();
+          }
+      } 
+      else if (isLawyer && lawyerId) {
+          console.log('Navigating to lawyer page with ID:', lawyerId);
+          router(`/business_card/businesscard/${cardId}/lawyers/${lawyerId}`);
+      } 
+      else if (isLawyer && !lawyerId) {
+          console.log('Side is lawyer but lawyer record not found, redirecting to side page');
+          router(`/businesscard/${cardId}/sides/${sideId}`);
+      } 
+      else {
+          console.log('Navigating to standard side page');
+          router(`/businesscard/${cardId}/sides/${sideId}`);
+      }
   };
 
   const formatDate = (dateString) => {
@@ -123,14 +249,6 @@ const BusinessCard = (props) => {
     const year = date.getFullYear();
     
     return `${day}.${month}.${year}`;
-  };
-
-  const getCourtInstanceText = (instance) => {
-    switch (instance) {
-      case '1': return 'Апелляционной';
-      case '2': return 'Кассационной';
-      default: return 'Не указано';
-    }
   };
 
   useEffect(() => {
@@ -307,6 +425,23 @@ const BusinessCard = (props) => {
     router(`/businesscard/${cardId}/criminal-decisions/${decisionId}`);
   };
 
+  useEffect(() => {
+    const loadCivilCase = async () => {
+      if (card.case_category === 3) {
+        try {
+          const civilData = await CivilCaseService.getByBusinessCardId(cardId);
+          setCivilCase(civilData);
+        } catch (error) {
+          console.error('Ошибка загрузки гражданского дела:', error);
+          setCivilCase(null);
+        }
+      }
+    };
+    
+    if (cardId) {
+      loadCivilCase();
+    }
+  }, [cardId, card.case_category]);
 
   useEffect(() => {
     const loadDefendants = async () => {
@@ -849,56 +984,17 @@ const createMove = async (newMove) => {
                 </div>
               )}
 
-          {activeTab === 1 && (
-            <div>
-              {sides && sides.length > 0 ? (
-                sides.map(side => (
-                  <div key={side.id} className={styles.sideItem}>
-                    <div className={styles.sideInfo}>
-                      <strong>{side.name}</strong>
-                      {side.sides_case && side.sides_case.length > 0 && (
-                        <div><strong>Вид стороны: {side.sides_case.join(', ')}</strong></div>
-                      )}
-                      <div>Статус: {side.status || 'Не указан'}</div>
-                      {/* Дополнительная информация */}
-                    </div>
-                    <div className={styles.verticalActionButtons}>
-                      <button 
-                        onClick={() => {
-                          // Получаем тип стороны из sides_case
-                          const sideType = side.sides_case && side.sides_case[0];
-                          handleShowSideDetails(side.id, sideType);
-                        }}
-                        className={`${styles.verticalActionButton} ${styles.viewButton}`}
-                        title="Просмотреть подробнее"
-                      >
-                        <span className={styles.buttonIcon}>👁️</span>
-                        Просмотр
-                      </button>
-                      <button 
-                        onClick={() => handleEditSideForm(side.id)}
-                        className={`${styles.verticalActionButton} ${styles.editButton}`}
-                        title="Редактировать"
-                      >
-                        <span className={styles.buttonIcon}>✏️</span>
-                        Изменить
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteSide(side.id)}
-                        className={`${styles.verticalActionButton} ${styles.deleteButton}`}
-                        title="Удалить"
-                      >
-                        <span className={styles.buttonIcon}>🗑️</span>
-                        Удалить
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p>Стороны не добавлены</p>
-              )}
-            </div>
-          )}
+          {activeTab === 1 && sides ? (
+            <SidesList
+              sides={sides}
+              handleShowSideDetails={handleShowSideDetails}
+              handleDeleteSide={handleDeleteSide}
+              handleEditSideForm={handleEditSideForm}
+              cardId={cardId}
+              setSide={setSide}
+              router={router}
+            />
+          ) : null}
           {activeTab === 2 && movements ? (
             <MovementList
               movements={movements}

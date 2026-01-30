@@ -1,4 +1,3 @@
-// CardFooter.jsx - исправим функцию handleAddConsideredToState
 import React from 'react';
 import MyButton from '../button/MyButton';
 import { useNavigate } from 'react-router-dom';

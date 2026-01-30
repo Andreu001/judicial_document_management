@@ -69,17 +69,9 @@ const Navbar = () => {
             </div>
           )}
         </div>
-        <div className={styles.dropdown}>
-          <button onClick={toggleParticipantsMenu} className={styles.dropdownButton}>
-            Участники процесса
-          </button>
-          {isParticipantsOpen && (
-            <div className={styles.dropdownContent}>
-              <Link to="">Физические лица</Link>
-              <Link to="">Юридические лица</Link>
-            </div>
-          )}
-        </div>
+        <Link to="/person-search" className={styles.navbarLink}>
+          Участники процесса
+        </Link>
         <Link to="/statistic">Статистика</Link>
         <Link to="/archive">Архив</Link>
         <Link to="/profile">Профиль</Link>

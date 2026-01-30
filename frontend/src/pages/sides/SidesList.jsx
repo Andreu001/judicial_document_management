@@ -1,9 +1,9 @@
 import React from 'react';
-import { IoMdEye, IoMdTrash, IoMdCreate } from 'react-icons/io';
+import styles from '../../components/UI/Card/BusinessCard.module.css';
 
 const SidesList = ({
     sides,
-    handleShowDetails,
+    handleShowSideDetails,
     handleDeleteSide,
     handleEditSideForm,
     cardId,
@@ -12,40 +12,50 @@ const SidesList = ({
 }) => {
   return (
     <>
-        {sides.map((sides, index) => (
-        <div key={index} style={{ marginBottom: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-                <strong>ФИО {sides.name}.</strong>
-                {sides.sides_case_name ? (
-                sides.sides_case_name.map((sideCaseName, idx) => (
-                    <div key={idx}>Статус стороны: {sideCaseName || 'Не указано'}</div>
-                ))
-                ) : (
-                <div>Нет данных по сторонам дела</div>
-                )}
-                <div>Дата направления повестки: {sides.date_sending_agenda}</div>
+      {sides.length > 0 ? (
+        sides.map(side => (
+          <div key={side.id} className={styles.defendantItem}>
+            <div className={styles.defendantInfo}>
+              <strong>ФИО: {side.name}</strong>
+              {side.sides_case_name && side.sides_case_name.length > 0 && (
+                <div><strong>Вид стороны: {side.sides_case_name.join(', ')}</strong></div>
+              )}
+              <div>Статус: {side.status_display || 'Не указан'}</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-                <IoMdEye onClick={() => handleShowDetails({ side: sides }, router)} style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }} />
-                <IoMdTrash
+            <div className={styles.verticalActionButtons}>
+              <button 
                 onClick={() => {
-                    const currentSideId = sides.id;
-                    console.log('currentSideId:', currentSideId);
-                    console.log('cardId:', cardId);
-                    handleDeleteSide(currentSideId, cardId, setSide);
+                  const sideType = side.sides_case_name && side.sides_case_name[0];
+                  handleShowSideDetails(side.id, sideType);
                 }}
-                style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-                />
-                <IoMdCreate
-                    onClick={() => handleEditSideForm(sides.id)}
-                    style={{ cursor: 'pointer', color: 'green' }}
-                />
+                className={`${styles.verticalActionButton} ${styles.viewButton}`}
+                title="Просмотреть подробнее"
+              >
+                <span className={styles.buttonIcon}>👁️</span>
+                Просмотр
+              </button>
+              <button 
+                onClick={() => handleEditSideForm(side.id)}
+                className={`${styles.verticalActionButton} ${styles.editButton}`}
+                title="Редактировать"
+              >
+                <span className={styles.buttonIcon}>✏️</span>
+                Изменить
+              </button>
+              <button 
+                onClick={() => handleDeleteSide(side.id, cardId, setSide)}
+                className={`${styles.verticalActionButton} ${styles.deleteButton}`}
+                title="Удалить"
+              >
+                <span className={styles.buttonIcon}>🗑️</span>
+                Удалить
+              </button>
             </div>
-            </div>
-            <hr style={{ width: '100%', height: '1px', backgroundColor: '#d3d3d3', margin: '10px 0' }} />
-        </div>
-        ))}
+          </div>
+        ))
+      ) : (
+        <p>Стороны не добавлены</p>
+      )}
     </>
   );
 };
