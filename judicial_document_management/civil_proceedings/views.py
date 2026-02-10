@@ -23,7 +23,9 @@ class CivilProceedingsViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         businesscard_id = self.kwargs.get("businesscard_id")
-        return CivilProceedings.objects.filter(business_card_id=businesscard_id)
+        if businesscard_id:
+            return CivilProceedings.objects.filter(business_card_id=businesscard_id)
+        return CivilProceedings.objects.all()
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -31,6 +33,14 @@ class CivilProceedingsViewSet(viewsets.ModelViewSet):
         filter_kwargs.pop('businesscard_id', None)
         obj = get_object_or_404(queryset, **filter_kwargs)
         return obj
+
+    def perform_create(self, serializer):
+        businesscard_id = self.kwargs.get("businesscard_id")
+        if businesscard_id:
+            businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+            serializer.save(business_card=businesscard)
+        else:
+            serializer.save()
 
     def retrieve(self, request, *args, **kwargs):
         """Переопределяем retrieve для обработки случая, когда запись не найдена"""
@@ -42,25 +52,10 @@ class CivilProceedingsViewSet(viewsets.ModelViewSet):
             # Если запись не найдена, возвращаем пустой ответ вместо 404
             return Response(None, status=status.HTTP_200_OK)
 
-    def create(self, request, *args, **kwargs):
-        businesscard_id = self.kwargs.get("businesscard_id")
-        
-        # Проверяем, существует ли уже запись для этой бизнес-карточки
-        existing_record = CivilProceedings.objects.filter(business_card_id=businesscard_id).first()
-        
-        if existing_record:
-            # Если запись существует, обновляем её
-            serializer = self.get_serializer(existing_record, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        # Если записи нет, создаём новую
-        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         businesscard_id = self.kwargs.get("businesscard_id")
-        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+        businesscard = get_object_or_404(CivilProceedingsViewSet, pk=businesscard_id)
         serializer.save(business_card=businesscard)
 
     def update(self, request, *args, **kwargs):

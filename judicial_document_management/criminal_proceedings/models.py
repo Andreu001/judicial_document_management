@@ -1,6 +1,15 @@
 from django.db import models
-from business_card.models import BusinessCard, SidesCaseInCase
+from business_card.models import (
+                                SidesCase, Lawyer,
+                                SidesCaseInCase, PetitionsInCase,
+                                Petitions
+                            )
 from users.models import User
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ReferringAuthority(models.Model):
@@ -47,13 +56,19 @@ class CriminalProceedings(models.Model):
     """
     Учетно-статистическая карточка уголовного дела (общие сведения).
     """
-    business_card = models.OneToOneField(
-        BusinessCard,
-        on_delete=models.CASCADE,
-        related_name="criminal_proceedings",
-        verbose_name="Базовая карточка"
-    )
 
+    STATUS_CHOICES = [
+        ('active', 'Активное'),
+        ('completed', 'Рассмотрено'),
+        ('execution', 'На исполнении'),
+        ('archived', 'В архиве'),
+    ]
+
+    case_number_criminal = models.CharField(
+        max_length=100, 
+        unique=True,
+        verbose_name="Номер уголовного дела"
+    )
     # --- Раздел А. Сведения по делу ---
     number_of_persons = models.PositiveIntegerField(
         null=True, blank=True, verbose_name="Число лиц по делу"
@@ -138,7 +153,7 @@ class CriminalProceedings(models.Model):
     )
 
     # Пункт 3 - Категория дела
-    case_category = models.CharField(
+    case_category_criminal = models.CharField(
         max_length=255,
         null=True,
         blank=True,
@@ -335,21 +350,36 @@ class CriminalProceedings(models.Model):
     cassation_result = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Результат кассации/надзора"
         )
-    case_to_archive_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата сдачи дела в архив"
-    )
 
     # --- Особые отметки ---
     special_notes = models.TextField(
         null=True, blank=True, verbose_name="Особые отметки"
     )
 
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+        verbose_name="Статус дела"
+    )
+
+    archived_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата сдачи в архив"
+    )
+
+    archive_notes = models.TextField(
+        null=True, blank=True,
+        verbose_name="Примечания по архивному делу"
+    )
+    
+
     class Meta:
         verbose_name = "Уголовное производство"
         verbose_name_plural = "Уголовные производства"
 
     def __str__(self):
-        return f"Уголовное дело {self.business_card.original_name}"
+        return f"Уголовное дело {self.case_number_criminal}"
 
 
 class Defendant(models.Model):
@@ -362,7 +392,15 @@ class Defendant(models.Model):
         related_name="defendants",
         verbose_name="Уголовное производство"
     )
-
+    full_name_criminal = models.CharField(
+        max_length=255, verbose_name="ФИО обвиняемого"
+    )
+    sides_case_defendant = models.ForeignKey(
+        SidesCase,
+        on_delete=models.CASCADE,
+        related_name='criminal_defendants',
+        verbose_name='Подсудимый по делу'
+    )
     article = models.IntegerField(
         null=True,
         blank=True,
@@ -373,13 +411,6 @@ class Defendant(models.Model):
         null=True,
         blank=True,
         verbose_name='Максимальное наказание по статье'
-    )
-
-    sides_case_person = models.ForeignKey(
-        SidesCaseInCase,
-        on_delete=models.CASCADE,
-        related_name='criminal_defendants',
-        verbose_name='Сторона по делу'
     )
     address = models.CharField(
         max_length=500, null=True, blank=True, verbose_name="Адрес проживания"
@@ -448,7 +479,6 @@ class Defendant(models.Model):
         verbose_name="Мера пресечения применена"
     )
 
-    # Изменение меры пресечения
     restraint_change = models.CharField(
         max_length=1,
         null=True,
@@ -512,6 +542,123 @@ class Defendant(models.Model):
     class Meta:
         verbose_name = "Обвиняемый"
         verbose_name_plural = "Обвиняемые"
+
+
+class LawyerCriminal(models.Model):
+    '''Модель для адвокатов с информацией об оплате'''
+
+    sides_case_lawyer = models.ForeignKey(
+        SidesCase,
+        on_delete=models.CASCADE,
+        related_name='criminal_lawyer',
+        verbose_name='Адвокат по делу'
+    )
+    sides_case_lawyer_criminal = models.ForeignKey(
+        Lawyer,
+        on_delete=models.CASCADE,
+        related_name='lawyer_info',
+        verbose_name='Сторона (адвокат)',
+        blank=True,
+        null=True
+    )
+    criminal_proceedings = models.ForeignKey(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        related_name="criminal_sides_lawyer",
+        verbose_name="Уголовное производство",
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = 'Адвокат'
+        verbose_name_plural = 'Адвокаты'
+
+    @property
+    def sides_case_defendant_name(self):
+        """Название вида стороны (для отображения)"""
+        if self.sides_case_defendant:
+            return self.sides_case_defendant.sides_case
+        return None
+
+
+class CriminalSidesCaseInCase(models.Model):
+    """
+    Стороны по уголовному судопроизводству
+    """
+
+    sides_case_criminal = models.ForeignKey(
+        SidesCase,
+        on_delete=models.CASCADE,
+        related_name='criminal_SidesCase',
+        verbose_name='Сторона по делу'
+    )
+    criminal_side_case = models.ForeignKey(
+        SidesCaseInCase,
+        on_delete=models.CASCADE,
+        related_name="criminal_sides",
+        verbose_name="Стороны Уголовного производства",
+        blank=True,
+        null=True
+    )
+    criminal_proceedings = models.ForeignKey(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        related_name="criminal_sides",
+        verbose_name="Уголовное производство",
+        null=True,
+        blank=True
+    )
+    
+    class Meta:
+        verbose_name = 'Сторона уголовного дела'
+        verbose_name_plural = 'Стороны уголовного дела'
+
+    def __str__(self):
+        return f'Адвокат: {self.criminal_side_case.name}'
+
+
+class PetitionCriminal(models.Model):
+    '''Модель для ходатайств в уголовном деле'''
+
+    petitions_criminal = models.ManyToManyField(
+        Petitions,
+        verbose_name='ходатайства по делу',
+        related_name='criminal_petitions'
+    )
+    date_application = models.DateField(
+        verbose_name='Дата ходатайства',
+        null=True,
+        blank=True
+    )
+    date_decision = models.DateField(
+        verbose_name='Дата решения по ходатайству',
+        null=True,
+        blank=True
+    )
+    notation = models.TextField(
+        max_length=300,
+        verbose_name='примечания',
+        null=True,
+        blank=True
+    )
+    criminal_proceedings = models.ForeignKey(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        verbose_name="Уголовное производство",
+        related_name='petitions',
+        null=True,
+        blank=True
+    )
+    
+    class Meta:
+        verbose_name = 'Ходатайство уголовного дела'
+        verbose_name_plural = 'Ходатайства уголовного дела'
+    
+    def __str__(self):
+        if self.petitions_criminal:
+            return f'Ходатайство: {self.petitions_criminal}'
+        return 'Ходатайство'
 
 
 class CriminalDecision(models.Model):
@@ -739,21 +886,9 @@ class CriminalDecision(models.Model):
         verbose_name="Процессуальные издержки"
     )
 
-    # Пункт 19 - Ходатайства
-    petitions_info = models.TextField(
-        null=True, blank=True, verbose_name="Информация о ходатайствах"
-    )
-    petitions_withdrawal_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата отзыва ходатайства"
-    )
-
     # Пункт 20 - Другие отметки
     other_notes = models.TextField(
         null=True, blank=True, verbose_name="Другие отметки"
-    )
-
-    archive_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата сдачи в архив"
     )
 
     class Meta:
@@ -762,14 +897,14 @@ class CriminalDecision(models.Model):
         ordering = ['-appeal_date']
 
     def __str__(self):
-        return f"Решение по делу {self.criminal_proceedings.business_card.original_name} - {self.get_court_instance_display()}"
+        return f"Решение по делу {self.criminal_proceedings.case_number_criminal} - {self.get_court_instance_display()}"
 
 
 class CriminalCaseMovement(models.Model):
     """
     Модель для отслеживания движения уголовного дела (пункты 6-9 раздела А)
     """
-    criminal_proceedings = models.OneToOneField(
+    criminal_proceedings = models.ForeignKey(
         CriminalProceedings,
         on_delete=models.CASCADE,
         related_name="case_movement",
@@ -795,7 +930,11 @@ class CriminalCaseMovement(models.Model):
     first_hearing_date = models.DateField(
         null=True, blank=True, verbose_name="Дата первого заседания"
     )
-
+    meeting_time = models.TimeField(
+        verbose_name='Время заседания',
+        null=True,
+        blank=True,
+    )
     hearing_compliance = models.CharField(
         max_length=1,
         null=True,
@@ -862,7 +1001,7 @@ class CriminalCaseMovement(models.Model):
         verbose_name_plural = "Движения дел"
 
     def __str__(self):
-        return f"Движение дела {self.criminal_proceedings.business_card.original_name}"
+        return f"Движение дела {self.criminal_proceedings.case_number_criminal}"
 
 
 @property
@@ -937,4 +1076,26 @@ class CriminalRuling(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.title} - {self.criminal_proceedings.business_card.original_name}"
+        return f"{self.title} - {self.criminal_proceedings.case_number_criminal}"
+
+
+@receiver(post_delete, sender=CriminalSidesCaseInCase)
+def delete_related_sidescaseincase(sender, instance, **kwargs):
+    """Удалить связанный SidesCaseInCase при удалении связи"""
+    if instance.criminal_side_case:
+        try:
+            instance.criminal_side_case.delete()
+            logger.info(f"Deleted related SidesCaseInCase {instance.criminal_side_case.id}")
+        except Exception as e:
+            logger.error(f"Error deleting SidesCaseInCase: {e}")
+
+
+@receiver(post_delete, sender=LawyerCriminal)
+def delete_related_lawyer(sender, instance, **kwargs):
+    """Удалить связанного Lawyer при удалении связи"""
+    if instance.sides_case_lawyer_criminal:
+        try:
+            instance.sides_case_lawyer_criminal.delete()
+            logger.info(f"Deleted related Lawyer {instance.sides_case_lawyer_criminal.id}")
+        except Exception as e:
+            logger.error(f"Error deleting Lawyer: {e}")

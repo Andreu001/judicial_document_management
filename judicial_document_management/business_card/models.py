@@ -151,28 +151,23 @@ class SidesCaseInCase(models.Model):
 
     name = models.CharField(
         max_length=150,
-        verbose_name='ФИО / Наименование'
+        verbose_name='ФИО / Наименование',
+        blank=True,
+        null=True
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='individual',
-        verbose_name='Статус лица'
+        verbose_name='Статус лица',
+        blank=True,
+        null=True
     )
-    sides_case = models.ManyToManyField(
-        SidesCase,
-        verbose_name='Стороны по делу',
-    )
+
     date_sending_agenda = models.DateField(
         blank=True,
         null=True,
         verbose_name='Дата направления повестки'
-    )
-    business_card = models.ForeignKey(
-        BusinessCard,
-        on_delete=models.CASCADE,
-        related_name='sidescaseincase',
-        verbose_name='Карточка на дело',
     )
 
     # Для физических лиц
@@ -287,15 +282,6 @@ class SidesCaseInCase(models.Model):
 class Lawyer(models.Model):
     '''Модель для адвокатов с информацией об оплате'''
 
-    sides_case_incase = models.OneToOneField(
-        SidesCaseInCase,
-        on_delete=models.CASCADE,
-        related_name='lawyer_info',
-        verbose_name='Сторона (адвокат)',
-        blank=True,
-        null=True,
-    )
-
     law_firm_name = models.CharField(
         blank=True,
         null=True,
@@ -389,7 +375,7 @@ class Lawyer(models.Model):
         verbose_name_plural = 'Адвокаты'
 
     def __str__(self):
-        return f'Адвокат: {self.sides_case_incase.name}'
+        return f'Адвокат: {self.sides_case_lawyer.law_firm_name}'
 
 
 class PetitionsInCase(models.Model):

@@ -1,17 +1,14 @@
 from django.db import models
-from business_card.models import BusinessCard
 
 
 class CivilProceedings(models.Model):
     """Гражданское судопроизводство - основная модель"""
     
-    business_card = models.OneToOneField(
-        BusinessCard,
-        on_delete=models.CASCADE,
-        related_name='civil_proceedings',
-        verbose_name='Карточка дела'
-    )
-    
+    case_number_civil = models.CharField(
+        max_length=100, 
+        unique=True,
+        verbose_name="Номер уголовного дела"
+    )    
     # I. ДОСУДЕБНАЯ ПОДГОТОВКА
     application_date = models.DateField(
         verbose_name='Заявление поступило в суд',

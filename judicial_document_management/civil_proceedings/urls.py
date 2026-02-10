@@ -12,7 +12,28 @@ from .views import (
 
 router = routers.DefaultRouter()
 
-# Основной endpoint для гражданского производства
+router.register(
+    r"civil-proceedings",
+    CivilProceedingsViewSet,
+    basename="civil-proceedings"
+)
+router.register(
+    r"civil-decisions",
+    CivilDecisionViewSet,
+    basename="civil-decisions"
+)
+router.register(
+    r"civil-sides",
+    CivilSideViewSet,
+    basename="civil-sides"
+)
+router.register(
+    r"civil-procedure-actions",
+    CivilProcedureActionViewSet,
+    basename="civil-procedure-actions"
+)
+
+"""
 router.register(
     r"businesscard/(?P<businesscard_id>\d+)/civil",
     CivilProceedingsViewSet,
@@ -37,7 +58,7 @@ router.register(
     CivilProcedureActionViewSet,
     basename="civil-procedure-actions"
 )
-
+"""
 urlpatterns = [
     path("", include(router.urls)),
     # Endpoints для получения опций

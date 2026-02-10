@@ -33,7 +33,7 @@ router.register(
 router.register(r'businesscard/(?P<businesscard_id>\d+)/familiarization',
     FamiliarizationCaseViewSet,
     basename='familiarization'
-    )
+)
 router.register(
     r'businesscard/(?P<businesscard_id>\d+)/businessmovement',
     BusinessMovementViewSet,
