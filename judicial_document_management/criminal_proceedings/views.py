@@ -2,6 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.utils import timezone
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -103,6 +105,53 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             {'message': 'Дело возвращено из архива'},
             status=status.HTTP_200_OK
         )
+    
+    @action(detail=True, methods=['get'], url_path='all-sides')
+    def all_sides(self, request, pk=None):
+        """Возвращает объединённый список всех сторон по делу (обвиняемые, адвокаты, иные стороны)"""
+        proceeding = self.get_object()
+
+        # 1. Обвиняемые
+        defendants = Defendant.objects.filter(criminal_proceedings=proceeding)
+        defendant_list = [
+            {
+                'id': d.id,
+                'type': 'defendant',
+                'name': d.full_name_criminal or f"Обвиняемый #{d.id}",
+                'role': 'Обвиняемый',
+                'details': d.full_name_criminal or ''
+            }
+            for d in defendants
+        ]
+
+        # 2. Адвокаты
+        lawyers = LawyerCriminal.objects.filter(criminal_proceedings=proceeding)
+        lawyer_list = [
+            {
+                'id': l.id,
+                'type': 'lawyer',
+                'name': l.sides_case_lawyer_criminal.law_firm_name if l.sides_case_lawyer_criminal else 'Адвокат',
+                'role': 'Адвокат',
+                'details': l.sides_case_lawyer_criminal.law_firm_name if l.sides_case_lawyer_criminal else ''
+            }
+            for l in lawyers
+        ]
+
+        # 3. Иные стороны
+        sides = CriminalSidesCaseInCase.objects.filter(criminal_proceedings=proceeding)
+        side_list = [
+            {
+                'id': s.id,
+                'type': 'side',
+                'name': s.criminal_side_case.name if s.criminal_side_case else 'Сторона',
+                'role': s.sides_case_criminal.sides_case if s.sides_case_criminal else 'Участник',
+                'details': s.criminal_side_case.name if s.criminal_side_case else ''
+            }
+            for s in sides
+        ]
+
+        all_sides = defendant_list + lawyer_list + side_list
+        return Response(all_sides)
 
 
 class ArchivedCriminalProceedingsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -364,9 +413,31 @@ def referring_authorities_list(request):
 
 @api_view(['GET'])
 def judges_list(request):
-    judges = User.objects.filter(role='judge')
-    serializer = UserSerializer(judges, many=True)
-    return Response(serializer.data)
+    """Получить список судей с полными именами"""
+    judges = User.objects.filter(role='judge', is_active=True)
+    judges_data = []
+    for judge in judges:
+        # Формируем полное ФИО
+        full_name = ' '.join(filter(None, [
+            judge.last_name,
+            judge.first_name,
+            judge.middle_name
+        ])).strip() or judge.username
+        
+        # Получаем код судьи (можно заменить на нужное поле)
+        judge_code = getattr(judge, 'judge_code', '') or judge.username
+        
+        judges_data.append({
+            'id': judge.id,
+            'full_name': full_name,
+            'last_name': judge.last_name or '',
+            'first_name': judge.first_name or '',
+            'middle_name': judge.middle_name or '',
+            'judge_code': judge_code,
+            'username': judge.username
+        })
+    
+    return Response(judges_data)
 
 
 @api_view(['GET'])

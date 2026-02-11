@@ -64,7 +64,10 @@ urlpatterns = [
     path("criminal-proceedings/<int:proceeding_id>/archive/", 
          CriminalProceedingsViewSet.as_view({'post': 'archive'}), 
          name="criminal-proceedings-archive"),
-    path("criminal-proceedings/<int:proceeding_id>/unarchive/", 
-         CriminalProceedingsViewSet.as_view({'post': 'unarchive'}), 
+    path("criminal-proceedings/<int:proceeding_id>/unarchive/",
+         CriminalProceedingsViewSet.as_view({'post': 'unarchive'}),
          name="criminal-proceedings-unarchive"),
+    path("criminal-proceedings/<int:proceeding_id>/all-sides/", 
+         CriminalProceedingsViewSet.all_sides, 
+         name="all-sides"),
 ]

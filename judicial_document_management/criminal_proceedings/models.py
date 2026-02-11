@@ -8,6 +8,8 @@ from users.models import User
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 import logging
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
@@ -650,6 +652,22 @@ class PetitionCriminal(models.Model):
         null=True,
         blank=True
     )
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Тип стороны",
+        #limit_choices_to={
+           # 'model__in': ('defendant', 'lawyercriminal', 'criminalsidescaseincase')
+       # }
+    )
+    object_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="ID стороны"
+    )
+    petitioner = GenericForeignKey('content_type', 'object_id')
     
     class Meta:
         verbose_name = 'Ходатайство уголовного дела'

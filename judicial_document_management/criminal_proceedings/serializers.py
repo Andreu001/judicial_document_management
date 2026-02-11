@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from users.models import User
+from django.contrib.contenttypes.models import ContentType
 from business_card.models import SidesCase, SidesCaseInCase, Lawyer, Petitions
 from .models import (CriminalProceedings,
                      Defendant,
@@ -313,24 +314,33 @@ class DefendantSerializer(serializers.ModelSerializer):
         return instance
 
 
+from django.contrib.contenttypes.models import ContentType
+
 class PetitionCriminalSerializer(serializers.ModelSerializer):
-    """Сериализатор для ходатайств в уголовных делах"""
-    
-    # Для чтения: информация о ходатайстве
     petition_detail = serializers.SerializerMethodField()
+    petition_id = serializers.IntegerField(write_only=True, required=True)
     
-    # Для записи: ID ходатайства (одно значение)
-    petition_id = serializers.IntegerField(
+    # Поля для работы со стороной-заявителем
+    petitioner_info = serializers.SerializerMethodField(read_only=True)
+    petitioner_type = serializers.ChoiceField(
+        choices=['defendant', 'lawyer', 'side'],
         write_only=True,
-        required=True,
-        help_text="ID ходатайства"
+        required=False,
+        allow_null=True,
+        allow_blank=True
     )
-    
+    petitioner_id = serializers.IntegerField(
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = PetitionCriminal
         fields = [
             'id', 'date_application', 'date_decision', 'notation',
-            'criminal_proceedings', 'petition_id', 'petition_detail'
+            'criminal_proceedings', 'petition_id', 'petition_detail',
+            'petitioner_info', 'petitioner_type', 'petitioner_id'
         ]
         read_only_fields = ('criminal_proceedings', 'petitions_criminal')
         extra_kwargs = {
@@ -338,7 +348,7 @@ class PetitionCriminalSerializer(serializers.ModelSerializer):
             'date_decision': {'required': False, 'allow_null': True},
             'notation': {'required': False, 'allow_null': True},
         }
-    
+
     def get_petition_detail(self, obj):
         """Получить информацию о ходатайстве"""
         petition = obj.petitions_criminal.first()  # Получаем первое ходатайство
@@ -349,73 +359,161 @@ class PetitionCriminalSerializer(serializers.ModelSerializer):
                 'name': petition.petitions
             }
         return None
-    
+
+    def get_petitioner_info(self, obj):
+        """Возвращает информацию о заявителе в унифицированном формате"""
+        if not obj.petitioner:
+            return None
+        petitioner = obj.petitioner
+        model_name = obj.content_type.model
+        # Определяем, какое поле использовать для отображения имени
+        if model_name == 'defendant':
+            name = petitioner.full_name_criminal or str(petitioner)
+            role = 'Обвиняемый'
+        elif model_name == 'lawyercriminal':
+            # У LawyerCriminal может быть имя через связанный Lawyer
+            name = petitioner.sides_case_lawyer_criminal.law_firm_name if petitioner.sides_case_lawyer_criminal else 'Адвокат'
+            role = 'Адвокат'
+        elif model_name == 'criminalsidescaseincase':
+            name = petitioner.criminal_side_case.name if petitioner.criminal_side_case else 'Сторона'
+            role = petitioner.sides_case_criminal.sides_case if petitioner.sides_case_criminal else 'Участник'
+        else:
+            name = str(petitioner)
+            role = None
+
+        return {
+            'id': petitioner.id,
+            'type': model_name,
+            'name': name,
+            'role': role
+        }
+
     def validate(self, data):
-        """Проверка ID ходатайства"""
+        # 1. Проверка petition_id (как и раньше)
         petition_id = data.get('petition_id')
-        
         if not petition_id:
-            raise serializers.ValidationError({
-                'petition_id': 'Необходимо указать ходатайство'
-            })
-        
-        # Проверяем существование ходатайства
+            raise serializers.ValidationError({'petition_id': 'Необходимо указать ходатайство'})
         try:
             petition = Petitions.objects.get(id=petition_id)
-            data['_petition'] = petition  # Сохраняем объект для использования в create
+            data['_petition'] = petition
         except Petitions.DoesNotExist:
-            raise serializers.ValidationError({
-                'petition_id': f'Ходатайство с ID {petition_id} не найдено'
-            })
-        
+            raise serializers.ValidationError({'petition_id': f'Ходатайство с ID {petition_id} не найдено'})
+
+        # 2. Валидация заявителя (если передан)
+        petitioner_type = data.get('petitioner_type')
+        petitioner_id = data.get('petitioner_id')
+        criminal_proceedings = self.context.get('criminal_proceedings')
+
+        if petitioner_type and petitioner_id is not None:
+            # Проверяем, что тип допустим
+            if petitioner_type not in ['defendant', 'lawyer', 'side']:
+                raise serializers.ValidationError(
+                    {'petitioner_type': 'Тип стороны должен быть defendant, lawyer или side'}
+                )
+
+            # Определяем модель по типу
+            model_map = {
+                'defendant': Defendant,
+                'lawyer': LawyerCriminal,
+                'side': CriminalSidesCaseInCase
+            }
+            model = model_map[petitioner_type]
+
+            # Проверяем существование объекта и принадлежность к данному производству
+            try:
+                petitioner_obj = model.objects.get(
+                    id=petitioner_id,
+                    criminal_proceedings=criminal_proceedings
+                )
+                data['_petitioner_obj'] = petitioner_obj
+                data['_petitioner_model'] = model
+            except model.DoesNotExist:
+                raise serializers.ValidationError(
+                    {'petitioner_id': f'Сторона с ID {petitioner_id} не найдена в этом деле'}
+                )
+        else:
+            # Если переданы не оба поля, сбрасываем заявителя (можно удалить)
+            data['_petitioner_obj'] = None
+            data['_petitioner_model'] = None
+
         return data
-    
+
     def create(self, validated_data):
-        """Создать запись с ходатайством"""
-        # Извлекаем объект ходатайства
         petition = validated_data.pop('_petition')
-        validated_data.pop('petition_id', None)
+        petitioner_obj = validated_data.pop('_petitioner_obj', None)
+        petitioner_model = validated_data.pop('_petitioner_model', None)
         
-        # Получаем criminal_proceedings из контекста
+        # Убираем write_only поля
+        validated_data.pop('petition_id', None)
+        validated_data.pop('petitioner_type', None)
+        validated_data.pop('petitioner_id', None)
+
         criminal_proceedings = self.context.get('criminal_proceedings')
         if criminal_proceedings:
             validated_data['criminal_proceedings'] = criminal_proceedings
-        
-        # Создаем объект PetitionCriminal
+
+        # Если есть заявитель – заполняем content_type и object_id
+        if petitioner_obj:
+            content_type = ContentType.objects.get_for_model(petitioner_model)
+            validated_data['content_type'] = content_type
+            validated_data['object_id'] = petitioner_obj.id
+        else:
+            validated_data['content_type'] = None
+            validated_data['object_id'] = None
+
         instance = PetitionCriminal.objects.create(**validated_data)
-        
-        # Добавляем ходатайство (одно значение)
         instance.petitions_criminal.add(petition)
-        
         return instance
-    
+
     def update(self, instance, validated_data):
-        """Обновить запись с ходатайством"""
         petition = validated_data.pop('_petition', None)
+        petitioner_obj = validated_data.pop('_petitioner_obj', None)
+        petitioner_model = validated_data.pop('_petitioner_model', None)
+
         validated_data.pop('petition_id', None)
-        
+        validated_data.pop('petitioner_type', None)
+        validated_data.pop('petitioner_id', None)
+
         # Обновляем простые поля
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        # Обновляем заявителя
+        if petitioner_obj:
+            content_type = ContentType.objects.get_for_model(petitioner_model)
+            instance.content_type = content_type
+            instance.object_id = petitioner_obj.id
+        else:
+            # Если переданы пустые значения – очищаем
+            instance.content_type = None
+            instance.object_id = None
+
         instance.save()
-        
-        # Обновляем ходатайство если предоставлено новое
+
         if petition is not None:
-            instance.petitions_criminal.clear()  # Удаляем все старые ходатайства
-            instance.petitions_criminal.add(petition)  # Добавляем новое
-        
+            instance.petitions_criminal.clear()
+            instance.petitions_criminal.add(petition)
+
         return instance
-    
+
     def to_representation(self, instance):
-        """Настраиваем вывод для удобства"""
-        representation = super().to_representation(instance)
-        
-        # Добавляем имя ходатайства для удобства
+        rep = super().to_representation(instance)
+        # Добавляем имя ходатайства
         petition = instance.petitions_criminal.first()
         if petition:
-            representation['petition_name'] = petition.petitions
-        
-        return representation
+            rep['petition_name'] = petition.petitions
+        return rep
+
+
+class PetitionerInfoSerializer(serializers.Serializer):
+    """Унифицированное представление любой стороны по делу"""
+    id = serializers.IntegerField()
+    type = serializers.CharField()
+    name = serializers.CharField()
+    role = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        fields = ('id', 'type', 'name', 'role')
 
 
 class PetitionCriminalOptionsSerializer(serializers.Serializer):
@@ -467,6 +565,14 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
     criminal_decisions = CriminalDecisionSerializer(many=True, read_only=True)
     case_movement = CriminalCaseMovementSerializer(read_only=True)
     referring_authority = ReferringAuthoritySerializer(read_only=True)
+    
+    # Добавляем поля для отображения ФИО судьи
+    presiding_judge_full_name = serializers.SerializerMethodField()
+    presiding_judge_name = serializers.SerializerMethodField()
+    
+    # Добавляем поле для отображения названия органа
+    referring_authority_name = serializers.SerializerMethodField()
+    referring_authority_code = serializers.SerializerMethodField()
 
     status_display = serializers.CharField(
         source='get_status_display', 
@@ -477,6 +583,38 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
         model = CriminalProceedings
         fields = "__all__"
         read_only_fields = ("id", "created_at", "updated_at")
+    
+    def get_presiding_judge_full_name(self, obj):
+        """Получить полное ФИО председательствующего судьи"""
+        if obj.presiding_judge:
+            # Собираем ФИО из частей
+            parts = []
+            if obj.presiding_judge.last_name:
+                parts.append(obj.presiding_judge.last_name)
+            if obj.presiding_judge.first_name:
+                parts.append(obj.presiding_judge.first_name)
+            if obj.presiding_judge.middle_name:
+                parts.append(obj.presiding_judge.middle_name)
+            
+            full_name = ' '.join(parts).strip()
+            return full_name if full_name else str(obj.presiding_judge)
+        return None
+    
+    def get_presiding_judge_name(self, obj):
+        """Алиас для full_name (для обратной совместимости)"""
+        return self.get_presiding_judge_full_name(obj)
+    
+    def get_referring_authority_name(self, obj):
+        """Получить название органа, направившего материалы"""
+        if obj.referring_authority:
+            return obj.referring_authority.name
+        return None
+    
+    def get_referring_authority_code(self, obj):
+        """Получить код органа, направившего материалы"""
+        if obj.referring_authority:
+            return obj.referring_authority.code
+        return None
     
     def validate_case_number_criminal(self, value):
         # Проверка уникальности на уровне сериализатора
@@ -498,17 +636,17 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
                 'archive_notes',
                 'special_notes',
                 'case_to_archive_date',
+                'status',
             ]
             
             # Проверяем, не пытаются ли изменить запрещенные поля
             for field in data.keys():
-                if field not in editable_in_archive and field != 'status':
+                if field not in editable_in_archive:
                     raise serializers.ValidationError(
                         f"Поле '{field}' нельзя редактировать в архивном деле"
                     )
         
         return data
-
 
 
 class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):
