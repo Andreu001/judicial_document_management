@@ -557,6 +557,33 @@ class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):
             'sentence_date',
             'sentence_result',
         )
+    
+    def validate(self, data):
+        """Переопределяем валидацию для архивных дел"""
+        instance = self.instance
+        
+        if instance and instance.status == 'archived':
+            # Определяем, какие поля можно редактировать в архиве
+            editable_in_archive = [
+                'archive_notes',
+                'special_notes',
+                'case_to_archive_date',
+                'status',
+            ]
+            
+            # Проверяем, не пытаются ли изменить запрещенные поля
+            for field in data.keys():
+                if field not in editable_in_archive:
+                    raise serializers.ValidationError(
+                        f"Поле '{field}' нельзя редактировать в архивном деле"
+                    )
+        
+        return data
+    
+    # Отключаем проверку уникальности номера дела для архивных дел
+    def validate_case_number_criminal(self, value):
+        # Для архивных дел не проверяем уникальность
+        return value
 
 
 

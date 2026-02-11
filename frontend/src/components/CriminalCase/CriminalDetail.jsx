@@ -13,9 +13,10 @@ import {
   ResultTab,
   AdditionalTab
 } from './CriminalTabComponents';
+import ConfirmDialog from '../../pages/ConfirmDialog';
 
 const CriminalDetail = () => {
-  const { cardId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [criminalData, setCriminalData] = useState(null);
   const [defendants, setDefendants] = useState([]);
@@ -40,12 +41,18 @@ const CriminalDetail = () => {
   });
   const [showRulingModal, setShowRulingModal] = useState(false);
   const [rulingType, setRulingType] = useState('');
-  const [preliminaryHearingGrounds, setPreliminaryHearingGrounds] = useState([]);
   const [showRulingEditor, setShowRulingEditor] = useState(false);
   const [currentRuling, setCurrentRuling] = useState(null);
-  const [card, setCard] = useState(null);
   const [referringAuthorities, setReferringAuthorities] = useState([]);
   const [judges, setJudges] = useState([]);
+  const [isArchived, setIsArchived] = useState(false);
+
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: 'Подтверждение',
+    message: '',
+    onConfirm: null
+  });
 
   // Проверка, нужно ли показывать поле оснований предварительного слушания
   const showPreliminaryHearingGrounds = () => {
@@ -62,23 +69,23 @@ const CriminalDetail = () => {
     return formData.judge_decision === hearingAppointmentOption.value;
   };
 
-    const generateRuling = async (type) => {
-      setRulingType(type);
-      setShowRulingModal(false);
-      setShowRulingEditor(true);
-      
-      // Создаем новое постановление с шаблоном
-      setCurrentRuling(null);
-    };
+  const generateRuling = async (type) => {
+    setRulingType(type);
+    setShowRulingModal(false);
+    setShowRulingEditor(true);
+    
+    // Создаем новое постановление с шаблоном
+    setCurrentRuling(null);
+  };
 
-    const handleSaveRuling = async (rulingData) => {
+  const handleSaveRuling = async (rulingData) => {
     try {
       if (currentRuling && currentRuling.id) {
         // Обновление существующего
-        await CriminalCaseService.updateRuling(cardId, currentRuling.id, rulingData);
+        await CriminalCaseService.updateRuling(id, currentRuling.id, rulingData);
       } else {
         // Создание нового
-        await CriminalCaseService.createRuling(cardId, rulingData);
+        await CriminalCaseService.createRuling(id, rulingData);
       }
       setShowRulingEditor(false);
       setCurrentRuling(null);
@@ -153,51 +160,71 @@ const CriminalDetail = () => {
     }
   };
 
+  const handleArchive = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Отправка в архив',
+      message: 'Отправить дело в архив? После архивации дело будет доступно только в разделе "Архив".',
+      onConfirm: async () => {
+        try {
+          await CriminalCaseService.archiveCriminalProceeding(id);
+          navigate('/archive');
+        } catch (err) {
+          alert('Ошибка отправки в архив');
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  const handleUnarchive = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Возврат из архива',
+      message: 'Вернуть дело из архива?',
+      onConfirm: async () => {
+        try {
+          await CriminalCaseService.unarchiveCriminalProceeding(id);
+          const updatedData = await CriminalCaseService.getCriminalProceedingById(id);
+          setCriminalData(updatedData);
+          setFormData(updatedData);
+          setIsArchived(false);
+        } catch (err) {
+          console.error('Error unarchiving:', err);
+          alert('Ошибка возврата из архива: ' + (err.response?.data?.error || err.message));
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   useEffect(() => {
     const fetchCriminalDetails = async () => {
       try {
         setLoading(true);
-        const cardResponse = await baseService.get(`/business_card/businesscard/${cardId}/`);
-        setCard(cardResponse.data);
         
-        const criminalResponse = await CriminalCaseService.getByBusinessCardId(cardId);
+        console.log('Loading criminal details for ID:', id);
+
+        // Исправляем: добавляем правильный путь
+        const criminalResponse = await CriminalCaseService.getCriminalProceedingById(id);
         
         if (criminalResponse) {
-          const criminalDataWithCaseNumber = {
-            ...criminalResponse,
-            case_number: criminalResponse.case_number || cardResponse.data?.original_name || ''
-          };
+          console.log('Criminal data loaded:', criminalResponse);
+          setCriminalData(criminalResponse);
+          setFormData(criminalResponse);
+          setIsArchived(criminalResponse.status === 'archived');
           
-          setCriminalData(criminalDataWithCaseNumber);
-          setFormData(criminalDataWithCaseNumber);
-          
-        await fetchReferringAuthorities();
-        await fetchJudges();
-          
-          // Загрузка подсудимых (оставляем как было)
-          const defendantsResponse = await CriminalCaseService.getDefendants(cardId);
-          const defendantsWithSideNames = await Promise.all(
-            defendantsResponse.map(async (defendant) => {
-              if (defendant.side_case) {
-                try {
-                  const sideResponse = await baseService.get(`/business_card/sides/${defendant.side_case}/`);
-                  return {
-                    ...defendant,
-                    side_case_name: sideResponse.data.sides_case
-                  };
-                } catch (error) {
-                  console.error('Ошибка загрузки названия стороны:', error);
-                  return { ...defendant, side_case_name: 'Неизвестный статус' };
-                }
-              }
-              return defendant;
-            })
-          );
-          
-          setDefendants(defendantsWithSideNames);
+          // Загружаем подсудимых
+          const defendantsResponse = await CriminalCaseService.getDefendants(criminalResponse.id);
+          setDefendants(defendantsResponse);
+          console.log('Defendants loaded:', defendantsResponse.length);
+
+          await fetchReferringAuthorities();
+          await fetchJudges();
+        } else {
+          setError('Уголовное дело не найдено');
         }
-        
-        // Загрузка опций для выпадающих списков
+
         await loadOptions();
         
         setLoading(false);
@@ -207,9 +234,11 @@ const CriminalDetail = () => {
         setLoading(false);
       }
     };
-
-    fetchCriminalDetails();
-  }, [cardId]);
+    
+    if (id) {
+      fetchCriminalDetails();
+    }
+  }, [id]);
 
   const loadOptions = async () => {
     try {
@@ -229,16 +258,16 @@ const CriminalDetail = () => {
         compositionCourt: response.data.composition_court || [],
         preliminaryHearingGrounds: response.data.preliminary_hearing || [],
         preliminaryHearingGrounds: response.data.preliminary_hearing_grounds || [
-        {value: '1', label: 'ходатайство стороны об исключении доказательства (ч. 3 ст. 229 УПК РФ)'},
-        {value: '2', label: 'основание для возвращения дела прокурору (ст. 237 УПК РФ)'},
-        {value: '3', label: 'основание для приостановления или прекращения дела'},
-        {value: '4', label: 'ходатайство о проведении судебного разбирательства (ч. 5 ст. 247 УПК РФ)'},
-        {value: '5', label: 'решение вопроса о рассмотрении дела с участием присяжных заседателей'},
-        {value: '6', label: 'наличие не вступившего в силу приговора с условным осуждением'},
-        {value: '7', label: 'основание для выделения уголовного дела'},
-        {value: '8', label: 'ходатайство стороны о соединении уголовных дел'},
-        {value: '9', label: 'иные основания'},
-            ],
+          {value: '1', label: 'ходатайство стороны об исключении доказательства (ч. 3 ст. 229 УПК РФ)'},
+          {value: '2', label: 'основание для возвращения дела прокурору (ст. 237 УПК РФ)'},
+          {value: '3', label: 'основание для приостановления или прекращения дела'},
+          {value: '4', label: 'ходатайство о проведении судебного разбирательства (ч. 5 ст. 247 УПК РФ)'},
+          {value: '5', label: 'решение вопроса о рассмотрении дела с участием присяжных заседателей'},
+          {value: '6', label: 'наличие не вступившего в силу приговора с условным осуждением'},
+          {value: '7', label: 'основание для выделения уголовного дела'},
+          {value: '8', label: 'ходатайство стороны о соединении уголовных дел'},
+          {value: '9', label: 'иные основания'},
+        ],
       });
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
@@ -258,34 +287,68 @@ const CriminalDetail = () => {
       });
     }
   };
+  
   const handleFieldChange = useCallback((name, value) => {
+    // Для архивных дел разрешаем редактирование только определенных полей
+    if (isArchived && isEditing) {
+      const editableFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
+      if (!editableFields.includes(name)) {
+        alert('Это поле нельзя редактировать в архивном деле');
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  }, []);
+  }, [isArchived, isEditing]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
+    // Для архивных дел разрешаем редактирование только определенных полей
+    if (isArchived && isEditing) {
+      const editableFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
+      if (!editableFields.includes(name)) {
+        alert('Это поле нельзя редактировать в архивном деле');
+        return;
+      }
+    }
+    
     handleFieldChange(name, type === 'checkbox' ? checked : value);
-  }, [handleFieldChange]);
+  }, [handleFieldChange, isArchived, isEditing]);
 
   const handleSave = async () => {
     try {
       setSaving(true);
       
       const dataToSend = { ...formData };
-      
+
       delete dataToSend.defendants;
       delete dataToSend.criminal_decisions;
       delete dataToSend.id;
-      
-      const updatedData = await CriminalCaseService.update(cardId, dataToSend);
+      delete dataToSend.case_movement;
+
+      // Для архивных дел оставляем только разрешенные поля
+      if (isArchived) {
+        const allowedFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
+        Object.keys(dataToSend).forEach(key => {
+          if (!allowedFields.includes(key)) {
+            delete dataToSend[key];
+          }
+        });
+      }
+
+      const proceedingId = criminalData.id;
+      const updatedData = await CriminalCaseService.updateCriminalProceedings(proceedingId, dataToSend);
       
       setCriminalData(updatedData);
       setFormData(updatedData);
       setIsEditing(false);
       setSaving(false);
+      
+      // Обновляем статус архивации
+      setIsArchived(updatedData.status === 'archived');
     } catch (err) {
       console.error('Ошибка сохранения:', err);
       setError('Не удалось сохранить данные');
@@ -294,11 +357,20 @@ const CriminalDetail = () => {
   };
 
   const handleDateChange = useCallback((name, dateString) => {
+    // Для архивных дел разрешаем редактирование только определенных полей
+    if (isArchived && isEditing) {
+      const editableFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
+      if (!editableFields.includes(name)) {
+        alert('Это поле нельзя редактировать в архивном деле');
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: dateString || null
     }));
-  }, []);
+  }, [isArchived, isEditing]);
 
   const handleCancel = () => {
     setFormData(criminalData);
@@ -353,34 +425,7 @@ const CriminalDetail = () => {
     </div>
   );
 
-
-  const DefendantsTab = () => (
-    <div className={styles.tabContent}>
-      <div className={styles.defendantsSection}>
-        <h3 className={styles.subsectionTitle}>Б. Стороны по делу</h3>
-        
-        {defendants.length > 0 ? (
-          <div className={styles.defendantsGrid}>
-            {defendants.map(defendant => (
-              <div key={defendant.id} className={styles.defendantCard}>
-                <h4>{defendant.full_name}</h4>
-                <div className={styles.defendantInfo}>
-                  <p><strong>Статус:</strong> {defendant.side_case_name || 'Не указано'}</p>
-                  <p><strong>Дата рождения:</strong> {formatDate(defendant.birth_date)}</p>
-                  <p><strong>ИНН:</strong> {defendant.inn || 'Не указано'}</p>
-                  <p><strong>Адрес:</strong> {defendant.address || 'Не указано'}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={styles.noData}>Нет данных о сторонах по делу</p>
-        )}
-      </div>
-    </div>
-  );
-
-if (loading) {
+  if (loading) {
     return <div className={styles.loading}>Загрузка данных...</div>;
   }
 
@@ -402,14 +447,35 @@ if (loading) {
           >
             ← Назад
           </button>
-          <h1 className={styles.title}>Уголовное дело №{card.original_name}</h1>
+          <h1 className={styles.title}>
+            Уголовное дело №{criminalData.case_number_criminal || 'Не указано'}
+            {isArchived && <span className={styles.archiveBadge}> (АРХИВ)</span>}
+          </h1>
         </div>
         
         <div className={styles.headerRight}>
+          {isArchived ? (
+            <button 
+              onClick={handleUnarchive}
+              className={styles.unarchiveButton}
+            >
+              📤 Вернуть из архива
+            </button>
+          ) : (
+            <button 
+              onClick={handleArchive}
+              className={styles.archiveButton}
+            >
+              📁 Сдать в архив
+            </button>
+          )}
+          
           {!isEditing ? (
             <button 
               onClick={() => setIsEditing(true)} 
               className={styles.editButton}
+              disabled={isArchived}
+              title={isArchived ? "Редактирование архивных дел ограничено" : ""}
             >
               Редактировать
             </button>
@@ -439,26 +505,34 @@ if (loading) {
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
               <button 
-                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('basic')}
+                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('basic')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
                 Основные сведения
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'evidence' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('evidence')}
+                className={`${styles.tab} ${activeTab === 'evidence' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('evidence')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
                 Вещественные доказательства
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'category' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('category')}
+                className={`${styles.tab} ${activeTab === 'category' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('category')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
                 Категория и решение
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'result' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('result')}
+                className={`${styles.tab} ${activeTab === 'result' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('result')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
                 Результат и состав
               </button>
@@ -472,24 +546,23 @@ if (loading) {
             <div className={styles.tabContentWrapper}>
               {activeTab === 'basic' && (
                 <BasicInfoTab
-                  isEditing={isEditing}
+                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
                   formData={formData}
                   options={options}
                   criminalData={criminalData}
                   handleDateChange={handleDateChange}
                   formatDate={formatDate}
-                  card={card}
                   handleInputChange={handleInputChange}
                   handleFieldChange={handleFieldChange}
                   getOptionLabel={getOptionLabel}
-                  formatBoolean ={formatBoolean}
+                  formatBoolean={formatBoolean}
                   referringAuthorities={referringAuthorities}
                   judges={judges}
                 />
               )}
               {activeTab === 'evidence' && (
                 <EvidenceTab
-                  isEditing={isEditing}
+                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
                   formData={formData}
                   handleInputChange={handleInputChange}
                   formatBoolean={formatBoolean}
@@ -498,7 +571,7 @@ if (loading) {
               )}
               {activeTab === 'category' && (
                 <CaseCategoryTab
-                  isEditing={isEditing}
+                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
                   formData={formData}
                   options={options}
                   handleDateChange={handleDateChange}
@@ -513,7 +586,7 @@ if (loading) {
               )}
               {activeTab === 'result' && (
                 <ResultTab
-                  isEditing={isEditing}
+                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
                   formData={formData}
                   options={options}
                   handleInputChange={handleInputChange}
@@ -530,6 +603,7 @@ if (loading) {
                   criminalData={criminalData}
                   handleDateChange={handleDateChange}
                   formatDate={formatDate}
+                  isArchived={isArchived} // Передаем флаг архива
                 />
               )}
             </div>
@@ -559,12 +633,12 @@ if (loading) {
           </div>
 
           {/* Уведомления по делу - теперь внутри sidebar */}
-            <CriminalNotifications 
-              cardId={cardId} 
-              criminalData={criminalData} 
-            />
+          <CriminalNotifications 
+            id={id} 
+            criminalData={criminalData} 
+          />
         </div>
-      </div> {/* Закрывающий тег для .content */}
+      </div>
 
       {showRulingModal && <RulingModal />}
 
@@ -576,7 +650,7 @@ if (loading) {
               onSave={handleSaveRuling}
               onCancel={handleCancelRuling}
               templateVariables={{
-                caseNumber: criminalData.case_number,
+                caseNumber: criminalData.case_number_criminal,
                 judgeName: criminalData.judge_name,
                 incomingDate: criminalData.incoming_date,
                 defendants: defendants
@@ -586,6 +660,15 @@ if (loading) {
           </div>
         </div>
       )}
+
+      {/* Модальное окно подтверждения */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

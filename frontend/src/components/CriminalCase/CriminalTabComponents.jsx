@@ -656,14 +656,15 @@ export const AdditionalTab = ({ isEditing,
                                 handleInputChange,
                                 criminalData,
                                 handleDateChange,
-                                formatDate }) => (
+                                formatDate,
+                                isArchived = false }) => (
     <div className={styles.tabContent}>
       <div className={styles.tabGrid}>
         <div className={styles.fieldGroup}>
           <h3 className={styles.subsectionTitle}>Частные определения</h3>
           <div className={styles.field}>
             <label>Количество частных определений</label>
-            {isEditing ? (
+            {isEditing && !isArchived ? ( // Блокируем для архивных дел
               <input
                 type="number"
                 name="private_rulings_count"
@@ -678,7 +679,7 @@ export const AdditionalTab = ({ isEditing,
 
           <div className={styles.field}>
             <label>Дата вынесения частного определения</label>
-            {isEditing ? (
+            {isEditing && !isArchived ? ( // Блокируем для архивных дел
               <input
                 type="date"
                 name="private_ruling_date"
@@ -695,17 +696,47 @@ export const AdditionalTab = ({ isEditing,
         <div className={styles.fieldGroup}>
           <h3 className={styles.subsectionTitle}>Дополнительные сведения</h3>
           <div className={styles.field}>
+            <label>Дата передачи в архив</label>
+            {isEditing ? (
+              <textarea
+              type="date"
+                name="archived_date"
+                value={formData.archived_date || ''}
+                onChange={(e) => handleDateChange('archived_date', e.target.value)}
+                className={styles.textarea}
+              />
+            ) : (
+              <span>{criminalData.archived_date || 'Не указано'}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
             <label>Примечание</label>
             {isEditing ? (
               <textarea
-                name="note"
-                value={formData.note || ''}
+                name="special_notes"
+                value={formData.special_notes || ''}
                 onChange={handleInputChange}
                 className={styles.textarea}
                 rows={3}
               />
             ) : (
-              <span>{criminalData.note || 'Не указано'}</span>
+              <span>{criminalData.special_notes || 'Не указано'}</span>
+            )}
+          </div>
+          
+          <div className={styles.field}>
+            <label>Архивные примечания</label>
+            {isEditing ? (
+              <textarea
+                name="archive_notes"
+                value={formData.archive_notes || ''}
+                onChange={handleInputChange}
+                className={styles.textarea}
+                rows={3}
+              />
+            ) : (
+              <span>{criminalData.archive_notes || 'Не указано'}</span>
             )}
           </div>
 
@@ -1982,6 +2013,22 @@ export const MovementHearingTab = ({
             />
           ) : (
             <span>{formatDate(movementData.first_hearing_date)}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor="meeting_time">Время заседания:</label>
+          {isEditing ? (
+            <input
+              type="time"
+              id="meeting_time"
+              name="meeting_time"
+              value={formData.meeting_time || ''}
+              onChange={handleInputChange}
+              className={styles.input}
+            />
+          ) : (
+            <span>{(movementData.meeting_time)}</span>
           )}
         </div>
 

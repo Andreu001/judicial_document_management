@@ -1,0 +1,404 @@
+/* CriminalBusinessCard.module.css - минималистичный дизайн */
+
+.cardContainer {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+  height: 320px; /* Компактный размер */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cardContainer:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d0d0d0;
+}
+
+/* Заголовок */
+.cardHeader {
+  background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+  color: white;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.caseType {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.caseNumber {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Roboto Mono', monospace;
+}
+
+.headerMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.caseArticle {
+  font-weight: 500;
+}
+
+/* Быстрые действия */
+.quickActions {
+  display: flex;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+  gap: 8px;
+}
+
+.quickAction {
+  flex: 1;
+  padding: 6px 4px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #555;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.2s ease;
+  min-height: 36px;
+}
+
+.quickAction:hover {
+  border-color: #3498db;
+  color: #3498db;
+  background: #f8fafc;
+}
+
+.quickAction.active {
+  border-color: #3498db;
+  background: #3498db;
+  color: white;
+}
+
+.quickActionCount {
+  font-size: 12px;
+  font-weight: 700;
+  background: #3498db;
+  color: white;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quickAction.active .quickActionCount {
+  background: white;
+  color: #3498db;
+}
+
+/* Контент */
+.cardContent {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: white;
+}
+
+.summaryContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.statItem {
+  text-align: center;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.courtInfo {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+.infoLabel {
+  font-size: 10px;
+  color: #6c757d;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.infoValue {
+  font-size: 12px;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.lastActivity {
+  margin-top: auto;
+  font-size: 10px;
+  color: #95a5a6;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Вкладки с контентом */
+.tabContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tabHeader h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.addButton {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.addButton:hover {
+  background: #2980b9;
+}
+
+/* Список элементов */
+.itemsList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.compactItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
+}
+
+.compactItem:hover {
+  border-color: #3498db;
+  background: #f8fafc;
+}
+
+.compactItemContent {
+  flex: 1;
+}
+
+.compactItemTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.compactItemSubtitle {
+  font-size: 10px;
+  color: #7f8c8d;
+}
+
+.compactItemActions {
+  display: flex;
+  gap: 4px;
+}
+
+.actionButton, .deleteButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.actionButton {
+  background: #f8f9fa;
+  color: #3498db;
+}
+
+.actionButton:hover {
+  background: #3498db;
+  color: white;
+}
+
+.deleteButton {
+  background: #f8f9fa;
+  color: #e74c3c;
+}
+
+.deleteButton:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+/* Состояние пустого списка */
+.emptyState {
+  text-align: center;
+  padding: 24px 16px;
+  color: #95a5a6;
+  font-size: 12px;
+}
+
+.emptyStateButton {
+  margin-top: 8px;
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.emptyStateButton:hover {
+  background: #2980b9;
+}
+
+/* Футер */
+.cardFooter {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.primaryButton {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.primaryButton:hover {
+  background: #1a252f;
+}
+
+.footerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.dangerButton {
+  background: white;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dangerButton:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+/* Прокрутка */
+.cardContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cardContent::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.cardContent::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.cardContent::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+.addButtonsGroup {
+  display: flex;
+  gap: 4px;
+}
+
+.addButtonsGroup .addButton {
+  padding: 4px 6px;
+  font-size: 10px;
+  white-space: nowrap;
+}

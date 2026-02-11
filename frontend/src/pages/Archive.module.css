@@ -1,0 +1,536 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+  padding: 2rem;
+  margin-left: 15rem;
+  box-sizing: border-box;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 2rem 0;
+  text-align: center;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(90deg, #3498db, #2c3e50);
+  border-radius: 2px;
+}
+
+.proceedingsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.archiveCard {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(52, 152, 219, 0.1);
+  position: relative;
+}
+
+.archiveCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  border-color: rgba(52, 152, 219, 0.3);
+}
+
+.cardHeader {
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  padding: 1.5rem;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.cardHeader::before {
+  content: 'АРХИВ';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 1px;
+}
+
+.caseNumber {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.archiveDate {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.cardContent {
+  padding: 2rem;
+  background: white;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+  min-width: 140px;
+}
+
+.infoRow span:not(.label) {
+  color: #5d6d7e;
+  font-size: 0.95rem;
+  text-align: right;
+  flex: 1;
+  padding-left: 1rem;
+}
+
+/* Стили для примечаний */
+.notesDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex: 1;
+  padding-left: 1rem;
+}
+
+.notesText {
+  color: #5d6d7e;
+  font-size: 0.95rem;
+  text-align: right;
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 100%;
+}
+
+.editNotesButton {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.editNotesButton:hover {
+  background: #e9ecef;
+  border-color: #ced4da;
+  color: #212529;
+}
+
+.notesEditContainer {
+  flex: 1;
+  padding-left: 1rem;
+}
+
+.notesTextarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #495057;
+  background: #f8f9fa;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease;
+}
+
+.notesTextarea:focus {
+  outline: none;
+  border-color: #3498db;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.notesTextarea:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+}
+
+.notesEditActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  justify-content: flex-end;
+}
+
+.saveButton {
+  background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #219a52 0%, #1a7a3f 100%);
+  transform: translateY(-1px);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cardActions {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.viewButton {
+  flex: 1;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  padding: 0.9rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.viewButton:hover {
+  background: linear-gradient(135deg, #2980b9 0%, #1c5a7a 100%);
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+}
+
+.viewButton::before {
+  content: '👁️';
+}
+
+.unarchiveButton {
+  flex: 1;
+  background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+  color: white;
+  border: none;
+  padding: 0.9rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.unarchiveButton:hover {
+  background: linear-gradient(135deg, #219a52 0%, #1a7a3f 100%);
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+}
+
+.unarchiveButton::before {
+  content: '↩️';
+}
+
+.emptyArchive {
+  text-align: center;
+  padding: 6rem 2rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  margin: 2rem auto;
+  max-width: 600px;
+  border: 2px dashed #e0e6ed;
+}
+
+.emptyArchive p {
+  font-size: 1.3rem;
+  color: #7f8c8d;
+  margin: 0;
+  font-weight: 500;
+}
+
+.emptyArchive::before {
+  content: '📁';
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 1.2rem;
+  color: #3498db;
+  font-weight: 500;
+}
+
+.loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  margin-left: 15px;
+  animation: spin 1s linear infinite;
+}
+
+.error {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #ffeaea;
+  border-radius: 15px;
+  color: #e74c3c;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 2rem auto;
+  max-width: 500px;
+  border: 1px solid #ffcccc;
+}
+
+.error::before {
+  content: '⚠️';
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* Анимация загрузки */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Анимация появления карточек */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.proceedingsList > * {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .container {
+    margin-left: 5rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .proceedingsList {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0.5rem;
+  }
+  
+  .cardActions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .archiveCard {
+    border-radius: 12px;
+  }
+  
+  .infoRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .label {
+    min-width: auto;
+  }
+  
+  .notesDisplay,
+  .notesEditContainer {
+    padding-left: 0;
+    margin-top: 0.5rem;
+  }
+  
+  .notesTextarea {
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardHeader {
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: flex-start;
+  }
+  
+  .infoRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .infoRow span:not(.label) {
+    text-align: left;
+    padding-left: 0;
+  }
+  
+  .caseNumber {
+    font-size: 1.1rem;
+  }
+  
+  .notesEditActions {
+    flex-direction: column;
+  }
+  
+  .saveButton,
+  .cancelButton {
+    width: 100%;
+  }
+}
+/* Стили для редактируемых полей */
+.editableFields {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.fieldGroup {
+    margin-bottom: 15px;
+}
+
+.fieldLabel {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.notesRow {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.notesRow .label {
+    min-width: 200px;
+    font-weight: 600;
+    color: #333;
+}
+
+.notesText {
+    flex: 1;
+    color: #666;
+    line-height: 1.4;
+}
+
+.dateInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.dateInput:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.dateInput:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}

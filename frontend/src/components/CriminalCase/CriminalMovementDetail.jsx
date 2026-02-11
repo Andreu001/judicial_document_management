@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './MovementDetail.module.css';
+import styles from './CriminalMovementDetail.module.css';
 import {
   MovementHearingTab,
   MovementComplianceTab,
   MovementPostponementTab
 } from './CriminalTabComponents';
 
-const MovementDetail = () => {
+const CriminalMovementDetail = () => {
   const { cardId, moveId } = useParams();
   const navigate = useNavigate();
   const [movementData, setMovementData] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(moveId === 'create'); // Режим редактирования для создания
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,18 +26,14 @@ const MovementDetail = () => {
   });
   const [defendants, setDefendants] = useState([]);
   const [activeTab, setActiveTab] = useState('hearing');
+  
+  // Определяем режим: создание или редактирование
+  const isCreateMode = moveId === 'create';
 
   useEffect(() => {
-    const fetchMovementDetails = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        
-        const movementResponse = await CriminalCaseService.getMoveById(cardId, moveId);
-        
-        if (movementResponse) {
-          setMovementData(movementResponse);
-          setFormData(movementResponse);
-        }
         
         // Загрузка опций для выпадающих списков
         await loadOptions();
@@ -45,16 +41,38 @@ const MovementDetail = () => {
         // Загрузка обвиняемых
         await loadDefendants();
         
+        // Если это режим редактирования (не создание), загружаем существующие данные
+        if (!isCreateMode) {
+          const movementResponse = await CriminalCaseService.getCaseMovementById(cardId, moveId);
+          
+          if (movementResponse) {
+            setMovementData(movementResponse);
+            setFormData(movementResponse);
+          } else {
+            setError('Движение дела не найдено');
+          }
+        } else {
+          // Для режима создания инициализируем пустую форму
+          setFormData({
+            criminal_proceedings: cardId,
+            // Другие поля можно инициализировать по умолчанию
+          });
+          setIsEditing(true); // Автоматически переходим в режим редактирования при создании
+        }
+        
         setLoading(false);
       } catch (err) {
-        console.error('Ошибка загрузки данных движения:', err);
-        setError('Не удалось загрузить данные движения');
+        console.error('Ошибка загрузки данных:', err);
+        // Если это 404 при создании, это нормально
+        if (!isCreateMode || err.response?.status !== 404) {
+          setError('Не удалось загрузить данные');
+        }
         setLoading(false);
       }
     };
 
-    fetchMovementDetails();
-  }, [cardId, moveId]);
+    fetchData();
+  }, [cardId, moveId, isCreateMode]);
 
   const loadDefendants = async () => {
     try {
@@ -121,12 +139,23 @@ const MovementDetail = () => {
       setSaving(true);
       
       const dataToSend = { ...formData };
+
+      // Удаляем системные поля
       delete dataToSend.id;
       delete dataToSend.business_card;
       delete dataToSend.created_at;
       delete dataToSend.updated_at;
       
-      const updatedData = await CriminalCaseService.updateMove(cardId, moveId, dataToSend);
+      let updatedData;
+      
+      if (isCreateMode) {
+        // ВСЕГДА создаем новое движение при нажатии "Добавить"
+        updatedData = await CriminalCaseService.createCaseMovement(cardId, dataToSend);
+        navigate(-1);
+      } else {
+        // Режим редактирования существующего движения
+        updatedData = await CriminalCaseService.updateCaseMovement(cardId, moveId, dataToSend);
+      }
       
       setMovementData(updatedData);
       setFormData(updatedData);
@@ -147,8 +176,14 @@ const MovementDetail = () => {
   };
 
   const handleCancel = () => {
-    setFormData(movementData);
-    setIsEditing(false);
+    if (isCreateMode) {
+      // При отмене создания возвращаемся назад
+      navigate(-1);
+    } else {
+      // При отмене редактирования восстанавливаем исходные данные
+      setFormData(movementData);
+      setIsEditing(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -172,7 +207,7 @@ const MovementDetail = () => {
     );
   }
 
-  if (error) {
+  if (error && !isCreateMode) {
     return (
       <div className={styles.container}>
         <div className={styles.error}>{error}</div>
@@ -183,7 +218,8 @@ const MovementDetail = () => {
     );
   }
 
-  if (!movementData) {
+  // Для режима создания показываем форму даже если movementData пустой
+  if (!isCreateMode && !movementData) {
     return (
       <div className={styles.container}>
         <div className={styles.error}>Данные движения не найдены</div>
@@ -201,18 +237,20 @@ const MovementDetail = () => {
           <button onClick={() => navigate(-1)} className={styles.backButton}>
             ← Назад
           </button>
-          <h1 className={styles.title}>Движение дела</h1>
+          <h1 className={styles.title}>
+            {isCreateMode ? 'Создание движения дела' : 'Движение дела'}
+          </h1>
         </div>
         
         <div className={styles.headerRight}>
-          {!isEditing ? (
+          {!isEditing && !isCreateMode ? (
             <button onClick={() => setIsEditing(true)} className={styles.editButton}>
               Редактировать
             </button>
           ) : (
             <div className={styles.editButtons}>
               <button onClick={handleSave} className={styles.saveButton} disabled={saving}>
-                {saving ? 'Сохранение...' : 'Сохранить'}
+                {saving ? 'Сохранение...' : (isCreateMode ? 'Создать' : 'Сохранить')}
               </button>
               <button onClick={handleCancel} className={styles.cancelButton}>
                 Отмена
@@ -250,7 +288,7 @@ const MovementDetail = () => {
             <div className={styles.tabContentWrapper}>
               {activeTab === 'hearing' && (
                 <MovementHearingTab
-                  isEditing={isEditing}
+                  isEditing={isEditing || isCreateMode}
                   formData={formData}
                   options={options}
                   handleInputChange={handleInputChange}
@@ -259,21 +297,23 @@ const MovementDetail = () => {
                   handleDateChange={handleDateChange}
                   formatDate={formatDate}
                   formatBoolean={formatBoolean}
+                  isCreateMode={isCreateMode}
                 />
               )}
               {activeTab === 'compliance' && (
                 <MovementComplianceTab
-                  isEditing={isEditing}
+                  isEditing={isEditing || isCreateMode}
                   formData={formData}
                   options={options}
                   handleInputChange={handleInputChange}
                   getOptionLabel={getOptionLabel}
                   movementData={movementData}
+                  isCreateMode={isCreateMode}
                 />
               )}
               {activeTab === 'postponement' && (
                 <MovementPostponementTab
-                  isEditing={isEditing}
+                  isEditing={isEditing || isCreateMode}
                   formData={formData}
                   options={options}
                   handleInputChange={handleInputChange}
@@ -281,6 +321,7 @@ const MovementDetail = () => {
                   movementData={movementData}
                   handleDateChange={handleDateChange}
                   formatDate={formatDate}
+                  isCreateMode={isCreateMode}
                 />
               )}
             </div>
@@ -308,21 +349,23 @@ const MovementDetail = () => {
             )}
           </div>
           
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Информация о движении</h2>
-            <div className={styles.infoField}>
-              <label>Дата создания:</label>
-              <span>{formatDate(movementData.created_at)}</span>
+          {!isCreateMode && movementData && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Информация о движении</h2>
+              <div className={styles.infoField}>
+                <label>Дата создания:</label>
+                <span>{formatDate(movementData.created_at)}</span>
+              </div>
+              <div className={styles.infoField}>
+                <label>Последнее обновление:</label>
+                <span>{formatDate(movementData.updated_at)}</span>
+              </div>
             </div>
-            <div className={styles.infoField}>
-              <label>Последнее обновление:</label>
-              <span>{formatDate(movementData.updated_at)}</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default MovementDetail;
+export default CriminalMovementDetail;

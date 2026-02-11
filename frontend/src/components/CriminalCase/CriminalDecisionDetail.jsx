@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
 import styles from './CriminalDecisionDetail.module.css';
@@ -12,12 +12,24 @@ import {
 } from './CriminalTabComponents';
 
 const CriminalDecisionDetail = () => {
-  const { cardId, decisionId } = useParams();
+  const { id, proceedingId } = useParams(); // получаем оба параметра
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const isCreateMode = location.pathname.includes('/create');
   const [decisionData, setDecisionData] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(isCreateMode); // в режиме создания сразу редактируем
+  const [formData, setFormData] = useState({
+    // начальные данные для нового решения
+    appeal_present: null,
+    appeal_date: null,
+    appeal_number: '',
+    appeal_consideration_result: null,
+    appeal_consideration_date: null,
+    appeal_consideration_time: null,
+    criminal_proceedings: proceedingId // автоматически заполняем ID производства
+  });
+  const [loading, setLoading] = useState(!isCreateMode); // загрузка только если не режим создания
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState({
@@ -30,57 +42,47 @@ const CriminalDecisionDetail = () => {
   const [activeTab, setActiveTab] = useState('appeal');
 
   useEffect(() => {
-    const fetchDecisionDetails = async () => {
-      try {
-        setLoading(true);
-        
-        const decisionResponse = await CriminalCaseService.getDecisionById(cardId, decisionId);
-        
-        if (decisionResponse) {
-          setDecisionData(decisionResponse);
-          setFormData(decisionResponse);
-        }
-        
-        // Загрузка опций для выпадающих списков
-        await loadOptions();
-        
-        // Загрузка обвиняемых
-        await loadDefendants();
-        
-        setLoading(false);
-      } catch (err) {
-        console.error('Ошибка загрузки данных судебного решения:', err);
-        setError('Не удалось загрузить данные судебного решения');
-        setLoading(false);
+    if (isCreateMode) {
+      // В режиме создания просто загружаем опции и подсудимых
+      loadOptions();
+      if (proceedingId) {
+        loadDefendants(proceedingId);
       }
-    };
+      setLoading(false);
+    } else {
+      // В режиме просмотра/редактирования загружаем данные решения
+      fetchDecisionDetails();
+    }
+  }, [id, proceedingId, isCreateMode]);
 
-    fetchDecisionDetails();
-  }, [decisionId]);
-
-    const loadDefendants = async () => {
+  const fetchDecisionDetails = async () => {
     try {
-      const defendantsResponse = await CriminalCaseService.getDefendants(cardId);
+      setLoading(true);
       
-      const defendantsWithSideNames = await Promise.all(
-        defendantsResponse.map(async (defendant) => {
-          if (defendant.side_case) {
-            try {
-              const sideResponse = await baseService.get(`/business_card/sides/${defendant.side_case}/`);
-              return {
-                ...defendant,
-                side_case_name: sideResponse.data.sides_case
-              };
-            } catch (error) {
-              console.error('Ошибка загрузки названия стороны:', error);
-              return { ...defendant, side_case_name: 'Неизвестный статус' };
-            }
-          }
-          return defendant;
-        })
-      );
+      const decisionResponse = await CriminalCaseService.getDecisionById(proceedingId, id);
       
-      setDefendants(defendantsWithSideNames);
+      if (decisionResponse) {
+        setDecisionData(decisionResponse);
+        setFormData(decisionResponse);
+
+        if (decisionResponse.criminal_proceedings) {
+          await loadDefendants(decisionResponse.criminal_proceedings);
+        }
+      }
+      
+      await loadOptions();
+      setLoading(false);
+    } catch (err) {
+      console.error('Ошибка загрузки данных судебного решения:', err);
+      setError('Не удалось загрузить данные судебного решения');
+      setLoading(false);
+    }
+  };
+
+  const loadDefendants = async (proceedingId) => {
+    try {
+      const defendantsResponse = await CriminalCaseService.getDefendants(proceedingId);
+      setDefendants(defendantsResponse);
     } catch (error) {
       console.error('Ошибка загрузки обвиняемых:', error);
       setDefendants([]);
@@ -89,7 +91,6 @@ const CriminalDecisionDetail = () => {
 
   const loadOptions = async () => {
     try {
-      // Загрузка всех опций из одного эндпоинта для CriminalDecision
       const response = await baseService.get('/criminal_proceedings/criminal-decision-options/');
       
       setOptions({
@@ -100,7 +101,6 @@ const CriminalDecisionDetail = () => {
       });
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
-      // Устанавливаем пустые массивы вместо ошибки
       setOptions({
         appeal_present: [],
         court_instance: [],
@@ -123,16 +123,27 @@ const CriminalDecisionDetail = () => {
       setSaving(true);
       
       const dataToSend = { ...formData };
-      delete dataToSend.id;
-      delete dataToSend.criminal_proceedings;
-      delete dataToSend.created_at;
-      delete dataToSend.updated_at;
       
-      const updatedData = await CriminalCaseService.updateDecision(decisionId, dataToSend);
+      if (isCreateMode) {
+        // Создание нового решения
+        const createdData = await CriminalCaseService.createDecision(proceedingId, dataToSend);
+        setDecisionData(createdData);
+        setFormData(createdData);
+        // Перенаправляем на страницу созданного решения
+        navigate(-1);
+      } else {
+        // Обновление существующего решения
+        delete dataToSend.id;
+        delete dataToSend.criminal_proceedings;
+        delete dataToSend.created_at;
+        delete dataToSend.updated_at;
+        
+        const updatedData = await CriminalCaseService.updateDecision(proceedingId, id, dataToSend);
+        setDecisionData(updatedData);
+        setFormData(updatedData);
+        setIsEditing(false);
+      }
       
-      setDecisionData(updatedData);
-      setFormData(updatedData);
-      setIsEditing(false);
       setSaving(false);
     } catch (err) {
       console.error('Ошибка сохранения:', err);
@@ -149,17 +160,19 @@ const CriminalDecisionDetail = () => {
   };
 
   const handleCancel = () => {
-    setFormData(decisionData);
-    setIsEditing(false);
+    if (isCreateMode) {
+      // В режиме создания возвращаемся назад
+      navigate(-1);
+    } else {
+      // В режиме редактирования отменяем изменения
+      setFormData(decisionData);
+      setIsEditing(false);
+    }
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Не указано';
     return new Date(dateString).toLocaleDateString('ru-RU');
-  };
-
-  const formatBoolean = (value) => {
-    return value ? 'Да' : 'Нет';
   };
 
   const getOptionLabel = (optionsArray, value) => {
@@ -185,17 +198,6 @@ const CriminalDecisionDetail = () => {
     );
   }
 
-  if (!decisionData) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>Данные судебного решения не найдены</div>
-        <button onClick={() => navigate(-1)} className={styles.backButton}>
-          Назад
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -203,21 +205,23 @@ const CriminalDecisionDetail = () => {
           <button onClick={() => navigate(-1)} className={styles.backButton}>
             ← Назад
           </button>
-          <h1 className={styles.title}>Судебное решение</h1>
+          <h1 className={styles.title}>
+            {isCreateMode ? 'Создание судебного решения' : 'Судебное решение'}
+          </h1>
         </div>
         
         <div className={styles.headerRight}>
-          {!isEditing ? (
+          {!isCreateMode && !isEditing ? (
             <button onClick={() => setIsEditing(true)} className={styles.editButton}>
               Редактировать
             </button>
           ) : (
             <div className={styles.editButtons}>
               <button onClick={handleSave} className={styles.saveButton} disabled={saving}>
-                {saving ? 'Сохранение...' : 'Сохранить'}
+                {saving ? 'Сохранение...' : isCreateMode ? 'Создать' : 'Сохранить'}
               </button>
               <button onClick={handleCancel} className={styles.cancelButton}>
-                Отмена
+                {isCreateMode ? 'Отмена' : 'Отменить'}
               </button>
             </div>
           )}
@@ -264,7 +268,7 @@ const CriminalDecisionDetail = () => {
             <div className={styles.tabContentWrapper}>
               {activeTab === 'appeal' && (
                  <AppealTab
-                    isEditing={isEditing}
+                    isEditing={isEditing || isCreateMode}
                     formData={formData}
                     options={options}
                     handleInputChange={handleInputChange}
@@ -276,7 +280,7 @@ const CriminalDecisionDetail = () => {
                 )}
               {activeTab === 'court' && (
                 <CourtInstanceTab
-                    isEditing={isEditing}
+                    isEditing={isEditing || isCreateMode}
                     formData={formData}
                     options={options}
                     handleInputChange={handleInputChange}
@@ -287,7 +291,7 @@ const CriminalDecisionDetail = () => {
                 />)}
               {activeTab === 'consideration' && (
                 <ConsiderationTab
-                    isEditing={isEditing}
+                    isEditing={isEditing || isCreateMode}
                     formData={formData}
                     options={options}
                     handleInputChange={handleInputChange}
@@ -298,7 +302,7 @@ const CriminalDecisionDetail = () => {
                 />)}
               {activeTab === 'execution' && (
                 <ExecutionTab
-                    isEditing={isEditing}
+                    isEditing={isEditing || isCreateMode}
                     formData={formData}
                     options={options}
                     handleInputChange={handleInputChange}
@@ -309,7 +313,7 @@ const CriminalDecisionDetail = () => {
                 />)}
               {activeTab === 'special' && (
                 <SpecialMarksTab
-                    isEditing={isEditing}
+                    isEditing={isEditing || isCreateMode}
                     formData={formData}
                     handleInputChange={handleInputChange}
                     decisionData={decisionData}

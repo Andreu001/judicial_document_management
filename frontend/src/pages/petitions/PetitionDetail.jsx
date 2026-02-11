@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import baseService from '../../API/baseService';
 import styles from './PetitionDetail.module.css';
+import PetitionService from '../../API/PetitionService';
 
 const PetitionDetail = () => {
-  const { cardId, petitionId } = useParams();
+  const { cardId, petitionId, proceedingId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Определяем, это уголовное или гражданское дело
+  const isCriminal = location.pathname.includes('criminal-proceedings');
+  const currentCardId = isCriminal ? proceedingId : cardId;
+  
   const [petitionData, setPetitionData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -23,39 +30,58 @@ const PetitionDetail = () => {
     console.log('DEBUG - Параметры URL:', { 
       cardId, 
       petitionId,
+      proceedingId,
+      isCriminal,
+      currentCardId,
       fullPathname: window.location.pathname 
     });
-  }, [cardId, petitionId]);
+  }, [cardId, petitionId, proceedingId]);
 
   useEffect(() => {
     const fetchPetitionDetails = async () => {
       try {
         setLoading(true);
         
-        // Загружаем данные ходатайства
-        const petitionResponse = await baseService.get(
-          `/business_card/businesscard/${cardId}/petitionsincase/${petitionId}/`
-        );
+        let petitionResponse;
+        let sidesListData = [];
         
-        // ПАРАЛЛЕЛЬНО загружаем списки для выбора
+        if (isCriminal) {
+          // Загружаем данные уголовного ходатайства
+          if (petitionId && petitionId !== 'create') {
+            petitionResponse = await baseService.get(
+              `/business_card/criminalproceedings/${currentCardId}/petitionsincase/${petitionId}/`
+            );
+          }
+          
+          // Загружаем стороны/обвиняемых для уголовного дела
+          sidesListData = await getCriminalSides(currentCardId);
+          
+        } else {
+          // Загружаем данные гражданского ходатайства
+          petitionResponse = await baseService.get(
+            `/business_card/businesscard/${currentCardId}/petitionsincase/${petitionId}/`
+          );
+          
+          // Загружаем стороны для гражданского дела
+          sidesListData = await getSidesOrDefendants(currentCardId);
+        }
+        
+        // ПАРАЛЛЕЛЬНО загружаем общие списки для выбора
         const [
           petitionsResponse,
           decisionsResponse,
-          sidesResponse
         ] = await Promise.all([
           baseService.get('/business_card/petitions/'),
           baseService.get('/business_card/decisions/'),
-          // Пробуем оба варианта - сначала стороны, потом обвиняемых
-          getSidesOrDefendants(cardId)
         ]);
         
         // Устанавливаем списки для выбора
         setPetitionsList(petitionsResponse.data || []);
         setDecisionsList(decisionsResponse.data || []);
-        setSidesList(sidesResponse || []);
+        setSidesList(sidesListData || []);
         
         // Устанавливаем данные ходатайства
-        if (petitionResponse.data) {
+        if (petitionResponse && petitionResponse.data) {
           const data = petitionResponse.data;
           console.log('Загруженные данные ходатайства:', data);
           setPetitionData(data);
@@ -77,6 +103,21 @@ const PetitionDetail = () => {
           };
           
           setFormData(formDataToSet);
+        } else if (petitionId === 'create') {
+          // Если создаем новое ходатайство, инициализируем пустую форму
+          setPetitionData({
+            id: 'new',
+            date_application: new Date().toISOString().split('T')[0]
+          });
+          
+          setFormData({
+            petitions_name: '',
+            notification_parties: '',
+            date_application: new Date().toISOString().split('T')[0],
+            decision_rendered: '',
+            date_decision: '',
+            notation: '',
+          });
         }
         
         setLoading(false);
@@ -88,15 +129,82 @@ const PetitionDetail = () => {
     };
 
     fetchPetitionDetails();
-  }, [cardId, petitionId]);
+  }, [currentCardId, petitionId, isCriminal]);
 
-  // Функция для получения сторон или обвиняемых
+  // Функция для получения сторон для уголовного дела
+  const getCriminalSides = async (proceedingId) => {
+    try {
+      // Загружаем обвиняемых
+      const defendantsResponse = await baseService.get(
+        `/criminal_proceedings/businesscard/${proceedingId}/defendants/`
+      );
+      
+      // Загружаем адвокатов
+      const lawyersResponse = await baseService.get(
+        `/business_card/criminalproceedings/${proceedingId}/sidescaseincase/`
+      );
+      
+      // Загружаем другие стороны
+      const otherSidesResponse = await baseService.get(
+        `/business_card/criminalproceedings/${proceedingId}/sidesincase/`
+      );
+      
+      const allSides = [];
+      
+      // Преобразуем обвиняемых
+      if (defendantsResponse.data) {
+        defendantsResponse.data.forEach(defendant => {
+          allSides.push({
+            id: defendant.id,
+            name: defendant.full_name || 'Неизвестный',
+            type: 'defendant',
+            full_name: defendant.full_name,
+            side_case_name: defendant.side_case_name || 'Обвиняемый'
+          });
+        });
+      }
+      
+      // Преобразуем адвокатов
+      if (lawyersResponse.data) {
+        lawyersResponse.data.forEach(lawyer => {
+          allSides.push({
+            id: lawyer.id,
+            name: lawyer.law_firm_name || 'Адвокат',
+            type: 'lawyer',
+            law_firm_name: lawyer.law_firm_name,
+            sides_case_name: 'Адвокат'
+          });
+        });
+      }
+      
+      // Преобразуем другие стороны
+      if (otherSidesResponse.data) {
+        otherSidesResponse.data.forEach(side => {
+          allSides.push({
+            id: side.id,
+            name: side.name || 'Сторона',
+            type: 'side',
+            sides_case_name: side.sides_case_name || 'Сторона'
+          });
+        });
+      }
+      
+      console.log('Загружены стороны для уголовного дела:', allSides);
+      return allSides;
+      
+    } catch (error) {
+      console.error('Ошибка загрузки сторон уголовного дела:', error);
+      return [];
+    }
+  };
+
+  // Функция для получения сторон или обвиняемых для гражданского дела
   const getSidesOrDefendants = async (cardId) => {
     try {
       // Сначала пробуем загрузить стороны
       console.log('Пытаемся загрузить стороны...');
       const sidesResponse = await baseService.get(
-        `http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`
+        `/business_card/businesscard/${cardId}/sidescaseincase/`
       );
       
       if (sidesResponse.data && sidesResponse.data.length > 0) {
@@ -107,7 +215,7 @@ const PetitionDetail = () => {
       // Если сторон нет, пробуем загрузить обвиняемых
       console.log('Сторон нет, пытаемся загрузить обвиняемых...');
       const defendantsResponse = await baseService.get(
-        `http://localhost:8000/criminal_proceedings/businesscard/${cardId}/defendants/`
+        `/criminal_proceedings/businesscard/${cardId}/defendants/`
       );
       
       if (defendantsResponse.data && defendantsResponse.data.length > 0) {
@@ -151,37 +259,70 @@ const PetitionDetail = () => {
         decision_rendered: formData.decision_rendered ? [parseInt(formData.decision_rendered, 10)] : [],
         date_decision: formData.date_decision || '',
         notation: formData.notation || '',
-        business_card: parseInt(cardId, 10),
       };
+      
+      // Добавляем связь с делом
+      if (isCriminal) {
+        dataToSend.criminal_proceedings = parseInt(currentCardId, 10);
+      } else {
+        dataToSend.business_card = parseInt(currentCardId, 10);
+      }
       
       console.log('Отправляемые данные:', dataToSend);
       
-      const updatedData = await baseService.patch(
-        `/business_card/businesscard/${cardId}/petitionsincase/${petitionId}/`, 
-        dataToSend
-      );
+      let updatedData;
       
-      setPetitionData(updatedData.data);
+      if (isCriminal) {
+        if (petitionId === 'create') {
+          // Создаем новое уголовное ходатайство
+          updatedData = await PetitionService.createCriminalPetition(currentCardId, dataToSend);
+        } else {
+          // Обновляем существующее уголовное ходатайство
+          updatedData = await PetitionService.updateCriminalPetition(currentCardId, petitionId, dataToSend);
+        }
+      } else {
+        if (petitionId === 'create') {
+          // Создаем новое гражданское ходатайство
+          updatedData = await baseService.post(
+            `/business_card/businesscard/${currentCardId}/petitionsincase/`,
+            dataToSend
+          );
+        } else {
+          // Обновляем существующее гражданское ходатайство
+          updatedData = await baseService.patch(
+            `/business_card/businesscard/${currentCardId}/petitionsincase/${petitionId}/`, 
+            dataToSend
+          );
+        }
+        updatedData = updatedData.data;
+      }
+      
+      setPetitionData(updatedData);
       
       // Обновляем formData с преобразованными данными
       const updatedFormData = {
-        petitions_name: updatedData.data.petitions_name?.[0]?.id || 
-                       updatedData.data.petitions_name?.[0] || 
-                       updatedData.data.petitions_name || '',
-        notification_parties: updatedData.data.notification_parties?.[0]?.id || 
-                            updatedData.data.notification_parties?.[0] || 
-                            updatedData.data.notification_parties || '',
-        date_application: updatedData.data.date_application || '',
-        decision_rendered: updatedData.data.decision_rendered?.[0]?.id || 
-                         updatedData.data.decision_rendered?.[0] || 
-                         updatedData.data.decision_rendered || '',
-        date_decision: updatedData.data.date_decision || '',
-        notation: updatedData.data.notation || '',
+        petitions_name: updatedData.petitions_name?.[0]?.id || 
+                       updatedData.petitions_name?.[0] || 
+                       updatedData.petitions_name || '',
+        notification_parties: updatedData.notification_parties?.[0]?.id || 
+                            updatedData.notification_parties?.[0] || 
+                            updatedData.notification_parties || '',
+        date_application: updatedData.date_application || '',
+        decision_rendered: updatedData.decision_rendered?.[0]?.id || 
+                         updatedData.decision_rendered?.[0] || 
+                         updatedData.decision_rendered || '',
+        date_decision: updatedData.date_decision || '',
+        notation: updatedData.notation || '',
       };
       
       setFormData(updatedFormData);
       setIsEditing(false);
       setSaving(false);
+      
+      // Если создавали новое, перенаправляем на страницу редактирования
+      if (petitionId === 'create') {
+        navigate(`/criminal-proceedings/${currentCardId}/petitionsincase/${updatedData.id}`);
+      }
       
     } catch (err) {
       console.error('Ошибка сохранения:', err);
@@ -209,6 +350,11 @@ const PetitionDetail = () => {
       setFormData(originalFormData);
     }
     setIsEditing(false);
+    
+    // Если отменяем создание, возвращаемся назад
+    if (petitionId === 'create') {
+      navigate(-1);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -270,6 +416,9 @@ const PetitionDetail = () => {
     } else if (side.name) {
       // Это сторона
       return `${side.name} ${side.sides_case_name ? `(${side.sides_case_name})` : ''}`;
+    } else if (side.law_firm_name) {
+      // Это адвокат
+      return `${side.law_firm_name} (Адвокат)`;
     }
     return 'Неизвестный';
   };
@@ -293,7 +442,7 @@ const PetitionDetail = () => {
     );
   }
 
-  if (!petitionData) {
+  if (!petitionData && petitionId !== 'create') {
     return (
       <div className={styles.container}>
         <div className={styles.error}>Данные ходатайства не найдены</div>
@@ -304,6 +453,11 @@ const PetitionDetail = () => {
     );
   }
 
+  const isCreateMode = petitionId === 'create';
+  const pageTitle = isCreateMode 
+    ? 'Создание ходатайства' 
+    : 'Ходатайство по делу';
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -311,18 +465,18 @@ const PetitionDetail = () => {
           <button onClick={() => navigate(-1)} className={styles.backButton}>
             ← Назад
           </button>
-          <h1 className={styles.title}>Ходатайство по делу</h1>
+          <h1 className={styles.title}>{pageTitle}</h1>
         </div>
         
         <div className={styles.headerRight}>
-          {!isEditing ? (
+          {!isEditing && !isCreateMode ? (
             <button onClick={() => setIsEditing(true)} className={styles.editButton}>
               Редактировать
             </button>
           ) : (
             <div className={styles.editButtons}>
               <button onClick={handleSave} className={styles.saveButton} disabled={saving}>
-                {saving ? 'Сохранение...' : 'Сохранить'}
+                {saving ? 'Сохранение...' : isCreateMode ? 'Создать' : 'Сохранить'}
               </button>
               <button onClick={handleCancel} className={styles.cancelButton}>
                 Отмена
@@ -341,7 +495,7 @@ const PetitionDetail = () => {
             <div className={styles.formGrid}>
               <div className={styles.field}>
                 <label htmlFor="petitions_name">Ходатайство *</label>
-                {isEditing ? (
+                {isEditing || isCreateMode ? (
                   <select
                     id="petitions_name"
                     name="petitions_name"
@@ -365,7 +519,7 @@ const PetitionDetail = () => {
 
               <div className={styles.field}>
                 <label htmlFor="notification_parties">Сторона подавшая ходатайство *</label>
-                {isEditing ? (
+                {isEditing || isCreateMode ? (
                   <select
                     id="notification_parties"
                     name="notification_parties"
@@ -389,7 +543,7 @@ const PetitionDetail = () => {
 
               <div className={styles.field}>
                 <label htmlFor="date_application">Дата поступления *</label>
-                {isEditing ? (
+                {isEditing || isCreateMode ? (
                   <input
                     type="date"
                     id="date_application"
@@ -413,7 +567,7 @@ const PetitionDetail = () => {
             <div className={styles.formGrid}>
               <div className={styles.field}>
                 <label htmlFor="decision_rendered">Решение по ходатайству</label>
-                {isEditing ? (
+                {isEditing || isCreateMode ? (
                   <select
                     id="decision_rendered"
                     name="decision_rendered"
@@ -436,7 +590,7 @@ const PetitionDetail = () => {
 
               <div className={styles.field}>
                 <label htmlFor="date_decision">Дата вынесения решения</label>
-                {isEditing ? (
+                {isEditing || isCreateMode ? (
                   <input
                     type="date"
                     id="date_decision"
@@ -458,7 +612,7 @@ const PetitionDetail = () => {
             
             <div className={styles.field}>
               <label htmlFor="notation">Примечание</label>
-              {isEditing ? (
+              {isEditing || isCreateMode ? (
                 <textarea
                   id="notation"
                   name="notation"
@@ -475,28 +629,30 @@ const PetitionDetail = () => {
           </div>
 
           {/* Служебная информация */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Служебная информация</h2>
-            
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label>ID ходатайства</label>
-                <span className={styles.readonly}>{petitionData.id}</span>
-              </div>
-
-              <div className={styles.field}>
-                <label>ID карточки дела</label>
-                <span className={styles.readonly}>{cardId}</span>
-              </div>
-
-              {petitionData.business_card && (
+          {!isCreateMode && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Служебная информация</h2>
+              
+              <div className={styles.formGrid}>
                 <div className={styles.field}>
-                  <label>Номер дела</label>
-                  <span className={styles.readonly}>{petitionData.business_card.original_name}</span>
+                  <label>ID ходатайства</label>
+                  <span className={styles.readonly}>{petitionData.id}</span>
                 </div>
-              )}
+
+                <div className={styles.field}>
+                  <label>ID дела</label>
+                  <span className={styles.readonly}>{currentCardId}</span>
+                </div>
+
+                <div className={styles.field}>
+                  <label>Тип дела</label>
+                  <span className={styles.readonly}>
+                    {isCriminal ? 'Уголовное' : 'Гражданское'}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+// CardFooter.jsx - обновленная версия
 import React from 'react';
 import MyButton from '../button/MyButton';
 import { useNavigate } from 'react-router-dom';
@@ -14,10 +15,37 @@ const CardFooter = ({
   isEditingCard,
   handleShowDetails,
   card,
+  isCriminalCard = false,
   }) => {
   const router = useNavigate();
   
   const renderButtons = () => {
+    // Для уголовных карточек
+    if (isCriminalCard) {
+      if (activeTab === 2) {
+        return (
+          <div className={styles.cardButtons}>
+            <MyButton className={styles.add} onClick={handleAddConsideredToState}>
+              Добавить решение
+            </MyButton>
+          </div>
+        );
+      }
+      
+      return (
+        <div className={styles.cardButtons}>
+          <MyButton className={styles.details} onClick={handleShowDetails}>
+            Подробнее
+          </MyButton>
+          <MyButton className={styles.delete} onClick={handleRemove}>Удалить</MyButton>
+          <MyButton className={styles.edit} onClick={handleEditToggle}>
+            Редактировать дело
+          </MyButton>
+        </div>
+      );
+    }
+    
+    // Для обычных карточек
     if (activeTab === 1) {
       return (
         <div className={styles.cardButtons}>

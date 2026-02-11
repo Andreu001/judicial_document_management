@@ -13,6 +13,10 @@ from .views import (CriminalProceedingsViewSet, DefendantViewSet,
 router = routers.DefaultRouter()
 
 router.register(
+    r"archived-criminal-proceedings", ArchivedCriminalProceedingsViewSet,
+    basename="archived-criminal-proceedings"
+)
+router.register(
     r"criminal-proceedings",
     CriminalProceedingsViewSet,
     basename="criminal-proceedings"
@@ -46,10 +50,6 @@ router.register(
     PetitionCriminalViewSet,
     basename="petitions-criminal"
 )
-router.register(
-    r"archived-criminal-proceedings", ArchivedCriminalProceedingsViewSet,
-    basename="archived-criminal-proceedings"
-)
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -61,6 +61,10 @@ urlpatterns = [
     path("referring-authorities/", referring_authorities_list, name="referring-authorities"),
     path("petition-criminal-options/", petition_criminal_options, name="petition-criminal-options"),
     path("judges/", judges_list, name="judges"),
-    path("criminal-proceedings/<int:pk>/archive/", CriminalProceedingsViewSet.as_view({'post': 'archive'}), name="archive-criminal"),
-    path("criminal-proceedings/<int:pk>/unarchive/", CriminalProceedingsViewSet.as_view({'post': 'unarchive'}), name="unarchive-criminal"),
+    path("criminal-proceedings/<int:proceeding_id>/archive/", 
+         CriminalProceedingsViewSet.as_view({'post': 'archive'}), 
+         name="criminal-proceedings-archive"),
+    path("criminal-proceedings/<int:proceeding_id>/unarchive/", 
+         CriminalProceedingsViewSet.as_view({'post': 'unarchive'}), 
+         name="criminal-proceedings-unarchive"),
 ]

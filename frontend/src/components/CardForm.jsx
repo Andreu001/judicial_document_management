@@ -207,6 +207,31 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
     }
   };
 
+
+  const createCriminalProceedings = async (cardId) => {
+    try {
+      // Собираем данные из формы уголовного дела
+      const criminalProceedingData = {
+        business_card: cardId,
+        case_number_criminal: card.original_name,
+        // Добавьте все поля из criminalData
+        ...criminalData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('Данные для создания уголовного производства:', criminalProceedingData);
+      
+      // Отправляем запрос на создание уголовного производства
+      const result = await CriminalCaseService.createCriminalProceedings(criminalProceedingData);
+      console.log('Уголовное производство успешно создано:', result);
+      return result;
+    } catch (error) {
+      console.error('Ошибка при создании уголовного производства:', error);
+      throw error;
+    }
+  };
+
   const handleCancel = () => {
     setIsEditing(false);
     setShowCriminalForm(false);
@@ -246,87 +271,84 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
 
   const handleAddNewCard = async () => {
     try {
-      const cardData = {
-        original_name: card.original_name,
-        author: user?.id || 1,
-        case_category: card.case_category,
-        pub_date: card.pub_date || null,
-        preliminary_hearing: card.preliminary_hearing || null,
-        registry_index: card.registry_index,
-      };
-
-      // Регистрируем дело в реестре
-      let registeredCase = null;
-      if (card.registry_index) {
-        try {
-          registeredCase = await CaseRegistryService.registerCase({
-            index: card.registry_index,
-            description: `Дело ${card.original_name}`,
-          });
-        } catch (registryError) {
-          console.error('Ошибка регистрации дела:', registryError);
-        }
-      }
-
-      const response = await CardService.create(cardData);
-
-      if (registeredCase && response.id) {
-        try {
-          await CaseRegistryService.updateCase(registeredCase.id, {
-            business_card_id: response.id
-          });
-        } catch (updateError) {
-          console.error('Ошибка обновления зарегистрированного дела:', updateError);
-        }
-      }
-
-      // Создаем соответствующее производство в зависимости от категории
-      if (response.id) {
-        const selectedCategory = categoryList.find(cat => 
-          cat.id === parseInt(card.case_category)
-        );
-        
-        if (selectedCategory) {
-          const categoryName = selectedCategory.title_category.toLowerCase();
-          
-          if (categoryName.includes('уголов')) {
-            try {
-              await CriminalCaseService.create(response.id, criminalData);
-            } catch (criminalError) {
-              console.error('Ошибка создания уголовного производства:', criminalError);
-            }
-          } else if (categoryName.includes('граждан')) {
-            try {
-              await CivilCaseService.create(response.id, civilData);
-            } catch (civilError) {
-              console.error('Ошибка создания гражданского производства:', civilError);
-            }
-          }
-        }
-      }
-
-      create(response);
+      const selectedCategory = categoryList.find(cat => 
+        cat.id === parseInt(card.case_category)
+      );
       
-      // Сброс формы
-      setCard({
-        original_name: '',
-        case_category: '',
-        pub_date: '',
-        preliminary_hearing: '',
-        registry_index: '',
-      });
+      if (!selectedCategory) {
+        alert('Не выбрана категория дела');
+        return;
+      }
       
-      setCriminalData({});
-      setCivilData({});
-      setShowCriminalForm(false);
-      setShowCivilForm(false);
-      setSelectedIndex('');
-      setNextNumber('');
-
+      const categoryName = selectedCategory.title_category.toLowerCase();
+      
+      if (categoryName.includes('уголов')) {
+        await handleCreateCriminalProceedings();
+      } else {
+        await handleCreateRegularCard();
+      }
+      
     } catch (error) {
       console.error('Ошибка создания карточки:', error.response?.data || error);
+      alert(`Ошибка создания: ${error.response?.data?.message || error.message}`);
     }
   };
+
+  const handleCreateCriminalProceedings = async () => {
+    try {
+      const criminalProceedingData = {
+        case_number_criminal: card.original_name,
+        case_category: card.case_category,
+        author: user?.id || 1,
+        registry_index: card.registry_index,
+        pub_date: card.pub_date || null,
+        preliminary_hearing: card.preliminary_hearing || null,
+        ...criminalData
+      };
+      
+      console.log('Создание уголовного производства:', criminalProceedingData);
+      
+      const response = await CriminalCaseService.createCriminalProceedings(criminalProceedingData);
+
+    } catch (error) {
+      console.error('Ошибка создания уголовного производства:', error);
+      throw error;
+    }
+  };
+
+const handleCreateRegularCard = async () => {
+  try {
+    const cardData = {
+      original_name: card.original_name,
+      author: user?.id || 1,
+      case_category: card.case_category,
+      pub_date: card.pub_date || null,
+      preliminary_hearing: card.preliminary_hearing || null,
+      registry_index: card.registry_index,
+    };
+
+    const response = await CardService.create(cardData);
+
+    // Для гражданских дел создаем соответствующую запись
+    const selectedCategory = categoryList.find(cat => 
+      cat.id === parseInt(card.case_category)
+    );
+    
+    if (selectedCategory && selectedCategory.title_category.toLowerCase().includes('граждан')) {
+      try {
+        await CivilCaseService.create(response.id, civilData);
+      } catch (civilError) {
+        console.error('Ошибка создания гражданского производства:', civilError);
+      }
+    }
+
+    create(response);
+    
+  } catch (error) {
+    console.error('Ошибка создания карточки:', error);
+    throw error;
+  }
+};
 
   if (!isAuthenticated()) {
     return (
@@ -463,7 +485,7 @@ const CardForm = ({ create, editCardData, onSave, onCancel }) => {
           ) : (
             <>
               <MyButton onClick={handleCreateCard}>
-                {showCriminalForm ? 'Создать карточку с уголовным делом' : 
+                {showCriminalForm ? 'Создать карточку уголовного дела' : 
                  showCivilForm ? 'Создать карточку с гражданским делом' : 
                  'Создать карточку'}
               </MyButton>

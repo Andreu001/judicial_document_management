@@ -591,3 +591,74 @@
   max-height: calc(95vh - 300px);
   overflow-y: auto;
 }
+.archiveButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 1rem;
+  transition: background 0.2s ease;
+}
+
+.archiveButton:hover {
+  background: #5a6268;
+}
+
+@media (max-width: 768px) {
+  .archiveButton {
+    margin-left: 0;
+    margin-top: 0.5rem;
+    order: 1;
+  }
+}
+
+/* Стили для архивных дел */
+.archiveBadge {
+  background-color: #f0ad4e;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  margin-left: 10px;
+}
+
+.disabledTab {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.unarchiveButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.unarchiveButton:hover {
+  background-color: #218838;
+}
+
+.archiveButton {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.archiveButton:hover {
+  background-color: #5a6268;
+}
+
+.editButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

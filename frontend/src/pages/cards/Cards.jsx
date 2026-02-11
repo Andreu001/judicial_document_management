@@ -13,6 +13,7 @@ import CardForm from '../../components/CardForm';
 import styles from '../../components/UI/Header/Header.module.css';
 import { useAuth } from '../../context/AuthContext';
 import cl from '../../components/UI/loader/Loader.module.css';
+import CriminalCaseService from '../../API/CriminalCaseService';
 
 function Cards() {
   const [cards, setCards] = useState([]);
@@ -34,18 +35,43 @@ function Cards() {
     }
   }, [limit, page, isAuthenticated]);
 
+ 
   const loadCards = async () => {
     try {
       await fetchCards(async () => {
         const response = await CardService.getAll(limit, page);
-        setCards(response.data);
-        const totalCount = response.headers['x-total-count'];
+        const regularCards = response.data;
+
+        let criminalCards = [];
+        try {
+          const criminalResponse = await CriminalCaseService.getAllCriminalProceedings();
+
+          criminalCards = criminalResponse.map(caseItem => ({
+            id: `${caseItem.id}`,
+            case_number: caseItem.case_number_criminal || 'Номер дела не указан',
+            case_category_title: 'Уголовное судопроизводство',
+            case_category: 4,
+            pub_date: caseItem.created_at || new Date().toISOString(),
+            updated_at: caseItem.updated_at || new Date().toISOString(),
+            author_name: caseItem.author_name || 'Не указан',
+            is_criminal: true,
+            criminal_proceedings_id: caseItem.id,
+          }));
+        } catch (error) {
+          console.error('Ошибка загрузки уголовных карточек:', error);
+        }
+
+        const allCards = [...regularCards, ...criminalCards];
+        
+        setCards(allCards);
+        const totalCount = response.headers['x-total-count'] || allCards.length;
         setTotalPages(getPageCount(totalCount, limit));
       });
     } catch (error) {
       console.error('Failed to load cards:', error);
     }
   };
+
 
   const createCard = (newCard) => {
     setCards([...cards, newCard]);
@@ -86,9 +112,13 @@ function Cards() {
   const filteredCards = activeCategory === 'Все дела'
     ? cards
     : cards.filter(card => {
-        const normalizedCategory = card.case_category_title?.trim().toLowerCase();
-        const activeCategoryNormalized = activeCategory.toLowerCase();
-        return normalizedCategory === activeCategoryNormalized;
+        if (activeCategory === 'Уголовное судопроизводство') {
+          return card.case_category === 'criminal' || card.is_criminal;
+        } else {
+          const normalizedCategory = card.case_category_title?.trim().toLowerCase();
+          const activeCategoryNormalized = activeCategory.toLowerCase();
+          return normalizedCategory === activeCategoryNormalized;
+        }
       });
 
   if (!isAuthenticated()) {

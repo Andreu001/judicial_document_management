@@ -13,8 +13,13 @@ import PetitionDetail from "../pages/petitions/PetitionDetail";
 import ConsideredDetail from "../pages/considered/ConsideredDetail";
 import Layout from './Layout';
 import DefendantDetail from "./CriminalCase//DefendantDetail";
+import CriminalCaseForm from "./CriminalCase//CriminalCaseForm";
 import CriminalDetail from "./CriminalCase//CriminalDetail";
 import CriminalDecisionDetail from "./CriminalCase//CriminalDecisionDetail";
+import CriminalLawyerDetails from "./CriminalCase/CriminalLawyerDetails";
+import CriminalSideDetails from "./CriminalCase/CriminalSideDetails";
+import CriminalMovementDetail from "./CriminalCase/CriminalMovementDetail";
+import PetitionCriminal from "./CriminalCase/PetitionCriminal";
 import CorrespondenceIn from "./Correspondence/CorrespondenceIn";
 import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
@@ -59,10 +64,34 @@ const AppRouter = () => {
 
                 <Route path="business_card/businesscard/:businesscardId/lawyers/:lawyerId" element={<LawyerDetails />} />
 
-                {/* Уголовное судопроизводство */}
-                <Route path="/businesscard/:cardId/criminal-details" element={<CriminalDetail />} />
-                <Route path="/businesscard/:cardId/criminal-decisions/:decisionId" element={<CriminalDecisionDetail />} />
-                <Route path="/businesscard/:businesscardId/defendants/:defendantId" element={<DefendantDetail />} />
+                {/* Уголовные производства */}
+                <Route path="criminal-proceedings/create" element={<CriminalCaseForm />} />
+                <Route path="criminal-proceedings/:id" element={<CriminalDetail />} />
+                <Route path="criminal-proceedings/:id/edit" element={<CriminalCaseForm />} />
+
+                <Route path="criminal-proceedings/:proceedingId/petitions/create" element={<PetitionCriminal />} />
+                <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionCriminal />} />
+                <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId/edit" element={<PetitionCriminal />} />
+
+                {/* Движение уголовного дела */}
+                <Route path="criminal-proceedings/:cardId/criminal-case-movement/:moveId" element={<CriminalMovementDetail />} />
+                <Route path="criminal-proceedings/:cardId/criminal-case-movement/:moveId/edit" element={<CriminalMovementDetail />} />
+                
+                {/* Уголовные решения */}
+                <Route path="criminal-proceedings/:proceedingId/criminal-decisions/create" element={<CriminalDecisionDetail />} />
+                <Route path="criminal-proceedings/:proceedingId/criminal-decisions/:id" element={<CriminalDecisionDetail />} />
+                
+                {/* Подсудимые */}
+                <Route path="/criminal-proceedings/:proceedingId/defendants/create" element={<DefendantDetail />} />
+                <Route path="/criminal-proceedings/:proceedingId/defendants/:id" element={<DefendantDetail />} />
+                
+                {/* Адвокаты */}
+                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/create" element={<CriminalLawyerDetails />} />
+                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/:lawyerId" element={<CriminalLawyerDetails />} />
+                
+                {/* Стороны */}
+                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/create" element={<CriminalSideDetails />} />
+                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/:sideId" element={<CriminalSideDetails />} />
 
                 {/* Гражданское судопроизводство */}
                 <Route path="/businesscard/:cardId/civil-details" element={<CivilDetail />} />

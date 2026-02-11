@@ -21,6 +21,17 @@ class PetitionService {
     }
   }
 
+  // Остальные методы остаются без изменений
+  static async getPetition(cardId) {
+    try {
+      const response = await baseService.get(`/business_card/businesscard/${cardId}/petitionsincase/`);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error getting petitions:', error);
+      throw error;
+    }
+  }
+
   static async remove(cardId, petitionsId) {
     try {
       const response = await baseService.delete(`/business_card/businesscard/${cardId}/petitionsincase/${petitionsId}/`);

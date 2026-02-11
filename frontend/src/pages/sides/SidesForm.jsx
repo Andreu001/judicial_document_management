@@ -51,7 +51,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
       const { name, value, type } = e.target;
     
       if (name === 'sides_case') {
-        // Преобразуем строку в массив чисел
         const sideCaseArray = value ? [parseInt(value)] : [];
         setSide((prevSide) => ({
           ...prevSide,
@@ -67,8 +66,7 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
     
     const handleAddNewSide = async (e) => {
       e.preventDefault();
-    
-      // Проверяем, выбрана ли сторона
+
       if (!side.sides_case || side.sides_case.length === 0) {
         console.error('Не выбрана сторона по делу');
         alert('Пожалуйста, выберите сторону по делу');
@@ -76,16 +74,13 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
       }
     
       try {
-        // Получаем ID выбранной стороны дела
         const selectedSideCaseId = side.sides_case[0];
-        
-        // Проверяем, является ли выбранная сторона адвокатом/защитником
+
         const selectedSideCase = sidesCaseList.find(sc => sc.id === selectedSideCaseId);
         const isLawyer = selectedSideCase && 
           (selectedSideCase.sides_case.toLowerCase().includes('адвокат') || 
            selectedSideCase.sides_case.toLowerCase().includes('защитник'));
         
-        // Проверяем, является ли выбранная сторона обвиняемым/осужденным/подозреваемым/подсудимым
         const isDefendant = [8, 9, 12, 13].includes(selectedSideCaseId);
         
         console.log('Выбранная сторона:', selectedSideCase);
@@ -93,30 +88,26 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
         console.log('Это обвиняемый/подсудимый?', isDefendant);
         
         if (isLawyer) {
-          // Если выбрана сторона "Адвокат" или "Защитник", создаем запись в таблице адвокатов
           const lawyerData = {
             name: side.name,
-            sides_case: side.sides_case, // Отправляем как массив
+            sides_case: side.sides_case,
           };
           
           console.log('Создание адвоката:', lawyerData);
           
           try {
-            // Создаем адвоката
             const response = await LawyerService.createLawyer(cardId, lawyerData);
             console.log('Адвокат создан:', response);
-            
-            // Если функция create существует и нужно обновить список
+
             if (create) {
               create(response);
             }
           } catch (lawyerError) {
             console.error('Ошибка создания адвоката:', lawyerError);
-            // Пробуем альтернативный формат
             try {
               const alternativeLawyerData = {
                 name: side.name,
-                sides_case_incase: side.sides_case[0], // ID как число
+                sides_case_incase: side.sides_case[0],
               };
               
               console.log('Пробуем альтернативный формат:', alternativeLawyerData);
@@ -137,27 +128,22 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
             }
           }
         } else if (isDefendant) {
-          // Если выбрана сторона обвиняемый/осужденный/подозреваемый/подсудимый, создаем запись в таблице обвиняемых
           const defendantData = {
             name: side.name,
-            sides_case: side.sides_case, // ID стороны дела как массив
+            sides_case: side.sides_case,
           };
           
           console.log('Создание обвиняемого/подсудимого:', defendantData);
           
           try {
-            // Создаем обвиняемого через CriminalCaseService
             const response = await CriminalCaseService.createDefendant(cardId, defendantData);
             console.log('Обвиняемый/подсудимый создан:', response);
-            
-            // Если функция create существует и нужно обновить список
             if (create) {
               create(response);
             }
           } catch (defendantError) {
             console.error('Ошибка создания обвиняемого/подсудимого:', defendantError);
-            
-            // Пробуем создать через baseService напрямую
+
             try {
               console.log('Пробуем создать через baseService напрямую');
               
@@ -177,7 +163,6 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
             }
           }
         } else {
-          // Для всех остальных сторон создаем обычную запись
           const newSideData = {
             name: side.name,
             sides_case: side.sides_case,
@@ -190,11 +175,9 @@ const SidesForm = ({ create, editSideData = {}, onSave, onCancel, cardId }) => {
           }
           
           if (editingSideId) {
-            // Редактирование существующей стороны
             const response = await SideService.updateSide(cardId, editingSideId, newSideData);
             onSave(response.data);
           } else {
-            // Создание новой стороны
             const response = await baseService.post(
               `http://localhost:8000/business_card/businesscard/${cardId}/sidescaseincase/`,
               newSideData

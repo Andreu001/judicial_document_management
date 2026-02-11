@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from users.models import User
+from .models import CriminalRuling
 from .models import (CriminalProceedings, Defendant,
                      CriminalDecision, CriminalRuling,
                      CriminalCaseMovement, ReferringAuthority,
@@ -35,19 +36,30 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
     serializer_class = CriminalProceedingsSerializer
 
     def get_queryset(self):
-        # По умолчанию показываем только активные дела
-        queryset = CriminalProceedings.objects.all()
-        
-        # Если запрос из архива, показываем архивные дела
-        is_archive = self.request.query_params.get('archive', False)
-        if is_archive:
-            queryset = queryset.filter(status='archived')
-        else:
-            # Иначе показываем неархивные дела
-            queryset = queryset.exclude(status='archived')
-        
-        return queryset
+        # Для списка (list) фильтруем по статусу
+        if self.action == 'list':
+            queryset = CriminalProceedings.objects.all()
+            is_archive = self.request.query_params.get('archive', False)
+            if is_archive:
+                queryset = queryset.filter(status='archived')
+            else:
+                queryset = queryset.exclude(status='archived')
+            return queryset
+        # Для остальных действий (retrieve, update и т.д.) возвращаем все объекты
+        return CriminalProceedings.objects.all()
 
+    def get_serializer_class(self):
+        """Выбираем сериализатор в зависимости от статуса дела"""
+        if self.action == 'retrieve':
+            instance = self.get_object()
+            if instance.status == 'archived':
+                return ArchivedCriminalProceedingsSerializer
+        elif self.action == 'update' or self.action == 'partial_update':
+            instance = self.get_object()
+            if instance.status == 'archived':
+                return ArchivedCriminalProceedingsSerializer
+        return super().get_serializer_class()
+    
     @action(detail=True, methods=['post'])
     def archive(self, request, pk=None):
         """Перевести дело в архив"""

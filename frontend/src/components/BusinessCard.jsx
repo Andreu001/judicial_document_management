@@ -26,7 +26,6 @@ import CardFooter from './UI/CardFooter/CardFooter';
 import authService from '../API/authService';
 import CriminalCaseService from '../API/CriminalCaseService';
 import baseService from '../API/baseService';
-import CriminalDecisionForm from './CriminalCase/CriminalDecisionForm';
 import CriminalDecisionDetail from './CriminalCase/CriminalDecisionDetail';
 import CaseRegistryService from '../API/CaseRegistryService';
 import CivilCaseService from '../API/CivilCaseService';
@@ -65,48 +64,72 @@ const BusinessCard = (props) => {
   const [authorName, setAuthorName] = useState('');
   const [criminalCase, setCriminalCase] = useState(null);
   const [defendants, setDefendants] = useState([]);
-  const isCriminalCategory = card.case_category === 4;
+  const isCriminalCategory = card.case_category;
   const [criminalDecisions, setCriminalDecisions] = useState([]);
-  const [showCriminalDecisionForm, setShowCriminalDecisionForm] = useState(false);
   const [isEditingCriminalDecision, setIsEditingCriminalDecision] = useState(false);
   const [editedCriminalDecisionData, setEditedCriminalDecisionData] = useState({});
   const [editedCriminalDecisionId, setEditedCriminalDecisionId] = useState(null);
   const [registeredCase, setRegisteredCase] = useState(null);
   const [civilCase, setCivilCase] = useState(null);
+  const [showCriminalSideForm, setShowCriminalSideForm] = useState(false);
+  const [isEditingCriminalSide, setIsEditingCriminalSide] = useState(false);
+  const [editedCriminalSideData, setEditedCriminalSideData] = useState({});
+  const [editedCriminalSideId, setEditedCriminalSideId] = useState(null);
+  const [criminalSides, setCriminalSides] = useState([]);
+  const isCriminalCard = card.case_category && card.case_category === 4;
 
   const handleAddCriminalDecisionToState = () => {
     console.log("Adding criminal decision to state");
-    setShowCriminalDecisionForm(true);
     setIsEditingCriminalDecision(false);
     setEditedCriminalDecisionData({});
   };
 
-const handleShowDetails = () => {
-  const categoryId = card.case_category;
-  
-  switch(categoryId) {
-    case 1: // Административное судопроизводство
-      router(`/businesscard/${cardId}/administrative-details`);
+  const handleShowDetails = () => {
+    const categoryId = card.case_category;
+    
+    switch(categoryId) {
+      case 1: // Административное судопроизводство
+        router(`/businesscard/${cardId}/administrative-details`);
+        break;
+      case 2: // Административное правнарушение
+        router(`/businesscard/${cardId}/administrative-offense-details`);
+        break;
+      case 3: // Гражданское судопроизводство
+        router(`/businesscard/${cardId}/civil-details`);
+        break;
+      case 4: // Уголовное судопроизводство
+        // Проверяем, есть ли уже уголовное производство
+        if (criminalCase && criminalCase.id) {
+          router(`/criminal-proceedings/${criminalCase.id}`);
+        } else {
+          // Перенаправляем на страницу создания уголовного производства
+          router(`/criminal-proceedings/create?card_id=${cardId}`);
+        }
       break;
-    case 2: // Административное правнарушение
-      router(`/businesscard/${cardId}/administrative-offense-details`);
-      break;
-    case 3: // Гражданское судопроизводство
-      router(`/businesscard/${cardId}/civil-details`);
-      break;
-    case 4: // Уголовное судопроизводство
-      router(`/businesscard/${cardId}/criminal-details`);
-      break;
-    default:
-      router(`/cards/${cardId}`);
-  }
-};
+      default:
+        router(`/cards/${cardId}`);
+    }
+  };
 
   const handleShowSideDetails = (sideId, sideTypes) => {
-      console.log('Opening side details:', { sideId, sideTypes, cardId });
+      console.log('Opening side details:', { sideId, sideTypes, cardId, isCriminalCard });
+
+        if (isCriminalCard) {
+          router(`/criminal-proceedings/${criminalCase?.id}/sides/${sideId}`);
+          return;
+  }
       
       const selectedSide = sides.find(s => s.id === sideId);
       console.log('Selected side:', selectedSide);
+      if (card.case_category) {
+        // Для уголовного дела ищем сторону в criminalSides
+        const criminalSide = criminalSides.find(s => s.id === sideId);
+        if (criminalSide) {
+          // Переходим на детальную страницу стороны уголовного производства
+          router(`/businesscard/${cardId}/criminal-sides/${sideId}`);
+          return;
+        }
+      }
       
       if (!selectedSide) {
           console.error('Side not found');
@@ -272,51 +295,21 @@ const handleShowDetails = () => {
   
   useEffect(() => {
     const loadCriminalDecisions = async () => {
-      if (criminalCase) {
+      if (criminalCase && criminalCase.id) {
         try {
-          const decisionsData = await CriminalCaseService.getDecisions(cardId);
-          
-          // Получаем названия для связанных полей
-          const decisionsWithNames = await Promise.all(
-            decisionsData.map(async (decision) => {
-              if (decision.name_case) {
-                try {
-                  const decisionResponse = await baseService.get(`http://localhost:8000/business_card/decisions/${decision.name_case}/`);
-                  decision.decision_name = decisionResponse.data.decisions;
-                } catch (error) {
-                  console.error('Ошибка загрузки названия решения:', error);
-                  decision.decision_name = 'Неизвестное решение';
-                }
-              }
-              
-              if (decision.decision_appeal) {
-                try {
-                  const appealResponse = await baseService.get(`http://localhost:8000/business_card/appeal/${decision.decision_appeal}/`);
-                  decision.appeal_name = appealResponse.data.appeal;
-                } catch (error) {
-                  console.error('Ошибка загрузки названия апелляции:', error);
-                  decision.appeal_name = 'Неизвестный результат';
-                }
-              }
-              
-              return decision;
-            })
-          );
-          
-          setCriminalDecisions(decisionsWithNames);
+          const decisionsData = await CriminalCaseService.getDecisions(criminalCase.id);
+          setCriminalDecisions(decisionsData || []);
         } catch (error) {
-          console.error('Ошибка загрузки решений:', error);
+          console.error('Ошибка загрузки уголовных решений:', error);
           setCriminalDecisions([]);
         }
-      } else {
-        setCriminalDecisions([]);
       }
     };
     
     if (criminalCase) {
       loadCriminalDecisions();
     }
-  }, [criminalCase, cardId]);
+  }, [criminalCase]);
 
   const handleEditPetition = (
       petitionId, 
@@ -350,18 +343,12 @@ const handleShowDetails = () => {
       fetchPetitionData();
   };
 
-  const handleAddCriminalDecision = () => {
-    setShowCriminalDecisionForm(true);
-    setIsEditingCriminalDecision(false);
-    setEditedCriminalDecisionData({});
-  };
 
   const handleEditCriminalDecision = (decisionId) => {
     const decision = criminalDecisions.find(d => d.id === decisionId);
     setEditedCriminalDecisionData({ ...decision });
     setEditedCriminalDecisionId(decisionId);
     setIsEditingCriminalDecision(true);
-    setShowCriminalDecisionForm(true);
   };
 
   const handleSaveCriminalDecision = async (decisionData) => {
@@ -404,7 +391,6 @@ const handleShowDetails = () => {
         setCriminalDecisions([...criminalDecisions, newDecision]);
       }
       
-      setShowCriminalDecisionForm(false);
       setEditedCriminalDecisionData({});
       setEditedCriminalDecisionId(null);
     } catch (error) {
@@ -427,7 +413,7 @@ const handleShowDetails = () => {
 
   useEffect(() => {
     const loadCivilCase = async () => {
-      if (card.case_category === 3) {
+      if (card.case_category) {
         try {
           const civilData = await CivilCaseService.getByBusinessCardId(cardId);
           setCivilCase(civilData);
@@ -480,61 +466,112 @@ const handleShowDetails = () => {
     }
   }, [criminalCase, cardId]);
 
+  useEffect(() => {
+    // Загружаем стороны ТОЛЬКО для не-уголовных карточек
+    if (!isCriminalCard) {
+      SideService.getAllSide(cardId)
+        .then((response) => {
+          if (Array.isArray(response.data)) {
+            setSide(response.data);
+          } else {
+            console.error('Неверный тип данных в ответе:', response.data);
+          }
+        })
+        .catch((error) => {
+          // Игнорируем ошибку 404 для уголовных карточек
+          if (!isCriminalCard) {
+            console.error('Ошибка при загрузке сторон:', error);
+          }
+        });
+    }
+  }, [cardId, isCriminalCard]);
+
+  useEffect(() => {
+    // Загружаем движение дела
+    if (!isCriminalCard) {
+      MovementService.getAllMove(cardId)
+        .then((response) => {
+          if (Array.isArray(response.data)) {
+            setMovements(response.data);
+          } else {
+            console.error('Неверный тип данных в ответе:', response.data);
+          }
+        })
+        .catch((error) => {
+          if (!isCriminalCard) {
+            console.error('Ошибка при загрузке движения дела:', error);
+          }
+        });
+    }
+  }, [cardId, isCriminalCard]);
+
+  useEffect(() => {
+    // Загружаем ходатайства
+    if (!isCriminalCard) {
+      const fetchPetitions = async () => {
+        try {
+          const response = await PetitionService.getAllPetitions(cardId);
+          if (Array.isArray(response.data)) {
+            setPetitions(response.data);
+          } else {
+            console.error("Неверный формат данных ходатайств:", response.data);
+          }
+        } catch (error) {
+          if (!isCriminalCard) {
+            console.error("Ошибка при загрузке ходатайств:", error);
+          }
+        }
+      };
+    
+      if (cardId) {
+        fetchPetitions();
+      }
+    }
+  }, [cardId, isCriminalCard]);
+
+  useEffect(() => {
+    // Загружаем решения (considered)
+    if (!isCriminalCard) {
+      ConsideredService.getAllConsidereds(cardId)
+        .then((response) => {
+          if (Array.isArray(response.data)) {
+            setConsidered(response.data);
+          } else {
+            console.error('Неверный тип данных в ответе:', response.data);
+          }
+        })
+        .catch((error) => {
+          if (!isCriminalCard) {
+            console.error('Ошибка при загрузке решений:', error);
+          }
+        });
+    }
+  }, [cardId, isCriminalCard]);
 
   useEffect(() => {
     const loadCriminalCase = async () => {
-      if (isCriminalCategory) {
+      if (isCriminalCard) {
         try {
-          const criminalData = await CriminalCaseService.getByBusinessCardId(cardId);
-          setCriminalCase(criminalData);
+          // Используем новый метод для поиска по ID карточки
+          const criminalProceeding = await CriminalCaseService.getCriminalProceedingsByCardId(cardId);
           
-          if (criminalData) {
-            try {
-              const defendantsData = await CriminalCaseService.getDefendants(cardId);
-              
-              // Получаем названия сторон для каждого обвиняемого
-              const defendantsWithSideNames = await Promise.all(
-                defendantsData.map(async (defendant) => {
-                  if (defendant.side_case) {
-                    try {
-                      const sideResponse = await baseService.get(`http://localhost:8000/business_card/sides/${defendant.side_case}/`);
-                      return {
-                        ...defendant,
-                        side_case_name: sideResponse.data.sides_case
-                      };
-                    } catch (error) {
-                      console.error('Ошибка загрузки названия стороны:', error);
-                      return { ...defendant, side_case_name: 'Неизвестный статус' };
-                    }
-                  }
-                  return defendant;
-                })
-              );
-              
-              setDefendants(defendantsWithSideNames);
-            } catch (defendantError) {
-              console.error('Ошибка загрузки обвиняемых:', defendantError);
-              setDefendants([]);
-            }
+          if (criminalProceeding) {
+            setCriminalCase(criminalProceeding);
+            const defendantsData = await CriminalCaseService.getDefendants(criminalProceeding.id);
+            setDefendants(defendantsData);
           } else {
-            console.log('No criminal case found for this card');
-            setDefendants([]);
+            console.warn('Уголовное дело не найдено для карточки:', cardId);
           }
         } catch (error) {
           console.error('Ошибка загрузки уголовного дела:', error);
-          setCriminalCase(null);
-          setDefendants([]);
         }
-      } else {
-        setCriminalCase(null);
-        setDefendants([]);
       }
     };
     
-    if (cardId) {
+    if (cardId && isCriminalCard) {
       loadCriminalCase();
     }
-  }, [cardId, isCriminalCategory]);
+  }, [cardId, isCriminalCard]);
 
   // Функция для форматирования даты
   const formatDateTime = (dateString) => {
@@ -765,10 +802,37 @@ const handleShowDetails = () => {
         console.error('ID карточки не определен');
         return;
       }
-  
+
       const cardId = String(props.card.id);
-      await props.remove(cardId); // Вызываем функцию remove, переданную через props
-      console.log('Удаляется карточка с ID:', cardId);
+      
+      // Проверяем, есть ли связанное уголовное дело
+      if (criminalCase && criminalCase.id) {
+        // Спрашиваем подтверждение для удаления уголовного дела
+        const confirmDelete = window.confirm(
+          'Это уголовное дело. Удалить его из системы? Это действие удалит как карточку, так и уголовное производство.'
+        );
+        
+        if (confirmDelete) {
+          try {
+            // Сначала удаляем уголовное дело
+            await CriminalCaseService.deleteCriminalProceedings(criminalCase.id);
+            console.log('Уголовное производство удалено:', criminalCase.id);
+          } catch (criminalError) {
+            console.error('Ошибка удаления уголовного производства:', criminalError);
+            // Можем продолжить или спросить пользователя
+            if (!window.confirm('Не удалось удалить уголовное производство. Удалить только карточку?')) {
+              return; // Отмена удаления
+            }
+          }
+        } else {
+          return; // Пользователь отменил удаление
+        }
+      }
+      
+      // Удаляем карточку
+      await props.remove(cardId);
+      console.log('Карточка удалена:', cardId);
+      
     } catch (error) {
       console.error('Ошибка удаления:', error);
     }
@@ -778,14 +842,22 @@ const handleShowDetails = () => {
     setActiveTab(tabIndex);
   };
 
-  const handleAddSideToState = (e) => {
-    e.preventDefault();
-    
-    // Всегда показываем стандартную форму стороны
+const handleAddSideToState = (e) => {
+  e.preventDefault();
+  
+  // Проверяем, является ли дело уголовным
+  if (card.case_category && criminalCase) {
+    // Для уголовного дела - показываем форму сторон уголовного производства
+    setShowCriminalSideForm(true);
+    setIsEditingCriminalSide(false);
+    setEditedCriminalSideData({});
+  } else {
+    // Для других категорий дел - стандартная форма стороны
     setEditedSideData({});
     setEditedSideId(null);
     setShowSideForm(true);
-  };
+  }
+};
 
 
 const createSide = async (newSide) => {
@@ -918,23 +990,6 @@ const createMove = async (newMove) => {
               }}
               setNewSide={setNewSide}
               cardId={cardId}
-            />
-          </div>
-        </div>
-      )}
-
-      {showCriminalDecisionForm && (
-        <div className={styles.formOverlay}>
-          <div className={styles.formContainer}>
-            <CriminalDecisionForm
-              decisionData={editedCriminalDecisionData}
-              onDecisionDataChange={setEditedCriminalDecisionData}
-              onSubmit={(data) => handleSaveCriminalDecision(data)}
-              onCancel={() => {
-                setShowCriminalDecisionForm(false);
-                setEditedCriminalDecisionData({});
-                setEditedCriminalDecisionId(null);
-              }}
             />
           </div>
         </div>
