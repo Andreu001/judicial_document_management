@@ -22,7 +22,7 @@ export const BasicInfoTab = ({ isEditing,
           <div className={styles.field}>
             <div className={styles.field}>
               <label>№ дела</label>
-              <span>{criminalData.case_number || card?.original_name}</span>
+              <span>{criminalData.case_number_criminal || card?.case_number_criminal}</span>
             </div>
 
             <div className={styles.field}>
@@ -116,30 +116,32 @@ export const BasicInfoTab = ({ isEditing,
             )}
           </div>
 
-        {/* Председательствующий */}
-        <div className={styles.field}>
-          <label>Председательствующий</label>
-            {isEditing ? (
-              <select
-                name="presiding_judge"
-                value={formData.presiding_judge || ''}
-                onChange={handleInputChange}
-                className={styles.input}
-              >
-                <option value="">Выберите судью</option>
-                {judges.map(judge => (
-                  <option key={judge.id} value={judge.id}>
-                    {judge.role} ({judge.judge_code})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>
-                {formData.presiding_judge_name || 'Не указано'}
-              </span>
-            )}
-        </div>
-        </div>
+            {/* Председательствующий */}
+            <div className={styles.field}>
+              <label>Председательствующий</label>
+                {isEditing ? (
+                  <select
+                    name="presiding_judge"
+                    value={formData.presiding_judge || ''}
+                    onChange={handleInputChange}
+                    className={styles.input}
+                  >
+                    <option value="">Выберите судью</option>
+                    {judges.map(judge => (
+                      <option key={judge.id} value={judge.id}>
+                        {judge.full_name || judge.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span>
+                    {criminalData.presiding_judge_full_name || 
+                    criminalData.presiding_judge_name || 
+                    'Не указано'}
+                  </span>
+                )}
+            </div>
+          </div>
 
         <div className={styles.fieldGroup}>
           <h3 className={styles.subsectionTitle}>Порядок поступления дела</h3>

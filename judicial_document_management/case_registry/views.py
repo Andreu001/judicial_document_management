@@ -11,11 +11,12 @@ from .serializers import (
     NumberAdjustmentSerializer,
     CorrespondenceSerializer,
     CorrespondenceCreateSerializer,
-    CorrespondenceUpdateSerializer  # ДОБАВИТЬ
+    CorrespondenceUpdateSerializer
 )
 from .filters import CorrespondenceFilter
 from .managers import case_registry
 import logging
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,8 @@ class RegisteredCaseViewSet(viewsets.ModelViewSet):
                 case = case_registry.register_case(
                     index_code=serializer.validated_data['index'],
                     description=serializer.validated_data.get('description'),
+                    case_number=serializer.validated_data.get('case_number'),
+                    registration_date=serializer.validated_data.get('registration_date'),
                     business_card_id=serializer.validated_data.get('business_card_id'),
                     criminal_proceedings_id=serializer.validated_data.get('criminal_proceedings_id')
                 )
@@ -102,6 +105,8 @@ def register_case(request):
             case = case_registry.register_case(
                 index_code=serializer.validated_data['index'],
                 description=serializer.validated_data.get('description'),
+                case_number=serializer.validated_data.get('case_number'),
+                registration_date=serializer.validated_data.get('registration_date'),
                 business_card_id=serializer.validated_data.get('business_card_id'),
                 criminal_proceedings_id=serializer.validated_data.get('criminal_proceedings_id')
             )
@@ -155,10 +160,17 @@ def get_next_number(request, index_code):
     Получение следующего номера для указанного индекса
     """
     try:
-        next_number = case_registry.get_next_number(index_code)
+        # Декодируем URL-кодированный индекс
+        decoded_index = urllib.parse.unquote(index_code)
+        logger.info(f"Getting next number for index: {decoded_index}")
+        
+        next_number = case_registry.get_next_number(decoded_index)
         return Response({'next_number': next_number}, status=status.HTTP_200_OK)
     except ValueError as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Error in get_next_number: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CorrespondenceViewSet(viewsets.ModelViewSet):
@@ -173,33 +185,27 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return CorrespondenceCreateSerializer
         elif self.action in ['update', 'partial_update']:
-            return CorrespondenceUpdateSerializer  # Используем отдельный сериализатор для обновления
+            return CorrespondenceUpdateSerializer
         return CorrespondenceSerializer
     
     def get_queryset(self):
         queryset = super().get_queryset()
         
-        # ФИЛЬТРАЦИЯ ПО ТИПУ КОРРЕСПОНДЕНЦИИ
         correspondence_type = self.request.query_params.get('type')
         if correspondence_type:
             queryset = queryset.filter(correspondence_type=correspondence_type)
         
-        # Применяем фильтры из filterset_class
         queryset = self.filter_queryset(queryset)
-        
         return queryset.order_by('-registration_date', '-created_at')
      
     def perform_create(self, serializer):
-        """Автоматическая генерация регистрационного номера"""
         from django.utils import timezone
         from .models import CorrespondenceCounter
         
         instance = serializer.save()
         
-        # Генерация регистрационного номера
         current_year = timezone.now().year
         
-        # Получаем или создаем счетчик для текущего года
         counter, created = CorrespondenceCounter.objects.get_or_create(
             year=current_year,
             defaults={
@@ -219,35 +225,29 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
         
         counter.save()
         
-        # Формат: Префикс-номер/год
         instance.registration_number = f"{prefix}-{number}/{current_year}"
         instance.save()
     
     def perform_update(self, serializer):
-        """Обновление корреспонденции"""
         serializer.save()
     
     @action(detail=False, methods=['get'])
     def statistics(self, request):
-        """Статистика по корреспонденции"""
         from django.db.models import Count
         from django.utils import timezone
         
         current_year = timezone.now().year
         
-        # Статистика по типам
         type_stats = Correspondence.objects.values('correspondence_type').annotate(
             count=Count('id')
         )
         
-        # Статистика по месяцам текущего года
         monthly_stats = Correspondence.objects.filter(
             registration_date__year=current_year
         ).values('correspondence_type', 'registration_date__month').annotate(
             count=Count('id')
         ).order_by('correspondence_type', 'registration_date__month')
         
-        # Статистика по статусам
         status_stats = Correspondence.objects.values('status').annotate(
             count=Count('id')
         )
@@ -261,7 +261,6 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def filter_options(self, request):
-        """Получение доступных опций для фильтров"""
         from django.db.models import Count
         
         return Response({

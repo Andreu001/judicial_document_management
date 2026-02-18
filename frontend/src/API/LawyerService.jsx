@@ -1,64 +1,77 @@
 import baseService from './baseService';
 
+const CIVIL_BASE_URL = '/civil_proceedings/civil-proceedings/';
+
 class LawyerService {
-  static async createLawyer(cardId, lawyerData) {
+
+    // === Роли сторон (из business_card) ===
+  
+  static async getSideRoles() {
     try {
-      const response = await baseService.post(
-        `/business_card/businesscard/${cardId}/lawyers/`,
-        lawyerData
-      );
+      const response = await baseService.get('/business_card/sides/');
       return response.data;
     } catch (error) {
-      console.error('Error creating lawyer:', error);
+      console.error('Error fetching side roles:', error);
+      return [];
+    }
+  }
+
+  static async getLawyers(proceedingId) {
+    try {
+      const response = await baseService.get(`${CIVIL_BASE_URL}${proceedingId}/lawyers/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching civil lawyers:', error);
       throw error;
     }
   }
 
-  static async updateLawyer(cardId, lawyerId, lawyerData) {
+  static async getLawyerById(proceedingId, lawyerId) {
     try {
-      const response = await baseService.patch(
-        `/business_card/businesscard/${cardId}/lawyers/${lawyerId}/`,
-        lawyerData
-      );
+      const response = await baseService.get(`${CIVIL_BASE_URL}${proceedingId}/lawyers/${lawyerId}/`);
       return response.data;
     } catch (error) {
-      console.error('Error updating lawyer:', error);
+      console.error('Error fetching civil lawyer:', error);
       throw error;
     }
   }
 
-  static async deleteLawyer(cardId, lawyerId) {
+  static async createLawyer(proceedingId, data) {
     try {
-      const response = await baseService.delete(
-        `/business_card/businesscard/${cardId}/lawyers/${lawyerId}/`
-      );
+      const response = await baseService.post(`${CIVIL_BASE_URL}${proceedingId}/lawyers/`, data);
       return response.data;
     } catch (error) {
-      console.error('Error deleting lawyer:', error);
+      console.error('Error creating civil lawyer:', error);
       throw error;
     }
   }
 
-  static async getLawyer(cardId, lawyerId) {
+  static async attachExistingLawyer(proceedingId, data) {
     try {
-      const response = await baseService.get(
-        `/business_card/businesscard/${cardId}/lawyers/${lawyerId}/`
-      );
+      const response = await baseService.post(`${CIVIL_BASE_URL}${proceedingId}/lawyers/`, data);
       return response.data;
     } catch (error) {
-      console.error('Error getting lawyer:', error);
+      console.error('Error attaching existing lawyer:', error);
       throw error;
     }
   }
 
-  static async getAllLawyers(cardId) {
+static async updateLawyer(proceedingId, lawyerId, data) {
+  try {
+    const response = await baseService.put(`${CIVIL_BASE_URL}${proceedingId}/lawyers/${lawyerId}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating civil lawyer:', error);
+    throw error;
+  }
+}
+
+  static async deleteLawyer(proceedingId, lawyerId) {
     try {
-      const response = await baseService.get(
-        `/business_card/businesscard/${cardId}/lawyers/`
-      );
+      const response = await baseService.delete(`${CIVIL_BASE_URL}${proceedingId}/lawyers/${lawyerId}/`);
       return response.data;
     } catch (error) {
-      console.error('Error getting lawyers:', error);
+      console.error('Error deleting civil lawyer:', error);
       throw error;
     }
   }

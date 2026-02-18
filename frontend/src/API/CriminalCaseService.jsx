@@ -68,7 +68,7 @@ class CriminalCaseService {
 
   static async deleteCriminalProceedings(proceedingsId) {
     try {
-      await baseService.delete(`${BASE_URL}criminal-proceedings/${proceedingsId}/`);
+      await baseService.delete(`/criminal_proceedings/criminal-proceedings/${proceedingsId}/`);
     } catch (error) {
       console.error('Error deleting criminal proceedings:', error);
       throw error;
@@ -484,22 +484,25 @@ class CriminalCaseService {
     }
   }
 
-  static async getJudges() {
-    try {
-      const response = await baseService.get(`${BASE_URL}judges/`);
-      
-      // Форматируем данные для отображения
-      return response.data.map(judge => ({
-        id: judge.id,
-        name: `${judge.last_name || ''} ${judge.first_name || ''} ${judge.middle_name || ''}`.trim(),
-        role: judge.role,
-        judge_code: judge.judge_code || ''
-      }));
-    } catch (error) {
-      console.error('Error fetching judges:', error);
-      return [];
-    }
+static async getJudges() {
+  try {
+    const response = await baseService.get(`${BASE_URL}judges/`);
+    console.log('Judges API response:', response.data);
+    return response.data.map(judge => ({
+      id: judge.id,
+      full_name: `${judge.last_name || ''} ${judge.first_name || ''} ${judge.middle_name || ''}`.trim(),
+      name: `${judge.last_name || ''} ${judge.first_name || ''} ${judge.middle_name || ''}`.trim(),
+      last_name: judge.last_name,
+      first_name: judge.first_name,
+      middle_name: judge.middle_name,
+      role: judge.role,
+      judge_code: judge.judge_code || ''
+    }));
+  } catch (error) {
+    console.error('Error fetching judges:', error);
+    return [];
   }
+}
 
   static async getCriminalOptions() {
     try {
@@ -699,6 +702,27 @@ class CriminalCaseService {
     } catch (error) {
       console.error('Error fetching archived proceedings:', error);
       return [];
+    }
+  }
+
+  static async getAllSides(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/all-sides/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all sides:', error);
+      return [];
+    }
+  }
+
+  static async getJudges() {
+    try {
+      const response = await baseService.get(`${BASE_URL}judges/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching judges:', error);
     }
   }
 }

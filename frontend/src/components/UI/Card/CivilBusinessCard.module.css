@@ -1,0 +1,575 @@
+/* CivilBusinessCard.module.css - деловая зелено-серая гамма */
+
+.cardContainer {
+  background: linear-gradient(to bottom, #ffffff, #fafafa);
+  border: 1px solid #dde0e5;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(40, 60, 50, 0.03);
+  margin-bottom: 20px;
+  transition: all 0.25s cubic-bezier(0.02, 0.8, 0.2, 1);
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Скрываем прокрутку на контейнере */
+  position: relative;
+}
+
+.cardContainer:hover {
+  box-shadow: 0 12px 24px rgba(50, 80, 70, 0.08);
+  border-color: #a8c0b5;
+}
+
+.cardContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #336b5e, #4d8b7a);
+  opacity: 0.9;
+}
+
+/* Заголовок - УМЕНЬШЕН */
+.cardHeader {
+  background: linear-gradient(135deg, #2d5a4f, #3f786a);
+  color: white;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  flex-shrink: 0; /* Не сжимается */
+}
+
+.headerMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.caseType {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 2px 6px;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.caseNumber {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Roboto Mono', 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.headerMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+.caseJudge {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.caseDate {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* Быстрые действия - УМЕНЬШЕНЫ и БЕЗ ЦИФР */
+.quickActions {
+  display: flex;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e8ecef;
+  background: #f7f9fa;
+  gap: 4px;
+  flex-shrink: 0; /* Не сжимается */
+}
+
+.quickAction {
+  flex: 1;
+  padding: 4px 2px;
+  background: white;
+  border: 1px solid #d9dfe5;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #4a5b5f;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-height: 28px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.quickAction:hover {
+  border-color: #5e9b87;
+  color: #2f6b5b;
+  background: #edf6f2;
+}
+
+.quickAction.active {
+  border-color: #3f786a;
+  background: linear-gradient(145deg, #3f786a, #2d5a4f);
+  color: white;
+}
+
+/* Убираем счетчики */
+.quickActionCount {
+  display: none;
+}
+
+/* Контент - основная прокручиваемая область */
+.cardContent {
+  flex: 1 1 auto;
+  overflow-y: auto; /* Прокрутка только здесь */
+  padding: 12px 12px;
+  background: white;
+  /* Тонкая полоса прокрутки */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5d0 #f1f3f2;
+}
+
+/* Стили для вебкит браузеров (Chrome, Safari, Edge) */
+.cardContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cardContent::-webkit-scrollbar-track {
+  background: #f1f3f2;
+  border-radius: 4px;
+}
+
+.cardContent::-webkit-scrollbar-thumb {
+  background: #cbd5d0;
+  border-radius: 4px;
+}
+
+.cardContent::-webkit-scrollbar-thumb:hover {
+  background: #a8b8b1;
+}
+
+/* Содержимое внутри cardContent */
+.summaryContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.statItem {
+  text-align: center;
+  padding: 6px 4px;
+  background: #f5f8f7;
+  border-radius: 8px;
+  border: 1px solid #dee5e2;
+  transition: all 0.2s ease;
+}
+
+.statItem:hover {
+  background: white;
+  border-color: #a8c8bb;
+  box-shadow: 0 2px 8px rgba(79, 138, 117, 0.1);
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2d5a4f;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 9px;
+  color: #6d7f7a;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+.courtInfo {
+  background: linear-gradient(to right, #f5f8f7, #ffffff);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 4px solid #5e9b87;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.infoLabel {
+  font-size: 9px;
+  color: #6d7f7a;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.infoValue {
+  font-size: 12px;
+  color: #1a2e28;
+  font-weight: 500;
+}
+
+.lastActivity {
+  margin-top: auto;
+  font-size: 9px;
+  color: #99aaa4;
+  text-align: right;
+  padding-top: 6px;
+  border-top: 1px solid #e8ecef;
+  font-style: italic;
+}
+
+/* Детальная информация */
+.summaryDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f5f8f7;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px dashed #d9e0dd;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-size: 10px;
+  color: #6d7f7a;
+  font-weight: 500;
+}
+
+.detailValue {
+  font-size: 11px;
+  color: #2c423b;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Вкладки с контентом */
+.tabContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tabHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #dee5e2;
+  min-height: 28px;
+  flex-shrink: 0; /* Не сжимается */
+}
+
+.tabHeader h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2d5a4f;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.tabHeaderActions {
+  display: flex;
+  gap: 4px;
+}
+
+.addButton {
+  background: linear-gradient(145deg, #5e9b87, #4a8270);
+  color: white;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(74, 130, 112, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.addButton:hover {
+  background: linear-gradient(145deg, #4a8270, #3a6859);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 130, 112, 0.3);
+}
+
+.addButton:active {
+  transform: translateY(0);
+}
+
+/* Список элементов - теперь без своей прокрутки */
+.compactList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compactItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: white;
+  border: 1px solid #e8ecef;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.compactItem:hover {
+  border-color: #a8c8bb;
+  background: #f8fbfa;
+  box-shadow: 0 4px 12px rgba(79, 138, 117, 0.08);
+  transform: translateX(2px);
+}
+
+.compactItemContent {
+  flex: 1;
+}
+
+.compactItemTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2c423b;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sideType {
+  font-size: 9px;
+  font-weight: 500;
+  color: #4a8270;
+  background: #e8f3ee;
+  padding: 1px 6px;
+  border-radius: 16px;
+  display: inline-block;
+}
+
+.compactItemSubtitle {
+  font-size: 10px;
+  color: #6d7f7a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claimAmount {
+  font-weight: 600;
+  color: #3a6859;
+  background: #e8f3ee;
+  padding: 1px 6px;
+  border-radius: 16px;
+  font-size: 10px;
+}
+
+.compactItemActions {
+  display: flex;
+  gap: 4px;
+}
+
+.actionButton, .deleteButton, .editButton {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f5f8f7;
+  color: #4a5b5f;
+}
+
+.actionButton {
+  color: #4a8270;
+}
+
+.actionButton:hover {
+  background: #4a8270;
+  color: white;
+  transform: scale(1.05);
+}
+
+.editButton {
+  color: #5a6b65;
+}
+
+.editButton:hover {
+  background: #5a6b65;
+  color: white;
+  transform: scale(1.05);
+}
+
+.deleteButton {
+  color: #b8776d;
+}
+
+.deleteButton:hover {
+  background: #b8776d;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Состояние пустого списка */
+.emptyState {
+  text-align: center;
+  padding: 20px 15px;
+  color: #99aaa4;
+  font-size: 12px;
+  background: #f5f8f7;
+  border-radius: 8px;
+  border: 1px dashed #cbd5d0;
+}
+
+.emptyStateButton {
+  margin-top: 8px;
+  background: #5e9b87;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(79, 138, 117, 0.2);
+}
+
+.emptyStateButton:hover {
+  background: #4a8270;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(79, 138, 117, 0.3);
+}
+
+.noData {
+  text-align: center;
+  color: #99aaa4;
+  font-size: 11px;
+  padding: 15px;
+  font-style: italic;
+}
+
+/* Футер - УМЕНЬШЕН */
+.cardFooter {
+  padding: 8px 12px;
+  background: #f7f9fa;
+  border-top: 1px solid #dee5e2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0; /* Не сжимается */
+}
+
+.primaryButton {
+  background: linear-gradient(145deg, #2d5a4f, #3f786a);
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  margin-right: 8px;
+  box-shadow: 0 2px 4px rgba(45, 90, 79, 0.2);
+}
+
+.primaryButton:hover {
+  background: linear-gradient(145deg, #3f786a, #2d5a4f);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(45, 90, 79, 0.25);
+}
+
+.footerActions {
+  display: flex;
+  gap: 6px;
+}
+
+.dangerButton {
+  background: white;
+  color: #b8776d;
+  border: 1px solid #b8776d;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dangerButton:hover {
+  background: #b8776d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(184, 119, 109, 0.2);
+}
+
+/* Статус архива */
+.archivedBadge {
+  background: #b58b6d;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 16px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
+.listSubtitle {
+  margin: 6px 0 3px 0;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}

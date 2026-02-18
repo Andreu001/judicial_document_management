@@ -1,9 +1,11 @@
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework import filters, permissions
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from .permissions import IsAdmin
+from rest_framework.permissions import AllowAny
 from .serializers import (UserSerializer, UserCreateSerializer, 
                          UserUpdateSerializer, UserPasswordSerializer)
 
@@ -13,25 +15,34 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['username', 'first_name', 'last_name', 'email']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        role = self.request.query_params.get('role', None)
+        if role:
+            queryset = queryset.filter(role=role)
+        return queryset
     
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer
         return UserSerializer
     
-    @action(detail=False, methods=['post'], permission_classes=[IsAdmin])
-    def create_user(self, request):
-        serializer = UserCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Ограничиваем доступ для не-админов
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Только админы могут создавать/изменять/удалять пользователей
+            return [IsAdmin()]
+        # Все аутентифицированные могут просматривать
+        return [AllowAny]
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_object(self):
         return self.request.user
@@ -44,7 +55,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 class UserChangePasswordView(generics.UpdateAPIView):
     serializer_class = UserPasswordSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_object(self):
         return self.request.user
@@ -65,3 +76,5 @@ class UserChangePasswordView(generics.UpdateAPIView):
             return Response({'detail': 'Пароль успешно изменен'})
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+

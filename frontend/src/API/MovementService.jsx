@@ -1,22 +1,50 @@
 import baseService from './baseService';
 
-export const updateMove = async (cardId, moveId, updatedData) => {
-  try {
-    const response = await baseService.patch(`/business_card/businesscard/${cardId}/businessmovement/${moveId}/`, updatedData);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating movement:', error);
-    throw error;
-  }
-};
+const CIVIL_BASE_URL = '/civil_proceedings/civil-proceedings/';
 
 class MovementService {
   static async getAllMove(cardId) {
     try {
-      const response = await baseService.get(`/business_card/businesscard/${cardId}/businessmovement/`);
+      const response = await baseService.get(`${CIVIL_BASE_URL}${cardId}/movements/`);
       return response;
     } catch (error) {
       console.error('Ошибка при выполнении запроса getAllMove:', error);
+      throw error;
+    }
+  }
+
+  static async getMovement(cardId, moveId) {
+    try {
+      const response = await baseService.get(`${CIVIL_BASE_URL}${cardId}/movements/${moveId}/`);
+      return response;
+    } catch (error) {
+      console.error('Ошибка при получении движения:', error);
+      throw error;
+    }
+  }
+
+  static async createMovement(cardId, movementData) {
+    try {
+      const response = await baseService.post(
+        `${CIVIL_BASE_URL}${cardId}/movements/`,
+        movementData
+      );
+      return response;
+    } catch (error) {
+      console.error('Ошибка при создании движения:', error);
+      throw error;
+    }
+  }
+
+  static async updateMovement(cardId, moveId, updatedData) {
+    try {
+      const response = await baseService.patch(
+        `${CIVIL_BASE_URL}${cardId}/movements/${moveId}/`,
+        updatedData
+      );
+      return response;
+    } catch (error) {
+      console.error('Error updating movement:', error);
       throw error;
     }
   }
@@ -33,7 +61,7 @@ class MovementService {
 
   static async remove(cardId, moveId) {
     try {
-      const response = await baseService.delete(`/business_card/businesscard/${cardId}/businessmovement/${moveId}/`);
+      const response = await baseService.delete(`${CIVIL_BASE_URL}${cardId}/movements/${moveId}/`);
       return response.data;
     } catch (error) {
       console.error('Error deleting movement:', error);

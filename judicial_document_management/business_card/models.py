@@ -384,19 +384,13 @@ class PetitionsInCase(models.Model):
         Petitions,
         verbose_name='ходатайства по делу',
     )
-    '''sides_case = models.ManyToManyField(
-        SidesCase,
-        verbose_name='Сторона по делу'
-    )'''
-    notification_parties = models.ManyToManyField(
-        SidesCaseInCase,
-        verbose_name='Кто заявил ходатайство'
-    )
     date_application = models.DateField(
         verbose_name='Дата ходатайства'
         )
-    decision_rendered = models.ManyToManyField(
+    decision_rendered = models.ForeignKey(
         Decisions,
+        on_delete=models.SET_NULL,
+        null=True,
         verbose_name='наименование вынесенного решения',
     )
     date_decision = models.DateField(
@@ -407,12 +401,6 @@ class PetitionsInCase(models.Model):
         max_length=300,
         verbose_name='примечания',
         null=True,
-    )
-    business_card = models.ForeignKey(
-        BusinessCard,
-        on_delete=models.CASCADE,
-        related_name='petitionsincase',
-        verbose_name='Карточка на дело',
     )
 
     class Meta:
@@ -484,6 +472,7 @@ class BusinessMovement(models.Model):
     )
     decision_case = models.ManyToManyField(
         Decisions,
+        blank=True,
         verbose_name='Решение по поступившему делу'
     )
     composition_colleges = models.CharField(
@@ -503,12 +492,6 @@ class BusinessMovement(models.Model):
         null=True,
         max_length=200,  # В дальнейшем выбор из списка вариантов
         verbose_name='причина отложения'
-    )
-    business_card = models.ForeignKey(
-        BusinessCard,
-        on_delete=models.CASCADE,
-        related_name='businessmovement',
-        verbose_name='Карточка на дело',
     )
 
     class Meta:

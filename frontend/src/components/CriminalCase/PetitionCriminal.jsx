@@ -23,6 +23,22 @@ const PetitionCriminal = () => {
   const [proceedingInfo, setProceedingInfo] = useState(null);
 
   const isCreateMode = !petitionId || petitionId === 'create' || petitionId === 'undefined';
+  const [petitionerOptions, setPetitionerOptions] = useState([]);
+  const [selectedPetitioner, setSelectedPetitioner] = useState({ type: '', id: '' });
+
+  useEffect(() => {
+    const fetchSides = async () => {
+      try {
+        const sides = await CriminalCaseService.getAllSides(proceedingId);
+        setPetitionerOptions(sides);
+      } catch (err) {
+        console.error('Не удалось загрузить список сторон:', err);
+      }
+    };
+    if (proceedingId) {
+      fetchSides();
+    }
+  }, [proceedingId]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,9 +96,10 @@ const PetitionCriminal = () => {
     try {
       const data = await CriminalCaseService.getPetitionById(proceedingId, petitionId);
       setPetitionData(data);
-      
-      const petitionIdValue = data.petition_id && data.petition_id.length > 0 
-        ? data.petition_id[0] 
+
+      // Устанавливаем ID ходатайства (существующий код)
+      const petitionIdValue = data.petition_id && data.petition_id.length > 0
+        ? data.petition_id[0]
         : (data.petition_detail?.id || '');
         
       setFormData({
@@ -90,12 +107,34 @@ const PetitionCriminal = () => {
         date_application: data.date_application || '',
         date_decision: data.date_decision || '',
         notation: data.notation || '',
-        petition_id: petitionIdValue
+        petition_id: petitionIdValue,
+        // Добавляем поля заявителя, если они есть
+        petitioner_type: data.petitioner_info?.type || '',
+        petitioner_id: data.petitioner_info?.id || null
       });
+
+      // Устанавливаем selectedPetitioner для отображения в select
+      if (data.petitioner_info) {
+        setSelectedPetitioner({
+          type: data.petitioner_info.type,
+          id: data.petitioner_info.id
+        });
+      }
+
     } catch (err) {
       console.error('Ошибка загрузки ходатайства:', err);
       setError('Ходатайство не найдено');
     }
+  };
+
+  const handlePetitionerChange = (e) => {
+    const [type, id] = e.target.value.split('|');
+    setSelectedPetitioner({ type, id: parseInt(id) });
+    setFormData(prev => ({
+      ...prev,
+      petitioner_type: type,
+      petitioner_id: parseInt(id)
+    }));
   };
 
   const handleInputChange = (e) => {
@@ -106,59 +145,54 @@ const PetitionCriminal = () => {
     }));
   };
 
-    const handleSave = async () => {
+  const handleSave = async () => {
     try {
-        setSaving(true);
-        setError(null);
+      setSaving(true);
+      setError(null);
 
-        if (!formData.petition_id) {
+      if (!formData.petition_id) {
         setError('Необходимо выбрать тип ходатайства');
         setSaving(false);
         return;
-        }
-        const dataToSend = {
+      }
+
+      const dataToSend = {
         petition_id: parseInt(formData.petition_id)
-        };
+      };
 
-        if (formData.date_application) {
+      // Опциональные поля
+      if (formData.date_application) {
         dataToSend.date_application = formData.date_application;
-        }
-        
-        if (formData.date_decision) {
+      }
+      if (formData.date_decision) {
         dataToSend.date_decision = formData.date_decision;
-        }
-        
-        if (formData.notation && formData.notation.trim() !== '') {
+      }
+      if (formData.notation && formData.notation.trim() !== '') {
         dataToSend.notation = formData.notation;
-        }
+      }
 
-        console.log('Отправка данных:', dataToSend);
+      // --- Добавляем информацию о заявителе, если выбрана сторона ---
+      if (formData.petitioner_type && formData.petitioner_id) {
+        dataToSend.petitioner_type = formData.petitioner_type;
+        dataToSend.petitioner_id = formData.petitioner_id;
+      }
 
-        if (isCreateMode) {
+      console.log('Отправка данных:', dataToSend);
+
+      if (isCreateMode) {
         const newPetition = await CriminalCaseService.createPetition(proceedingId, dataToSend);
         console.log('Создано ходатайство:', newPetition);
         navigate(-1);
-        } else {
+      } else {
         await CriminalCaseService.updatePetition(proceedingId, petitionId, dataToSend);
         setIsEditing(false);
-        }
+      }
 
-        setSaving(false);
+      setSaving(false);
     } catch (err) {
-        console.error('Ошибка сохранения:', err);
-        console.error('Детали ошибки:', err.response?.data);
-        
-        // Более детальное сообщение об ошибке
-        const errorMsg = err.response?.data?.petition_id?.[0] || 
-                        err.response?.data?.detail || 
-                        err.response?.data?.message || 
-                        err.message || 
-                        'Не удалось сохранить данные. Проверьте введенные данные.';
-        
-        setError(errorMsg);
-        setSaving(false);
+      // ... обработка ошибок
     }
-    };
+  };
 
   const handleDelete = async () => {
     if (!window.confirm('Вы уверены, что хотите удалить это ходатайство?')) {
@@ -273,6 +307,59 @@ const PetitionCriminal = () => {
                 </div>
               )}
             </div>
+
+              {/* Блок выбора стороны */}
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Сторона, заявившая ходатайство</label>
+                {isEditing || isCreateMode ? (
+                  <select
+                    name="petitioner"
+                    value={selectedPetitioner.type ? `${selectedPetitioner.type}|${selectedPetitioner.id}` : ''}
+                    onChange={handlePetitionerChange}
+                    className={styles.select}
+                  >
+                    <option value="">-- Не выбрано --</option>
+                    {/* Группировка по типам сторон */}
+                    {petitionerOptions.filter(p => p.type === 'defendant').length > 0 && (
+                      <optgroup label="Обвиняемые">
+                        {petitionerOptions
+                          .filter(p => p.type === 'defendant')
+                          .map(p => (
+                            <option key={`defendant-${p.id}`} value={`defendant|${p.id}`}>
+                              {p.name} ({p.details})
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                    {petitionerOptions.filter(p => p.type === 'lawyer').length > 0 && (
+                      <optgroup label="Адвокаты">
+                        {petitionerOptions
+                          .filter(p => p.type === 'lawyer')
+                          .map(p => (
+                            <option key={`lawyer-${p.id}`} value={`lawyer|${p.id}`}>
+                              {p.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                    {petitionerOptions.filter(p => p.type === 'side').length > 0 && (
+                      <optgroup label="Иные стороны">
+                        {petitionerOptions
+                          .filter(p => p.type === 'side')
+                          .map(p => (
+                            <option key={`side-${p.id}`} value={`side|${p.id}`}>
+                              {p.name} ({p.role})
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                  </select>
+                ) : (
+                  <div className={styles.readOnlyField}>
+                    {petitionData?.petitioner_info?.name || 'Не указано'}
+                  </div>
+                )}
+              </div>
 
             {/* Дата ходатайства */}
             <div className={styles.formGroup}>

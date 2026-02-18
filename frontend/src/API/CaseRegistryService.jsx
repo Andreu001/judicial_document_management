@@ -8,7 +8,6 @@ class CaseRegistryService {
     } catch (error) {
       console.error('Error fetching registry indexes:', error);
       console.error('Error details:', error.response?.data);
-      
       return [];
     }
   }
@@ -16,7 +15,11 @@ class CaseRegistryService {
   async getNextNumber(indexCode) {
     try {
       console.log('Fetching next number for index:', indexCode);
-      const response = await baseService.get(`/case-registry/next-number/${indexCode}/`);
+      
+      // Экранируем слеши для URL
+      const encodedIndex = encodeURIComponent(indexCode);
+      const response = await baseService.get(`/case-registry/next-number/${encodedIndex}/`);
+      
       console.log('Next number response:', response.data);
       return response.data.next_number;
     } catch (error) {
@@ -29,7 +32,17 @@ class CaseRegistryService {
   async registerCase(caseData) {
     try {
       console.log('Registering case:', caseData);
-      const response = await baseService.post('/case-registry/cases/register/', caseData);
+      
+      const payload = {
+        index: caseData.index,
+        description: caseData.description || '',
+        case_number: caseData.case_number,
+        registration_date: caseData.registration_date || new Date().toISOString().split('T')[0],
+        business_card_id: caseData.business_card_id || null,
+        criminal_proceedings_id: caseData.criminal_proceedings_id || null,
+      };
+      
+      const response = await baseService.post('/case-registry/cases/register/', payload);
       console.log('Case registration response:', response.data);
       return response.data;
     } catch (error) {
@@ -51,7 +64,6 @@ class CaseRegistryService {
 
   async getCases(params = {}) {
     try {
-      
       if (params.business_card) {
         const response = await baseService.get('/case-registry/cases/', { 
           params: {
@@ -67,7 +79,6 @@ class CaseRegistryService {
       console.error('Error fetching cases:', error);
       console.error('Error URL:', error.config?.url);
       console.error('Error status:', error.response?.status);
-
       return [];
     }
   }

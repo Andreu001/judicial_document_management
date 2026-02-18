@@ -61,6 +61,24 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             if instance.status == 'archived':
                 return ArchivedCriminalProceedingsSerializer
         return super().get_serializer_class()
+
+    def perform_destroy(self, instance):
+        """
+        Принудительное удаление уголовного дела с удалением регистрации
+        """
+        # Сначала удаляем регистрацию, если она есть
+        if instance.registered_case:
+            try:
+                case_registry.delete_case(
+                    instance.registered_case.id,
+                    reason="Удалено уголовное производство через API"
+                )
+                logger.info(f"Удалена регистрация для уголовного дела {instance.case_number_criminal}")
+            except Exception as e:
+                logger.error(f"Ошибка при удалении регистрации: {e}")
+        
+        # Затем удаляем само дело
+        instance.delete()
     
     @action(detail=True, methods=['post'])
     def archive(self, request, pk=None):

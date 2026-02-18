@@ -37,6 +37,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('secretary', 'Секретарь'),
         ('lawyer', 'Адвокат'),
         ('citizen', 'Гражданин'),
+        ('hr', 'Кадры'),
     )
 
     SUBJECT_LEVELS = (

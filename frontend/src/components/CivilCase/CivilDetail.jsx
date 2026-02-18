@@ -1,29 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import baseService from '../../API/baseService';
 import CivilCaseService from '../../API/CivilCaseService';
 import styles from './CivilDetail.module.css';
-import CivilNotifications from './CivilNotifications';
+import ConfirmDialog from '../../pages/ConfirmDialog';
 import {
-  PreTrialTab,
-  CaseMovementTab,
-  ReconciliationTab,
-  DurationTab,
-  OtherMarksTab
+  BasicInfoTab,
+  MovementTab,
+  DeadlinesTab,
+  AdditionalInfoTab
 } from './CivilTabComponents';
 
 const CivilDetail = () => {
-  const { cardId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [civilData, setCivilData] = useState(null);
   const [sides, setSides] = useState([]);
+  const [decisions, setDecisions] = useState([]);
   const [procedureActions, setProcedureActions] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('pretrial');
+  const [activeTab, setActiveTab] = useState('basic');
   const [options, setOptions] = useState({
     admission_order: [],
     postponed_reason: [],
@@ -35,7 +34,13 @@ const CivilDetail = () => {
     second_instance_result: [],
     court_composition: []
   });
-  const [card, setCard] = useState(null);
+  const [isArchived, setIsArchived] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: 'Подтверждение',
+    message: '',
+    onConfirm: null
+  });
   const [judges, setJudges] = useState([]);
 
   useEffect(() => {
@@ -43,36 +48,34 @@ const CivilDetail = () => {
       try {
         setLoading(true);
         
-        // Загрузка карточки дела
-        const cardResponse = await baseService.get(`/business_card/businesscard/${cardId}/`);
-        setCard(cardResponse.data);
-        
-        // Загрузка гражданского дела
-        const civilResponse = await CivilCaseService.getByBusinessCardId(cardId);
+        console.log('Loading civil details for ID:', id);
+
+        const civilResponse = await CivilCaseService.getCivilProceedingById(id);
         
         if (civilResponse) {
-          const civilDataWithCard = {
-            ...civilResponse,
-            case_number: civilResponse.case_number || cardResponse.data?.original_name || ''
-          };
+          console.log('Civil data loaded:', civilResponse);
+          setCivilData(civilResponse);
+          setFormData(civilResponse);
+          setIsArchived(civilResponse.status === 'archived');
           
-          setCivilData(civilDataWithCard);
-          setFormData(civilDataWithCard);
-          
-          // Загрузка сторон
+          // Загружаем связанные данные
           const sidesResponse = await CivilCaseService.getSides(civilResponse.id);
           setSides(sidesResponse);
           
-          // Загрузка действий по подготовке
-          const actionsResponse = await CivilCaseService.getProcedureActions(civilResponse.id);
+          const decisionsResponse = await CivilCaseService.getDecisions(civilResponse.id);
+          setDecisions(decisionsResponse);
+          
+          const actionsResponse = await CivilCaseService.getCivilProceedingById(civilResponse.id);
           setProcedureActions(actionsResponse);
+        } else {
+          setError('Гражданское дело не найдено');
         }
-        
-        // Загрузка опций
-        await loadOptions();
-        
-        // Загрузка списка судей
-        await loadJudges();
+
+        // Загружаем опции и судей параллельно
+        await Promise.all([
+          loadOptions(),
+          loadJudges()
+        ]);
         
         setLoading(false);
       } catch (err) {
@@ -81,91 +84,240 @@ const CivilDetail = () => {
         setLoading(false);
       }
     };
-
-    fetchCivilDetails();
-  }, [cardId]);
-
-  const loadOptions = async () => {
-    try {
-      const response = await CivilCaseService.getCivilOptions();
-      setOptions({
-        admission_order: response.admission_order || [],
-        postponed_reason: response.postponed_reason || [],
-        compliance_with_deadlines: response.compliance_with_deadlines || [],
-        ruling_type: response.ruling_type || [],
-        consideration_result_main: response.consideration_result_main || [],
-        consideration_result_additional: response.consideration_result_additional || [],
-        consideration_result_counter: response.consideration_result_counter || [],
-        second_instance_result: response.second_instance_result || [],
-        court_composition: response.court_composition || []
-      });
-    } catch (error) {
-      console.error('Ошибка загрузки опций:', error);
-      setOptions({});
+    
+    if (id) {
+      fetchCivilDetails();
     }
-  };
+  }, [id]);
 
   const loadJudges = async () => {
     try {
-      const judgesList = await CivilCaseService.getJudges();
-      setJudges(judgesList);
+      const judgesData = await CivilCaseService.getJudges();
+      setJudges(judgesData);
     } catch (error) {
       console.error('Ошибка загрузки списка судей:', error);
       setJudges([]);
     }
   };
 
+  const loadOptions = async () => {
+    try {
+      const response = await CivilCaseService.getCivilOptions();
+      setOptions(response);
+    } catch (error) {
+      console.error('Ошибка загрузки опций:', error);
+      setOptions({
+        admission_order: [],
+        postponed_reason: [],
+        compliance_with_deadlines: [],
+        ruling_type: [],
+        consideration_result_main: [],
+        consideration_result_additional: [],
+        consideration_result_counter: [],
+        second_instance_result: [],
+        court_composition: []
+      });
+    }
+  };
+
   const handleFieldChange = useCallback((name, value) => {
+    if (isArchived && isEditing) {
+      const editableFields = ['archive_notes', 'archived_date', 'status'];
+      if (!editableFields.includes(name)) {
+        alert('Это поле нельзя редактировать в архивном деле');
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  }, []);
+  }, [isArchived, isEditing]);
+
+  const [expandedSections, setExpandedSections] = useState({
+    sides: true, // по умолчанию развернуто
+    decisions: true,
+    actions: true
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
+    
+    if (isArchived && isEditing) {
+      const editableFields = ['archive_notes', 'archived_date', 'status'];
+      if (!editableFields.includes(name)) {
+        alert('Это поле нельзя редактировать в архивном деле');
+        return;
+      }
+    }
+    
     handleFieldChange(name, type === 'checkbox' ? checked : value);
-  }, [handleFieldChange]);
+  }, [handleFieldChange, isArchived, isEditing]);
+
+  const handleDateChange = useCallback((name, dateString) => {
+    if (isArchived && isEditing) {
+      const editableFields = ['archive_notes', 'archived_date', 'status'];
+      if (!editableFields.includes(name)) {
+        alert('Это поле нельзя редактировать в архивном деле');
+        return;
+      }
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: dateString || null
+    }));
+  }, [isArchived, isEditing]);
 
   const handleSave = async () => {
     try {
       setSaving(true);
       
       const dataToSend = { ...formData };
-      
-      // Удаляем лишние поля
+
       delete dataToSend.sides;
-      delete dataToSend.procedure_actions;
       delete dataToSend.decisions;
+      delete dataToSend.procedure_actions;
       delete dataToSend.id;
-      delete dataToSend.business_card;
-      delete dataToSend.business_card_data;
-      delete dataToSend.created_at;
-      delete dataToSend.updated_at;
-      
-      const updatedData = await CivilCaseService.updateByBusinessCard(cardId, dataToSend);
+
+      if (isArchived) {
+        const allowedFields = ['archive_notes', 'archived_date', 'status'];
+        Object.keys(dataToSend).forEach(key => {
+          if (!allowedFields.includes(key)) {
+            delete dataToSend[key];
+          }
+        });
+      }
+
+      const proceedingId = civilData.id;
+      const updatedData = await CivilCaseService.updateCivilProceedings(proceedingId, dataToSend);
       
       setCivilData(updatedData);
       setFormData(updatedData);
       setIsEditing(false);
       setSaving(false);
+      
+      setIsArchived(updatedData.status === 'archived');
+      
     } catch (err) {
       console.error('Ошибка сохранения:', err);
       setError('Не удалось сохранить данные');
       setSaving(false);
+      alert('Ошибка при сохранении данных');
     }
   };
 
-  const handleDateChange = useCallback((name, dateString) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: dateString || null
-    }));
-  }, []);
+  const handleArchive = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Отправка в архив',
+      message: 'Отправить дело в архив? После архивации дело будет доступно только в разделе "Архив".',
+      onConfirm: async () => {
+        try {
+          await CivilCaseService.archiveCivilProceeding(id);
+          navigate('/archive');
+        } catch (err) {
+          console.error('Error archiving:', err);
+          alert('Ошибка отправки в архив: ' + (err.response?.data?.error || err.message));
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  const handleUnarchive = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Возврат из архива',
+      message: 'Вернуть дело из архива?',
+      onConfirm: async () => {
+        try {
+          await CivilCaseService.unarchiveCivilProceeding(id);
+          const updatedData = await CivilCaseService.getCivilProceedingById(id);
+          setCivilData(updatedData);
+          setFormData(updatedData);
+          setIsArchived(false);
+          alert('Дело возвращено из архива');
+        } catch (err) {
+          console.error('Error unarchiving:', err);
+          alert('Ошибка возврата из архива: ' + (err.response?.data?.error || err.message));
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   const handleCancel = () => {
     setFormData(civilData);
     setIsEditing(false);
+  };
+
+  const handleAddSide = () => {
+    navigate(`/civil-proceedings/${id}/sides/create`);
+  };
+
+  const handleAddDecision = () => {
+    navigate(`/civil-proceedings/${id}/decisions/create`);
+  };
+
+  const handleAddProcedureAction = () => {
+    navigate(`/civil-proceedings/${id}/procedure-actions/create`);
+  };
+
+  const handleEditSide = (sideId) => {
+    navigate(`/civil-proceedings/${id}/sides/${sideId}/edit`);
+  };
+
+  const handleEditDecision = (decisionId) => {
+    navigate(`/civil-proceedings/${id}/decisions/${decisionId}/edit`);
+  };
+
+  const handleEditProcedureAction = (actionId) => {
+    navigate(`/civil-proceedings/${id}/procedure-actions/${actionId}/edit`);
+  };
+
+  const handleDeleteSide = async (sideId) => {
+    if (window.confirm('Удалить сторону по делу?')) {
+      try {
+        await CivilCaseService.deleteSide(id, sideId);
+        setSides(sides.filter(s => s.id !== sideId));
+      } catch (error) {
+        console.error('Ошибка удаления стороны:', error);
+        alert('Не удалось удалить сторону');
+      }
+    }
+  };
+
+  const handleDeleteDecision = async (decisionId) => {
+    if (window.confirm('Удалить решение по делу?')) {
+      try {
+        await CivilCaseService.deleteDecision(id, decisionId);
+        setDecisions(decisions.filter(d => d.id !== decisionId));
+      } catch (error) {
+        console.error('Ошибка удаления решения:', error);
+        alert('Не удалось удалить решение');
+      }
+    }
+  };
+
+  const handleDeleteProcedureAction = async (actionId) => {
+    if (window.confirm('Удалить процессуальное действие?')) {
+      try {
+        await CivilCaseService.deleteProcedureAction(id, actionId);
+        setProcedureActions(procedureActions.filter(a => a.id !== actionId));
+      } catch (error) {
+        console.error('Ошибка удаления процессуального действия:', error);
+        alert('Не удалось удалить действие');
+      }
+    }
   };
 
   const formatDate = (dateString) => {
@@ -173,199 +325,24 @@ const CivilDetail = () => {
     return new Date(dateString).toLocaleDateString('ru-RU');
   };
 
-  const formatBoolean = (value) => {
-    return value ? 'Да' : 'Нет';
-  };
-
   const getOptionLabel = (optionsArray, value) => {
-    return optionsArray.find(opt => opt.value === value)?.label || 'Не указано';
+    if (!optionsArray || !value) return 'Не указано';
+    const option = optionsArray.find(opt => opt.value === value);
+    return option?.label || 'Не указано';
   };
 
-  // Функция проверки сроков
-  const checkDeadlines = () => {
-    if (!civilData) return null;
-
-    const applicationDate = new Date(civilData.application_date);
-    const acceptedDate = new Date(civilData.accepted_for_production);
-    const consideredDate = civilData.decisions?.[0]?.considered_date ? 
-      new Date(civilData.decisions[0].considered_date) : null;
-
-    // Срок принятия к производству
-    const acceptanceDays = acceptedDate ? 
-      Math.floor((acceptedDate - applicationDate) / (1000 * 60 * 60 * 24)) : null;
-    
-    // Срок рассмотрения дела
-    const considerationDays = consideredDate && acceptedDate ? 
-      Math.floor((consideredDate - acceptedDate) / (1000 * 60 * 60 * 24)) : null;
-
-    return {
-      acceptance: {
-        days: acceptanceDays,
-        violation: acceptanceDays > 5 // Стандартный срок 5 дней
-      },
-      consideration: {
-        days: considerationDays,
-        statutory: civilData.statutory_period_days || 60,
-        violation: considerationDays > (civilData.statutory_period_days || 60)
-      }
-    };
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return '—';
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
   };
-
-  // Компонент вкладки сторон
-  const SidesTab = () => (
-    <div className={styles.tabContent}>
-      <div className={styles.sidesSection}>
-        <div className={styles.tabHeader}>
-          <h3 className={styles.subsectionTitle}>А. Стороны по гражданскому делу</h3>
-          <button 
-            className={styles.addButton}
-            onClick={() => navigate(`/civil/cases/${cardId}/sides/new`)}
-          >
-            + Добавить сторону
-          </button>
-        </div>
-        
-        {sides.length > 0 ? (
-          <div className={styles.sidesGrid}>
-            {sides.map(side => (
-              <div key={side.id} className={styles.sideCard}>
-                <div className={styles.sideHeader}>
-                  <h4>Сторона #{side.id}</h4>
-                  <div className={styles.sideActions}>
-                    <button 
-                      className={styles.editSideButton}
-                      onClick={() => navigate(`/civil/cases/${cardId}/sides/${side.id}/edit`)}
-                    >
-                      Редактировать
-                    </button>
-                  </div>
-                </div>
-                
-                <div className={styles.sideContent}>
-                  <div className={styles.sideColumn}>
-                    <h5>Истец:</h5>
-                    <p>{side.plaintiff_name || 'Не указан'}</p>
-                    
-                    <h5>Основное требование:</h5>
-                    <p>{side.main_claim || 'Не указано'}</p>
-                    <p><strong>Сумма:</strong> {side.main_claim_amount || '0'} руб.</p>
-                    
-                    <h5>Дополнительное требование:</h5>
-                    <p>{side.additional_claim || 'Не указано'}</p>
-                    <p><strong>Сумма:</strong> {side.additional_claim_amount || '0'} руб.</p>
-                  </div>
-                  
-                  <div className={styles.sideColumn}>
-                    <h5>Ответчик:</h5>
-                    <p>{side.defendant_name || 'Не указан'}</p>
-                    
-                    <h5>Встречное требование:</h5>
-                    <p>{side.counter_claim || 'Не указано'}</p>
-                    <p><strong>Сумма (осн.):</strong> {side.counter_claim_amount_main || '0'} руб.</p>
-                    <p><strong>Сумма (доп.):</strong> {side.counter_claim_amount_additional || '0'} руб.</p>
-                  </div>
-                  
-                  <div className={styles.sideColumn}>
-                    <h5>Третьи лица:</h5>
-                    <p>{side.third_parties || 'Не указаны'}</p>
-                    
-                    {side.independent_claims && (
-                      <>
-                        <h5>Самостоятельные требования:</h5>
-                        <p><strong>Сумма:</strong> {side.independent_claims_amount || '0'} руб.</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>Стороны по делу не добавлены</p>
-            <button 
-              className={styles.addButton}
-              onClick={() => navigate(`/civil/cases/${cardId}/sides/new`)}
-            >
-              + Добавить первую сторону
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Компонент вкладки действий по подготовке
-  const ActionsTab = () => (
-    <div className={styles.tabContent}>
-      <div className={styles.actionsSection}>
-        <div className={styles.tabHeader}>
-          <h3 className={styles.subsectionTitle}>Действия на стадии подготовки дела</h3>
-          <button 
-            className={styles.addButton}
-            onClick={() => navigate(`/civil/cases/${cardId}/actions/new`)}
-          >
-            + Добавить действие
-          </button>
-        </div>
-        
-        {procedureActions.length > 0 ? (
-          <div className={styles.actionsGrid}>
-            {procedureActions.map(action => (
-              <div key={action.id} className={styles.actionCard}>
-                <div className={styles.actionHeader}>
-                  <h4>Действие #{action.id}</h4>
-                  <span className={styles.actionDate}>
-                    Создано: {formatDate(action.created_at)}
-                  </span>
-                </div>
-                
-                <div className={styles.actionContent}>
-                  {action.preparation_order_date && (
-                    <p><strong>Определение о подготовке:</strong> {formatDate(action.preparation_order_date)}</p>
-                  )}
-                  
-                  {action.preliminary_hearing_order_date && (
-                    <p><strong>Предварительное заседание:</strong> {formatDate(action.preliminary_hearing_order_date)}</p>
-                  )}
-                  
-                  {action.examination_order_date && (
-                    <p><strong>Экспертиза:</strong> {formatDate(action.examination_order_date)} ({action.examination_type})</p>
-                  )}
-                  
-                  {action.claim_security_order_date && (
-                    <p><strong>Обеспечение иска:</strong> {formatDate(action.claim_security_order_date)}</p>
-                  )}
-                  
-                  <div className={styles.actionActions}>
-                    <button 
-                      className={styles.editActionButton}
-                      onClick={() => navigate(`/civil/cases/${cardId}/actions/${action.id}/edit`)}
-                    >
-                      Редактировать
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.noData}>
-            <p>Действия по подготовке дела не добавлены</p>
-            <button 
-              className={styles.addButton}
-              onClick={() => navigate(`/civil/cases/${cardId}/actions/new`)}
-            >
-              + Добавить первое действие
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   if (loading) {
-    return <div className={styles.loading}>Загрузка данных гражданского дела...</div>;
+    return <div className={styles.loading}>Загрузка данных...</div>;
   }
 
   if (error) {
@@ -373,20 +350,8 @@ const CivilDetail = () => {
   }
 
   if (!civilData) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>Данные гражданского дела не найдены</div>
-        <button 
-          onClick={() => navigate(-1)} 
-          className={styles.backButton}
-        >
-          Назад
-        </button>
-      </div>
-    );
+    return <div className={styles.error}>Данные не найдены</div>;
   }
-
-  const deadlines = checkDeadlines();
 
   return (
     <div className={styles.container}>
@@ -398,14 +363,35 @@ const CivilDetail = () => {
           >
             ← Назад
           </button>
-          <h1 className={styles.title}>Гражданское дело №{card?.original_name || ''}</h1>
+          <h1 className={styles.title}>
+            Гражданское дело №{civilData.case_number_civil || 'Не указано'}
+            {isArchived && <span className={styles.archiveBadge}>АРХИВ</span>}
+          </h1>
         </div>
         
         <div className={styles.headerRight}>
+          {isArchived ? (
+            <button 
+              onClick={handleUnarchive}
+              className={styles.unarchiveButton}
+            >
+              📤 Вернуть из архива
+            </button>
+          ) : (
+            <button 
+              onClick={handleArchive}
+              className={styles.archiveButton}
+            >
+              📁 Сдать в архив
+            </button>
+          )}
+          
           {!isEditing ? (
             <button 
               onClick={() => setIsEditing(true)} 
               className={styles.editButton}
+              disabled={isArchived}
+              title={isArchived ? "Редактирование архивных дел ограничено" : ""}
             >
               Редактировать
             </button>
@@ -435,196 +421,288 @@ const CivilDetail = () => {
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
               <button 
-                className={`${styles.tab} ${activeTab === 'pretrial' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('pretrial')}
+                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('basic')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
-                Досудебная подготовка
+                Основные сведения
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'movement' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('movement')}
+                className={`${styles.tab} ${activeTab === 'movement' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('movement')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
                 Движение дела
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'sides' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('sides')}
+                className={`${styles.tab} ${activeTab === 'deadlines' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
+                onClick={() => !(isArchived && isEditing) && setActiveTab('deadlines')}
+                disabled={isArchived && isEditing}
+                title={isArchived && isEditing ? "Эта вкладка недоступна для редактирования в архивном деле" : ""}
               >
-                Стороны
+                Сроки и делопроизводство
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'reconciliation' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('reconciliation')}
+                className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('additional')}
               >
-                Примирение
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'duration' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('duration')}
-              >
-                Сроки
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'actions' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('actions')}
-              >
-                Действия
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'other' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('other')}
-              >
-                Другие отметки
+                Дополнительно
               </button>
             </div>
-            
             <div className={styles.tabContentWrapper}>
-              {activeTab === 'pretrial' && (
-                <PreTrialTab
-                  isEditing={isEditing}
+              {activeTab === 'basic' && (
+                <BasicInfoTab
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
                   civilData={civilData}
                   handleDateChange={handleDateChange}
-                  formatDate={formatDate}
-                  card={card}
                   handleInputChange={handleInputChange}
-                  handleFieldChange={handleFieldChange}
                   getOptionLabel={getOptionLabel}
-                  formatBoolean={formatBoolean}
+                  formatDate={formatDate}
+                  isArchived={isArchived}
                   judges={judges}
                 />
               )}
-              
               {activeTab === 'movement' && (
-                <CaseMovementTab
-                  isEditing={isEditing}
+                <MovementTab
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
                   civilData={civilData}
                   handleDateChange={handleDateChange}
-                  formatDate={formatDate}
                   handleInputChange={handleInputChange}
                   getOptionLabel={getOptionLabel}
-                  formatBoolean={formatBoolean}
-                />
-              )}
-              
-              {activeTab === 'sides' && <SidesTab />}
-              
-              {activeTab === 'reconciliation' && (
-                <ReconciliationTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  civilData={civilData}
-                  handleDateChange={handleDateChange}
                   formatDate={formatDate}
-                  handleInputChange={handleInputChange}
-                  formatBoolean={formatBoolean}
+                  isArchived={isArchived}
                 />
               )}
-              
-              {activeTab === 'duration' && (
-                <DurationTab
-                  isEditing={isEditing}
+              {activeTab === 'deadlines' && (
+                <DeadlinesTab
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
                   civilData={civilData}
                   handleDateChange={handleDateChange}
-                  formatDate={formatDate}
                   handleInputChange={handleInputChange}
                   getOptionLabel={getOptionLabel}
-                  deadlines={deadlines}
+                  formatDate={formatDate}
+                  isArchived={isArchived}
                 />
               )}
-              
-              {activeTab === 'actions' && <ActionsTab />}
-              
-              {activeTab === 'other' && (
-                <OtherMarksTab
+              {activeTab === 'additional' && (
+                <AdditionalInfoTab
                   isEditing={isEditing}
                   formData={formData}
                   civilData={civilData}
                   handleDateChange={handleDateChange}
-                  formatDate={formatDate}
                   handleInputChange={handleInputChange}
-                  formatBoolean={formatBoolean}
+                  formatDate={formatDate}
+                  isArchived={isArchived}
                 />
               )}
             </div>
           </div>
         </div>
 
-        {/* Правая колонка - уведомления */}
-        <div className={styles.sidebar}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Статус дела</h2>
-            
-            <div className={styles.statusInfo}>
-              <div className={styles.statusItem}>
-                <strong>Статус:</strong>
-                <span className={styles.statusValue}>
-                  {civilData.handed_to_office_date ? 'В архиве' : 
-                   civilData.effective_date ? 'Исполняется' : 
-                   civilData.considered_date ? 'Рассмотрено' : 
-                   civilData.accepted_for_production ? 'В производстве' : 
-                   'Поступило'}
-                </span>
+{/* Правая колонка - стороны по делу */}
+<div className={styles.sidebar}>
+  {/* Стороны по делу */}
+  <div className={styles.section}>
+    <div 
+      className={styles.sectionHeader}
+      onClick={() => toggleSection('sides')}
+    >
+      <h2 className={styles.sectionTitle}>
+        <span>Стороны по делу</span>
+        <span className={styles.expandIcon}>
+          {expandedSections.sides ? '▼' : '▶'}
+        </span>
+      </h2>
+    </div>
+    
+    {expandedSections.sides && (
+      <>
+        <button 
+          onClick={handleAddSide}
+          className={styles.addButton}
+        >
+          + Добавить сторону
+        </button>
+        
+        {sides.length > 0 ? (
+          <div className={styles.sidesList}>
+            {sides.map(side => (
+              <div key={side.id} className={styles.sideItem}>
+                <div className={styles.sideHeader}>
+                  <h4>
+                    {side.plaintiff_name || side.defendant_name || 'Сторона по делу'}
+                  </h4>
+                  <span className={styles.sideRole}>
+                    {side.plaintiff_name ? 'Истец' : 
+                     side.defendant_name ? 'Ответчик' : 
+                     side.third_parties ? 'Третье лицо' : 'Сторона'}
+                  </span>
+                </div>
+                {side.main_claim && (
+                  <p className={styles.sideDetails}>
+                    <strong>Требование:</strong> {side.main_claim.substring(0, 100)}
+                    {side.main_claim.length > 100 && '...'}
+                  </p>
+                )}
+                {side.main_claim_amount > 0 && (
+                  <span className={styles.sideAmount}>
+                    Сумма: {formatCurrency(side.main_claim_amount)}
+                  </span>
+                )}
+                <div className={styles.sideActions}>
+                  <button 
+                    onClick={() => handleEditSide(side.id)}
+                    className={styles.editButton}
+                  >
+                    Редактировать
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteSide(side.id)}
+                    className={styles.dangerButton}
+                  >
+                    Удалить
+                  </button>
+                </div>
               </div>
-              
-              <div className={styles.statusItem}>
-                <strong>Судья:</strong>
-                <span>{civilData.judge_name || 'Не назначен'}</span>
-              </div>
-              
-              <div className={styles.statusItem}>
-                <strong>Дата поступления:</strong>
-                <span>{formatDate(civilData.application_date)}</span>
-              </div>
-              
-              <div className={styles.statusItem}>
-                <strong>Принято к производству:</strong>
-                <span>{formatDate(civilData.accepted_for_production)}</span>
-              </div>
-            </div>
+            ))}
           </div>
+        ) : (
+          <p className={styles.noData}>Стороны не добавлены</p>
+        )}
+      </>
+    )}
+  </div>
 
-          {/* Уведомления по срокам */}
-          <CivilNotifications 
-            cardId={cardId} 
-            civilData={civilData} 
-            deadlines={deadlines}
-          />
+  {/* Решения по делу */}
+  <div className={styles.section}>
+    <div 
+      className={styles.sectionHeader}
+      onClick={() => toggleSection('decisions')}
+    >
+      <h2 className={styles.sectionTitle}>
+        <span>Решения по делу</span>
+        <span className={styles.expandIcon}>
+          {expandedSections.decisions ? '▼' : '▶'}
+        </span>
+      </h2>
+    </div>
+    
+    {expandedSections.decisions && (
+      <>
+        <button 
+          onClick={handleAddDecision}
+          className={styles.addButton}
+        >
+          + Добавить решение
+        </button>
+        
+        {decisions.length > 0 ? (
+          <div className={styles.sidesList}>
+            {decisions.map(decision => (
+              <div key={decision.id} className={styles.sideItem}>
+                <div className={styles.sideHeader}>
+                  <h4>Решение #{decision.id}</h4>
+                  <span className={styles.sideRole}>
+                    {formatDate(decision.considered_date)}
+                  </span>
+                </div>
+                {decision.ruling_type && (
+                  <p className={styles.sideDetails}>
+                    Вид: {decision.ruling_type}
+                  </p>
+                )}
+                <div className={styles.sideActions}>
+                  <button 
+                    onClick={() => handleEditDecision(decision.id)}
+                    className={styles.editButton}
+                  >
+                    Просмотр
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className={styles.noData}>Решения не добавлены</p>
+        )}
+      </>
+    )}
+  </div>
 
-          {/* Быстрые ссылки */}
+          {/* Процессуальные действия */}
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Быстрые действия</h2>
-            
-            <div className={styles.quickActions}>
-              <button 
-                className={styles.quickButton}
-                onClick={() => navigate(`/civil/cases/${cardId}/decisions`)}
-              >
-                📄 Решения
-              </button>
-              
-              <button 
-                className={styles.quickButton}
-                onClick={() => navigate(`/civil/cases/${cardId}/sides`)}
-              >
-                👥 Стороны
-              </button>
-              
-              <button 
-                className={styles.quickButton}
-                onClick={() => navigate(`/civil/cases/${cardId}/actions`)}
-              >
-                ⚙️ Действия
-              </button>
+            <div 
+              className={styles.sectionHeader}
+              onClick={() => toggleSection('actions')}
+            >
+              <h2 className={styles.sectionTitle}>
+                <span>Процессуальные действия</span>
+                <span className={styles.expandIcon}>
+                  {expandedSections.actions ? '▼' : '▶'}
+                </span>
+              </h2>
             </div>
+            
+            {expandedSections.actions && (
+              <>
+                <button 
+                  onClick={handleAddProcedureAction}
+                  className={styles.addButton}
+                >
+                  + Добавить действие
+                </button>
+                
+                {procedureActions.length > 0 ? (
+                  <div className={styles.sidesList}>
+                    {procedureActions.map(action => (
+                      <div key={action.id} className={styles.sideItem}>
+                        <div className={styles.sideHeader}>
+                          <h4>
+                            {action.preparation_order_date ? 'Подготовка дела' : 
+                            action.preliminary_hearing_order_date ? 'Предварительное заседание' : 
+                            'Процессуальное действие'}
+                          </h4>
+                        </div>
+                        {action.control_date && (
+                          <p className={styles.sideDetails}>
+                            Контроль: {formatDate(action.control_date)}
+                          </p>
+                        )}
+                        <div className={styles.sideActions}>
+                          <button 
+                            onClick={() => handleEditProcedureAction(action.id)}
+                            className={styles.editButton}
+                          >
+                            Просмотр
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.noData}>Действия не добавлены</p>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

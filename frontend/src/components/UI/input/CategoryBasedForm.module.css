@@ -1,0 +1,645 @@
+/* CategoryBasedForm.module.css */
+
+/* Общий контейнер формы */
+.formContainer {
+  max-width: 950px; /* чуть шире для компактной сетки */
+  margin: 0 auto;
+  padding: 1rem; /* уменьшено */
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  font-size: 13px; /* уменьшен базовый шрифт */
+}
+
+.formContainer h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem; /* уменьшен */
+  font-weight: 600;
+  color: #2d3e50;
+  border-bottom: 1px solid #e0e7ed;
+  padding-bottom: 0.4rem;
+}
+
+/* Сетка категорий */
+.categoriesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* меньше ячейки */
+  gap: 0.5rem; /* меньше промежуток */
+  margin-bottom: 0.75rem;
+}
+
+.categoryCard {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem; /* уменьшен */
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  background: #f9fbfd;
+  font-size: 0.85rem; /* уменьшен */
+}
+
+.categoryCard:hover {
+  border-color: #2c7be5;
+  background: #f0f6ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(44, 123, 229, 0.1);
+}
+
+.categoryCard:active {
+  transform: translateY(0);
+}
+
+.categoryTitle {
+  font-size: 0.95rem; /* чуть меньше */
+  font-weight: 600;
+  color: #2d3e50;
+  margin-bottom: 0.2rem;
+}
+
+.categoryDescription {
+  font-size: 0.75rem; /* уменьшен */
+  color: #6c7a8d;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* Иконки категорий (псевдоэлементы) */
+.categoryIcon {
+  width: 18px;
+  height: 18px;
+  margin-right: 0.4rem;
+}
+
+/* Карточка подтверждения */
+.confirmationCard {
+  background: #fff;
+  border-radius: 6px;
+  padding: 1rem; /* уменьшен */
+  border: 1px solid #e9eef2;
+  margin-top: 0.5rem;
+}
+
+.infoRow {
+  display: flex;
+  align-items: baseline;
+  padding: 0.4rem 0; /* уменьшен */
+  border-bottom: 1px solid #edf2f7;
+  font-size: 0.85rem; /* уменьшен */
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoRow strong {
+  min-width: 100px; /* чуть уже */
+  font-weight: 600;
+  color: #4a5a6e;
+  font-size: 0.8rem;
+}
+
+.caseNumber {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem; /* уменьшен */
+  font-weight: 700;
+  color: #1e4c7a;
+  background: #ebf5ff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
+/* Группа кнопок */
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem; /* меньше */
+  margin-top: 1rem; /* уменьшен */
+  justify-content: flex-end;
+}
+
+/* Кнопки */
+.primaryButton {
+  background: #2c7be5;
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem; /* уменьшен */
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 0.85rem; /* уменьшен */
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 140px; /* чуть уже */
+  line-height: 1.2;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #1a5bbf;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(26, 91, 191, 0.2);
+}
+
+.primaryButton:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.secondaryButton {
+  background: #e9ecf0;
+  color: #2d3e50;
+  border: 1px solid #cdd7e3;
+  padding: 0.4rem 1rem;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: #dde2e9;
+  border-color: #b8c5d4;
+}
+
+.dangerButton {
+  background: #e04848;
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: #c03535;
+}
+
+/* Индикатор загрузки */
+.loadingSpinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Хлебные крошки */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem; /* уменьшен */
+  font-size: 0.75rem; /* уменьшен */
+  color: #7a8b9f;
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: none;
+  border: none;
+  color: #2c7be5;
+  cursor: pointer;
+  padding: 0;
+}
+
+.breadcrumbActive {
+  color: #2d3e50;
+  font-weight: 600;
+}
+
+.breadcrumbSeparator {
+  color: #ccd7e4;
+}
+
+/* Прогресс-бар */
+.progressBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem; /* уменьшен */
+  position: relative;
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.stepIndicator {
+  width: 22px; /* уменьшен */
+  height: 22px;
+  border-radius: 50%;
+  background: #e9ecf0;
+  color: #6b7f94;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.75rem; /* уменьшен */
+  margin-bottom: 0.2rem;
+  z-index: 2;
+  transition: all 0.2s;
+}
+
+.stepIndicator.active {
+  background: #2c7be5;
+  color: white;
+  box-shadow: 0 0 0 2px rgba(44, 123, 229, 0.15);
+}
+
+.stepIndicator.completed {
+  background: #3fb68b;
+  color: white;
+  font-size: 0.8rem;
+}
+
+.stepLabel {
+  font-size: 0.65rem; /* уменьшен */
+  color: #7a8b9f;
+  text-align: center;
+}
+
+.stepLabel.active {
+  color: #2d3e50;
+  font-weight: 600;
+}
+
+.progressLine {
+  position: absolute;
+  top: 11px; /* подогнано под новый размер */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.progressFill {
+  position: absolute;
+  top: 11px;
+  left: 0;
+  height: 2px;
+  background: #3fb68b;
+  transition: width 0.3s ease;
+  z-index: 1;
+}
+
+/* Предпросмотр номера дела */
+.previewSection {
+  background: #f7fafc;
+  border-radius: 6px;
+  padding: 0.75rem; /* уменьшен */
+  margin: 0.75rem 0; /* уменьшен */
+  border: 1px dashed #cddae9;
+}
+
+.previewTitle {
+  font-size: 0.7rem; /* уменьшен */
+  color: #6b7f94;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.previewNumber {
+  font-size: 1.1rem; /* уменьшен */
+  font-weight: 700;
+  color: #1e4c7a;
+  font-family: 'Courier New', monospace;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+  .formContainer {
+    padding: 0.75rem;
+  }
+  
+  .categoriesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+  
+  .infoRow {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  
+  .infoRow strong {
+    min-width: auto;
+  }
+  
+  .caseNumber {
+    margin-left: 0;
+    align-self: flex-start;
+  }
+  
+  .formRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.categoryCard {
+  animation: fadeIn 0.2s ease;
+}
+
+/* Стили для выбранной категории */
+.categoryCard.selected {
+  border-color: #2c7be5;
+  background: #eaf2ff;
+  box-shadow: 0 0 0 1px rgba(44, 123, 229, 0.3);
+}
+
+/* Иконки категорий */
+.criminalIcon::before {
+  content: "⚖️";
+  margin-right: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.civilIcon::before {
+  content: "📋";
+  margin-right: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.adminIcon::before {
+  content: "🏛️";
+  margin-right: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.defaultIcon::before {
+  content: "📄";
+  margin-right: 0.3rem;
+  font-size: 0.9rem;
+}
+
+/* Подсказки */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d3e50;
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  z-index: 10;
+  margin-bottom: 0.2rem;
+}
+
+/* Статусные метки */
+.statusBadge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #e9ecf0;
+  color: #4a5a6e;
+}
+
+.statusActive {
+  background: #dff0d8;
+  color: #2e6b3e;
+}
+
+.statusPending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Пустое состояние */
+.emptyState {
+  text-align: center;
+  padding: 1.5rem; /* уменьшен */
+  color: #a6b7c9;
+}
+
+.emptyStateIcon {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+}
+
+/* Счетчик категорий */
+.categoryCount {
+  font-size: 0.65rem;
+  color: #7a8b9f;
+  margin-left: 0.4rem;
+  background: #e9ecf0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 10px;
+}
+
+/* Поиск категорий */
+.searchBox {
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.4rem 1rem 0.4rem 1.8rem; /* уменьшен */
+  border: 1px solid #d9e2ec;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2c7be5;
+  box-shadow: 0 0 0 1px rgba(44, 123, 229, 0.2);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aabbf;
+  font-size: 0.85rem;
+}
+
+/* Форма редактирования */
+.editForm {
+  margin-top: 0.75rem;
+}
+
+.formRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.formGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5a6e;
+  margin-bottom: 0.2rem;
+}
+
+.select {
+  padding: 0.4rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+  background: white;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #2c7be5;
+  box-shadow: 0 0 0 1px rgba(44, 123, 229, 0.2);
+}
+
+.select:disabled {
+  background: #f5f7fa;
+  color: #7a8b9f;
+  cursor: not-allowed;
+}
+
+.helpText {
+  font-size: 0.65rem;
+  color: #7a8b9f;
+  margin-top: 0.15rem;
+}
+
+.previewHint {
+  font-size: 0.75rem;
+  color: #7a8b9f;
+  margin-top: 0.2rem;
+}
+
+.infoMessage {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: #f0f6ff;
+  border-left: 3px solid #2c7be5;
+  border-radius: 4px;
+  color: #1e4c7a;
+  font-size: 0.8rem;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem; /* уменьшен */
+  color: #7a8b9f;
+}
+
+.loadingState .loadingSpinner {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 0.3rem;
+}
+/* Добавьте в ваш файл CategoryBasedForm.module.css */
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.required {
+  color: #e53e3e;
+  margin-left: 0.25rem;
+}
+
+.select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  background-color: white;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.select option {
+  padding: 0.5rem;
+}
+
+.warningMessage {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: #fffaf0;
+  border: 1px solid #feebc8;
+  border-radius: 0.375rem;
+  color: #c05621;
+  font-size: 0.875rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}

@@ -522,6 +522,12 @@ const CriminalBusinessCard = ({ card, remove }) => {
         </div>
         <div className={styles.headerMeta}>
           <div className={styles.caseArticle}>
+              {criminalCase?.presiding_judge_full_name && (
+                <div className={styles.detailRow}>
+                  <div className={styles.detailLabel}>Судья:
+                    {criminalCase.presiding_judge_full_name}</div>
+                </div>
+              )}
             {criminalCase?.article_criminal ? `ст. ${criminalCase.article_criminal}` : 'Статья не указана'}
           </div>
           <div className={styles.caseDate}>
@@ -576,12 +582,6 @@ const CriminalBusinessCard = ({ card, remove }) => {
                 <div className={styles.detailRow}>
                   <div className={styles.detailLabel}>Суд:</div>
                   <div className={styles.detailValue}>{criminalCase.court_name}</div>
-                </div>
-              )}
-              {criminalCase?.judge_name && (
-                <div className={styles.detailRow}>
-                  <div className={styles.detailLabel}>Судья:</div>
-                  <div className={styles.detailValue}>{criminalCase.judge_name}</div>
                 </div>
               )}
             </div>

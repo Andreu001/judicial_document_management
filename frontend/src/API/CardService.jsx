@@ -49,15 +49,6 @@ class CardService {
     }
   }
 
-  static async create(cardData) {
-    try {
-      const response = await baseService.post(BASE_URL, cardData);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating card:', error.response?.data || error);
-      throw error;
-    }
-  }
   static async getCategories() {
     try {
       const response = await baseService.get('/business_card/category/');

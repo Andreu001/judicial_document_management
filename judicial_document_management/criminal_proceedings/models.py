@@ -374,7 +374,14 @@ class CriminalProceedings(models.Model):
         null=True, blank=True,
         verbose_name="Примечания по архивному делу"
     )
-    
+    registered_case = models.OneToOneField(
+        'case_registry.RegisteredCase',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='criminal_proceedings_link',
+        verbose_name="Зарегистрированное дело"
+    )
 
     class Meta:
         verbose_name = "Уголовное производство"

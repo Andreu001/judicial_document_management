@@ -7,6 +7,7 @@ const Navbar = () => {
   const [isCourtLevelOpen, setIsCourtLevelOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
+  const userRole = localStorage.getItem('userRole');
 
   const toggleExpeditionMenu = () => {
     setIsExpeditionOpen(!isExpeditionOpen);
@@ -72,6 +73,7 @@ const Navbar = () => {
         <Link to="/person-search" className={styles.navbarLink}>
           Участники процесса
         </Link>
+        <Link to="/hr">Кадры</Link>
         <Link to="/statistic">Статистика</Link>
         <Link to="/archive">Архив</Link>
         <Link to="/profile">Профиль</Link>

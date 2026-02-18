@@ -1,0 +1,345 @@
+/* CivilPetition.module.css */
+.container {
+  min-height: 100vh;
+  background: #f0f5fa; /* Более светлый, голубоватый фон для гражданских */
+  padding: 2rem 2rem 2rem 17rem;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 50, 80, 0.05);
+  padding: 1.25rem 2rem;
+  border: 1px solid #e0f0fa;
+  border-left: 6px solid #2a6496; /* Темно-синяя полоса для гражданских */
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  background: #e6f0fa;
+  color: #2a6496;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: #2a6496;
+  color: white;
+  transform: translateX(-2px);
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1a4b78; /* Темно-синий для гражданских */
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.caseInfo {
+  background: #e6f0fa;
+  color: #1a4b78;
+  padding: 0.4rem 1rem;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.headerRight {
+  display: flex;
+  gap: 1rem;
+}
+
+.actionButtons, .editButtons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.editButton, .saveButton, .cancelButton, .deleteButton {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.editButton {
+  background: #2a6496;
+  color: white;
+  box-shadow: 0 2px 8px rgba(42, 100, 150, 0.3);
+}
+
+.editButton:hover:not(:disabled) {
+  background: #1a4b78;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(42, 100, 150, 0.4);
+}
+
+.saveButton {
+  background: #38a169;
+  color: white;
+  box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #2f855a;
+  transform: translateY(-1px);
+}
+
+.saveButton:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.cancelButton:hover {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.deleteButton {
+  background: #f56565;
+  color: white;
+}
+
+.deleteButton:hover {
+  background: #e53e3e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(229, 62, 62, 0.2);
+}
+
+.errorBanner {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #e53e3e;
+  font-weight: 500;
+}
+
+.content {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.formSection {
+  flex: 2;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 50, 80, 0.05);
+  padding: 2rem;
+  border: 1px solid #e0f0fa;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a4b78;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #2a6496;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup:has(textarea) {
+  grid-column: span 2;
+}
+
+.label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2a6496;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border: 1px solid #d4e4f0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #2d3748;
+  background: white;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #2a6496;
+  box-shadow: 0 0 0 3px rgba(42, 100, 150, 0.1);
+}
+
+.input:hover, .select:hover, .textarea:hover {
+  border-color: #4299e1;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%232a6496' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 1rem center;
+  background-repeat: no-repeat;
+  background-size: 1.2em;
+  padding-right: 2.5rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.readOnlyField {
+  padding: 0.6rem 1rem;
+  background: #f0f7ff;
+  border: 1px solid #e0f0fa;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #1a4b78;
+  min-height: 1.5rem;
+  word-break: break-word;
+}
+
+.sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.infoSection {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 50, 80, 0.05);
+  padding: 1.5rem;
+  border: 1px solid #e0f0fa;
+}
+
+.infoTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a4b78;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e0f0fa;
+}
+
+.infoItem {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.infoLabel {
+  font-size: 0.7rem;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+.infoValue {
+  font-size: 0.9rem;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #2a6496;
+  font-size: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    padding: 1.5rem;
+  }
+  
+  .content {
+    flex-direction: column;
+  }
+  
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .formGroup:has(textarea) {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .headerRight {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .actionButtons, .editButtons {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .editButton, .saveButton, .cancelButton, .deleteButton {
+    flex: 1;
+    justify-content: center;
+  }
+}

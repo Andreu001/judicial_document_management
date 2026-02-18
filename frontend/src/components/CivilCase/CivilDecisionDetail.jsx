@@ -1,90 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CivilCaseService from '../../API/CivilCaseService';
-import baseService from '../../API/baseService';
-import styles from './CivilDecisionDetail.module.css';
-import {
-  ConsiderationTab,
-  AppealTab,
-  ExecutionTab,
-  AdditionalTab,
-  CostsTab
-} from './CivilDecisionTabComponents';
+import styles from './CivilDetail.module.css';
 
 const CivilDecisionDetail = () => {
-  const { cardId, decisionId } = useParams();
+  const { proceedingId, decisionId } = useParams();
   const navigate = useNavigate();
   const [decisionData, setDecisionData] = useState(null);
-  const [civilData, setCivilData] = useState(null);
-  const [sides, setSides] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('main'); // 'main', 'appeal', 'cassation'
+
+  // Опции для выпадающих списков
   const [options, setOptions] = useState({
-    ruling_type: [],
-    consideration_result_main: [],
-    consideration_result_additional: [],
-    consideration_result_counter: [],
-    second_instance_result: [],
-    court_composition: []
+    outcome: [],           // результат рассмотрения
+    appeal_result: [],     // результат апелляции
+    cassation_result: [],  // результат кассации
+    second_instance_result: [] // для обратной совместимости
   });
-  const [activeTab, setActiveTab] = useState('consideration');
 
   useEffect(() => {
-    const fetchDecisionDetails = async () => {
+    const fetchOptions = async () => {
       try {
-        setLoading(true);
-        
-        // Загрузка гражданского дела
-        const civilResponse = await CivilCaseService.getByBusinessCardId(cardId);
-        if (civilResponse) {
-          setCivilData(civilResponse);
-          
-          // Загрузка решения
-          const decisionResponse = await CivilCaseService.getDecisionById(civilResponse.id, decisionId);
-          
-          if (decisionResponse) {
-            setDecisionData(decisionResponse);
-            setFormData(decisionResponse);
-          }
-          
-          // Загрузка сторон
-          const sidesResponse = await CivilCaseService.getSides(civilResponse.id);
-          setSides(sidesResponse);
-        }
-        
-        // Загрузка опций
-        await loadOptions();
-        
-        setLoading(false);
+        const optionsData = await CivilCaseService.getCivilDecisionOptions();
+        setOptions(optionsData);
       } catch (err) {
-        console.error('Ошибка загрузки данных судебного решения:', err);
-        setError('Не удалось загрузить данные судебного решения');
+        console.error('Error fetching options:', err);
+      }
+    };
+    fetchOptions();
+  }, []);
+
+  useEffect(() => {
+    const fetchDecisionData = async () => {
+      if (decisionId && decisionId !== 'create' && decisionId !== 'undefined' && decisionId !== 'null') {
+        try {
+          setLoading(true);
+          const data = await CivilCaseService.getDecisionById(proceedingId, decisionId);
+          setDecisionData(data);
+          setFormData(data);
+          setIsEditing(false);
+        } catch (err) {
+          console.error('Error fetching decision:', err);
+          setError('Не удалось загрузить данные решения');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Режим создания - инициализируем пустыми значениями в соответствии с моделью
+        setDecisionData(null);
+        setFormData({
+          // Раздел 4. Результаты рассмотрения
+          outcome: '',
+          decision_date: null,
+          decision_motivated_date: null,
+          decision_effective_date: null,
+          
+          // Апелляция
+          appeal_filed: false,
+          appeal_date: null,
+          appeal_result: '',
+          appeal_decision_date: null,
+          
+          // Кассация
+          cassation_filed: false,
+          cassation_result: '',
+          // Добавьте другие поля кассации, если они есть в модели
+          // cassation_date: null,
+          // cassation_decision_date: null,
+        });
+        setIsEditing(true);
         setLoading(false);
       }
     };
 
-    fetchDecisionDetails();
-  }, [cardId, decisionId]);
-
-  const loadOptions = async () => {
-    try {
-      const response = await CivilCaseService.getDecisionOptions();
-      setOptions({
-        ruling_type: response.ruling_type || [],
-        consideration_result_main: response.consideration_result_main || [],
-        consideration_result_additional: response.consideration_result_additional || [],
-        consideration_result_counter: response.consideration_result_counter || [],
-        second_instance_result: response.second_instance_result || [],
-        court_composition: response.court_composition || []
-      });
-    } catch (error) {
-      console.error('Ошибка загрузки опций:', error);
-      setOptions({});
-    }
-  };
+    fetchDecisionData();
+  }, [proceedingId, decisionId]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -94,37 +88,6 @@ const CivilDecisionDetail = () => {
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      
-      if (!civilData || !civilData.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
-      const dataToSend = { ...formData };
-      delete dataToSend.id;
-      delete dataToSend.civil_proceedings;
-      delete dataToSend.created_at;
-      delete dataToSend.updated_at;
-      
-      const updatedData = await CivilCaseService.updateDecision(
-        civilData.id, 
-        decisionId, 
-        dataToSend
-      );
-      
-      setDecisionData(updatedData);
-      setFormData(updatedData);
-      setIsEditing(false);
-      setSaving(false);
-    } catch (err) {
-      console.error('Ошибка сохранения:', err);
-      setError('Не удалось сохранить данные');
-      setSaving(false);
-    }
-  };
-
   const handleDateChange = (name, dateString) => {
     setFormData(prev => ({
       ...prev,
@@ -132,269 +95,275 @@ const CivilDecisionDetail = () => {
     }));
   };
 
-  const handleCancel = () => {
-    setFormData(decisionData);
-    setIsEditing(false);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Не указано';
-    return new Date(dateString).toLocaleDateString('ru-RU');
-  };
-
-  const formatBoolean = (value) => {
-    return value ? 'Да' : 'Нет';
-  };
-
-  const getOptionLabel = (optionsArray, value) => {
-    return optionsArray.find(opt => opt.value === value)?.label || 'Не указано';
-  };
-
-  const formatCurrency = (amount) => {
-    if (!amount) return '0 руб.';
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency',
-      currency: 'RUB',
-      minimumFractionDigits: 2
-    }).format(amount);
+    try {
+      let savedDecision;
+      if (decisionId && decisionId !== 'create' && decisionId !== 'undefined' && decisionId !== 'null') {
+        savedDecision = await CivilCaseService.updateDecision(proceedingId, decisionId, formData);
+      } else {
+        savedDecision = await CivilCaseService.createDecision(proceedingId, formData);
+      }
+      
+      navigate(-1);
+    } catch (err) {
+      console.error('Error saving decision:', err);
+      setError('Ошибка при сохранении решения: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Загрузка данных судебного решения...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>{error}</div>
-        <button onClick={() => navigate(-1)} className={styles.backButton}>
-          Назад
-        </button>
-      </div>
-    );
-  }
-
-  if (!decisionData) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.error}>Данные судебного решения не найдены</div>
-        <button onClick={() => navigate(-1)} className={styles.backButton}>
-          Назад
-        </button>
-      </div>
-    );
+    return <div className={styles.loading}>Загрузка...</div>;
   }
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <button onClick={() => navigate(-1)} className={styles.backButton}>
-            ← Назад
+          <button 
+            onClick={() => navigate(-1)} 
+            className={styles.backButton}
+          >
+            ← Назад к делу
           </button>
           <h1 className={styles.title}>
-            Решение по гражданскому делу №{civilData?.business_card_data?.original_name || ''}
+            {decisionId && decisionId !== 'create' ? 'Редактирование решения' : 'Добавление решения'}
           </h1>
         </div>
-        
         <div className={styles.headerRight}>
-          {!isEditing ? (
-            <button onClick={() => setIsEditing(true)} className={styles.editButton}>
+          <button 
+            onClick={handleSubmit} 
+            className={styles.saveButton}
+            disabled={saving}
+          >
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+          {(!decisionId || decisionId === 'create') && (
+            <button 
+              onClick={() => navigate(-1)} 
+              className={styles.cancelButton}
+            >
+              Отмена
+            </button>
+          )}
+          {decisionId && decisionId !== 'create' && !isEditing && (
+            <button 
+              onClick={() => setIsEditing(true)} 
+              className={styles.editButton}
+            >
               Редактировать
             </button>
-          ) : (
-            <div className={styles.editButtons}>
-              <button onClick={handleSave} className={styles.saveButton} disabled={saving}>
-                {saving ? 'Сохранение...' : 'Сохранить'}
-              </button>
-              <button onClick={handleCancel} className={styles.cancelButton}>
-                Отмена
-              </button>
-            </div>
           )}
         </div>
       </div>
 
+      {error && <div className={styles.error}>{error}</div>}
+
       <div className={styles.content}>
-        {/* Основной контент с вкладками */}
         <div className={styles.mainContent}>
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
               <button 
-                className={`${styles.tab} ${activeTab === 'consideration' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('consideration')}
+                className={`${styles.tab} ${activeTab === 'main' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('main')}
               >
-                Рассмотрение дела
+                Результат рассмотрения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'appeal' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('appeal')}
               >
-                Обжалование
+                Апелляция
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'execution' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('execution')}
+                className={`${styles.tab} ${activeTab === 'cassation' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('cassation')}
               >
-                Исполнение
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'costs' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('costs')}
-              >
-                Издержки и взыскания
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('additional')}
-              >
-                Дополнительно
+                Кассация
               </button>
             </div>
 
             <div className={styles.tabContentWrapper}>
-              {activeTab === 'consideration' && (
-                <ConsiderationTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  options={options}
-                  handleInputChange={handleInputChange}
-                  getOptionLabel={getOptionLabel}
-                  decisionData={decisionData}
-                  handleDateChange={handleDateChange}
-                  formatDate={formatDate}
-                  formatBoolean={formatBoolean}
-                />
-              )}
-              
-              {activeTab === 'appeal' && (
-                <AppealTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  options={options}
-                  handleInputChange={handleInputChange}
-                  getOptionLabel={getOptionLabel}
-                  decisionData={decisionData}
-                  handleDateChange={handleDateChange}
-                  formatDate={formatDate}
-                  formatBoolean={formatBoolean}
-                />
-              )}
-              
-              {activeTab === 'execution' && (
-                <ExecutionTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                  decisionData={decisionData}
-                  handleDateChange={handleDateChange}
-                  formatDate={formatDate}
-                  formatCurrency={formatCurrency}
-                />
-              )}
-              
-              {activeTab === 'costs' && (
-                <CostsTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                  decisionData={decisionData}
-                  handleDateChange={handleDateChange}
-                  formatDate={formatDate}
-                  formatCurrency={formatCurrency}
-                />
-              )}
-              
-              {activeTab === 'additional' && (
-                <AdditionalTab
-                  isEditing={isEditing}
-                  formData={formData}
-                  options={options}
-                  handleInputChange={handleInputChange}
-                  getOptionLabel={getOptionLabel}
-                  decisionData={decisionData}
-                  handleDateChange={handleDateChange}
-                  formatDate={formatDate}
-                  formatBoolean={formatBoolean}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+              <form onSubmit={handleSubmit}>
+                {/* Вкладка "Результат рассмотрения" */}
+                {activeTab === 'main' && (
+                  <div className={styles.tabGrid}>
+                    <div className={styles.fieldGroup}>
+                      <h3 className={styles.subsectionTitle}>Результат рассмотрения дела</h3>
+                      
+                      <div className={styles.field}>
+                        <label>Результат рассмотрения</label>
+                        <select
+                          name="outcome"
+                          value={formData.outcome || ''}
+                          onChange={handleInputChange}
+                          className={styles.select}
+                          disabled={!isEditing}
+                        >
+                          <option value="">Не выбрано</option>
+                          {options.outcome?.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-        {/* Правая колонка - стороны и итоги */}
-        <div className={styles.sidebar}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Стороны по делу</h2>
-            
-            {sides.length > 0 ? (
-              <div className={styles.sidesList}>
-                {sides.map(side => (
-                  <div key={side.id} className={styles.sideItem}>
-                    <h4>Истец:</h4>
-                    <p>{side.plaintiff_name || 'Не указан'}</p>
-                    
-                    <h4>Ответчик:</h4>
-                    <p>{side.defendant_name || 'Не указан'}</p>
-                    
-                    <div className={styles.claimsSummary}>
-                      <p><strong>Основное требование:</strong> {formatCurrency(side.main_claim_amount)}</p>
-                      {side.additional_claim_amount > 0 && (
-                        <p><strong>Дополнительное:</strong> {formatCurrency(side.additional_claim_amount)}</p>
-                      )}
-                      {side.counter_claim_amount_main > 0 && (
-                        <p><strong>Встречное:</strong> {formatCurrency(side.counter_claim_amount_main)}</p>
+                      <div className={styles.field}>
+                        <label>Дата вынесения решения</label>
+                        <input
+                          type="date"
+                          name="decision_date"
+                          value={formData.decision_date || ''}
+                          onChange={(e) => handleDateChange('decision_date', e.target.value)}
+                          className={styles.input}
+                          disabled={!isEditing}
+                        />
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дата составления мотивированного решения</label>
+                        <input
+                          type="date"
+                          name="decision_motivated_date"
+                          value={formData.decision_motivated_date || ''}
+                          onChange={(e) => handleDateChange('decision_motivated_date', e.target.value)}
+                          className={styles.input}
+                          disabled={!isEditing}
+                        />
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дата вступления в законную силу</label>
+                        <input
+                          type="date"
+                          name="decision_effective_date"
+                          value={formData.decision_effective_date || ''}
+                          onChange={(e) => handleDateChange('decision_effective_date', e.target.value)}
+                          className={styles.input}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Вкладка "Апелляция" */}
+                {activeTab === 'appeal' && (
+                  <div className={styles.tabGrid}>
+                    <div className={styles.fieldGroup}>
+                      <h3 className={styles.subsectionTitle}>
+                        <input
+                          type="checkbox"
+                          name="appeal_filed"
+                          checked={formData.appeal_filed || false}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Подана апелляционная жалоба
+                      </h3>
+
+                      {formData.appeal_filed && (
+                        <>
+                          <div className={styles.field}>
+                            <label>Дата поступления апелляционной жалобы</label>
+                            <input
+                              type="date"
+                              name="appeal_date"
+                              value={formData.appeal_date || ''}
+                              onChange={(e) => handleDateChange('appeal_date', e.target.value)}
+                              className={styles.input}
+                              disabled={!isEditing}
+                            />
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Результат апелляционного рассмотрения</label>
+                            <select
+                              name="appeal_result"
+                              value={formData.appeal_result || ''}
+                              onChange={handleInputChange}
+                              className={styles.select}
+                              disabled={!isEditing}
+                            >
+                              <option value="">Не выбрано</option>
+                              {options.appeal_result?.map(option => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                              {/* Если нет appeal_result, используем second_instance_result */}
+                              {(!options.appeal_result || options.appeal_result.length === 0) && 
+                                options.second_instance_result?.map(option => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))
+                              }
+                            </select>
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дата апелляционного определения</label>
+                            <input
+                              type="date"
+                              name="appeal_decision_date"
+                              value={formData.appeal_decision_date || ''}
+                              onChange={(e) => handleDateChange('appeal_decision_date', e.target.value)}
+                              className={styles.input}
+                              disabled={!isEditing}
+                            />
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p>Стороны не добавлены</p>
-            )}
-          </div>
+                )}
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Итоги решения</h2>
-            
-            <div className={styles.summary}>
-              <div className={styles.summaryItem}>
-                <strong>Дата рассмотрения:</strong>
-                <span>{formatDate(decisionData.considered_date)}</span>
-              </div>
-              
-              <div className={styles.summaryItem}>
-                <strong>Вид постановления:</strong>
-                <span>{getOptionLabel(options.ruling_type, decisionData.ruling_type)}</span>
-              </div>
-              
-              <div className={styles.summaryItem}>
-                <strong>Результат (осн.):</strong>
-                <span>{getOptionLabel(options.consideration_result_main, decisionData.consideration_result_main)}</span>
-              </div>
-              
-              {decisionData.amicable_agreement && (
-                <div className={styles.summaryItem}>
-                  <strong>Мировое соглашение:</strong>
-                  <span className={styles.success}>Заключено</span>
-                </div>
-              )}
-              
-              {decisionData.awarded_main > 0 && (
-                <div className={styles.summaryItem}>
-                  <strong>Присуждено:</strong>
-                  <span className={styles.amount}>{formatCurrency(decisionData.awarded_main)}</span>
-                </div>
-              )}
-              
-              <div className={styles.summaryItem}>
-                <strong>Вступило в силу:</strong>
-                <span>{formatDate(decisionData.effective_date)}</span>
-              </div>
+                {/* Вкладка "Кассация" */}
+                {activeTab === 'cassation' && (
+                  <div className={styles.tabGrid}>
+                    <div className={styles.fieldGroup}>
+                      <h3 className={styles.subsectionTitle}>
+                        <input
+                          type="checkbox"
+                          name="cassation_filed"
+                          checked={formData.cassation_filed || false}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Подана кассационная жалоба
+                      </h3>
+
+                      {formData.cassation_filed && (
+                        <>
+                          <div className={styles.field}>
+                            <label>Результат кассационного рассмотрения</label>
+                            <input
+                              type="text"
+                              name="cassation_result"
+                              value={formData.cassation_result || ''}
+                              onChange={handleInputChange}
+                              className={styles.input}
+                              disabled={!isEditing}
+                              placeholder="Введите результат"
+                            />
+                          </div>
+                          
+                          {/* Если в модели есть дополнительные поля кассации, добавьте их здесь */}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </form>
             </div>
           </div>
         </div>

@@ -110,7 +110,7 @@ const MovementForm = ({ create, editMovementData = {}, onSave, onCancel, cardId 
     try {
       if (editingBusinessMovementId) {
         // Обновление существующего движения
-        const response = await updateMove(cardId, editingBusinessMovementId, newBusinessMovementData);
+        const response = await MovementForm.updateMove(cardId, editingBusinessMovementId, newBusinessMovementData);
         console.log('Движение по делу обновлено:', response);
         onSave(response); // Передаем обновленные данные в родительский компонент
       } else {

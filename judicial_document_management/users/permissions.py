@@ -19,3 +19,7 @@ class IsLawyer(permissions.BasePermission):
 class IsCourtStaff(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ['judge', 'secretary', 'admin', 'assistant_referee']
+
+class IsHR(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['hr', 'admin']

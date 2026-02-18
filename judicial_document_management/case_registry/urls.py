@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework import routers
 from . import views
 from .views import CorrespondenceViewSet
@@ -11,12 +11,10 @@ router.register(r'correspondence',
                 basename='correspondence')
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('adjust-numbering/', views.adjust_numbering, name='adjust-numbering'),
-    path('next-number/<str:index_code>/',
-         views.get_next_number,
-         name='get-next-number'),
-    path('correspondence/statistics/',
-         views.CorrespondenceViewSet.as_view({'get': 'statistics'}),
-         name='correspondence-statistics'),
+     path('', include(router.urls)),
+     path('adjust-numbering/', views.adjust_numbering, name='adjust-numbering'),
+     re_path(r'^next-number/(?P<index_code>.+)/$', views.get_next_number, name='get-next-number'),
+     path('correspondence/statistics/',
+          views.CorrespondenceViewSet.as_view({'get': 'statistics'}),
+          name='correspondence-statistics'),
 ]

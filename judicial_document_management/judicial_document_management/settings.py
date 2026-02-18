@@ -20,6 +20,9 @@ ALLOWED_HOSTS = [
     '[::1]',
     'testserver',
     'web',
+    '10.11.10.82',  # замените на ваш реальный IP
+    '*',  # временно разрешить все хосты (для тестирования)
+
 ]
 
 
@@ -44,8 +47,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'djoser',
     'notifications',
-    'case_registry',
+    'case_registry.apps.CaseRegistryConfig',
     'django_filters',
+    'personnel',
 ]
 
 MIDDLEWARE = [
@@ -215,5 +219,14 @@ NOTIFICATIONS_TARGETS = [
         # можно задать глобальные фильтры для queryset (опционально)
         "filters": {},
     },
-    # Добавь civil/admin/... по аналогии
+
+    {
+        "app_label": "civil_proceedings",
+        "model": "CivilProceedings",
+        "human_name": "Гражданское судопроизводство",
+        # поля даты которые надо отслеживать (заполни по реальным названиям моделях)
+        "date_fields": ["hearing_date", "decision_date", "copy_sent_date"],
+        # можно задать глобальные фильтры для queryset (опционально)
+        "filters": {},
+    },
 ]

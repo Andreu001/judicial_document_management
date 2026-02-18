@@ -5,7 +5,6 @@ import PetitionService from '../API/PetitionService';
 import { updateCard } from '../API/CardService';
 import CardNavbar from './UI/CardNavbar/CardNavbar';
 import CardHeader from './CardHeader';
-import CardForm from './CardForm';
 import { handleShowDetails, handleAddSide, handleDeleteSide, } from '../pages/sides/Sides';
 import { handleShowDetailsMovement, handleAddMove, handleDeleteMove, } from '../pages/movement/Movement';
 import { handleShowDetailsPetition, handleEditPetition, handleAddPetitions, handleDeletePetition } from '../pages/petitions/Petition';
@@ -17,7 +16,7 @@ import PetitionList from '../pages/petitions/PetitionList';
 import ConsideredForm from '../pages/considered/ConsideredForm';
 import ConsideredList from '../pages/considered/ConsideredList';
 import SideService from '../API/SideService';
-import MovementService, {updateMove} from '../API/MovementService';
+import MovementService from '../API/MovementService';
 import ConsideredService from '../API/ConsideredService';
 import MovementForm from '../pages/movement/MovementForm';
 import MovementList from '../pages/movement/MovementList';
@@ -944,7 +943,7 @@ const createMove = async (newMove) => {
           onSave={async (newMove) => {
             if (editedMoveId) {
               // Обновляем существующее движение
-              const updatedMove = await updateMove(cardId, editedMoveId, newMove);
+              const updatedMove = await MovementForm.updateMove(cardId, editedMoveId, newMove);
               // Обновляем состояние
               setMovements(movements.map(move => 
                 move.id === editedMoveId ? updatedMove : move
@@ -1018,16 +1017,6 @@ const createMove = async (newMove) => {
           cardId={cardId}
         />
       )}
-
-      {isEditingCard ? (
-        <CardForm
-          create={props.create}
-          editCardData={editedCardData}
-          onSave={handleSaveCard}
-          onCancel={handleCancel}
-        />
-      ) : (
-        <>
         <CardHeader card={props.card} />
           <div className={styles.cardContent}>
             <CardNavbar onTabChange={handleTabChange} />
@@ -1166,8 +1155,6 @@ const createMove = async (newMove) => {
               cardId={card.id}
               card={card}
             />
-        </>
-      )}
     </div>
   );
 };

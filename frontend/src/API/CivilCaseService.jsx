@@ -6,135 +6,115 @@ class CivilCaseService {
   static cleanData(data) {
     const cleaned = {};
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && value !== '') {
         cleaned[key] = value;
       }
     }
     return cleaned;
   }
 
-  // Основные операции по гражданскому делу
-  static async getByBusinessCardId(businesscardId) {
+  // === Роли сторон (из business_card) ===
+  
+  static async getSideRoles() {
     try {
-      const response = await baseService.get(`${BASE_URL}businesscard/${businesscardId}/civil/`);
-      
-      if (response.data && response.data.length > 0) {
-        const proceeding = response.data[0];
-        
-        // Дополнительно загружаем связанные данные
-        if (proceeding.business_card) {
-          try {
-            const cardResponse = await baseService.get(`/business_card/businesscard/${proceeding.business_card}/`);
-            proceeding.business_card_data = cardResponse.data;
-          } catch (error) {
-            console.error('Error loading business card:', error);
-          }
-        }
-        
-        return proceeding;
-      }
-      
-      if (response.data === null) {
-        console.log('Гражданское дело не найдено, возвращаем null');
-        return null;
-      }
-      
-      if (Array.isArray(response.data) && response.data.length === 0) {
-        console.log('Гражданское дело не найдено (пустой массив), возвращаем null');
-        return null;
-      }
-      
+      const response = await baseService.get('/business_card/sides/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching side roles:', error);
+      return [];
+    }
+  }
+
+  // === Гражданские производства (CivilProceedings) ===
+  
+  static async getAllCivilProceedings() {
+    try {
+      const response = await baseService.get(`${BASE_URL}civil-proceedings/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all civil proceedings:', error);
+      return [];
+    }
+  }
+
+  static async getCivilProceedingById(id) {
+    try {
+      const response = await baseService.get(`${BASE_URL}civil-proceedings/${id}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
-        console.log('Гражданское дело не найдено (404), возвращаем null');
         return null;
       }
-      console.error('Error fetching civil case:', error);
+      console.error('Error fetching civil proceeding by ID:', error);
       throw error;
     }
   }
 
-  static async create(businesscardId, civilData) {
+  static async createCivilProceedings(proceedingsData) {
     try {
-      const dataToSend = {
-        ...civilData,
-        business_card: businesscardId
-      };
-      
-      const response = await baseService.post(`${BASE_URL}businesscard/${businesscardId}/civil/`, dataToSend);
+      const cleanedData = this.cleanData(proceedingsData);
+      const response = await baseService.post(
+        `${BASE_URL}civil-proceedings/`,
+        cleanedData
+      );
       return response.data;
     } catch (error) {
-      console.error('Error creating civil case:', error);
+      console.error('Error creating civil proceedings:', error);
+      throw error;
+    }
+  }
+
+  static async updateCivilProceedings(proceedingsId, proceedingsData) {
+    try {
+      const cleanedData = this.cleanData(proceedingsData);
+      const response = await baseService.patch(
+        `${BASE_URL}civil-proceedings/${proceedingsId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating civil proceedings:', error);
       console.error('Error details:', error.response?.data);
       throw error;
     }
   }
 
-  static async update(civilId, civilData) {
+  static async deleteCivilProceedings(proceedingsId) {
     try {
-      // Используем правильный URL для обновления
-      const response = await baseService.patch(
-        `${BASE_URL}businesscard/${civilData.business_card || 'unknown'}/civil/${civilId}/`,
-        civilData
+      await baseService.delete(`${BASE_URL}civil-proceedings/${proceedingsId}/`);
+      // Возвращаем успешный результат, даже если сервер вернул 204
+      return { success: true };
+    } catch (error) {
+      // Проверяем, является ли ошибка 404, но при этом объект мог быть удален
+      if (error.response?.status === 404) {
+        console.warn('Received 404 but proceeding might be deleted:', proceedingsId);
+        // Все равно считаем это успехом, так как объект не найден (удален)
+        return { success: true };
+      }
+      console.error('Error deleting civil proceedings:', error);
+      throw error;
+    }
+  }
+
+  // === Решения по делу (CivilDecision) ===
+  
+  static async getDecisions(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/decisions/`
       );
       return response.data;
     } catch (error) {
-      console.error('Error updating civil case:', error);
-      
-      if (error.response) {
-        console.error('Server response:', error.response.data);
-        console.error('Status:', error.response.status);
-      }
-      
-      throw error;
-    }
-  }
-
-  static async updateByBusinessCard(businesscardId, civilData) {
-    try {
-      const existingData = await this.getByBusinessCardId(businesscardId);
-      
-      if (!existingData) {
-        console.log('Создание новой записи гражданского дела');
-        return await this.create(businesscardId, civilData);
-      }
-
-      if (!existingData.id) {
-        throw new Error('ID гражданского дела не найден в существующих данных');
-      }
-
-      console.log('Обновление существующей записи с ID:', existingData.id);
-      
-      const cleanedData = this.cleanData(civilData);
-      
-      return await this.update(existingData.id, {
-        ...cleanedData,
-        business_card: businesscardId
-      });
-    } catch (error) {
-      console.error('Error updating civil case:', error);
-      throw error;
-    }
-  }
-
-  // Решения по гражданским делам
-  static async getDecisions(businesscardId) {
-    try {
-      const response = await baseService.get(`${BASE_URL}businesscard/${businesscardId}/civil-decisions/`);
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return [];
-      }
       console.error('Error fetching civil decisions:', error);
-      throw error;
+      return [];
     }
   }
-
-  static async getDecisionById(businesscardId, decisionId) {
+  
+  static async getDecisionById(proceedingId, decisionId) {
     try {
-      const response = await baseService.get(`${BASE_URL}businesscard/${businesscardId}/civil-decisions/${decisionId}/`);
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/decisions/${decisionId}/`
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -144,12 +124,13 @@ class CivilCaseService {
       throw error;
     }
   }
-
-  static async createDecision(businesscardId, decisionData) {
+  
+  static async createDecision(proceedingId, decisionData) {
     try {
+      const cleanedData = this.cleanData(decisionData);
       const response = await baseService.post(
-        `${BASE_URL}businesscard/${businesscardId}/civil-decisions/`, 
-        decisionData
+        `${BASE_URL}civil-proceedings/${proceedingId}/decisions/`,
+        cleanedData
       );
       return response.data;
     } catch (error) {
@@ -157,12 +138,13 @@ class CivilCaseService {
       throw error;
     }
   }
-
-  static async updateDecision(businesscardId, decisionId, decisionData) {
+  
+  static async updateDecision(proceedingId, decisionId, decisionData) {
     try {
+      const cleanedData = this.cleanData(decisionData);
       const response = await baseService.patch(
-        `${BASE_URL}businesscard/${businesscardId}/civil-decisions/${decisionId}/`, 
-        decisionData
+        `${BASE_URL}civil-proceedings/${proceedingId}/decisions/${decisionId}/`,
+        cleanedData
       );
       return response.data;
     } catch (error) {
@@ -170,258 +152,336 @@ class CivilCaseService {
       throw error;
     }
   }
-
-  static async deleteDecision(businesscardId, decisionId) {
+  
+  static async deleteDecision(proceedingId, decisionId) {
     try {
-      await baseService.delete(`${BASE_URL}businesscard/${businesscardId}/civil-decisions/${decisionId}/`);
+      await baseService.delete(
+        `${BASE_URL}civil-proceedings/${proceedingId}/decisions/${decisionId}/`
+      );
     } catch (error) {
       console.error('Error deleting civil decision:', error);
       throw error;
     }
   }
 
-  // Стороны по делу - ИСПРАВЛЕНО: используем businesscardId вместо civilId
-  static async getSides(businesscardId) {
+  // === Стороны (CivilSide) ===
+  
+  static async getSides(proceedingId) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        return [];
-      }
-      
-      const response = await baseService.get(`${BASE_URL}${civilCase.id}/sides/`);
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/sides/`
+      );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 404) {
-        return [];
-      }
       console.error('Error fetching civil sides:', error);
-      throw error;
+      return [];
     }
   }
 
-  static async getSideById(businesscardId, sideId) {
+  static async getSideById(proceedingId, sideId) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
-      const response = await baseService.get(`${BASE_URL}${civilCase.id}/sides/${sideId}/`);
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/sides/${sideId}/`
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
         throw new Error('Сторона не найдена');
       }
-      console.error('Error fetching civil side:', error);
+      console.error('Error fetching side:', error);
       throw error;
     }
   }
 
-  static async createSide(businesscardId, sideData) {
+  static async createSide(proceedingId, sideData) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
+      const cleanedData = this.cleanData(sideData);
       const response = await baseService.post(
-        `${BASE_URL}${civilCase.id}/sides/`, 
-        sideData
+        `${BASE_URL}civil-proceedings/${proceedingId}/sides/`,
+        cleanedData
       );
       return response.data;
     } catch (error) {
-      console.error('Error creating civil side:', error);
+      console.error('Error creating side:', error);
       throw error;
     }
   }
 
-  static async updateSide(businesscardId, sideId, sideData) {
+  static async updateSide(proceedingId, sideId, sideData) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
+      const cleanedData = this.cleanData(sideData);
       const response = await baseService.patch(
-        `${BASE_URL}${civilCase.id}/sides/${sideId}/`, 
-        sideData
+        `${BASE_URL}civil-proceedings/${proceedingId}/sides/${sideId}/`,
+        cleanedData
       );
       return response.data;
     } catch (error) {
-      console.error('Error updating civil side:', error);
+      console.error('Error updating side:', error);
       throw error;
     }
   }
 
-  static async deleteSide(businesscardId, sideId) {
+  static async deleteSide(proceedingId, sideId) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
-      await baseService.delete(`${BASE_URL}${civilCase.id}/sides/${sideId}/`);
+      await baseService.delete(
+        `${BASE_URL}civil-proceedings/${proceedingId}/sides/${sideId}/`
+      );
     } catch (error) {
-      console.error('Error deleting civil side:', error);
+      console.error('Error deleting side:', error);
       throw error;
     }
   }
 
-  // Действия по подготовке дела - ИСПРАВЛЕНО: используем businesscardId вместо civilId
-  static async getProcedureActions(businesscardId) {
+  // === Адвокаты (CivilLawyer) ===
+  
+  static async getLawyers(proceedingId) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        return [];
-      }
-      
-      const response = await baseService.get(`${BASE_URL}${civilCase.id}/procedure_actions/`);
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/lawyers/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lawyers:', error);
+      return [];
+    }
+  }
+
+  static async getLawyerById(proceedingId, lawyerId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/lawyers/${lawyerId}/`
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
-        return [];
+        throw new Error('Адвокат не найден');
       }
-      console.error('Error fetching procedure actions:', error);
+      console.error('Error fetching lawyer:', error);
       throw error;
     }
   }
 
-  static async getProcedureActionById(businesscardId, actionId) {
+  static async createLawyer(proceedingId, lawyerData) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
-      const response = await baseService.get(`${BASE_URL}${civilCase.id}/procedure_actions/${actionId}/`);
+      const cleanedData = this.cleanData(lawyerData);
+      const response = await baseService.post(
+        `${BASE_URL}civil-proceedings/${proceedingId}/lawyers/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating lawyer:', error);
+      throw error;
+    }
+  }
+
+  static async updateLawyer(proceedingId, lawyerId, lawyerData) {
+    try {
+      const cleanedData = this.cleanData(lawyerData);
+      const response = await baseService.patch(
+        `${BASE_URL}civil-proceedings/${proceedingId}/lawyers/${lawyerId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating lawyer:', error);
+      throw error;
+    }
+  }
+
+  static async deleteLawyer(proceedingId, lawyerId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}civil-proceedings/${proceedingId}/lawyers/${lawyerId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting lawyer:', error);
+      throw error;
+    }
+  }
+
+  // === Движение дела (CivilCaseMovement) ===
+  
+  static async getMovements(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/movements/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching movements:', error);
+      return [];
+    }
+  }
+
+  static async getMovementById(proceedingId, movementId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/movements/${movementId}/`
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
-        throw new Error('Действие не найдено');
+        throw new Error('Движение не найдено');
       }
-      console.error('Error fetching procedure action:', error);
+      console.error('Error fetching movement:', error);
       throw error;
     }
   }
 
-  static async createProcedureAction(businesscardId, actionData) {
+  static async createMovement(proceedingId, movementData) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
+      const cleanedData = this.cleanData(movementData);
       const response = await baseService.post(
-        `${BASE_URL}${civilCase.id}/procedure_actions/`, 
-        actionData
+        `${BASE_URL}civil-proceedings/${proceedingId}/movements/`,
+        cleanedData
       );
       return response.data;
     } catch (error) {
-      console.error('Error creating procedure action:', error);
+      console.error('Error creating movement:', error);
       throw error;
     }
   }
 
-  static async updateProcedureAction(businesscardId, actionId, actionData) {
+  static async updateMovement(proceedingId, movementId, movementData) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
+      const cleanedData = this.cleanData(movementData);
       const response = await baseService.patch(
-        `${BASE_URL}${civilCase.id}/procedure_actions/${actionId}/`, 
-        actionData
+        `${BASE_URL}civil-proceedings/${proceedingId}/movements/${movementId}/`,
+        cleanedData
       );
       return response.data;
     } catch (error) {
-      console.error('Error updating procedure action:', error);
+      console.error('Error updating movement:', error);
       throw error;
     }
   }
 
-  static async deleteProcedureAction(businesscardId, actionId) {
+  // === Исполнение (CivilExecution) ===
+  
+  static async getExecutions(proceedingId) {
     try {
-      // Сначала получаем гражданское дело, чтобы узнать его ID
-      const civilCase = await this.getByBusinessCardId(businesscardId);
-      if (!civilCase || !civilCase.id) {
-        throw new Error('Гражданское дело не найдено');
-      }
-      
-      await baseService.delete(`${BASE_URL}${civilCase.id}/procedure_actions/${actionId}/`);
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/executions/`
+      );
+      return response.data;
     } catch (error) {
-      console.error('Error deleting procedure action:', error);
-      throw error;
+      console.error('Error fetching executions:', error);
+      return [];
     }
   }
 
-  // Опции для выпадающих списков
+  // === Вспомогательные методы ===
+  
   static async getCivilOptions() {
     try {
-      // Проверяем разные возможные варианты URL
-      const urls = [
-        '/civil_proceedings/civil-options/',
-        '/civil_proceedings/options/',
-        '/options/civil/'
-      ];
-      
-      let lastError = null;
-      
-      for (const url of urls) {
-        try {
-          const response = await baseService.get(url);
-          console.log('Options loaded from:', url);
+      const response = await baseService.get(`${BASE_URL}civil-options/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching civil options:', error);
+      return {
+        admission_order: [],
+        postponed_reason: [],
+        compliance_with_deadlines: [],
+        ruling_type: [],
+        consideration_result_main: [],
+        consideration_result_additional: [],
+        consideration_result_counter: [],
+        second_instance_result: [],
+        court_composition: []
+      };
+    }
+  }
+
+  static async getCivilDecisionOptions() {
+    try {
+      const response = await baseService.get(`${BASE_URL}civil-decision-options/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching civil decision options:', error);
+      return {
+        ruling_type: [],
+        consideration_result_main: [],
+        consideration_result_additional: [],
+        consideration_result_counter: [],
+        second_instance_result: [],
+        court_composition: []
+      };
+    }
+  }
+
+  static async getCivilProceedingByCardId(cardId) {
+    try {
+      const proceedings = await this.getAllCivilProceedings();
+      const filtered = proceedings.filter(p => p.business_card === cardId);
+      return filtered.length > 0 ? filtered[0] : null;
+    } catch (error) {
+      console.error('Error fetching civil proceeding by card ID:', error);
+      return null;
+    }
+  }
+
+  // === Архивные операции ===
+
+  static async archiveCivilProceeding(proceedingId) {
+      try {
+          const response = await baseService.post(
+              `${BASE_URL}civil-proceedings/${proceedingId}/archive/`
+          );
           return response.data;
-        } catch (error) {
-          lastError = error;
-          console.log(`Failed to load from ${url}:`, error.response?.status);
+      } catch (error) {
+          console.error('Error archiving civil proceeding:', error);
+          throw error;
+      }
+  }
+
+  static async unarchiveCivilProceeding(proceedingId) {
+      try {
+          const response = await baseService.post(
+              `${BASE_URL}civil-proceedings/${proceedingId}/unarchive/`
+          );
+          return response.data;
+      } catch (error) {
+          console.error('Error unarchiving civil proceeding:', error);
+          throw error;
+      }
+  }
+
+  static async getArchivedProceedings() {
+      try {
+          // Используем параметр archive=true для фильтрации на сервере
+          const response = await baseService.get(`${BASE_URL}civil-proceedings/?archive=true`);
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching archived proceedings:', error);
+          return [];
+      }
+  }
+
+  static async getJudges() {
+    try {
+      // Используем эндпоинт из гражданских дел
+      const response = await baseService.get('/civil_proceedings/judges/');
+      
+      // Если ответ уже в нужном формате, просто возвращаем его
+      if (Array.isArray(response.data)) {
+        // Проверяем, в каком формате приходят данные
+        if (response.data.length > 0 && response.data[0].full_name) {
+          // Уже в нужном формате
+          return response.data;
+        } else {
+          // Преобразуем в нужный формат
+          return response.data.map(judge => ({
+            id: judge.id,
+            full_name: judge.full_name || 
+                      `${judge.last_name || ''} ${judge.first_name || ''} ${judge.middle_name || ''}`.trim() || 
+                      judge.username || `Судья ${judge.id}`,
+            judge_code: judge.judge_code || judge.username || ''
+          }));
         }
       }
       
-      // Если все URL не сработали, возвращаем пустой объект
-      console.error('All options URLs failed:', lastError);
-      return {};
-      
-    } catch (error) {
-      console.error('Error fetching civil options:', error);
-      return {};
-    }
-  }
-
-  static async getDecisionOptions() {
-    try {
-      const response = await baseService.get('/civil_proceedings/decision-options/');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching decision options:', error);
-      return {};
-    }
-  }
-
-  // Список судей
-  static async getJudges() {
-    try {
-      const response = await baseService.get('auth/users/');
-      
-      const judges = response.data.filter(user => 
-        user.role === 'judge' || user.role === 'судья' || user.role?.toLowerCase().includes('judge')
-      );
-      
-      return judges.map(judge => ({
-        id: judge.id,
-        name: `${judge.last_name || ''} ${judge.first_name || ''} ${judge.middle_name || ''}`.trim(),
-        role: judge.role,
-        judge_code: judge.judge_code || ''
-      }));
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching judges:', error);
       return [];

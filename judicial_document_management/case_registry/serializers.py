@@ -24,6 +24,8 @@ class RegisteredCaseSerializer(serializers.ModelSerializer):
 class CaseRegistrationSerializer(serializers.Serializer):
     index = serializers.CharField(max_length=10)
     description = serializers.CharField(required=False, allow_blank=True)
+    case_number = serializers.IntegerField(required=False, allow_null=True)
+    registration_date = serializers.DateField(required=False, allow_null=True)
     business_card_id = serializers.IntegerField(
                                                 required=False,
                                                 allow_null=True)

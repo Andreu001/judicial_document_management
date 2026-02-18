@@ -4,7 +4,6 @@ import About from "../pages/About";
 import Profile from "../pages/Profile";
 import Archive from "../pages/Archive";
 import CardList from "./CardList";
-import CardForm from "./CardForm";
 import Cards from "../pages/cards/Cards";
 import CardIdPage from "../pages/cards/CardIdPage";
 import SideDetail from "../pages/sides/SideDetail";
@@ -12,10 +11,10 @@ import MovementDetail from "../pages/movement/MovementDetail";
 import PetitionDetail from "../pages/petitions/PetitionDetail";
 import ConsideredDetail from "../pages/considered/ConsideredDetail";
 import Layout from './Layout';
-import DefendantDetail from "./CriminalCase//DefendantDetail";
-import CriminalCaseForm from "./CriminalCase//CriminalCaseForm";
-import CriminalDetail from "./CriminalCase//CriminalDetail";
-import CriminalDecisionDetail from "./CriminalCase//CriminalDecisionDetail";
+import DefendantDetail from "./CriminalCase/DefendantDetail";
+import CriminalCaseForm from "./CriminalCase/CriminalCaseForm";
+import CriminalDetail from "./CriminalCase/CriminalDetail";
+import CriminalDecisionDetail from "./CriminalCase/CriminalDecisionDetail";
 import CriminalLawyerDetails from "./CriminalCase/CriminalLawyerDetails";
 import CriminalSideDetails from "./CriminalCase/CriminalSideDetails";
 import CriminalMovementDetail from "./CriminalCase/CriminalMovementDetail";
@@ -26,8 +25,11 @@ import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
 import CorrespondenceDetail from "./Correspondence/CorrespondenceDetail";
 import LawyerDetails from "../pages/sides/LawyerDetails";
 import PersonSearch from "./ParticipantsProcess/PersonSearch";
-import CivilDecisionDetail from "./CivilCase//CivilDecisionDetail";
 import CivilDetail from "./CivilCase/CivilDetail";
+import CivilSideDetail from "./CivilCase/CivilSideDetail";
+import CivilDecisionDetail from "./CivilCase/CivilDecisionDetail";
+import CivilProcedureActionDetail from "./CivilCase/CivilProcedureActionDetail";
+import PersonnelPage from '../pages/personnel/PersonnelPage';
 
 const AppRouter = () => {
     return (
@@ -39,6 +41,7 @@ const AppRouter = () => {
                 <Route path="profile" element={<Profile />} />
                 <Route path="archive" element={<Archive />} />
                 <Route path="person-search" element={<PersonSearch />} />
+                <Route path="hr" element={<PersonnelPage />} />
                 
                 {/* Входящая корреспонденция */}
                 <Route path="/in" element={<CorrespondenceIn />} />
@@ -53,16 +56,12 @@ const AppRouter = () => {
                 <Route path="/out/:id/edit" element={<CorrespondenceForm mode="edit" />} />
                 
                 <Route path="cards/:id" element={<CardIdPage />} />
-                <Route path="business_card" element={<CardForm />} />
                 <Route path="business_card/businesscard/" element={<CardList />} />
 
                 <Route path="business_card/businesscard/:id/sidescaseincase/:id" element={<SideDetail />} />
                 <Route path="/businesscard/:cardId/sides/:sideId" element={<SideDetail />} />
-                <Route path="business_card/businesscard/:cardId/businessmovement/:movementId"  element={<MovementDetail />} />
-                <Route path="business_card/businesscard/:cardId/petitionsincase/:petitionId" element={<PetitionDetail />} />
                 <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
 
-                <Route path="business_card/businesscard/:businesscardId/lawyers/:lawyerId" element={<LawyerDetails />} />
 
                 {/* Уголовные производства */}
                 <Route path="criminal-proceedings/create" element={<CriminalCaseForm />} />
@@ -94,8 +93,31 @@ const AppRouter = () => {
                 <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/:sideId" element={<CriminalSideDetails />} />
 
                 {/* Гражданское судопроизводство */}
-                <Route path="/businesscard/:cardId/civil-details" element={<CivilDetail />} />
-                <Route path="/businesscard/:cardId/civil-decisions/:decisionId" element={<CivilDecisionDetail />} />
+                <Route path="civil-proceedings/:id" element={<CivilDetail />} />
+                <Route path="civil-proceedings/create" element={<CivilDetail />} />
+                {/*Гражданские Адвокаты */}
+                <Route path="civil-proceedings/:proceedingId/lawyers/create" element={<LawyerDetails  />} />
+                <Route path="civil-proceedings/:proceedingId/lawyers/:lawyerId" element={<LawyerDetails  />} />
+                {/* Гражданские Движение */}
+                <Route path="civil-proceedings/:proceedingId/movements/create" element={<MovementDetail  />} />
+                <Route path="civil-proceedings/:proceedingId/movements/:movementId" element={<MovementDetail  />} />
+                {/* Гражданские ходатайства */}
+                <Route path="civil-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
+                <Route path="civil-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
+
+                {/* Стороны по гражданскому делу */}
+                <Route path="civil-proceedings/:proceedingId/sides/create" element={<CivilSideDetail />} />
+                <Route path="civil-proceedings/:proceedingId/sides/:sideId" element={<CivilSideDetail />} />
+
+                {/* Решения по гражданскому делу */}
+                <Route path="civil-proceedings/:proceedingId/decisions/create" element={<CivilDecisionDetail />} />
+                <Route path="civil-proceedings/:proceedingId/decisions/:decisionId" element={<CivilDecisionDetail />} />
+                <Route path="civil-proceedings/:proceedingId/decisions/:decisionId/edit" element={<CivilDecisionDetail />} />
+
+                {/* Процессуальные действия */}
+                <Route path="civil-proceedings/:proceedingId/procedure-actions/create" element={<CivilProcedureActionDetail />} />
+                <Route path="civil-proceedings/:proceedingId/procedure-actions/:actionId" element={<CivilProcedureActionDetail />} />
+                <Route path="civil-proceedings/:proceedingId/procedure-actions/:actionId/edit" element={<CivilProcedureActionDetail />} />
             </Route>
         </Routes>
     );

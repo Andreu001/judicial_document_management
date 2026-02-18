@@ -565,11 +565,12 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
     criminal_decisions = CriminalDecisionSerializer(many=True, read_only=True)
     case_movement = CriminalCaseMovementSerializer(read_only=True)
     referring_authority = ReferringAuthoritySerializer(read_only=True)
-    
+    registered_case_info = serializers.SerializerMethodField()
+
     # Добавляем поля для отображения ФИО судьи
     presiding_judge_full_name = serializers.SerializerMethodField()
     presiding_judge_name = serializers.SerializerMethodField()
-    
+
     # Добавляем поле для отображения названия органа
     referring_authority_name = serializers.SerializerMethodField()
     referring_authority_code = serializers.SerializerMethodField()
@@ -647,6 +648,16 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
                     )
         
         return data
+
+    def get_registered_case_info(self, obj):
+        if obj.registered_case:
+            return {
+                'id': obj.registered_case.id,
+                'full_number': obj.registered_case.full_number,
+                'registration_date': obj.registered_case.registration_date,
+                'status': obj.registered_case.get_status_display()
+            }
+        return None
 
 
 class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):

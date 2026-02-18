@@ -121,32 +121,6 @@ const PetitionForm = ({ create, editPetitionData = {}, onSave, onCancel, cardId,
     
     console.log('Отправляемые данные ходатайства:', petitionData);
     
-    try {
-      if (isEditing && editingPetitionId) {
-        // Редактирование существующего ходатайства
-        const updated = await updatedPetition(cardId, editingPetitionId, petitionData);
-        onSave(updated.data);
-      } else {
-        // Создание нового ходатайства
-        const response = await baseService.post(
-          `http://localhost:8000/business_card/businesscard/${cardId}/petitionsincase/`,
-          petitionData
-        );
-        
-        if (create) {
-          create(response.data);
-        } else {
-          onSave(response.data);
-        }
-      }
-      
-      // Закрываем форму
-      onCancel();
-      
-    } catch (error) {
-      console.error('Ошибка сохранения ходатайства:', error);
-      console.error('Детали ошибки:', error.response?.data || error.message);
-    }
   };
 
   if (loading) {

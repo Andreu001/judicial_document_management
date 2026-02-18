@@ -13,4 +13,5 @@ urlpatterns = [
     path('notifications/', include('notifications.urls')),
     path('case-registry/', include('case_registry.urls')),
     path('civil_proceedings/', include('civil_proceedings.urls')),
+    path('personnel/', include('personnel.urls')),
 ]

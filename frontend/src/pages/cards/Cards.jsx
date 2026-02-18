@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import CardService from '../../API/CardService';
+import CivilCaseService from '../../API/CivilCaseService'; // Добавляем импорт
 import CardList from '../../components/CardList';
 import MyButton from '../../components/UI/button/MyButton';
 import Modal from '../../components/UI/Modal/Modal';
@@ -9,7 +10,7 @@ import Pagination from '../../components/UI/pagination/Pagination';
 import CardFilter from '../../components/CardFilter';
 import { useProtectedFetching } from '../../hooks/useProtectedFetching';
 import { useCard } from '../../hooks/useCard';
-import CardForm from '../../components/CardForm';
+import CategoryBasedForm from '../../components/CategoryBasedForm';
 import styles from '../../components/UI/Header/Header.module.css';
 import { useAuth } from '../../context/AuthContext';
 import cl from '../../components/UI/loader/Loader.module.css';
@@ -35,19 +36,18 @@ function Cards() {
     }
   }, [limit, page, isAuthenticated]);
 
- 
   const loadCards = async () => {
     try {
       await fetchCards(async () => {
         const response = await CardService.getAll(limit, page);
         const regularCards = response.data;
 
+        // Загрузка уголовных дел
         let criminalCards = [];
         try {
           const criminalResponse = await CriminalCaseService.getAllCriminalProceedings();
-
           criminalCards = criminalResponse.map(caseItem => ({
-            id: `${caseItem.id}`,
+            id: `criminal-${caseItem.id}`, // Уникальный ID с префиксом
             case_number: caseItem.case_number_criminal || 'Номер дела не указан',
             case_category_title: 'Уголовное судопроизводство',
             case_category: 4,
@@ -61,17 +61,36 @@ function Cards() {
           console.error('Ошибка загрузки уголовных карточек:', error);
         }
 
-        const allCards = [...regularCards, ...criminalCards];
+        // Загрузка гражданских дел
+        let civilCards = [];
+        try {
+          const civilResponse = await CivilCaseService.getAllCivilProceedings();
+          civilCards = civilResponse.map(caseItem => ({
+            id: `civil-${caseItem.id}`, // Уникальный ID с префиксом
+            case_number: caseItem.case_number_civil || 'Номер дела не указан',
+            case_category_title: 'Гражданское судопроизводство',
+            case_category: 3,
+            pub_date: caseItem.created_at || new Date().toISOString(),
+            updated_at: caseItem.updated_at || new Date().toISOString(),
+            author_name: caseItem.author_name || 'Не указан',
+            is_civil: true,
+            civil_proceedings_id: caseItem.id,
+          }));
+        } catch (error) {
+          console.error('Ошибка загрузки гражданских карточек:', error);
+        }
+
+        // Объединяем все карточки
+        const allCards = [...regularCards, ...criminalCards, ...civilCards];
         
         setCards(allCards);
-        const totalCount = response.headers['x-total-count'] || allCards.length;
+        const totalCount = response.headers?.['x-total-count'] || allCards.length;
         setTotalPages(getPageCount(totalCount, limit));
       });
     } catch (error) {
       console.error('Failed to load cards:', error);
     }
   };
-
 
   const createCard = (newCard) => {
     setCards([...cards, newCard]);
@@ -80,15 +99,48 @@ function Cards() {
 
   const removeCard = async (id) => {
     try {
-      await fetchCards(async () => {
-        await CardService.remove(id);
+      // Определяем тип карточки по ID с префиксом
+      if (id.startsWith('criminal-')) {
+        const realId = id.replace('criminal-', '');
+        
+        // Пытаемся удалить
+        await CriminalCaseService.deleteCriminalProceedings(realId);
+        
+        // В случае успеха или если сервер вернул 404, все равно удаляем из состояния
         setCards(prevCards => prevCards.filter(card => card.id !== id));
-      });
+        console.log('Уголовная карточка удалена из состояния:', id);
+      } 
+      else if (id.startsWith('civil-')) {
+        const realId = id.replace('civil-', '');
+        
+        // Пытаемся удалить
+        await CivilCaseService.deleteCivilProceedings(realId);
+        
+        // В случае успеха или если сервер вернул 404, все равно удаляем из состояния
+        setCards(prevCards => prevCards.filter(card => card.id !== id));
+        console.log('Гражданская карточка удалена из состояния:', id);
+      } 
+      else {
+        await fetchCards(async () => {
+          await CardService.remove(id);
+          setCards(prevCards => prevCards.filter(card => card.id !== id));
+        });
+        console.log('Обычная карточка удалена из состояния:', id);
+      }
     } catch (error) {
       console.error('Ошибка удаления:', error);
+      
+      // Если ошибка 404, это означает, что дело уже удалено на сервере
+      // В этом случае просто убираем карточку из состояния
+      if (error.response?.status === 404) {
+        console.log('Дело уже удалено на сервере, убираем из UI');
+        setCards(prevCards => prevCards.filter(card => card.id !== id));
+      } else {
+        // Для других ошибок показываем сообщение
+        alert('Не удалось удалить карточку');
+      }
     }
   };
-
   const changePage = (page) => {
     setPage(page);
   };
@@ -113,7 +165,9 @@ function Cards() {
     ? cards
     : cards.filter(card => {
         if (activeCategory === 'Уголовное судопроизводство') {
-          return card.case_category === 'criminal' || card.is_criminal;
+          return card.is_criminal;
+        } else if (activeCategory === 'Гражданское судопроизводство') {
+          return card.is_civil;
         } else {
           const normalizedCategory = card.case_category_title?.trim().toLowerCase();
           const activeCategoryNormalized = activeCategory.toLowerCase();
@@ -136,7 +190,6 @@ function Cards() {
 
   return (
     <div className='App'>
-
       <div className={styles.createCardButtonContainer}>
         <div className={styles.categories}>
           {['Все дела', 'Административное правнарушение', 'Административное судопроизводство', 'Гражданское судопроизводство', 'Уголовное судопроизводство'].map(
@@ -161,7 +214,7 @@ function Cards() {
       </div>
 
       <Modal visible={modal} setVisible={setModal}>
-        {showForm && <CardForm create={createCard} onCancel={handleCloseModal} />}
+        {showForm && <CategoryBasedForm create={createCard} onCancel={handleCloseModal} />}
       </Modal>
 
       {isCardsLoading ? (

@@ -86,8 +86,16 @@ class RegisteredCase(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='registered_case',
+        related_name='+',
         verbose_name="Уголовное производство"
+    )
+    civil_proceedings = models.OneToOneField(
+        'civil_proceedings.CivilProceedings',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name="Гражданское производство"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")

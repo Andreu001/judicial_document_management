@@ -13,41 +13,70 @@ class CaseRegistryManager:
     Менеджер для работы с регистрацией дел
     """
 
-    class CaseRegistryManager:
-        @transaction.atomic
-        def register_case(self, index_code, description=None, business_card_id=None, criminal_proceedings_id=None):
-            """
-            Регистрация нового дела
-            """
-            from .models import RegistryIndex
-            
-            try:
-                index = RegistryIndex.objects.get(index=index_code)
-            except RegistryIndex.DoesNotExist:
-                raise ValueError(f"Индекс {index_code} не найден или не активен")
-            
-            # Получаем или создаем счетчик
-            counter, created = RegistryCounter.objects.get_or_create(
-                index=index,
-                defaults={'current_number': 0}
-            )
-            
-            # Увеличиваем счетчик и сразу сохраняем
-            counter.current_number += 1
+    @transaction.atomic
+    def register_case(self, index_code, description=None, case_number=None, 
+                    registration_date=None, business_card_id=None, criminal_proceedings_id=None):
+        """
+        Регистрация нового дела
+        """
+        from .models import RegistryIndex
+        
+        try:
+            index = RegistryIndex.objects.get(index=index_code)
+        except RegistryIndex.DoesNotExist:
+            raise ValueError(f"Индекс {index_code} не найден или не активен")
+        
+        # Получаем или создаем счетчик
+        counter, created = RegistryCounter.objects.get_or_create(
+            index=index,
+            defaults={'current_number': 0}
+        )
+        
+        # Если номер не передан, используем следующий из счетчика
+        if case_number is None:
+            case_number = counter.current_number + 1
+            # Увеличиваем счетчик
+            counter.current_number = case_number
             counter.total_registered += 1
-            counter.save()  # ВАЖНО: сохраняем увеличенный счетчик
-            
-            # Создаем запись о деле
-            case = RegisteredCase.objects.create(
-                index=index,
-                case_number=counter.current_number,  # Используем увеличенный номер
-                description=description,
-                business_card_id=business_card_id,
-                criminal_proceedings_id=criminal_proceedings_id
-            )
-            
-            logger.info(f"Зарегистрировано новое дело: {case.full_number}")
-            return case
+            counter.save()
+        else:
+            # Если номер передан явно, проверяем, что он не меньше текущего
+            if case_number <= counter.current_number:
+                raise ValueError(f"Номер {case_number} уже использован или меньше текущего {counter.current_number}")
+            # Обновляем счетчик, если номер больше текущего
+            if case_number > counter.current_number:
+                counter.current_number = case_number
+                counter.total_registered += 1
+                counter.save()
+        
+        # Используем переданную дату или текущую
+        if registration_date is None:
+            registration_date = timezone.now().date()
+        
+        current_year = registration_date.year
+        
+        # Создаем объект дела
+        case = RegisteredCase(
+            index=index,
+            case_number=case_number,
+            description=description,
+            business_card_id=business_card_id,
+            criminal_proceedings_id=criminal_proceedings_id,
+            registration_date=registration_date
+        )
+        
+        # Явно устанавливаем full_number перед сохранением
+        case.full_number = f"{index_code}-{case_number}/{current_year}"
+        
+        # Проверяем уникальность
+        if RegisteredCase.objects.filter(full_number=case.full_number).exists():
+            raise ValueError(f"Дело с номером {case.full_number} уже существует")
+        
+        # Сохраняем объект
+        case.save()
+        
+        logger.info(f"Зарегистрировано новое дело: {case.full_number}")
+        return case
     
     @transaction.atomic
     def delete_case(self, case_id, reason="Удаление дела"):
@@ -64,6 +93,7 @@ class CaseRegistryManager:
         
         # Помечаем дело как удаленное
         case.status = 'deleted'
+        case.deleted_at = timezone.now()
         case.save()
         
         # Автоматически откатываем нумерацию, если это последнее зарегистрированное дело
@@ -160,6 +190,7 @@ class CaseRegistryManager:
             return counter.current_number + 1
             
         except RegistryIndex.DoesNotExist:
+            logger.warning(f"Индекс {index_code} не найден, возвращаем 1")
             return 1
     
     def get_case_by_full_number(self, full_number):

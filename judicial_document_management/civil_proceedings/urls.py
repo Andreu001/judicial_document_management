@@ -1,69 +1,53 @@
-# civil_proceedings/urls.py
 from rest_framework import routers
 from django.urls import path, include
 from .views import (
-    CivilProceedingsViewSet, 
-    CivilDecisionViewSet,
-    CivilSideViewSet,
-    CivilProcedureActionViewSet,
-    civil_proceedings_options,
-    civil_decision_options
+    CivilProceedingsViewSet, CivilDecisionViewSet, CivilExecutionViewSet,
+    CivilSidesCaseInCaseViewSet, CivilLawyerViewSet,
+    CivilCaseMovementViewSet, CivilPetitionViewSet,
+    ReferringAuthorityCivilViewSet, judges_list,
+    civil_decision_options, civil_options
 )
 
 router = routers.DefaultRouter()
+router.register(r'civil-proceedings', CivilProceedingsViewSet, basename='civil-proceedings')
+router.register(r'referring-authorities-civil', ReferringAuthorityCivilViewSet)
 
+# Nested маршруты для связанных моделей
 router.register(
-    r"civil-proceedings",
-    CivilProceedingsViewSet,
-    basename="civil-proceedings"
+    r'civil-proceedings/(?P<civil_proceedings>\d+)/decisions',
+    CivilDecisionViewSet, basename='civil-decisions'
 )
 router.register(
-    r"civil-decisions",
-    CivilDecisionViewSet,
-    basename="civil-decisions"
+    r'civil-proceedings/(?P<civil_proceedings>\d+)/executions',
+    CivilExecutionViewSet, basename='civil-executions'
 )
 router.register(
-    r"civil-sides",
-    CivilSideViewSet,
-    basename="civil-sides"
+    r'civil-proceedings/(?P<civil_proceedings>\d+)/sides',
+    CivilSidesCaseInCaseViewSet, basename='civil-sides'
 )
 router.register(
-    r"civil-procedure-actions",
-    CivilProcedureActionViewSet,
-    basename="civil-procedure-actions"
+    r'civil-proceedings/(?P<civil_proceedings>\d+)/lawyers',
+    CivilLawyerViewSet, basename='civil-lawyers'
 )
-
-"""
 router.register(
-    r"businesscard/(?P<businesscard_id>\d+)/civil",
-    CivilProceedingsViewSet,
-    basename="civil"
+    r'civil-proceedings/(?P<civil_proceedings>\d+)/movements',
+    CivilCaseMovementViewSet, basename='civil-movements'
 )
-
-# Endpoints для связанных моделей
 router.register(
-    r"businesscard/(?P<businesscard_id>\d+)/civil-decisions",
-    CivilDecisionViewSet,
-    basename="civil-decisions"
+    r'civil-proceedings/(?P<civil_proceedings>\d+)/petitions',
+    CivilPetitionViewSet, basename='civil-petitions'
 )
 
-router.register(
-    r"businesscard/(?P<businesscard_id>\d+)/civil-sides",
-    CivilSideViewSet,
-    basename="civil-sides"
-)
-
-router.register(
-    r"businesscard/(?P<businesscard_id>\d+)/civil-procedure-actions",
-    CivilProcedureActionViewSet,
-    basename="civil-procedure-actions"
-)
-"""
 urlpatterns = [
-    path("", include(router.urls)),
-    # Endpoints для получения опций
-    path("civil-options/", civil_proceedings_options, name="civil-options"),
-    path("civil-decision-options/", 
-         civil_decision_options, 
-         name="civil-decision-options"),
+    path('', include(router.urls)),
+    path('judges/', judges_list, name='judges-list'),
+    path('civil-decision-options/', civil_decision_options, name='civil-decision-options'),
+    path('judges/', judges_list, name='judges-list'),
+    path('civil-proceedings/<int:pk>/archive/',
+         CivilProceedingsViewSet.as_view({'post': 'archive'}),
+         name='civil-proceedings-archive'),
+    path('civil-proceedings/<int:pk>/unarchive/',
+         CivilProceedingsViewSet.as_view({'post': 'unarchive'}),
+         name='civil-proceedings-unarchive'),
+    path('civil-options/', civil_options, name='civil-options'),
 ]
