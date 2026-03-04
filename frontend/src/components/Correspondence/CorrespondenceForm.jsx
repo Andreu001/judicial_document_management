@@ -1,6 +1,8 @@
+// case_registry/frontend/components/CorrespondenceForm.jsx (фрагмент с изменениями)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import baseService from '../../API/baseService';
+import CaseSearch from './CaseSearch';
 import styles from './CorrespondenceForm.module.css';
 
 const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
@@ -36,19 +38,14 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     document_type: '',
     summary: '',
     pages_count: 1,
-    status:'',
-    business_card: '',
+    status: '',
+    business_card: '', // Теперь это будет ID выбранного дела
     notes: '',
     attached_files: null,
     ...initialData
   });
 
-  const [businessCards, setBusinessCards] = useState([]);
-  const [documentTypes, setDocumentTypes] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-
-  const staticDocumentTypes = [
+  const [documentTypes] = useState([
     { value: 'Заявление', label: 'Заявление' },
     { value: 'Жалоба', label: 'Жалоба' },
     { value: 'Ходатайство', label: 'Ходатайство' },
@@ -66,28 +63,10 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     { value: 'Письмо', label: 'Письмо' },
     { value: 'Документы по делу', label: 'Документы по делу' },
     { value: 'Иные документы', label: 'Иные документы' },
-  ];
+  ]);
 
-  const fetchBusinessCards = useCallback(async () => {
-    try {
-      const response = await baseService.get('/business_card/businesscard/');
-      setBusinessCards(response.data);
-    } catch (error) {
-      console.error('Ошибка загрузки дел:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchBusinessCards();
-    setDocumentTypes(staticDocumentTypes);
-    
-    if (mode === 'edit' && initialData.id) {
-      setFormData(prev => ({
-        ...prev,
-        ...initialData
-      }));
-    }
-  }, [fetchBusinessCards, mode, initialData.id]);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     setFormData(prev => ({
@@ -97,14 +76,21 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     }));
   }, [correspondenceType]);
 
+  useEffect(() => {
+    if (mode === 'edit' && initialData.id) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData
+      }));
+    }
+  }, [mode, initialData.id]);
+
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     
     let finalValue = value;
     if (type === 'number') {
       finalValue = value === '' ? '' : Number(value);
-    } else if (name === 'business_card') {
-      finalValue = value === '' ? null : Number(value);
     }
     
     setFormData(prev => ({
@@ -120,6 +106,21 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     }
   };
 
+  // Обработчик для выбора дела из поиска
+  const handleBusinessCardChange = (cardId) => {
+    setFormData(prev => ({
+      ...prev,
+      business_card: cardId
+    }));
+    
+    if (errors.business_card) {
+      setErrors(prev => ({
+        ...prev,
+        business_card: ''
+      }));
+    }
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -130,14 +131,29 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     }
   };
 
+  const handleCaseChange = (compositeId) => {
+    console.log('handleCaseChange вызван с compositeId:', compositeId);
+    setFormData(prev => ({
+      ...prev,
+      case_id: compositeId
+    }));
+    
+    if (errors.case_id) {
+      setErrors(prev => ({
+        ...prev,
+        case_id: ''
+      }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.document_type.trim()) {
+    if (!formData.document_type?.trim()) {
       newErrors.document_type = 'Выберите тип документа';
     }
     
-    if (!formData.summary.trim()) {
+    if (!formData.summary?.trim()) {
       newErrors.summary = 'Введите краткое содержание';
     }
     
@@ -145,7 +161,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
       newErrors.pages_count = 'Количество листов должно быть больше 0';
     }
     
-    if (correspondenceType === 'outgoing' && !formData.recipient.trim()) {
+    if (correspondenceType === 'outgoing' && !formData.recipient?.trim()) {
       newErrors.recipient = 'Для исходящего документа необходимо указать получателя';
     }
     
@@ -157,6 +173,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     const cancelPath = formData.correspondence_type === 'incoming' ? '/in' : '/out';
     navigate(cancelPath);
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,8 +187,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
     try {
       const formDataToSend = new FormData();
       
-      console.log('Отправляемые данные:', formData);
-      console.log('Тип корреспонденции:', formData.correspondence_type);
+      console.log('Отправляемые данные перед отправкой:', formData);
       
       // Добавляем все обязательные поля
       formDataToSend.append('correspondence_type', formData.correspondence_type);
@@ -186,8 +202,17 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
         formDataToSend.append('recipient', formData.recipient);
       }
       
-      if (formData.business_card) {
-        formDataToSend.append('business_card', formData.business_card);
+      // Добавляем sender, если это входящая корреспонденция
+      if (formData.sender) {
+        formDataToSend.append('sender', formData.sender);
+      }
+      
+      // Добавляем case_id, если выбран
+      if (formData.case_id) {
+        formDataToSend.append('case_id', formData.case_id);
+        console.log('Отправляю case_id:', formData.case_id);
+      } else {
+        console.log('case_id не выбран');
       }
       
       if (formData.notes) {
@@ -206,12 +231,17 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
         formDataToSend.append('attached_files', formData.attached_files);
       }
       
+      // Для отладки - выведем содержимое FormData
+      console.log('FormData contents:');
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+      
       let response;
-      const apiUrl = '/case-registry/correspondence/'; // ИСПРАВЛЕНО: с дефисом
+      const apiUrl = '/case-registry/correspondence/';
       
       if (mode === 'edit' && formData.id) {
-        // Для редактирования
-        const updateUrl = `/case-registry/correspondence/${formData.id}/`; // ИСПРАВЛЕНО
+        const updateUrl = `/case-registry/correspondence/${formData.id}/`;
         console.log('Отправка PATCH запроса на:', updateUrl);
         
         response = await baseService.patch(
@@ -224,7 +254,6 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
           }
         );
       } else {
-        // Для создания
         console.log('Отправка POST запроса на:', apiUrl);
         
         response = await baseService.post(
@@ -240,22 +269,18 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
       
       console.log('Успешный ответ:', response.data);
       
-      // Редирект на правильную страницу
       const redirectPath = formData.correspondence_type === 'incoming' ? '/in' : '/out';
       console.log('Редирект на:', redirectPath);
       navigate(redirectPath);
       
     } catch (error) {
       console.error('Ошибка сохранения корреспонденции:', error);
-      console.error('URL запроса:', error.config?.url);
-      console.error('Метод запроса:', error.config?.method);
       
       if (error.response?.data) {
         const serverErrors = error.response.data;
         console.error('Ошибки с сервера:', serverErrors);
         
         const newErrors = {};
-        
         Object.keys(serverErrors).forEach(key => {
           if (Array.isArray(serverErrors[key])) {
             newErrors[key] = serverErrors[key][0];
@@ -265,12 +290,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
         });
         
         setErrors(newErrors);
-        
-        if (typeof serverErrors === 'string' && serverErrors.includes('<!DOCTYPE html>')) {
-          alert('Ошибка маршрутизации. Проверьте URL сервера.');
-        } else {
-          alert('Ошибка при сохранении: ' + JSON.stringify(serverErrors));
-        }
+        alert('Ошибка при сохранении: ' + JSON.stringify(serverErrors));
       } else {
         alert(error.message || 'Ошибка при сохранении. Проверьте данные и попробуйте снова.');
       }
@@ -310,7 +330,6 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
                 <input
                   id="correspondence_type"
                   type="text"
-                  name="correspondence_type"
                   value={correspondenceType === 'incoming' ? 'Входящая' : 'Исходящая'}
                   readOnly
                   className={styles.input}
@@ -467,21 +486,15 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
               <h3>Привязка к делу</h3>
               
               <div className={styles.formGroup}>
-                <label htmlFor="business_card">Связанное дело</label>
-                <select 
-                  id="business_card"
-                  name="business_card" 
-                  value={formData.business_card || ''} 
-                  onChange={handleChange}
-                  className={styles.select}
-                >
-                  <option value="">Не привязано к делу</option>
-                  {businessCards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.original_name} - {card.description || 'Без описания'}
-                    </option>
-                  ))}
-                </select>
+                <label htmlFor="business_card_search">Связанное дело</label>
+                <CaseSearch
+                  value={formData.case_id}
+                  onChange={handleCaseChange}
+                  placeholder="Введите номер дела для поиска..."
+                />
+                {errors.case_id && (
+                  <span className={styles.errorText}>{errors.case_id}</span>
+                )}
               </div>
             </div>
 
@@ -539,7 +552,7 @@ const CorrespondenceForm = ({ initialData = {}, mode = 'create' }) => {
 
         {/* Примечания */}
         <div className={styles.formSection}>
-          <h3>Примечаки</h3>
+          <h3>Примечания</h3>
           
           <div className={styles.formGroup}>
             <textarea

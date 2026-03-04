@@ -1218,7 +1218,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{decisionData.copy_sent_to_1 || 'Не указано'}</span>
+              <span>{decisionData?.copy_sent_to_1 || 'Не указано'}</span>
             )}
           </div>
 
@@ -1233,7 +1233,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{formatDate(decisionData.copy_sent_date_1)}</span>
+              <span>{formatDate(decisionData?.copy_sent_date_1)}</span>
             )}
           </div>
 
@@ -1248,7 +1248,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{decisionData.joined_with_case || 'Не указано'}</span>
+              <span>{decisionData?.joined_with_case || 'Не указано'}</span>
             )}
           </div>
 
@@ -1263,7 +1263,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{decisionData.separated_to_case || 'Не указано'}</span>
+              <span>{decisionData?.separated_to_case || 'Не указано'}</span>
             )}
           </div>
 
@@ -1278,7 +1278,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{decisionData.expertise_type || 'Не указано'}</span>
+              <span>{decisionData?.expertise_type || 'Не указано'}</span>
             )}
           </div>
 
@@ -1293,7 +1293,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{formatDate(decisionData.expertise_sent_date)}</span>
+              <span>{formatDate(decisionData?.expertise_sent_date)}</span>
             )}
           </div>
 
@@ -1308,7 +1308,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{formatDate(decisionData.expertise_received_date)}</span>
+              <span>{formatDate(decisionData?.expertise_received_date)}</span>
             )}
           </div>
 
@@ -1323,7 +1323,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{decisionData.confiscation_article || 'Не указано'}</span>
+              <span>{decisionData?.confiscation_article || 'Не указано'}</span>
             )}
           </div>
 
@@ -1339,7 +1339,7 @@ export const SpecialMarksTab = ({ isEditing,
                 step="0.01"
               />
             ) : (
-              <span>{decisionData.court_fine_amount || 'Не указано'}</span>
+              <span>{decisionData?.court_fine_amount || 'Не указано'}</span>
             )}
           </div>
 
@@ -1354,7 +1354,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{decisionData.court_fine_article || 'Не указано'}</span>
+              <span>{decisionData?.court_fine_article || 'Не указано'}</span>
             )}
           </div>
 
@@ -1369,7 +1369,7 @@ export const SpecialMarksTab = ({ isEditing,
                 rows={3}
               />
             ) : (
-              <span>{decisionData.procedural_coercion || 'Не указано'}</span>
+              <span>{decisionData?.procedural_coercion || 'Не указано'}</span>
             )}
           </div>
 
@@ -1384,7 +1384,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{formatDate(decisionData.procedural_coercion_date)}</span>
+              <span>{formatDate(decisionData?.procedural_coercion_date)}</span>
             )}
           </div>
 
@@ -1400,7 +1400,7 @@ export const SpecialMarksTab = ({ isEditing,
                 step="0.01"
               />
             ) : (
-              <span>{decisionData.procedural_costs || 'Не указано'}</span>
+              <span>{decisionData?.procedural_costs || 'Не указано'}</span>
             )}
           </div>
 
@@ -1415,7 +1415,7 @@ export const SpecialMarksTab = ({ isEditing,
                 rows={3}
               />
             ) : (
-              <span>{decisionData.petitions_info || 'Не указано'}</span>
+              <span>{decisionData?.petitions_info || 'Не указано'}</span>
             )}
           </div>
 
@@ -1430,7 +1430,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{formatDate(decisionData.petitions_withdrawal_date)}</span>
+              <span>{formatDate(decisionData?.petitions_withdrawal_date)}</span>
             )}
           </div>
 
@@ -1445,7 +1445,7 @@ export const SpecialMarksTab = ({ isEditing,
                 rows={3}
               />
             ) : (
-              <span>{decisionData.other_notes || 'Не указано'}</span>
+              <span>{decisionData?.other_notes || 'Не указано'}</span>
             )}
           </div>
 
@@ -1460,7 +1460,7 @@ export const SpecialMarksTab = ({ isEditing,
                 className={styles.input}
               />
             ) : (
-              <span>{formatDate(decisionData.archive_date)}</span>
+              <span>{formatDate(decisionData?.archive_date)}</span>
             )}
           </div>
         </div>
@@ -1470,12 +1470,12 @@ export const SpecialMarksTab = ({ isEditing,
           
           <div className={styles.field}>
             <label>Дата создания записи</label>
-            <span>{formatDate(decisionData.created_at)}</span>
+            <span>{formatDate(decisionData?.created_at)}</span>
           </div>
 
           <div className={styles.field}>
             <label>Дата последнего обновления</label>
-            <span>{formatDate(decisionData.updated_at)}</span>
+            <span>{formatDate(decisionData?.updated_at)}</span>
           </div>
         </div>
       </div>

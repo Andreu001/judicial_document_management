@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './LawyerDetails.module.css';
+import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
 
 const CriminalLawyerDetails = () => {
   const { proceedingId, lawyerId } = useParams();
@@ -16,20 +16,17 @@ const CriminalLawyerDetails = () => {
   const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
   const [selectedSideId, setSelectedSideId] = useState('');
   
-  // Определяем режим создания
   const isCreateMode = !lawyerId || lawyerId === 'create';
 
   useEffect(() => {
     if (proceedingId) {
       if (isCreateMode) {
-        // Режим создания
         setLoading(false);
         setLawyer(null);
         setFormData({});
         setIsEditing(true);
         loadSidesCaseOptions();
       } else if (lawyerId) {
-        // Режим редактирования/просмотра
         loadLawyerDetails();
         loadSidesCaseOptions();
       }
@@ -49,7 +46,6 @@ const CriminalLawyerDetails = () => {
       setLoading(true);
       const data = await CriminalCaseService.getLawyerById(proceedingId, lawyerId);
       
-      // Обрабатываем вложенные данные адвоката
       const lawyerDetails = data.lawyer_detail || data.sides_case_lawyer_criminal_data || {};
       const lawyerData = {
         ...data,
@@ -86,7 +82,6 @@ const CriminalLawyerDetails = () => {
   };
 
   const isLawyerSide = (sideId) => {
-    // ID сторон, которые являются адвокатами (дополнить при необходимости)
     const lawyerSideIds = ['1', '2', '3']; 
     return lawyerSideIds.includes(String(sideId));
   };
@@ -107,7 +102,6 @@ const CriminalLawyerDetails = () => {
         sides_case_lawyer_name: selectedSide ? selectedSide.sides_case : ''
       }));
     } else {
-      // Для всех полей адвоката
       setFormData(prev => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : value
@@ -119,53 +113,38 @@ const CriminalLawyerDetails = () => {
     try {
       setSaving(true);
 
-      // Собираем данные для связанной модели Lawyer
       const lawyerDetailData = {
-        // Основная информация адвоката
         law_firm_name: formData.law_firm_name || '',
         law_firm_address: formData.law_firm_address || '',
         law_firm_phone: formData.law_firm_phone || '',
         law_firm_email: formData.law_firm_email || '',
-        // Документы
         lawyer_certificate_number: formData.lawyer_certificate_number || '',
-        // Исправляем: для дат отправляем null вместо пустой строки
         lawyer_certificate_date: formData.lawyer_certificate_date || null,
-        // Финансовая информация
         bank_name: formData.bank_name || '',
         bank_bik: formData.bank_bik || '',
         correspondent_account: formData.correspondent_account || '',
         payment_account: formData.payment_account || '',
         days_for_payment: formData.days_for_payment || 0,
         payment_amount: formData.payment_amount || 0,
-        // Исправляем: для дат отправляем null вместо пустой строки
         payment_date: formData.payment_date || null,
-        // Примечания
         notes: formData.notes || ''
       };
 
-      // Основные данные для LawyerCriminal
       const lawyerData = {
         sides_case_lawyer: selectedSideId ? parseInt(selectedSideId, 10) : null,
         sides_case_lawyer_criminal_data: lawyerDetailData
       };
 
-      console.log('Отправляемые данные адвоката:', lawyerData);
-
-      // Проверка обязательных полей
       if (!lawyerData.sides_case_lawyer) {
         alert('Пожалуйста, выберите вид стороны для адвоката');
         setSaving(false);
         return;
       }
       
-      let savedLawyer;
       if (isCreateMode) {
-        // Отправляем данные для создания
-        savedLawyer = await CriminalCaseService.createLawyer(proceedingId, lawyerData);
-        // После создания редиректим назад
+        await CriminalCaseService.createLawyer(proceedingId, lawyerData);
         navigate(-1);
       } else {
-        // Отправляем данные для обновления
         await CriminalCaseService.updateLawyer(proceedingId, lawyerId, lawyerData);
         setIsEditing(false);
         await loadLawyerDetails();
@@ -174,7 +153,6 @@ const CriminalLawyerDetails = () => {
       setSaving(false);
     } catch (error) {
       console.error('Ошибка сохранения адвоката:', error);
-      console.error('Детали ошибки:', error.response?.data);
       setSaving(false);
       
       if (error.response?.data) {
@@ -271,7 +249,7 @@ const CriminalLawyerDetails = () => {
             <h1 className={styles.title}>
               {isCreateMode ? 'Новый адвокат' : (formData.law_firm_name || 'Адвокат')}
               {!isCreateMode && (
-                <span> | Вид стороны: {lawyer?.sides_case_lawyer_name || 'Не указан'}</span>
+                <span className={styles.archiveBadge}>Вид стороны: {lawyer?.sides_case_lawyer_name || 'Не указан'}</span>
               )}
             </h1>
             <div className={styles.subtitle}>
@@ -282,7 +260,7 @@ const CriminalLawyerDetails = () => {
         
         <div className={styles.headerRight}>
           {isCreateMode ? (
-            <div className={styles.editActions}>
+            <>
               <button 
                 onClick={handleSave}
                 disabled={saving}
@@ -296,7 +274,7 @@ const CriminalLawyerDetails = () => {
               >
                 Отмена
               </button>
-            </div>
+            </>
           ) : (
             !isEditing ? (
               <button 
@@ -306,7 +284,7 @@ const CriminalLawyerDetails = () => {
                 Редактировать
               </button>
             ) : (
-              <div className={styles.editActions}>
+              <>
                 <button 
                   onClick={handleSave}
                   disabled={saving}
@@ -320,7 +298,7 @@ const CriminalLawyerDetails = () => {
                 >
                   Отмена
                 </button>
-              </div>
+              </>
             )
           )}
         </div>
@@ -341,7 +319,6 @@ const CriminalLawyerDetails = () => {
 
         <div className={styles.tabContentWrapper}>
           <div className={styles.tabContent}>
-            {/* Вкладка: Основная информация */}
             {activeTab === 'general' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>
@@ -356,7 +333,6 @@ const CriminalLawyerDetails = () => {
                       onChange={handleInputChange}
                       className={styles.select}
                       required
-                      disabled={!isCreateMode && !isEditing}
                     >
                       <option value="">Выберите вид стороны (адвокат)</option>
                       {sidesCaseOptions
@@ -443,7 +419,6 @@ const CriminalLawyerDetails = () => {
               </div>
             )}
 
-            {/* Вкладка: Документы */}
             {activeTab === 'certificate' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>
@@ -484,7 +459,6 @@ const CriminalLawyerDetails = () => {
               </div>
             )}
 
-            {/* Вкладка: Финансовая информация */}
             {activeTab === 'finance' && (
               <>
                 <div className={styles.fieldGroup}>
@@ -615,7 +589,6 @@ const CriminalLawyerDetails = () => {
               </>
             )}
 
-            {/* Вкладка: Примечания */}
             {activeTab === 'notes' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>

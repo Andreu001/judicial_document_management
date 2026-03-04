@@ -371,6 +371,10 @@ class CivilExecution(models.Model):
         verbose_name="Присуждённые издержки (руб.)",
         null=True, blank=True
     )
+    notes = models.TextField(
+        verbose_name="Примечания",
+        null=True, blank=True
+    )
 
     class Meta:
         verbose_name = "Исполнение по гражданскому делу"

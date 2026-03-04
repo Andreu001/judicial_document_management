@@ -199,9 +199,21 @@ const CorrespondenceOut = () => {
                     />
                   </td>
                   <td>
-                    {item.business_card_name ? (
-                      <Link to={`/businesscard/${item.business_card}/criminal-details/`}>
-                        {item.business_card_name}
+                    {item.case_display_name ? (
+                      <Link 
+                        to={
+                          item.criminal_case_info 
+                            ? `/criminal-proceedings/${item.criminal_case_info.id}`
+                            : item.civil_case_info
+                            ? `/civil-proceedings/${item.civil_case_info.id}`
+                            : item.admin_case_info
+                            ? `/admin-proceedings/${item.admin_case_info.id}`
+                            : item.kas_case_info
+                            ? `/kas-proceedings/${item.kas_case_info.id}`
+                            : '#'
+                        }
+                      >
+                        {item.case_display_name}
                       </Link>
                     ) : (
                       'Не связано'

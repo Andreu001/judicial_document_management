@@ -18,6 +18,7 @@ from .managers import case_registry
 import logging
 import urllib.parse
 
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -173,6 +174,8 @@ def get_next_number(request, index_code):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# case_registry/views.py
+
 class CorrespondenceViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления корреспонденцией
@@ -199,13 +202,20 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-registration_date', '-created_at')
      
     def perform_create(self, serializer):
+        """
+        Переопределяем метод для генерации registration_number
+        """
         from django.utils import timezone
         from .models import CorrespondenceCounter
         
+        # Сначала сохраняем экземпляр без registration_number
+        # Важно: в serializer.save() не передаем registration_number
         instance = serializer.save()
         
+        # Генерируем registration_number
         current_year = timezone.now().year
         
+        # Получаем или создаем счетчик
         counter, created = CorrespondenceCounter.objects.get_or_create(
             year=current_year,
             defaults={
@@ -214,19 +224,26 @@ class CorrespondenceViewSet(viewsets.ModelViewSet):
             }
         )
         
+        # Увеличиваем соответствующий счетчик
         if instance.correspondence_type == 'incoming':
             counter.incoming_counter += 1
             prefix = 'Вх'
             number = counter.incoming_counter
-        else:
+        else:  # outgoing
             counter.outgoing_counter += 1
             prefix = 'Исх'
             number = counter.outgoing_counter
         
         counter.save()
         
-        instance.registration_number = f"{prefix}-{number}/{current_year}"
-        instance.save()
+        # Формируем registration_number
+        registration_number = f"{prefix}-{number}/{current_year}"
+        
+        # Обновляем registration_number
+        instance.registration_number = registration_number
+        instance.save(update_fields=['registration_number'])
+        
+        logger.info(f"Создана корреспонденция с номером: {registration_number}")
     
     def perform_update(self, serializer):
         serializer.save()

@@ -1,3 +1,4 @@
+# case_registry/models.py
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -97,6 +98,24 @@ class RegisteredCase(models.Model):
         related_name='+',
         verbose_name="Гражданское производство"
     )
+    # ИСПРАВЛЕНО: Для административных дел (КАС РФ) - используем правильный путь из вашего signals.py
+    kas_proceedings = models.OneToOneField(
+        'administrative_proceedings.KasProceedings',  # Исправлено с 'kas_proceedings.KasProceedings'
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name="Административное дело (КАС РФ)"
+    )
+    # ИСПРАВЛЕНО: Для дел об административных правонарушениях (КоАП)
+    administrative_proceedings = models.OneToOneField(
+        'administrative_code.AdministrativeProceedings',  # Исправлено с 'administrative_proceedings.AdministrativeProceedings'
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name="Дело об административном правонарушении (КоАП)"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Дата удаления")
@@ -192,7 +211,9 @@ class Correspondence(models.Model):
     registration_number = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name="Регистрационный номер"
+        verbose_name="Регистрационный номер",
+        blank=True,
+        null=True
     )
     number_sender_document = models.CharField(
         max_length=100,
@@ -262,13 +283,49 @@ class Correspondence(models.Model):
         default='received',
         verbose_name="Статус"
     )
+    criminal_case = models.ForeignKey(
+        'criminal_proceedings.CriminalProceedings',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='correspondence',
+        verbose_name="Связанное уголовное дело"
+    )
+    
+    civil_case = models.ForeignKey(
+        'civil_proceedings.CivilProceedings',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='correspondence',
+        verbose_name="Связанное гражданское дело"
+    )
+    
+    admin_case = models.ForeignKey(
+        'administrative_code.AdministrativeProceedings',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='correspondence',
+        verbose_name="Связанное дело об АП"
+    )
+    
+    kas_case = models.ForeignKey(
+        'administrative_proceedings.KasProceedings',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='correspondence',
+        verbose_name="Связанное дело КАС"
+    )
+    
     business_card = models.ForeignKey(
         'business_card.BusinessCard',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='correspondence',
-        verbose_name="Связанная карточка дела"
+        verbose_name="Связанная карточка дела (устаревшее)"
     )
     attached_files = models.FileField(
         upload_to='correspondence/',

@@ -4,3 +4,4 @@ from django.apps import AppConfig
 class AdministrativeCodeConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'administrative_code'
+    verbose_name = 'Административные правонарушения'

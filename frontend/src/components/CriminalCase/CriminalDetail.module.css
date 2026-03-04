@@ -1,140 +1,266 @@
+/* CriminalDetail.module.css - Единый файл стилей для всех компонентов */
+
+/* ========== ОСНОВНЫЕ СТИЛИ КОНТЕЙНЕРА ========== */
 .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 2rem 0 0 15rem; /* Отступ от хедера и навбара */
-  margin: 0;
-  width: 100%; /* Изменено с calc(100% - 6.4rem) на 100% */
   box-sizing: border-box;
+  width: 100%;
 }
 
+/* ========== ЗАГОЛОВОК И НАВИГАЦИЯ ========== */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 0 2rem;
+  margin-bottom: 24px;
+  padding: 16px 24px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-bottom: 2px solid #e9ecef;
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.backButton {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.backButton:hover {
-  background: #5a6268;
-}
-
-.title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
+  gap: 20px;
 }
 
 .headerRight {
   display: flex;
-  gap: 1rem;
+  gap: 12px;
 }
 
-.editButton, .saveButton, .cancelButton {
-  padding: 0.5rem 1.5rem;
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ========== КНОПКИ ========== */
+.backButton {
+  background-color: #4a5568;
+  color: white;
   border: none;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 14px;
   font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.backButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.archiveButton {
+  background-color: #c05621;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.archiveButton:hover {
+  background-color: #9c4221;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.unarchiveButton {
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.unarchiveButton:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .editButton {
-  background: #007bff;
+  background-color: #38a169; /* Изменен на более светлый зеленый */
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .editButton:hover {
-  background: #0056b3;
+  background-color: #2f855a; /* Более темный оттенок при наведении */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .saveButton {
-  background: #28a745;
+  background-color: #2f855a;
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #1e7e34;
+  background-color: #276749;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .saveButton:disabled {
-  background: #6c757d;
+  background-color: #9c9c9c;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .cancelButton {
-  background: #dc3545;
+  background-color: #c53030;
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancelButton:hover {
-  background: #c82333;
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+.dangerButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dangerButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Стиль для контейнера кнопок в режиме редактирования */
+.editButtons {
+  display: flex;
+  gap: 12px; /* Добавлен отступ между кнопками */
+}
+
+/* ========== ВКЛАДКИ ========== */
 .tabsContainer {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin: 0 2rem 2rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 0 0 24px 0;
   overflow: hidden;
 }
 
 .tabs {
   display: flex;
   background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  padding: 0 1rem;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 16px;
   flex-wrap: wrap;
+  gap: 4px;
 }
 
 .tab {
-  padding: 0.75rem 1.5rem;
+  padding: 12px 20px;
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 500;
   color: #6c757d;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 
 .tab:hover {
-  color: #007bff;
+  color: #2c3e50;
   background: #e9ecef;
 }
 
 .activeTab {
-  color: #007bff;
-  border-bottom-color: #007bff;
+  color: #2c3e50;
+  border-bottom-color: #2c3e50;
   background: white;
 }
 
+.disabledTab {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .tabContentWrapper {
-  padding: 1.5rem;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+  padding: 24px;
 }
 
 .tabContent {
@@ -143,154 +269,184 @@
 
 .tabGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
 }
 
+/* ========== ПОЛЯ ФОРМ ========== */
 .fieldGroup {
   background: #f8f9fa;
-  padding: 1.25rem;
-  border-radius: 6px;
+  padding: 20px;
+  border-radius: 8px;
   border: 1px solid #e9ecef;
+  margin-bottom: 24px;
 }
 
 .subsectionTitle {
-  font-size: 0.95rem;
+  font-size: 16px;
   font-weight: 600;
-  color: #495057;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #007bff;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #2c3e50;
+  letter-spacing: 0.3px;
 }
 
 .field {
-  margin-bottom: 0.75rem;
+  margin-bottom: 16px;
 }
 
 .field label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 500;
   color: #6c757d;
-  margin-bottom: 0.25rem;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 
 .field span {
   display: block;
-  font-size: 0.85rem;
-  color: #495057;
-  padding: 0.375rem 0.75rem;
+  font-size: 14px;
+  color: #2c3e50;
+  padding: 10px 12px;
   background: white;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  min-height: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  min-height: 20px;
+  line-height: 1.5;
 }
 
 .input, .select, .textarea {
   width: 100%;
-  padding: 0.375rem 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
   box-sizing: border-box;
+  background-color: white;
 }
 
 .input:focus, .select:focus, .textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
 }
 
 .textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 80px;
 }
 
-.defendantsSection {
-  padding: 1rem;
+/* ========== КОМПАКТНЫЕ ЭЛЕМЕНТЫ СПИСКОВ ========== */
+.compactList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.defendantsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+.compactItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-.defendantCard {
-  background: #f8f9fa;
-  padding: 1rem;
+.compactItem:hover {
+  border-color: #2c3e50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateX(2px);
+}
+
+.compactItemContent {
+  flex: 1;
+}
+
+.compactItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sideType {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6c757d;
+  background: #f1f3f5;
+  padding: 2px 8px;
+  border-radius: 16px;
+  letter-spacing: 0.2px;
+}
+
+.compactItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compactItemActions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ========== КНОПКИ ДЕЙСТВИЙ ========== */
+.actionButton {
+  width: 32px;
+  height: 32px;
+  border: none;
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f1f3f5;
+  color: #4a5568;
 }
 
-.defendantCard h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.9rem;
-  color: #495057;
+.actionButton:hover {
+  background: #4a5568;
+  color: white;
+  transform: scale(1.05);
 }
 
-.defendantInfo p {
-  margin: 0.25rem 0;
-  font-size: 0.8rem;
-  color: #6c757d;
+.deleteButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f1f3f5;
+  color: #c53030;
 }
 
-.defendantInfo strong {
-  color: #495057;
+.deleteButton:hover {
+  background: #c53030;
+  color: white;
+  transform: scale(1.05);
 }
 
-.noData {
-  text-align: center;
-  color: #6c757d;
-  font-style: italic;
-  padding: 2rem;
-}
-
-.loading, .error {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.1rem;
-}
-
-.loading {
-  color: #007bff;
-}
-
-.error {
-  color: #dc3545;
-}
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem 0 0 3.2rem;
-    width: calc(100% - 3.2rem);
-  }
-  
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-  }
-  
-  .tabs {
-    flex-direction: column;
-  }
-  
-  .tabGrid {
-    grid-template-columns: 1fr;
-  }
-  
-  .tabContentWrapper {
-    padding: 1rem;
-  }
-}
-
-/* Новая структура с sidebar */
+/* ========== САЙДБАР ========== */
 .content {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   align-items: flex-start;
 }
 
@@ -300,162 +456,68 @@
 
 .sidebar {
   flex: 1;
-  min-width: 300px;
+  min-width: 350px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 20px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #2c3e50;
+  letter-spacing: 0.3px;
 }
 
 .defendantsList {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 600px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
 .defendantItem {
-  padding: 15px;
+  padding: 16px;
   background: #f8f9fa;
-  border-radius: 6px;
-  border-left: 4px solid #28a745;
+  border-radius: 8px;
+  border-left: 4px solid #2c3e50;
 }
 
 .defendantItem h4 {
   margin: 0 0 8px 0;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .defendantItem p {
   margin: 4px 0;
   font-size: 13px;
   color: #6c757d;
+  line-height: 1.5;
 }
 
-.sectionTitle {
-  color: #495057;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #007bff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Адаптивность */
-@media (max-width: 1200px) {
-  .content {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-    min-width: auto;
-  }
-}
-
-.checkpointsButton {
-  background: #17a2b8;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-right: 1rem;
-}
-
-.checkpointsButton:hover {
-  background: #138496;
-}
-
-/* Адаптивность для мобильных */
-@media (max-width: 768px) {
-  .headerRight {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .checkpointsButton {
-    margin-right: 0;
-    order: -1;
-  }
-}
-
-.sidebar {
-  flex: 1;
-  min-width: 350px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 20px;
-}
-
-/* Адаптивность */
-@media (max-width: 1200px) {
-  .content {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-    min-width: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  
-  .section {
-    flex: 1;
-    min-width: 300px;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    flex-direction: column;
-  }
-  
-  .section {
-    min-width: auto;
-  }
-}
-
-/* Добавить в CriminalDetail.module.css */
-.generateRulingButton {
-  background: #17a2b8;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
-.generateRulingButton:hover {
-  background: #138496;
-}
-
-/* Добавьте эти стили в конец файла CriminalDetail.module.css */
-
+/* ========== МОДАЛЬНЫЕ ОКНА ========== */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -465,70 +527,10 @@
 .modalContent {
   background: white;
   border-radius: 8px;
-  padding: 2rem;
+  padding: 24px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.modalContent h3 {
-  margin-top: 0;
-  color: #333;
-  text-align: center;
-}
-
-.rulingOptions {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.rulingButton {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  text-align: left;
-  transition: background-color 0.2s;
-}
-
-.rulingButton:hover {
-  background: #0056b3;
-}
-
-.modalActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.rulingSection {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-}
-
-.rulingWarning {
-  color: #dc3545;
-  font-size: 0.8rem;
-  margin-top: 0.5rem;
-  font-style: italic;
-}
-
-.generateRulingButton:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.generateRulingButton:disabled:hover {
-  background: #6c757d;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .modalContentLarge {
@@ -537,128 +539,554 @@
   width: 95%;
   max-width: 1200px;
   max-height: 95vh;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.modalContentLarge > div {
-  flex: 1;
-  max-height: 100%;
-  overflow: hidden;
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-  .modalContentLarge {
-    width: 98%;
-    max-width: none;
-    height: 95vh;
-    margin: 10px;
+/* ========== УВЕДОМЛЕНИЯ ========== */
+.notificationsPanel {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 15px;
+  color: #2c3e50;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.statsSection {
+  margin-bottom: 16px;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 13px;
+}
+
+.statLabel {
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.statValue {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.violation {
+  color: #c53030;
+  font-weight: 600;
+}
+
+/* ========== РЕДАКТОР ПОСТАНОВЛЕНИЙ ========== */
+.rulingSection {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.generateRulingButton {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.generateRulingButton:hover {
+  background: #1a2632;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== АРХИВНЫЕ ДЕЛА ========== */
+.archiveBadge {
+  background-color: #c05621;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 12px;
+  letter-spacing: 0.3px;
+}
+
+/* ========== ПУСТЫЕ СОСТОЯНИЯ ========== */
+.noData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 24px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* ========== ЗАГРУЗКА И ОШИБКИ ========== */
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.error {
+  color: #c53030;
+  text-align: center;
+  padding: 24px;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+/* ========== ИНФОРМАЦИОННЫЕ ПОЛЯ ========== */
+.infoField {
+  margin-bottom: 12px;
+}
+
+.infoField label {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.infoField span {
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.staticValue {
+  display: block;
+  padding: 10px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #2c3e50;
+  min-height: 20px;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 1200px) {
+  .container {
+    padding-left: 20px;
   }
   
-  .modalOverlay {
-    padding: 10px;
-    align-items: flex-start;
+  .content {
+    flex-direction: column;
   }
-}
-
-/* Убедимся, что контейнер редактора занимает всю доступную высоту */
-.modalContentLarge .container {
-  max-height: calc(95vh - 40px);
-  display: flex;
-  flex-direction: column;
-}
-
-.modalContentLarge .editorContainer {
-  flex: 1;
-  min-height: 300px;
-  max-height: calc(95vh - 200px);
-  overflow: auto;
-}
-
-/* Улучшим отображение редактора внутри модального окна */
-.modalContentLarge .rdw-editor-wrapper {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.modalContentLarge .rdw-editor-main {
-  flex: 1;
-  min-height: 300px;
-  max-height: calc(95vh - 300px);
-  overflow-y: auto;
-}
-.archiveButton {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-left: 1rem;
-  transition: background 0.2s ease;
-}
-
-.archiveButton:hover {
-  background: #5a6268;
+  
+  .sidebar {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  
+  .tabGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .archiveButton {
-    margin-left: 0;
-    margin-top: 0.5rem;
-    order: 1;
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .headerLeft {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .headerRight {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    border-bottom: 1px solid #dee2e6;
+    border-left: 2px solid transparent;
+    text-align: left;
+  }
+  
+  .activeTab {
+    border-left-color: #2c3e50;
+    border-bottom-color: #dee2e6;
+  }
+  
+  .backButton, .archiveButton, .unarchiveButton, 
+  .editButton, .saveButton, .cancelButton, .dangerButton {
+    min-width: 100%;
   }
 }
 
-/* Стили для архивных дел */
-.archiveBadge {
-  background-color: #f0ad4e;
+/* ========== САЙДБАР СЕКЦИИ ========== */
+.sidebarSection {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.sidebarSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.sidebarSectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebarSectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.sidebarToggleButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s ease;
+}
+
+.sidebarToggleButton:hover {
+  color: #2c3e50;
+}
+
+.sidebarSectionContent {
+  padding: 16px 20px;
+}
+
+.sidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sidebarListItem {
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.sidebarListItem:last-child {
+  border-bottom: none;
+}
+
+.sidebarListItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.sidebarListItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.sidebarListItemMore {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.sidebarNoData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.sidebarDetailsButton {
+  width: 100%;
+  background-color: #4a5568;
   color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebarDetailsButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Обновляем существующий стиль sidebar для лучшей совместимости */
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Убираем старый стиль section, если он конфликтует */
+.section {
+  display: none;
+}
+
+/* Дополнительные стили для сайдбара */
+.sidebarSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.sidebarSectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebarSectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarSectionCount {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
   padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8em;
-  margin-left: 10px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
 }
 
-.disabledTab {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.unarchiveButton {
-  background-color: #28a745;
-  color: white;
+.sidebarToggleButton {
+  background: none;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  font-size: 14px;
+  color: #6c757d;
   cursor: pointer;
-  margin-right: 10px;
+  padding: 4px 8px;
+  transition: color 0.2s ease;
 }
 
-.unarchiveButton:hover {
-  background-color: #218838;
+.sidebarToggleButton:hover {
+  color: #2c3e50;
 }
 
-.archiveButton {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+.sidebarSectionContent {
+  padding: 16px 20px;
+}
+
+.sidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebarListItem {
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
   cursor: pointer;
-  margin-right: 10px;
 }
 
-.archiveButton:hover {
-  background-color: #5a6268;
+.sidebarListItem:hover {
+  background-color: #e9ecef;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.editButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* Цветовые индикаторы для разных типов сторон */
+.sideType-defendant:hover {
+  border-left-color: #c53030;
+}
+
+.sideType-lawyer:hover {
+  border-left-color: #3182ce;
+}
+
+.sideType-other:hover {
+  border-left-color: #38a169;
+}
+
+.sideType {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.sideType.sideType-defendant {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.sideType.sideType-lawyer {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
+.sideType.sideType-other {
+  background-color: #c6f6d5;
+  color: #276749;
+}
+
+.sidebarListItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.sidebarListItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+  word-break: break-word;
+}
+
+.sidebarListItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.sidebarListItemHint {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: right;
+  font-style: italic;
+  transition: color 0.2s ease;
+}
+
+.sidebarListItem:hover .sidebarListItemHint {
+  color: #4a5568;
+}
+
+.sidebarListItemMore {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+.sidebarNoData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* Обновляем существующий стиль sidebar */
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }

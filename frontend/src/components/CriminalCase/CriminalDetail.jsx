@@ -20,6 +20,10 @@ const CriminalDetail = () => {
   const navigate = useNavigate();
   const [criminalData, setCriminalData] = useState(null);
   const [defendants, setDefendants] = useState([]);
+  const [lawyers, setLawyers] = useState([]);
+  const [otherSides, setOtherSides] = useState([]);
+  const [decisions, setDecisions] = useState([]);
+  const [executions, setExecutions] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -46,6 +50,13 @@ const CriminalDetail = () => {
   const [referringAuthorities, setReferringAuthorities] = useState([]);
   const [judges, setJudges] = useState([]);
   const [isArchived, setIsArchived] = useState(false);
+
+  // Состояния для сворачивания блоков в сайдбаре
+  const [collapsedSections, setCollapsedSections] = useState({
+    sides: true,
+    decisions: true,
+    executions: true
+  });
 
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -219,6 +230,26 @@ const CriminalDetail = () => {
           setDefendants(defendantsResponse);
           console.log('Defendants loaded:', defendantsResponse.length);
 
+          // Загружаем адвокатов
+          const lawyersResponse = await CriminalCaseService.getLawyers(criminalResponse.id);
+          setLawyers(lawyersResponse);
+          console.log('Lawyers loaded:', lawyersResponse.length);
+
+          // Загружаем иные стороны
+          const otherSidesResponse = await CriminalCaseService.getSides(criminalResponse.id);
+          setOtherSides(otherSidesResponse);
+          console.log('Other sides loaded:', otherSidesResponse.length);
+
+          // Загружаем решения
+          const decisionsResponse = await CriminalCaseService.getDecisions(criminalResponse.id);
+          setDecisions(decisionsResponse);
+          console.log('Decisions loaded:', decisionsResponse.length);
+
+          // Загружаем исполнения
+          const executionsResponse = await CriminalCaseService.getExecutions(criminalResponse.id);
+          setExecutions(executionsResponse);
+          console.log('Executions loaded:', executionsResponse.length);
+
           await fetchReferringAuthorities();
           await fetchJudges();
         } else {
@@ -382,6 +413,18 @@ const CriminalDetail = () => {
     return new Date(dateString).toLocaleDateString('ru-RU');
   };
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'Не указано';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const formatBoolean = (value) => {
     return value ? 'Да' : 'Нет';
   };
@@ -389,6 +432,39 @@ const CriminalDetail = () => {
   const getOptionLabel = (optionsArray, value) => {
     return optionsArray.find(opt => opt.value === value)?.label || 'Не указано';
   };
+
+  // Функция для переключения сворачивания секций
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // Объединяем все стороны для отображения
+  const allSides = [
+    ...defendants.map(d => ({ 
+      ...d, 
+      sideType: 'defendant', 
+      sideTypeLabel: 'Подсудимый',
+      displayName: d.full_name_criminal || d.full_name || 'Не указано',
+      statusText: d.sides_case_defendant_name || 'Подсудимый'
+    })),
+    ...lawyers.map(l => ({ 
+      ...l, 
+      sideType: 'lawyer', 
+      sideTypeLabel: 'Адвокат',
+      displayName: l.lawyer_detail?.law_firm_name || l.sides_case_lawyer_detail?.sides_case || 'Адвокат',
+      statusText: 'Адвокат'
+    })),
+    ...otherSides.map(s => ({ 
+      ...s, 
+      sideType: 'other', 
+      sideTypeLabel: 'Сторона',
+      displayName: s.criminal_side_case_detail?.name || s.sides_case_criminal_detail?.sides_case || 'Сторона',
+      statusText: s.sides_case_criminal_detail?.sides_case || 'Сторона'
+    }))
+  ];
 
   // Модальное окно для формирования постановления
   const RulingModal = () => (
@@ -610,25 +686,193 @@ const CriminalDetail = () => {
           </div>
         </div>
 
-        {/* Правая колонка - обвиняемые */}
+        {/* Правая колонка - обновленные блоки */}
         <div className={styles.sidebar}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Стороны по делу</h2>
+          {/* Блок "Стороны по делу" */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('sides')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Стороны по делу 
+                <span className={styles.sidebarSectionCount}>
+                  {allSides.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.sides ? '▶' : '▼'}
+              </button>
+            </div>
             
-            {defendants.length > 0 ? (
-              <div className={styles.defendantsList}>
-                {defendants.map(defendant => (
-                  <div key={defendant.id} className={styles.defendantItem}>
-                    <h4>{defendant.full_name}</h4>
-                    <p>Статус: {defendant.side_case_name || 'Не указано'}</p>
-                    <p>Дата рождения: {formatDate(defendant.birth_date)}</p>
-                    <p>ИНН: {defendant.inn || 'Не указано'}</p>
-                    <p>Адрес: {defendant.address || 'Не указано'}</p>
+            {!collapsedSections.sides && (
+              <div className={styles.sidebarSectionContent}>
+                {allSides.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {allSides.slice(0, 5).map(side => {
+                      // Определяем путь в зависимости от типа стороны
+                      let detailPath = '';
+                      if (side.sideType === 'defendant') {
+                        detailPath = `/criminal-proceedings/${id}/defendants/${side.id}`;
+                      } else if (side.sideType === 'lawyer') {
+                        detailPath = `/criminal-proceedings/${id}/lawyers-criminal/${side.id}`;
+                      } else {
+                        detailPath = `/criminal-proceedings/${id}/sides-case-in-case/${side.id}`;
+                      }
+                      
+                      return (
+                        <div 
+                          key={`${side.sideType}-${side.id}`} 
+                          className={`${styles.sidebarListItem} ${styles[`sideType-${side.sideType}`]}`}
+                          onClick={() => navigate(detailPath)}
+                        >
+                          <div className={styles.sidebarListItemHeader}>
+                            <span className={styles.sidebarListItemTitle}>
+                              {side.displayName}
+                            </span>
+                            <span className={`${styles.sideType} ${styles[`sideType-${side.sideType}`]}`}>
+                              {side.sideTypeLabel}
+                            </span>
+                          </div>
+                          <div className={styles.sidebarListItemSubtitle}>
+                            {side.statusText}
+                          </div>
+                          <div className={styles.sidebarListItemHint}>
+                            Нажмите для просмотра →
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {allSides.length > 5 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {allSides.length - 5} участников
+                      </div>
+                    )}
                   </div>
-                ))}
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных о сторонах по делу</p>
+                )}
               </div>
-            ) : (
-              <p className={styles.noData}>Нет данных о сторонах по делу</p>
+            )}
+          </div>
+
+          {/* Блок "Решения" */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('decisions')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Решения 
+                <span className={styles.sidebarSectionCount}>
+                  {decisions.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.decisions ? '▶' : '▼'}
+              </button>
+            </div>
+            
+            {!collapsedSections.decisions && (
+              <div className={styles.sidebarSectionContent}>
+                {decisions.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {decisions.slice(0, 3).map(decision => (
+                      <div 
+                        key={decision.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => navigate(`/criminal-proceedings/${id}/criminal-decisions/${decision.id}`)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {decision.court_consideration_date 
+                              ? `Решение от ${formatDate(decision.court_consideration_date)}`
+                              : `Решение №${decision.id}`
+                            }
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {decision.appeal_consideration_result 
+                            ? getOptionLabel(options.appeal_consideration_result || [], decision.appeal_consideration_result)
+                            : 'Результат не указан'
+                          }
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {decisions.length > 3 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {decisions.length - 3} решений
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных о решениях</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Блок "Исполнение" */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('executions')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Исполнение 
+                <span className={styles.sidebarSectionCount}>
+                  {executions.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.executions ? '▶' : '▼'}
+              </button>
+            </div>
+            
+            {!collapsedSections.executions && (
+              <div className={styles.sidebarSectionContent}>
+                {executions.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {executions.slice(0, 3).map(execution => (
+                      <div 
+                        key={execution.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => navigate(`/criminal-proceedings/${id}/executions/${execution.id}`)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {execution.sentence_execution_date 
+                              ? `Исполнение от ${formatDate(execution.sentence_execution_date)}`
+                              : `Запись об исполнении №${execution.id}`
+                            }
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {execution.execution_sent_to 
+                            ? `Направлено: ${execution.execution_sent_to}`
+                            : execution.control_result 
+                              ? `Результат: ${execution.control_result}`
+                              : 'Информация отсутствует'
+                          }
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {executions.length > 3 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {executions.length - 3} записей
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных об исполнении</p>
+                )}
+              </div>
             )}
           </div>
 

@@ -13,7 +13,7 @@ from .models import (CriminalProceedings, Defendant,
                      CriminalDecision, CriminalRuling,
                      CriminalCaseMovement, ReferringAuthority,
                      CriminalSidesCaseInCase, LawyerCriminal,
-                     PetitionCriminal)
+                     PetitionCriminal, CriminalExecution)
 from .serializers import (CriminalProceedingsSerializer,
                           DefendantSerializer,
                           CriminalDecisionSerializer,
@@ -28,8 +28,16 @@ from .serializers import (CriminalProceedingsSerializer,
                           SidesCaseInCaseSerializer,
                           PetitionCriminalSerializer,
                           PetitionCriminalOptionsSerializer,
-                          ArchivedCriminalProceedingsSerializer)
+                          ArchivedCriminalProceedingsSerializer,
+                          CriminalExecutionSerializer)
 import logging
+from django.contrib.contenttypes.models import ContentType
+from case_documents.models import CaseDocument, DocumentTemplate
+from case_documents.serializers import (
+    CaseDocumentListSerializer, 
+    CaseDocumentDetailSerializer,
+    DocumentTemplateSerializer
+)
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +178,142 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
 
         all_sides = defendant_list + lawyer_list + side_list
         return Response(all_sides)
+
+    @action(detail=True, methods=['get'], url_path='document-templates')
+    def document_templates(self, request, pk=None):
+        """
+        Возвращает список шаблонов документов, доступных для уголовных дел.
+        """
+        case_category = 'criminal'
+        templates = DocumentTemplate.objects.filter(
+            case_category__in=[case_category, 'common'],
+            is_active=True
+        )
+        serializer = DocumentTemplateSerializer(templates, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get', 'post'], url_path='documents')
+    def documents(self, request, pk=None):
+        """
+        Работа со списком документов уголовного дела.
+        """
+        criminal_case = self.get_object()
+        content_type = ContentType.objects.get_for_model(criminal_case)
+
+        if request.method == 'GET':
+            docs = CaseDocument.objects.filter(
+                content_type=content_type,
+                object_id=criminal_case.id
+            )
+            serializer = CaseDocumentListSerializer(
+                docs, 
+                many=True, 
+                context={'request': request}
+            )
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            # Делаем копию данных, чтобы не изменять оригинал
+            data = request.data.copy()
+            
+            # Добавляем content_type и object_id в данные
+            data['content_type'] = content_type.model
+            data['object_id'] = criminal_case.id
+            
+            serializer = CaseDocumentDetailSerializer(
+                data=data,
+                context={'request': request, 'case': criminal_case}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], url_path='documents/(?P<doc_pk>[^/.]+)')
+    def retrieve_document(self, request, pk=None, doc_pk=None):
+        """
+        Получить конкретный документ по ID.
+        """
+        criminal_case = self.get_object()
+        document = self.get_document_object(criminal_case, doc_pk)
+        serializer = CaseDocumentDetailSerializer(
+            document, 
+            context={'request': request}
+        )
+        return Response(serializer.data)
+
+    @documents.mapping.put
+    @documents.mapping.patch
+    @documents.mapping.delete
+    def handle_document_detail(self, request, pk=None, doc_pk=None):
+        """
+        Обработка PUT, PATCH, DELETE запросов для конкретного документа.
+        """
+        criminal_case = self.get_object()
+        document = self.get_document_object(criminal_case, doc_pk)
+
+        if request.method in ['PUT', 'PATCH']:
+            serializer = CaseDocumentDetailSerializer(
+                document,
+                data=request.data,
+                partial=(request.method == 'PATCH'),
+                context={'request': request, 'case': criminal_case}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
+        elif request.method == 'DELETE':
+            document.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_document_object(self, criminal_case, doc_pk):
+        """
+        Вспомогательный метод для получения документа по ID.
+        """
+        content_type = ContentType.objects.get_for_model(criminal_case)
+        return get_object_or_404(
+            CaseDocument,
+            content_type=content_type,
+            object_id=criminal_case.id,
+            pk=doc_pk
+        )
+
+    @action(detail=True, methods=['post'], url_path='documents/(?P<doc_pk>[^/.]+)/sign')
+    def sign_document(self, request, pk=None, doc_pk=None):
+        """
+        Подписание документа.
+        """
+        criminal_case = self.get_object()
+        content_type = ContentType.objects.get_for_model(criminal_case)
+        
+        # Получаем документ, проверяем что он принадлежит этому делу
+        document = get_object_or_404(
+            CaseDocument,
+            content_type=content_type,
+            object_id=criminal_case.id,
+            pk=doc_pk
+        )
+        
+        # Проверяем, не подписан ли уже документ
+        if document.status == 'signed':
+            return Response(
+                {'detail': 'Документ уже подписан.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Подписываем документ
+        success, message = document.sign(request.user)
+        if success:
+            serializer = CaseDocumentDetailSerializer(
+                document, 
+                context={'request': request}
+            )
+            return Response(serializer.data)
+        else:
+            return Response(
+                {'detail': message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class ArchivedCriminalProceedingsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -413,6 +557,39 @@ class PetitionCriminalViewSet(viewsets.ModelViewSet):
         if criminal_proceedings_id:
             proceedings = get_object_or_404(CriminalProceedings, pk=criminal_proceedings_id)
             serializer.save(criminal_proceedings=proceedings)
+
+
+class CriminalExecutionViewSet(viewsets.ModelViewSet):
+    """ViewSet для исполнения по уголовным делам"""
+    serializer_class = CriminalExecutionSerializer
+
+    def get_queryset(self):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            return CriminalExecution.objects.filter(
+                criminal_proceedings_id=criminal_proceedings_id
+            ).select_related(
+                'criminal_side_case_execution',
+                'criminal_defendant_execution',
+                'sides_case_lawyer_execution'
+            )
+        return CriminalExecution.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            # Сохраняем в контекст, но не передаем в validated_data
+            context['criminal_proceedings'] = get_object_or_404(
+                CriminalProceedings, 
+                pk=criminal_proceedings_id
+            )
+        return context
+
+    def perform_create(self, serializer):
+        # Не передаем criminal_proceedings здесь, так как сериализатор 
+        # уже получит его из контекста в методе create
+        serializer.save()
 
 
 @api_view(['GET'])

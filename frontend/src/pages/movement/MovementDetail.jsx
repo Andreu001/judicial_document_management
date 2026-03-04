@@ -1,12 +1,19 @@
 // MovementDetail.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import MovementService from '../../API/MovementService';
+import KasCaseService from '../../API/KasCaseService';
 import styles from './MovementDetail.module.css';
 
 const MovementDetail = () => {
   const { proceedingId, movementId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Определяем тип дела по URL
+  const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
+                   location.pathname.includes('/kas-proceedings/') ? 'kas' : 'civil';
+  
   const isEditMode = movementId && movementId !== 'create';
   
   const [movementData, setMovementData] = useState(null);
@@ -36,40 +43,45 @@ const MovementDetail = () => {
     if (isEditMode) {
       fetchMovementDetails();
     }
-  }, [proceedingId, movementId, isEditMode]);
+  }, [proceedingId, movementId, isEditMode, caseType]);
 
   const fetchMovementDetails = async () => {
     try {
       setLoading(true);
       
-      // Получаем CivilCaseMovement напрямую
-      const response = await MovementService.getMovement(proceedingId, movementId);
+      let response;
       
-      if (response.data) {
-        const civilMovement = response.data;
-        setMovementData(civilMovement);
+      if (caseType === 'kas') {
+        // Для дел КАС используем отдельный сервис
+        response = await KasCaseService.getMovementById(proceedingId, movementId);
+      } else {
+        // Получаем движение по делу с учетом типа дела
+        response = await MovementService.getMovement(proceedingId, movementId, caseType);
+      }
+      
+      const movement = response.data || response;
+      setMovementData(movement);
+      
+      // Извлекаем данные из business_movement_detail
+      if (movement.business_movement_detail) {
+        const details = movement.business_movement_detail;
         
-        // Извлекаем данные из business_movement_detail
-        if (civilMovement.business_movement_detail) {
-          const details = civilMovement.business_movement_detail;
-          
-          // Получаем ID решений из деталей
-          let decisionIds = [];
-          if (details.decision_case && Array.isArray(details.decision_case)) {
-            decisionIds = details.decision_case.map(d => d.id);
-          }
-          
-          setFormData({
-            date_meeting: details.date_meeting || '',
-            meeting_time: details.meeting_time || '',
-            decision_case: decisionIds,
-            composition_colleges: details.composition_colleges || '',
-            result_court_session: details.result_court_session || '',
-            reason_deposition: details.reason_deposition || '',
-          });
-          
-          setSelectedDecisions(decisionIds);
+        // Получаем ID решений из деталей
+        let decisionIds = [];
+        if (details.decision_case && Array.isArray(details.decision_case)) {
+          decisionIds = details.decision_case.map(d => d.id);
         }
+        
+        setFormData({
+          date_meeting: details.date_meeting || '',
+          meeting_time: details.meeting_time || '',
+          decision_case: decisionIds,
+          composition_colleges: details.composition_colleges || '',
+          result_court_session: details.result_court_session || '',
+          reason_deposition: details.reason_deposition || '',
+        });
+        
+        setSelectedDecisions(decisionIds);
       }
       
       setLoading(false);
@@ -147,30 +159,49 @@ const MovementDetail = () => {
       };
 
       console.log('Данные для движения:', movementData);
+      console.log('Тип дела:', caseType);
 
       let response;
       
       if (isEditMode) {
         // Обновляем существующее движение
-        response = await MovementService.updateMovement(
-          proceedingId, 
-          movementId, 
-          movementData
-        );
+        if (caseType === 'kas') {
+          response = await KasCaseService.updateMovement(proceedingId, movementId, movementData);
+        } else {
+          response = await MovementService.updateMovement(
+            proceedingId, 
+            movementId, 
+            movementData,
+            caseType
+          );
+        }
       } else {
         // Создаем новое движение
-        response = await MovementService.createMovement(
-          proceedingId, 
-          movementData
-        );
+        if (caseType === 'kas') {
+          response = await KasCaseService.createMovement(proceedingId, movementData);
+        } else {
+          response = await MovementService.createMovement(
+            proceedingId, 
+            movementData,
+            caseType
+          );
+        }
       }
       
-      if (response.data) {
-        console.log('Движение сохранено:', response.data);
+      const responseData = response.data || response;
+      
+      if (responseData) {
+        console.log('Движение сохранено:', responseData);
         
-        if (!isEditMode && response.data.id) {
-          // Перенаправляем на страницу созданного движения
-          navigate(-1);
+        if (!isEditMode && responseData.id) {
+          // Перенаправляем на страницу созданного движения в зависимости от типа дела
+          if (caseType === 'admin') {
+            navigate(-1);
+          } else if (caseType === 'kas') {
+            navigate(-1);
+          } else {
+            navigate(-1);
+          }
         } else {
           // Обновляем данные на странице
           await fetchMovementDetails();
@@ -219,7 +250,14 @@ const MovementDetail = () => {
         setError(null);
       }
     } else {
-      navigate(`/civil-proceedings/${proceedingId}`);
+      // Возвращаемся к соответствующему делу в зависимости от типа
+      if (caseType === 'admin') {
+        navigate(-1);
+      } else if (caseType === 'kas') {
+        navigate(-1);
+      } else {
+        navigate(-1);
+      }
     }
   };
 
@@ -242,6 +280,25 @@ const MovementDetail = () => {
       const foundDecision = decisions.find(d => d.id === id);
       return foundDecision ? foundDecision.name_case : `Решение #${id}`;
     }).join(', ');
+  };
+
+  // Определяем заголовок в зависимости от типа дела
+  const getTitle = () => {
+    const action = isEditMode ? 'Движение по делу' : 'Новое движение по делу';
+    
+    let caseTypeText = '';
+    switch(caseType) {
+      case 'admin':
+        caseTypeText = '(административное правонарушение)';
+        break;
+      case 'kas':
+        caseTypeText = '(административное дело, КАС РФ)';
+        break;
+      default:
+        caseTypeText = '(гражданское)';
+    }
+    
+    return `${action} ${caseTypeText}`;
   };
 
   if (loading) {
@@ -274,8 +331,14 @@ const MovementDetail = () => {
             ← Назад
           </button>
           <h1 className={styles.title}>
-            {isEditMode ? 'Движение по делу' : 'Новое движение по делу'}
+            {getTitle()}
           </h1>
+          {caseType === 'admin' && (
+            <span className={styles.caseTypeBadge}>Административное правонарушение</span>
+          )}
+          {caseType === 'kas' && (
+            <span className={styles.caseTypeBadge}>Административное дело (КАС РФ)</span>
+          )}
         </div>
         
         <div className={styles.headerRight}>
@@ -471,6 +534,14 @@ const MovementDetail = () => {
                     <div className={styles.field}>
                       <label>ID дела</label>
                       <span className={styles.valueReadonly}>{proceedingId}</span>
+                    </div>
+
+                    <div className={styles.field}>
+                      <label>Тип дела</label>
+                      <span className={styles.valueReadonly}>
+                        {caseType === 'admin' ? 'Административное правонарушение' :
+                         caseType === 'kas' ? 'Административное дело (КАС РФ)' : 'Гражданское'}
+                      </span>
                     </div>
                   </div>
                 </div>

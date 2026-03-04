@@ -1,337 +1,409 @@
-/* PersonSearch.module.css */
+/* PersonSearch.module.css - Официальный деловой стиль */
+
 .container {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem 0 0 15rem;
+  padding: 20px 20px 20px calc(6.3cm + 20px);
   margin: 0;
   width: 100%;
   box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 0 2rem;
+  margin-bottom: 24px;
+  padding: 0;
 }
 
 .header h1 {
-  font-size: 1.8rem;
-  color: #333;
+  font-size: 24px;
+  color: #2c3e50;
   margin: 0;
-}
-
-.tabsContainer {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin: 0 2rem 2rem 2rem;
-  overflow: hidden;
-}
-
-.tabs {
-  display: flex;
-  background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.tab {
-  padding: 1rem 2rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #6c757d;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.tab:hover {
-  color: #495057;
-  background: #e9ecef;
-}
-
-.activeTab {
-  color: #007bff;
-  border-bottom-color: #007bff;
-  background: white;
-}
-
-.tabContent {
-  padding: 2rem;
-}
-
-.searchSection {
-  margin-bottom: 2rem;
-}
-
-.searchTitle {
-  font-size: 1.2rem;
-  color: #495057;
-  margin-bottom: 1.5rem;
   font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+/* Секция поиска */
+.searchSection {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+  padding: 20px;
 }
 
 .searchForm {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
+  width: 100%;
 }
 
-.formRow {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.formGroup {
+.searchRow {
   display: flex;
-  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.formGroup label {
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  color: #495057;
-  font-size: 0.9rem;
-}
-
-.formGroup input,
-.formGroup select {
-  padding: 0.75rem;
-  border: 1px solid #ced4da;
+.searchInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  font-size: 0.9rem;
+  font-size: 14px;
+  font-family: 'Arial', sans-serif;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  height: 38px;
+  box-sizing: border-box;
 }
 
-.formGroup input:focus,
-.formGroup select:focus {
+.searchInput:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+  border-color: #8b5a2b;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(139, 90, 43, 0.1);
 }
 
-.searchButtons {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
+.searchInput:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .searchButton {
-  background: #007bff;
+  background: #8b5a2b;
   color: white;
   border: none;
-  padding: 0.75rem 2rem;
+  padding: 8px 24px;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.searchButton:hover {
-  background: #0056b3;
-}
-
-.resetButton {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.75rem 2rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.resetButton:hover {
-  background: #5a6268;
-}
-
-.resultsSection {
-  margin-top: 2rem;
-}
-
-.resultsHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.resultsCount {
-  color: #6c757d;
-  font-size: 0.9rem;
-}
-
-.exportButton {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.exportButton:hover {
-  background: #218838;
-}
-
-.resultsTable {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  background: #f8f9fa;
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 0.85rem;
-}
-
-.table td {
-  padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
-  font-size: 0.85rem;
-}
-
-.table tr:hover {
-  background: #f8f9fa;
-}
-
-.personName {
+  font-size: 14px;
   font-weight: 500;
-  color: #007bff;
+  font-family: 'Arial', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  height: 38px;
+  min-width: 100px;
+  box-sizing: border-box;
+  letter-spacing: 0.3px;
 }
 
-.personDetails {
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.searchButton:hover:not(:disabled) {
+  background: #6b441f;
+}
+
+.searchButton:disabled {
+  background: #adb5bd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Вкладки */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: #f8fafc;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.tab {
+  padding: 6px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: 'Arial', sans-serif;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.personStatus {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+.tab:hover {
+  background: #e9ecef;
+  color: #2c3e50;
 }
 
-.personStatus.individual {
-  background: #a29bfe;
-  color: #6c5ce7;
+.activeTab {
+  background: white;
+  color: #2c3e50;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.personStatus.legal {
-  background: #55efc4;
-  color: #00614e;
+/* Результаты поиска */
+.resultsSection {
+  margin-top: 24px;
 }
 
-.viewButton {
-  background: #007bff;
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
+.resultsCount {
+  margin-bottom: 16px;
+  color: #718096;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* Сетка карточек */
+.resultsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 20px;
+}
+
+/* Карточка участника */
+.personCard {
+  background: white;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  font-size: 0.8rem;
-  border: none;
-  cursor: pointer;
-  display: inline-block;
-}
-
-.viewButton:hover {
-  background: #0056b3;
-}
-
-.loading, .noResults {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1rem;
-  color: #6c757d;
-}
-
-.loading {
-  color: #007bff;
-}
-
-.pagination {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  transition: all 0.2s ease;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
+  flex-direction: column;
+  height: 100%;
 }
 
-.paginationButton {
-  background: #007bff;
+.personCard:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e0;
+}
+
+/* Заголовок карточки */
+.personHeader {
+  padding: 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.personName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.4;
+}
+
+.personType {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #e9ecef;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+/* Информация в карточке */
+.personInfo {
+  padding: 16px;
+  flex: 1;
+}
+
+.infoRow {
+  display: flex;
+  margin-bottom: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #e9ecef;
+}
+
+.infoRow:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.infoLabel {
+  width: 100px;
+  color: #718096;
+  font-size: 12px;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  flex: 1;
+  color: #2d3748;
+  font-size: 13px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* Действия с карточкой */
+.personActions {
+  padding: 16px;
+  border-top: 1px solid #e9ecef;
+  background: #f8fafc;
+  display: flex;
+  gap: 8px;
+}
+
+.detailsButton {
+  flex: 1;
+  padding: 6px 12px;
+  background: #8b5a2b;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
   border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Arial', sans-serif;
   cursor: pointer;
-  font-size: 0.9rem;
+  transition: background 0.2s ease;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 
-.paginationButton:disabled {
-  background: #6c757d;
+.detailsButton:hover:not(:disabled) {
+  background: #6b441f;
+}
+
+.detailsButton:disabled {
+  background: #adb5bd;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
-.paginationInfo {
-  color: #495057;
-  font-size: 0.9rem;
+.cardButton {
+  flex: 1;
+  padding: 6px 12px;
+  background: white;
+  color: #8b5a2b;
+  border: 1px solid #8b5a2b;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Arial', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+.cardButton:hover {
+  background: #f8f5f0;
+  color: #6b441f;
+  border-color: #6b441f;
+}
+
+/* Состояния загрузки и пустых результатов */
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #8b5a2b;
+  font-size: 14px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-top: 24px;
+}
+
+.noResults {
+  text-align: center;
+  padding: 48px;
+  color: #718096;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 1024px) {
   .container {
-    padding: 1rem 0 0 3.2rem;
+    padding: 16px 16px 16px calc(6.3cm + 16px);
   }
   
-  .header {
+  .resultsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .searchRow {
     flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
+  }
+  
+  .searchButton {
+    width: 100%;
   }
   
   .tabs {
-    flex-wrap: wrap;
+    justify-content: stretch;
   }
   
   .tab {
     flex: 1;
-    min-width: 150px;
     text-align: center;
   }
   
-  .formRow {
+  .resultsGrid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   
-  .searchButtons {
-    justify-content: center;
-  }
-  
-  .resultsHeader {
+  .personActions {
     flex-direction: column;
-    gap: 1rem;
+  }
+  
+  .personHeader {
+    flex-direction: column;
+    gap: 8px;
     text-align: center;
   }
+  
+  .infoRow {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .infoLabel {
+    width: auto;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Дополнительные классы для типов лиц (можно использовать) */
+.typeIndividual {
+  background: #e9ecef;
+  color: #2c3e50;
+}
+
+.typeLegal {
+  background: #d4edda;
+  color: #155724;
+}
+
+.typeGovernment {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.typeOther {
+  background: #f8f9fa;
+  color: #6c757d;
 }

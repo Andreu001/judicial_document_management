@@ -7,5 +7,4 @@ class NotificationsConfig(AppConfig):
     name = "notifications"
 
     def ready(self):
-        # Импортируем signals, чтобы они были зарегистрированы
-        import notifications.signals  # noqa: F401
+        import notifications.signals

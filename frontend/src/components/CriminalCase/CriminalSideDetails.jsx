@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './SideDetails.module.css';
+import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
 
 const CriminalSideDetails = () => {
   const { proceedingId, sideId } = useParams();
@@ -16,20 +16,17 @@ const CriminalSideDetails = () => {
   const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
   const [selectedSideId, setSelectedSideId] = useState('');
   
-  // Определяем режим создания
   const isCreateMode = !sideId || sideId === 'create';
 
   useEffect(() => {
     if (proceedingId) {
       if (isCreateMode) {
-        // Режим создания
         setLoading(false);
         setSide(null);
         setFormData({});
         setIsEditing(true);
         loadSidesCaseOptions();
       } else if (sideId) {
-        // Режим редактирования/просмотра
         loadSideDetails();
         loadSidesCaseOptions();
       }
@@ -49,7 +46,6 @@ const CriminalSideDetails = () => {
       setLoading(true);
       const data = await CriminalCaseService.getSideById(proceedingId, sideId);
       
-      // Обрабатываем вложенные данные стороны
       const sideDetails = data.criminal_side_case_detail || {};
       const sideData = {
         ...data,
@@ -101,7 +97,6 @@ const CriminalSideDetails = () => {
         sides_case_criminal_name: selectedSide ? selectedSide.sides_case : ''
       }));
     } else {
-      // Для всех полей стороны
       setFormData(prev => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : value
@@ -113,45 +108,33 @@ const CriminalSideDetails = () => {
     try {
       setSaving(true);
 
-      // Собираем данные для связанной модели SidesCaseInCase
       const sideCaseData = {
-        // Основная информация стороны
         name: formData.name || '',
         status: formData.status || 'individual',
-        // Личные данные
-        birth_date: formData.birth_date || null, // Исправляем: null вместо пустой строки
+        birth_date: formData.birth_date || null,
         gender: formData.gender || '',
-        // Документы
         document_type: formData.document_type || '',
         document_number: formData.document_number || '',
         document_series: formData.document_series || '',
         document_issued_by: formData.document_issued_by || '',
-        document_issue_date: formData.document_issue_date || null, // Исправляем: null вместо пустой строки
-        // Для юридических лиц
+        document_issue_date: formData.document_issue_date || null,
         inn: formData.inn || '',
         kpp: formData.kpp || '',
         ogrn: formData.ogrn || '',
         legal_address: formData.legal_address || '',
         director_name: formData.director_name || '',
-        // Контактная информация
         address: formData.address || '',
         phone: formData.phone || '',
         email: formData.email || '',
-        // Дополнительная информация
         additional_info: formData.additional_info || '',
-        // Для уголовного дела (специфичные поля)
-        date_sending_agenda: formData.date_sending_agenda || null, // Исправляем: null вместо пустой строки
+        date_sending_agenda: formData.date_sending_agenda || null,
       };
 
-      // Основные данные для CriminalSidesCaseInCase
       const sideData = {
         sides_case_criminal: selectedSideId ? parseInt(selectedSideId, 10) : null,
         criminal_side_case_data: sideCaseData
       };
 
-      console.log('Отправляемые данные стороны:', sideData);
-
-      // Проверка обязательных полей
       if (!sideData.sides_case_criminal) {
         alert('Пожалуйста, выберите вид стороны');
         setSaving(false);
@@ -164,14 +147,10 @@ const CriminalSideDetails = () => {
         return;
       }
       
-      let savedSide;
       if (isCreateMode) {
-        // Отправляем данные для создания
-        savedSide = await CriminalCaseService.createSide(proceedingId, sideData);
-        // После создания редиректим назад
+        await CriminalCaseService.createSide(proceedingId, sideData);
         navigate(-1);
       } else {
-        // Отправляем данные для обновления
         await CriminalCaseService.updateSide(proceedingId, sideId, sideData);
         setIsEditing(false);
         await loadSideDetails();
@@ -180,7 +159,6 @@ const CriminalSideDetails = () => {
       setSaving(false);
     } catch (error) {
       console.error('Ошибка сохранения стороны:', error);
-      console.error('Детали ошибки:', error.response?.data);
       setSaving(false);
       
       if (error.response?.data) {
@@ -275,7 +253,7 @@ const CriminalSideDetails = () => {
             <h1 className={styles.title}>
               {isCreateMode ? 'Новая сторона' : (formData.name || 'Сторона по делу')}
               {!isCreateMode && (
-                <span> | Вид стороны: {getSideTypeName(side?.sides_case_criminal_id)}</span>
+                <span className={styles.archiveBadge}>Вид стороны: {getSideTypeName(side?.sides_case_criminal_id)}</span>
               )}
             </h1>
             <div className={styles.subtitle}>
@@ -286,7 +264,7 @@ const CriminalSideDetails = () => {
         
         <div className={styles.headerRight}>
           {isCreateMode ? (
-            <div className={styles.editActions}>
+            <>
               <button 
                 onClick={handleSave}
                 disabled={saving}
@@ -300,7 +278,7 @@ const CriminalSideDetails = () => {
               >
                 Отмена
               </button>
-            </div>
+            </>
           ) : (
             !isEditing ? (
               <button 
@@ -310,7 +288,7 @@ const CriminalSideDetails = () => {
                 Редактировать
               </button>
             ) : (
-              <div className={styles.editActions}>
+              <>
                 <button 
                   onClick={handleSave}
                   disabled={saving}
@@ -324,7 +302,7 @@ const CriminalSideDetails = () => {
                 >
                   Отмена
                 </button>
-              </div>
+              </>
             )
           )}
         </div>
@@ -345,7 +323,6 @@ const CriminalSideDetails = () => {
 
         <div className={styles.tabContentWrapper}>
           <div className={styles.tabContent}>
-            {/* Вкладка: Основная информация */}
             {activeTab === 'general' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>
@@ -360,7 +337,6 @@ const CriminalSideDetails = () => {
                       onChange={handleInputChange}
                       className={styles.select}
                       required
-                      disabled={!isCreateMode && !isEditing}
                     >
                       <option value="">Выберите вид стороны</option>
                       {sidesCaseOptions.map(sideOption => (
@@ -450,7 +426,6 @@ const CriminalSideDetails = () => {
               </div>
             )}
 
-            {/* Вкладка: Личные данные */}
             {activeTab === 'personal' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>
@@ -497,7 +472,6 @@ const CriminalSideDetails = () => {
               </div>
             )}
 
-            {/* Вкладка: Документы */}
             {activeTab === 'documents' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>
@@ -643,7 +617,6 @@ const CriminalSideDetails = () => {
               </div>
             )}
 
-            {/* Вкладка: Контактная информация */}
             {activeTab === 'contacts' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>
@@ -719,7 +692,6 @@ const CriminalSideDetails = () => {
               </div>
             )}
 
-            {/* Вкладка: Дополнительно */}
             {activeTab === 'additional' && (
               <div className={styles.fieldGroup}>
                 <h3 className={styles.subsectionTitle}>

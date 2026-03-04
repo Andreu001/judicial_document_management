@@ -1,9 +1,9 @@
-# notifications/views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
+from django.apps import apps
 
 from .models import Notification, JurisdictionCheck, DeadlineWarning
 from .serializers import (
@@ -12,13 +12,31 @@ from .serializers import (
     DeadlineWarningSerializer
 )
 from .services import NotificationService
+from .correspondence_service import CorrespondenceNotificationService  # NEW
 
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        queryset = Notification.objects.filter(user=self.request.user)
+        
+        # Фильтрация по типу уведомления (опционально)
+        notification_type = self.request.query_params.get('type', None)
+        if notification_type:
+            queryset = queryset.filter(notification_type=notification_type)
+        
+        # Фильтрация по делу (опционально)
+        case_id = self.request.query_params.get('case_id', None)
+        if case_id:
+            queryset = queryset.filter(
+                models.Q(criminal_proceeding_id=case_id) |
+                models.Q(civil_proceeding_id=case_id) |
+                models.Q(admin_proceeding_id=case_id) |
+                models.Q(kas_proceeding_id=case_id)
+            )
+        
+        return queryset.order_by('-created_at')
 
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
@@ -43,8 +61,20 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 priority__in=['high', 'critical'],
                 is_read=False
             ).count(),
+            # NEW: статистика по типам уведомлений
+            'incoming_correspondence': Notification.objects.filter(
+                user=user, 
+                notification_type='incoming_correspondence',
+                is_read=False
+            ).count(),
+            'outgoing_correspondence': Notification.objects.filter(
+                user=user, 
+                notification_type='outgoing_correspondence',
+                is_read=False
+            ).count(),
         }
         return Response(stats)
+
 
 class JurisdictionCheckViewSet(viewsets.ModelViewSet):
     serializer_class = JurisdictionCheckSerializer

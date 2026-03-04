@@ -21,9 +21,10 @@ const UserMenu = ({ user }) => {
 
   const getRoleName = (role) => {
     const roles = {
-      admin: 'Администратор',
+      admin: 'Администратор системы',
       judge: 'Судья',
-      secretary: 'Секретарь',
+      secretary: 'Секретарь судебного заседания',
+      assistant: 'Помощник судьи',
       lawyer: 'Адвокат',
       citizen: 'Гражданин'
     };
@@ -34,7 +35,7 @@ const UserMenu = ({ user }) => {
     const levels = {
       magistrate: 'Мировой суд',
       city_district: 'Городской/районный суд',
-      subject_level: 'Суд уровня субъекта'
+      subject_level: 'Суд уровня субъекта РФ'
     };
     return levels[level] || level;
   };
@@ -52,29 +53,27 @@ const UserMenu = ({ user }) => {
       >
         <span className={styles.userInfo}>
           <span className={styles.userName}>
-            {user.first_name} {user.last_name}
-          </span>
-          <span className={styles.userRole}>
-            {getRoleName(user.role)}
+            {user.last_name} {user.first_name?.[0]}. {user.patronymic?.[0]}.
           </span>
         </span>
-        <span className={styles.userAvatar}>👤</span>
+        <span className={styles.userAvatar}></span>
       </button>
 
       {isOpen && (
         <div className={styles.dropdown}>
           <div className={styles.userHeader}>
-            <div className={styles.avatar}>👤</div>
             <div className={styles.userDetails}>
               <div className={styles.fullName}>
-                {user.first_name} {user.last_name}
+                {user.last_name} {user.first_name} {user.patronymic}
               </div>
               <div className={styles.role}>{getRoleName(user.role)}</div>
-              {/* Отображаем уровень субъекта для судей */}
               {user.role === 'judge' && user.subject_level && (
                 <div className={styles.subjectLevel}>
                   {getSubjectLevelName(user.subject_level)}
                 </div>
+              )}
+              {user.court_name && (
+                <div className={styles.courtName}>{user.court_name}</div>
               )}
               {user.email && <div className={styles.email}>{user.email}</div>}
             </div>
@@ -87,21 +86,47 @@ const UserMenu = ({ user }) => {
             className={styles.menuItem}
             onClick={() => setIsOpen(false)}
           >
-            📋 Мой профиль
+            Мой профиль
           </Link>
 
           <Link 
-            to="/" 
+            to="/my-cases" 
             className={styles.menuItem}
             onClick={() => setIsOpen(false)}
           >
-            📋 Мои дела
+            Мои дела
           </Link>
+
+          <Link 
+            to="/calendar" 
+            className={styles.menuItem}
+            onClick={() => setIsOpen(false)}
+          >
+            Календарь заседаний
+          </Link>
+
+          <Link 
+            to="/statistics" 
+            className={styles.menuItem}
+            onClick={() => setIsOpen(false)}
+          >
+            Статистика
+          </Link>
+
+          {user.role === 'admin' && (
+            <Link 
+              to="/admin-panel" 
+              className={styles.menuItem}
+              onClick={() => setIsOpen(false)}
+            >
+              Панель администратора
+            </Link>
+          )}
 
           <div className={styles.menuDivider}></div>
 
           <button className={styles.menuItem} onClick={handleLogout}>
-            🚪 Выйти
+            Выйти из системы
           </button>
         </div>
       )}

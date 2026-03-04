@@ -8,15 +8,18 @@ from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
+RULE_TYPES = [
+    ('jurisdiction_check', 'Проверка подсудности'),
+    ('deadline_warning', 'Предупреждение о сроке'),
+    ('required_action', 'Обязательное действие'),
+    ('status_change', 'Изменение статуса'),
+    ('incoming_correspondence', 'Входящая корреспонденция'),
+    ('outgoing_correspondence', 'Исходящая корреспонденция')
+]
+    
+
 class NotificationRule(models.Model):
     """Правила для автоматического создания уведомлений"""
-    RULE_TYPES = [
-        ('jurisdiction_check', 'Проверка подсудности'),
-        ('deadline_warning', 'Предупреждение о сроке'),
-        ('required_action', 'Обязательное действие'),
-        ('status_change', 'Изменение статуса'),
-    ]
-    
     name = models.CharField(max_length=200, verbose_name="Название правила")
     rule_type = models.CharField(max_length=50, choices=RULE_TYPES)
     target_model = models.CharField(max_length=100, verbose_name="Целевая модель")
@@ -103,7 +106,6 @@ class LegalReference(models.Model):
         return f"{self.get_ref_type_display()} — {self.title}"
 
 class Notification(models.Model):
-    """Основная модель уведомления"""
     PRIORITY_CHOICES = [
         ('low', 'Низкий'),
         ('medium', 'Средний'),
@@ -122,10 +124,54 @@ class Notification(models.Model):
         verbose_name="Уголовное дело"
     )
     
+    # NEW: Связь с гражданским делом
+    civil_proceeding = models.ForeignKey(
+        'civil_proceedings.CivilProceedings',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Гражданское дело"
+    )
+    
+    # NEW: Связь с административным делом (КоАП)
+    admin_proceeding = models.ForeignKey(
+        'administrative_code.AdministrativeProceedings',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Административное дело (КоАП)"
+    )
+    
+    # NEW: Связь с делом по КАС
+    kas_proceeding = models.ForeignKey(
+        'administrative_proceedings.KASProceedings',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Дело по КАС"
+    )
+    
+    # NEW: Связь с корреспонденцией
+    correspondence = models.ForeignKey(
+        'case_registry.Correspondence',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Связанная корреспонденция"
+    )
+    
     # generic relation для других типов дел
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey("content_type", "object_id")
+    
+    # NEW: Тип уведомления для фильтрации
+    notification_type = models.CharField(
+        max_length=50,
+        choices=RULE_TYPES,
+        default='status_change',
+        verbose_name="Тип уведомления"
+    )
     
     title = models.CharField(max_length=512, verbose_name="Заголовок")
     message = models.TextField(verbose_name="Сообщение")

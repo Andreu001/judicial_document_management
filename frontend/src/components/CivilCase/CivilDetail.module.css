@@ -1,223 +1,286 @@
-/* CivilDetail.module.css */
+/* CivilDetail.module.css - Единый файл стилей для гражданских дел (в стиле уголовных) */
+
+/* ========== ОСНОВНЫЕ СТИЛИ КОНТЕЙНЕРА ========== */
 .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
   min-height: 100vh;
-  background: #f7fafc;
-  padding: 1.5rem 1.5rem 1.5rem 17rem;
-  margin: 0;
-  width: 100%;
   box-sizing: border-box;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  width: 100%;
 }
 
+/* ========== ЗАГОЛОВОК И НАВИГАЦИЯ ========== */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 24px;
+  padding: 16px 24px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 20, 40, 0.02);
-  padding: 1rem 1.5rem;
-  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-bottom: 2px solid #e9ecef;
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.backButton {
-  background: #edf2f7;
-  color: #4a5568;
-  border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-}
-
-.backButton:hover {
-  background: #e2e8f0;
-  color: #2d3748;
-  transform: translateX(-2px);
-}
-
-.title {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #1e3c72;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.archiveBadge {
-  background: linear-gradient(145deg, #ed8936, #dd6b20);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin-left: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: 20px;
 }
 
 .headerRight {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
-.editButton, .saveButton, .cancelButton, .archiveButton, .unarchiveButton {
-  padding: 0.4rem 1.2rem;
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ========== КНОПКИ ========== */
+.backButton {
+  background-color: #4a5568;
+  color: white;
   border: none;
-  border-radius: 20px;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 14px;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
   transition: all 0.2s ease;
+  min-width: 100px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.backButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.archiveButton {
+  background-color: #c05621;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.archiveButton:hover {
+  background-color: #9c4221;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.unarchiveButton {
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.unarchiveButton:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .editButton {
-  background: linear-gradient(145deg, #4299e1, #3182ce);
+  background-color: #38a169;
   color: white;
-  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .editButton:hover:not(:disabled) {
-  background: linear-gradient(145deg, #3182ce, #2c5282);
+  background-color: #2f855a;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .editButton:disabled {
-  background: #cbd5e0;
+  background-color: #a0aec0;
   cursor: not-allowed;
+  transform: none;
   box-shadow: none;
 }
 
 .saveButton {
-  background: linear-gradient(145deg, #48bb78, #38a169);
+  background-color: #2f855a;
   color: white;
-  box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .saveButton:hover:not(:disabled) {
-  background: linear-gradient(145deg, #38a169, #2f855a);
+  background-color: #276749;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .saveButton:disabled {
-  background: #cbd5e0;
+  background-color: #9c9c9c;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .cancelButton {
-  background: #edf2f7;
-  color: #4a5568;
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancelButton:hover {
-  background: #e2e8f0;
-  color: #2d3748;
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.archiveButton {
-  background: #ed8936;
+.dangerButton {
+  background-color: #c53030;
   color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.archiveButton:hover {
-  background: #dd6b20;
+.dangerButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.unarchiveButton {
-  background: #48bb78;
+.addButton {
+  background-color: #4a5568;
   color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-bottom: 16px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.unarchiveButton:hover {
-  background: #38a169;
+.addButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.content {
+.editButtons {
   display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
+  gap: 12px;
 }
 
-.mainContent {
-  flex: 2;
-  min-width: 0;
-}
-
-.sidebar {
-  flex: 1;
-  min-width: 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
+/* ========== ВКЛАДКИ ========== */
 .tabsContainer {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 20, 40, 0.02);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 0 0 24px 0;
   overflow: hidden;
-  border: 1px solid #edf2f7;
 }
 
 .tabs {
   display: flex;
-  background: #f8fafd;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 16px;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 .tab {
-  padding: 0.5rem 1rem;
+  padding: 12px 20px;
   border: none;
-  background: transparent;
+  background: none;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 500;
-  color: #718096;
-  border-radius: 20px;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 
 .tab:hover {
-  background: #edf2f7;
-  color: #4a5568;
+  color: #2c3e50;
+  background: #e9ecef;
 }
 
 .activeTab {
+  color: #2c3e50;
+  border-bottom-color: #2c3e50;
   background: white;
-  color: #3182ce;
-  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.1);
 }
 
 .disabledTab {
   opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 .tabContentWrapper {
-  padding: 1.25rem;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+  padding: 24px;
 }
 
 .tabContent {
@@ -227,231 +290,405 @@
 .tabGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 1.25rem;
+  gap: 24px;
 }
 
+/* ========== ПОЛЯ ФОРМ ========== */
 .fieldGroup {
-  background: #f8fafd;
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid #edf2f7;
-  transition: all 0.2s ease;
-}
-
-.fieldGroup:hover {
-  border-color: #cbd5e0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 24px;
 }
 
 .subsectionTitle {
-  font-size: 0.95rem;
+  font-size: 16px;
   font-weight: 600;
-  color: #1e3c72;
-  margin: 0 0 0.75rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #4299e1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #2c3e50;
+  letter-spacing: 0.3px;
 }
 
 .field {
-  margin-bottom: 0.75rem;
+  margin-bottom: 16px;
 }
 
 .field label {
   display: block;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #718096;
-  margin-bottom: 0.2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 
 .field span {
   display: block;
-  font-size: 0.85rem;
-  color: #2d3748;
-  padding: 0.4rem 0.75rem;
+  font-size: 14px;
+  color: #2c3e50;
+  padding: 10px 12px;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  min-height: 1.2rem;
-  word-break: break-word;
+  border-radius: 6px;
+  min-height: 20px;
+  line-height: 1.5;
 }
 
 .input, .select, .textarea {
   width: 100%;
-  padding: 0.4rem 0.75rem;
+  padding: 10px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: #2d3748;
-  background: white;
-  box-sizing: border-box;
+  border-radius: 6px;
+  font-size: 14px;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: white;
 }
 
 .input:focus, .select:focus, .textarea:focus {
   outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.1);
-}
-
-.input:hover, .select:hover, .textarea:hover {
-  border-color: #a0aec0;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
 }
 
 .textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 80px;
 }
 
 .select {
   appearance: none;
-  background-position: right 0.75rem center;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
+  background-position: right 0.75rem center;
   background-size: 1em;
-  padding-right: 2rem;
+  padding-right: 2.5rem;
 }
 
 .checkboxGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  background: white;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  gap: 8px;
 }
 
 .checkboxLabel {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #4a5568;
+  gap: 8px;
+  font-size: 14px;
+  color: #2c3e50;
   cursor: pointer;
 }
 
 .checkboxLabel input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  border-radius: 4px;
-  border: 1px solid #cbd5e0;
   cursor: pointer;
 }
 
-.section {
+/* ========== ПРАВАЯ КОЛОНКА (САЙДБАР) ========== */
+.content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex: 2;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.sidebarSection {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 20, 40, 0.02);
-  padding: 1.25rem;
-  border: 1px solid #edf2f7;
-}
-
-.sectionTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e3c72;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #4299e1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sidesList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 450px;
-  overflow-y: auto;
-}
-
-.sideItem {
-  padding: 1rem;
-  background: #f8fafd;
   border-radius: 8px;
-  border-left: 4px solid #4299e1;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
 }
 
-.sideItem:hover {
-  background: white;
-  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.08);
-}
-
-.sideHeader {
+.sidebarSectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
 }
 
-.sideHeader h4 {
+.sidebarSectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebarSectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
   margin: 0;
-  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarSectionCount {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.sidebarToggleButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s ease;
+}
+
+.sidebarToggleButton:hover {
+  color: #2c3e50;
+}
+
+.sidebarSectionContent {
+  padding: 16px 20px;
+}
+
+.sidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebarListItem {
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebarListItem:hover {
+  background-color: #e9ecef;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sidebarListItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.sidebarListItemTitle {
+  font-size: 14px;
   font-weight: 600;
-  color: #2d3748;
+  color: #2c3e50;
+  flex: 1;
+  word-break: break-word;
 }
 
-.sideRole {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  border-radius: 16px;
-  background: #ebf8ff;
-  color: #2b6cb0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.sidebarListItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin-bottom: 4px;
 }
 
-.sideDetails {
-  font-size: 0.8rem;
-  color: #718096;
-  margin: 0.25rem 0 0 0;
-  line-height: 1.4;
+.sidebarListItemHint {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: right;
+  font-style: italic;
+  transition: color 0.2s ease;
 }
 
-.sideAmount {
-  font-weight: 600;
-  color: #38a169;
-  background: #f0fff4;
-  padding: 0.15rem 0.5rem;
-  border-radius: 16px;
-  display: inline-block;
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
+.sidebarListItem:hover .sidebarListItemHint {
+  color: #4a5568;
 }
 
-.noData {
+.sidebarListItemMore {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+.sidebarNoData {
   text-align: center;
   color: #a0aec0;
   font-style: italic;
-  padding: 1.5rem;
-  background: #f8fafd;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
   border-radius: 8px;
-  border: 1px dashed #cbd5e0;
+  border: 1px dashed #e2e8f0;
 }
 
-.loading, .error {
-  text-align: center;
-  padding: 2rem;
-  font-size: 0.95rem;
+/* Цветовые индикаторы для разных типов сторон */
+.sideType-plaintiff:hover {
+  border-left-color: #3182ce;
 }
 
-.loading {
-  color: #4299e1;
+.sideType-defendant:hover {
+  border-left-color: #c53030;
 }
 
-.error {
-  color: #f56565;
+.sideType-third_party:hover {
+  border-left-color: #38a169;
 }
 
-/* Модальные окна */
+.sideType-lawyer:hover {
+  border-left-color: #805ad5;
+}
+
+.sideType {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.sideType.sideType-plaintiff {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
+.sideType.sideType-defendant {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.sideType.sideType-third_party {
+  background-color: #c6f6d5;
+  color: #276749;
+}
+
+.sideType.sideType-lawyer {
+  background-color: #e9d8fd;
+  color: #553c9a;
+}
+
+/* ========== КОМПАКТНЫЕ ЭЛЕМЕНТЫ СПИСКОВ (для CivilBusinessCard) ========== */
+.compactList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compactItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.compactItem:hover {
+  border-color: #2c3e50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateX(2px);
+}
+
+.compactItemContent {
+  flex: 1;
+}
+
+.compactItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compactItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compactItemActions {
+  display: flex;
+  gap: 6px;
+}
+
+.actionButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f1f3f5;
+  color: #4a5568;
+}
+
+.actionButton:hover {
+  background: #4a5568;
+  color: white;
+  transform: scale(1.05);
+}
+
+.deleteButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f1f3f5;
+  color: #c53030;
+}
+
+.deleteButton:hover {
+  background: #c53030;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* ========== МОДАЛЬНЫЕ ОКНА ========== */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -463,34 +700,341 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
 }
 
 .modalContent {
   background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: 8px;
+  padding: 24px;
   width: 90%;
-  max-width: 450px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.modalContent h3 {
-  margin-top: 0;
-  color: #1e3c72;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-align: center;
+.modalContentLarge {
+  background: white;
+  border-radius: 8px;
+  width: 95%;
+  max-width: 1200px;
+  max-height: 95vh;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .modalActions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-/* Суммы и валюты */
+/* ========== ПУСТЫЕ СОСТОЯНИЯ ========== */
+.noData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 24px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+.emptyState {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 24px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* ========== ЗАГРУЗКА И ОШИБКИ ========== */
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.error {
+  color: #c53030;
+  text-align: center;
+  padding: 24px;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+/* ========== ИНФОРМАЦИОННЫЕ ПОЛЯ ========== */
+.infoField {
+  margin-bottom: 12px;
+}
+
+.infoField label {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 12px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.infoField span {
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.staticValue {
+  display: block;
+  padding: 10px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #2c3e50;
+  min-height: 20px;
+}
+
+/* ========== АРХИВНЫЕ ДЕЛА ========== */
+.archiveBadge {
+  background-color: #c05621;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 12px;
+  letter-spacing: 0.3px;
+}
+
+.archivedBadge {
+  background-color: #c05621;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+  letter-spacing: 0.3px;
+}
+
+/* ========== БЫСТРЫЕ ДЕЙСТВИЯ (для CivilBusinessCard) ========== */
+.quickActions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  flex-wrap: wrap;
+}
+
+.quickAction {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quickAction:hover {
+  background: #4a5568;
+  color: white;
+  border-color: #4a5568;
+}
+
+.quickAction.active {
+  background: #2c3e50;
+  color: white;
+  border-color: #2c3e50;
+}
+
+.quickActionCount {
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.quickAction:hover .quickActionCount,
+.quickAction.active .quickActionCount {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* ========== КАРТОЧКА ДЕЛА (для CivilBusinessCard) ========== */
+.cardContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.cardHeader {
+  padding: 16px;
+  background: linear-gradient(to right, #f8f9fa, white);
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headerMain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.caseType {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3182ce;
+  background: #ebf8ff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.caseNumber {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.caseJudge {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.caseDate {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.cardContent {
+  padding: 16px;
+}
+
+.summaryContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summaryDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.detailRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #3182ce;
+}
+
+.detailLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detailValue {
+  font-size: 13px;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.lastActivity {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: right;
+  font-style: italic;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.tabHeader {
+  margin-bottom: 16px;
+}
+
+.tabHeaderActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.listSubtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 8px 0 4px 0;
+}
+
+.cardFooter {
+  padding: 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.primaryButton {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.primaryButton:hover {
+  background-color: #1a2632;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.footerActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ========== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ========== */
 .amount {
   font-family: 'SF Mono', 'Roboto Mono', monospace;
   font-weight: 600;
@@ -505,10 +1049,15 @@
   color: #e53e3e;
 }
 
-/* Адаптивность */
+/* Стили для числовых полей */
+.input[type="number"] {
+  font-family: 'SF Mono', 'Roboto Mono', monospace;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
 @media (max-width: 1200px) {
   .container {
-    padding: 1.25rem;
+    padding-left: 20px;
   }
   
   .content {
@@ -520,7 +1069,23 @@
     min-width: auto;
   }
   
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  
   .tabGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .summaryDetails {
     grid-template-columns: 1fr;
   }
 }
@@ -532,8 +1097,14 @@
   
   .header {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 16px;
     align-items: flex-start;
+    padding: 16px;
+  }
+  
+  .headerLeft {
+    flex-direction: column;
+    gap: 12px;
   }
   
   .headerRight {
@@ -545,191 +1116,47 @@
     flex-direction: column;
   }
   
-  .tabContentWrapper {
-    padding: 1rem;
+  .tab {
+    border-bottom: 1px solid #dee2e6;
+    border-left: 2px solid transparent;
+    text-align: left;
   }
   
-  .fieldGroup {
-    padding: 0.75rem;
+  .activeTab {
+    border-left-color: #2c3e50;
+    border-bottom-color: #dee2e6;
   }
-}
-
-/* Календарь и время */
-.dateInput {
-  position: relative;
-}
-
-.timeInput {
-  font-family: 'SF Mono', 'Roboto Mono', monospace;
-}
-
-/* Стили для архивных дел */
-.archivedField {
-  opacity: 0.8;
-  background: #f8fafd;
-}
-
-.archivedNote {
-  font-size: 0.75rem;
-  color: #ed8936;
-  margin-top: 0.2rem;
-  font-style: italic;
-}
-
-/* Бейджи статусов */
-.statusBadge {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: 16px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.statusActive {
-  background: #c6f6d5;
-  color: #22543d;
-}
-
-.statusArchived {
-  background: #fed7d7;
-  color: #742a2a;
-}
-
-/* Заголовок секции с возможностью сворачивания */
-.sectionHeader {
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-}
-
-.sectionHeader:hover {
-  opacity: 0.8;
-}
-
-.sectionTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e3c72;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #4299e1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.expandIcon {
-  font-size: 0.8rem;
-  color: #718096;
-  transition: transform 0.2s ease;
-}
-
-/* Исправленные стили для кнопок в sideItem */
-.sideActions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.sideActions .editButton,
-.sideActions .dangerButton {
-  padding: 0.3rem 1rem;
-  font-size: 0.75rem;
-  border: none;
-  border-radius: 16px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  flex: 1;
-  min-width: 80px;
-  text-align: center;
-}
-
-.sideActions .editButton {
-  background: #4299e1;
-  color: white;
-}
-
-.sideActions .editButton:hover {
-  background: #3182ce;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
-}
-
-.sideActions .dangerButton {
-  background: #feb2b2;
-  color: #c53030;
-}
-
-.sideActions .dangerButton:hover {
-  background: #fc8181;
-  color: #9b2c2c;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(229, 62, 62, 0.2);
-}
-
-/* Стили для кнопки добавления */
-.addButton {
-  width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  background: #edf2f7;
-  border: 1px dashed #a0aec0;
-  border-radius: 8px;
-  color: #4a5568;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.addButton:hover {
-  background: #e2e8f0;
-  border-color: #718096;
-  color: #2d3748;
-}
-
-/* Улучшенные стили для sideItem */
-.sideItem {
-  padding: 1rem;
-  background: #f8fafd;
-  border-radius: 8px;
-  border-left: 4px solid #4299e1;
-  transition: all 0.2s ease;
-  margin-bottom: 0.75rem;
-}
-
-.sideItem:last-child {
-  margin-bottom: 0;
-}
-
-.sideItem:hover {
-  background: white;
-  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.08);
-  transform: translateX(2px);
-}
-
-/* Анимация для сворачивания/разворачивания */
-.sidesList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 450px;
-  overflow-y: auto;
-  animation: slideDown 0.2s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+  
+  .backButton, .archiveButton, .unarchiveButton, 
+  .editButton, .saveButton, .cancelButton, .dangerButton {
+    min-width: 100%;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .quickActions {
+    flex-direction: column;
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .headerMeta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .cardFooter {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .footerActions {
+    width: 100%;
+  }
+  
+  .footerActions .dangerButton {
+    width: 100%;
   }
 }

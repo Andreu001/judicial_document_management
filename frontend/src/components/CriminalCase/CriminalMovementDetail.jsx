@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalMovementDetail.module.css';
+import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
 import {
   MovementHearingTab,
   MovementComplianceTab,
@@ -13,7 +13,7 @@ const CriminalMovementDetail = () => {
   const { cardId, moveId } = useParams();
   const navigate = useNavigate();
   const [movementData, setMovementData] = useState(null);
-  const [isEditing, setIsEditing] = useState(moveId === 'create'); // Режим редактирования для создания
+  const [isEditing, setIsEditing] = useState(moveId === 'create');
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +27,6 @@ const CriminalMovementDetail = () => {
   const [defendants, setDefendants] = useState([]);
   const [activeTab, setActiveTab] = useState('hearing');
   
-  // Определяем режим: создание или редактирование
   const isCreateMode = moveId === 'create';
 
   useEffect(() => {
@@ -35,13 +34,9 @@ const CriminalMovementDetail = () => {
       try {
         setLoading(true);
         
-        // Загрузка опций для выпадающих списков
         await loadOptions();
-        
-        // Загрузка обвиняемых
         await loadDefendants();
         
-        // Если это режим редактирования (не создание), загружаем существующие данные
         if (!isCreateMode) {
           const movementResponse = await CriminalCaseService.getCaseMovementById(cardId, moveId);
           
@@ -52,18 +47,15 @@ const CriminalMovementDetail = () => {
             setError('Движение дела не найдено');
           }
         } else {
-          // Для режима создания инициализируем пустую форму
           setFormData({
             criminal_proceedings: cardId,
-            // Другие поля можно инициализировать по умолчанию
           });
-          setIsEditing(true); // Автоматически переходим в режим редактирования при создании
+          setIsEditing(true);
         }
         
         setLoading(false);
       } catch (err) {
         console.error('Ошибка загрузки данных:', err);
-        // Если это 404 при создании, это нормально
         if (!isCreateMode || err.response?.status !== 404) {
           setError('Не удалось загрузить данные');
         }
@@ -105,7 +97,6 @@ const CriminalMovementDetail = () => {
 
   const loadOptions = async () => {
     try {
-      // Загрузка всех опций из нового эндпоинта для Movement
       const response = await baseService.get('/criminal_proceedings/criminal-case-movement-options/');
       
       setOptions({
@@ -116,7 +107,6 @@ const CriminalMovementDetail = () => {
       });
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
-      // Устанавливаем пустые массивы вместо ошибки
       setOptions({
         preliminaryHearingResult: [],
         hearingCompliance: [],
@@ -140,26 +130,21 @@ const CriminalMovementDetail = () => {
       
       const dataToSend = { ...formData };
 
-      // Удаляем системные поля
       delete dataToSend.id;
       delete dataToSend.business_card;
       delete dataToSend.created_at;
       delete dataToSend.updated_at;
       
-      let updatedData;
-      
       if (isCreateMode) {
-        // ВСЕГДА создаем новое движение при нажатии "Добавить"
-        updatedData = await CriminalCaseService.createCaseMovement(cardId, dataToSend);
+        await CriminalCaseService.createCaseMovement(cardId, dataToSend);
         navigate(-1);
       } else {
-        // Режим редактирования существующего движения
-        updatedData = await CriminalCaseService.updateCaseMovement(cardId, moveId, dataToSend);
+        const updatedData = await CriminalCaseService.updateCaseMovement(cardId, moveId, dataToSend);
+        setMovementData(updatedData);
+        setFormData(updatedData);
+        setIsEditing(false);
       }
       
-      setMovementData(updatedData);
-      setFormData(updatedData);
-      setIsEditing(false);
       setSaving(false);
     } catch (err) {
       console.error('Ошибка сохранения:', err);
@@ -177,10 +162,8 @@ const CriminalMovementDetail = () => {
 
   const handleCancel = () => {
     if (isCreateMode) {
-      // При отмене создания возвращаемся назад
       navigate(-1);
     } else {
-      // При отмене редактирования восстанавливаем исходные данные
       setFormData(movementData);
       setIsEditing(false);
     }
@@ -218,7 +201,6 @@ const CriminalMovementDetail = () => {
     );
   }
 
-  // Для режима создания показываем форму даже если movementData пустой
   if (!isCreateMode && !movementData) {
     return (
       <div className={styles.container}>
@@ -248,20 +230,19 @@ const CriminalMovementDetail = () => {
               Редактировать
             </button>
           ) : (
-            <div className={styles.editButtons}>
+            <>
               <button onClick={handleSave} className={styles.saveButton} disabled={saving}>
-                {saving ? 'Сохранение...' : (isCreateMode ? 'Создать' : 'Сохранить')}
+                {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
               <button onClick={handleCancel} className={styles.cancelButton}>
                 Отмена
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>
 
       <div className={styles.content}>
-        {/* Основной контент с вкладками */}
         <div className={styles.mainContent}>
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
@@ -269,19 +250,19 @@ const CriminalMovementDetail = () => {
                 className={`${styles.tab} ${activeTab === 'hearing' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('hearing')}
               >
-                6. Результат предварительного слушания
+                Результат предварительного слушания
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'compliance' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('compliance')}
               >
-                7. Соблюдение сроков
+                Соблюдение сроков
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'postponement' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('postponement')}
               >
-                8. Причины отложения дела
+                Причины отложения дела
               </button>
             </div>
 
@@ -328,10 +309,9 @@ const CriminalMovementDetail = () => {
           </div>
         </div>
 
-        {/* Правая колонка - обвиняемые */}
         <div className={styles.sidebar}>
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Б. Стороны по делу</h2>
+            <h2 className={styles.sectionTitle}>Стороны по делу</h2>
             
             {defendants.length > 0 ? (
               <div className={styles.defendantsList}>
@@ -345,23 +325,9 @@ const CriminalMovementDetail = () => {
                 ))}
               </div>
             ) : (
-              <p>Обвиняемые не добавлены</p>
+              <p className={styles.noData}>Обвиняемые не добавлены</p>
             )}
           </div>
-          
-          {!isCreateMode && movementData && (
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>Информация о движении</h2>
-              <div className={styles.infoField}>
-                <label>Дата создания:</label>
-                <span>{formatDate(movementData.created_at)}</span>
-              </div>
-              <div className={styles.infoField}>
-                <label>Последнее обновление:</label>
-                <span>{formatDate(movementData.updated_at)}</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

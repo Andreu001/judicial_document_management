@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import LawyerService from '../../API/LawyerService';
+import KasCaseService from '../../API/KasCaseService';
 import styles from './LawyerDetails.module.css';
 
 const LawyerDetails = () => {
   const { proceedingId, lawyerId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Определяем тип дела по URL
+  const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
+                   location.pathname.includes('/kas-proceedings/') ? 'kas' : 'civil';
+  
   const [lawyerData, setLawyerData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'bank', 'payment'
   const [formData, setFormData] = useState({
-    // CivilLawyer fields
+    // CivilLawyer / AdminLawyer / KasLawyer fields
     sides_case_role: '',
     
     // Lawyer fields
@@ -46,7 +53,7 @@ const LawyerDetails = () => {
       try {
         setLoading(true);
         
-        // Загружаем роли сторон
+        // Загружаем роли сторон (общие для всех типов дел)
         const rolesResponse = await LawyerService.getSideRoles();
         setSideRoles(rolesResponse || []);
         
@@ -55,7 +62,16 @@ const LawyerDetails = () => {
           // Проверяем, что ID является числом
           const numericId = parseInt(lawyerId);
           if (!isNaN(numericId)) {
-            const data = await LawyerService.getLawyerById(proceedingId, numericId);
+            let data;
+            
+            // Для дел КАС используем отдельный сервис
+            if (caseType === 'kas') {
+              data = await KasCaseService.getLawyerById(proceedingId, numericId);
+            } else {
+              // Для гражданских и административных дел используем универсальный метод
+              data = await LawyerService.getLawyerById(proceedingId, numericId, caseType);
+            }
+            
             console.log('Received lawyer data:', data);
             setLawyerData(data);
 
@@ -101,7 +117,7 @@ const LawyerDetails = () => {
     };
 
     fetchData();
-  }, [proceedingId, lawyerId]);
+  }, [proceedingId, lawyerId, caseType]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -153,15 +169,25 @@ const LawyerDetails = () => {
       });
 
       console.log('Sending request data:', requestData);
+      console.log('Case type:', caseType);
 
       if (lawyerId && lawyerId !== 'create' && lawyerId !== 'undefined' && lawyerId !== 'null') {
-        // Для обновления используем PATCH с полными данными
-        await LawyerService.updateLawyer(proceedingId, lawyerId, requestData);
+        // Для обновления
+        if (caseType === 'kas') {
+          await KasCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+        } else {
+          await LawyerService.updateLawyer(proceedingId, lawyerId, requestData, caseType);
+        }
       } else {
         // Для создания
-        await LawyerService.createLawyer(proceedingId, requestData);
+        if (caseType === 'kas') {
+          await KasCaseService.createLawyer(proceedingId, requestData);
+        } else {
+          await LawyerService.createLawyer(proceedingId, requestData, caseType);
+        }
       }
       
+      // После успешного сохранения возвращаемся назад
       navigate(-1);
     } catch (err) {
       console.error('Error saving lawyer:', err);
@@ -169,10 +195,29 @@ const LawyerDetails = () => {
                           err.response?.data?.message || 
                           JSON.stringify(err.response?.data) || 
                           err.message;
-      setError('Ошибка при сохранении адвоката: ' + errorMessage);
+      setError('Ошибка при сохранении: ' + errorMessage);
     } finally {
       setSaving(false);
     }
+  };
+
+  // Определяем заголовок в зависимости от типа дела
+  const getTitle = () => {
+    const action = lawyerId && lawyerId !== 'create' ? 'Редактирование' : 'Добавление';
+    
+    let caseTypeText = '';
+    switch(caseType) {
+      case 'admin':
+        caseTypeText = 'защитника (адм. правонарушение)';
+        break;
+      case 'kas':
+        caseTypeText = 'представителя (КАС РФ)';
+        break;
+      default:
+        caseTypeText = 'адвоката (гражданское)';
+    }
+    
+    return `${action} ${caseTypeText}`;
   };
 
   if (loading) {
@@ -190,8 +235,14 @@ const LawyerDetails = () => {
             ← Назад
           </button>
           <h1 className={styles.title}>
-            {lawyerId && lawyerId !== 'create' ? 'Редактирование адвоката' : 'Добавление адвоката'}
+            {getTitle()}
           </h1>
+          {caseType === 'admin' && (
+            <span className={styles.caseTypeBadge}>Административное правонарушение</span>
+          )}
+          {caseType === 'kas' && (
+            <span className={styles.caseTypeBadge}>Административное дело (КАС РФ)</span>
+          )}
         </div>
         <div className={styles.headerRight}>
           <button 
@@ -273,7 +324,7 @@ const LawyerDetails = () => {
                       </div>
                     </div>
 
-                    {/* Основная информация об адвокате */}
+                    {/* Основная информация об адвокате/защитнике */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Основная информация</h3>
                       

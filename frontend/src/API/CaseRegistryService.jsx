@@ -33,10 +33,11 @@ class CaseRegistryService {
     try {
       console.log('Registering case:', caseData);
       
+      // Убираем поле case_number из payload - оно будет сгенерировано автоматически на сервере
       const payload = {
         index: caseData.index,
         description: caseData.description || '',
-        case_number: caseData.case_number,
+        // НЕ передаем case_number - сервер сам его сгенерирует
         registration_date: caseData.registration_date || new Date().toISOString().split('T')[0],
         business_card_id: caseData.business_card_id || null,
         criminal_proceedings_id: caseData.criminal_proceedings_id || null,

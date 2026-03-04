@@ -487,6 +487,73 @@ class CivilCaseService {
       return [];
     }
   }
+  // === Исполнение (CivilExecution) ===
+
+  static async getExecutions(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/executions/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching executions:', error);
+      return [];
+    }
+  }
+
+  static async getExecutionById(proceedingId, executionId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}civil-proceedings/${proceedingId}/executions/${executionId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Исполнение не найдено');
+      }
+      console.error('Error fetching execution:', error);
+      throw error;
+    }
+  }
+
+  static async createExecution(proceedingId, executionData) {
+    try {
+      const cleanedData = this.cleanData(executionData);
+      const response = await baseService.post(
+        `${BASE_URL}civil-proceedings/${proceedingId}/executions/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating execution:', error);
+      throw error;
+    }
+  }
+
+  static async updateExecution(proceedingId, executionId, executionData) {
+    try {
+      const cleanedData = this.cleanData(executionData);
+      const response = await baseService.patch(
+        `${BASE_URL}civil-proceedings/${proceedingId}/executions/${executionId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating execution:', error);
+      throw error;
+    }
+  }
+
+  static async deleteExecution(proceedingId, executionId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}civil-proceedings/${proceedingId}/executions/${executionId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting execution:', error);
+      throw error;
+    }
+  }
 }
 
 export default CivilCaseService;

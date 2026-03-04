@@ -1,0 +1,950 @@
+/* AdministrativeDetail.module.css - Единый файл стилей для административных дел */
+
+/* ========== ОСНОВНЫЕ СТИЛИ КОНТЕЙНЕРА ========== */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ========== ЗАГОЛОВОК И НАВИГАЦИЯ ========== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-bottom: 2px solid #e9ecef;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.headerRight {
+  display: flex;
+  gap: 12px;
+}
+
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.archiveBadge {
+  background-color: #c05621;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 12px;
+  letter-spacing: 0.3px;
+}
+
+/* ========== КНОПКИ ========== */
+.backButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.backButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.archiveButton {
+  background-color: #c05621;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.archiveButton:hover {
+  background-color: #9c4221;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.unarchiveButton {
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.unarchiveButton:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editButton {
+  background-color: #38a169;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.editButton:hover {
+  background-color: #2f855a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.saveButton {
+  background-color: #2f855a;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #276749;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.saveButton:disabled {
+  background-color: #9c9c9c;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cancelButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cancelButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dangerButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dangerButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Стиль для контейнера кнопок в режиме редактирования */
+.editButtons {
+  display: flex;
+  gap: 12px;
+}
+
+/* ========== ВКЛАДКИ ========== */
+.tabsContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 0 0 24px 0;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 16px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.tab:hover {
+  color: #2c3e50;
+  background: #e9ecef;
+}
+
+.activeTab {
+  color: #2c3e50;
+  border-bottom-color: #2c3e50;
+  background: white;
+}
+
+.disabledTab {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabContentWrapper {
+  padding: 24px;
+}
+
+.tabContent {
+  min-height: 400px;
+}
+
+.tabGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+/* ========== ПОЛЯ ФОРМ ========== */
+.fieldGroup {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 24px;
+}
+
+.fieldGroup:last-child {
+  margin-bottom: 0;
+}
+
+.subsectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #2c3e50;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.field span {
+  display: block;
+  font-size: 14px;
+  color: #2c3e50;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  min-height: 20px;
+  line-height: 1.5;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: white;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.input:hover, .select:hover, .textarea:hover {
+  border-color: #a0aec0;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23718096' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.2em;
+  padding-right: 2rem;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #2c3e50;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ========== САЙДБАР ========== */
+.content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex: 2;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.sidebarSection {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.sidebarSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.sidebarSectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebarSectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarSectionCount {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.sidebarToggleButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s ease;
+}
+
+.sidebarToggleButton:hover {
+  color: #2c3e50;
+}
+
+.sidebarSectionContent {
+  padding: 16px 20px;
+}
+
+.sidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebarListItem {
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebarListItem:hover {
+  background-color: #e9ecef;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Цветовые индикаторы для разных типов сторон */
+.sidebarListItem.sideType-side:hover {
+  border-left-color: #c53030;
+}
+
+.sidebarListItem.sideType-lawyer:hover {
+  border-left-color: #3182ce;
+}
+
+.sidebarListItem.sideType-decision:hover {
+  border-left-color: #38a169;
+}
+
+.sidebarListItem.sideType-execution:hover {
+  border-left-color: #805ad5;
+}
+
+.sidebarListItem.sideType-petition:hover {
+  border-left-color: #d69e2e;
+}
+
+.sidebarListItem.sideType-movement:hover {
+  border-left-color: #00b5d8;
+}
+
+.sidebarListItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.sidebarListItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+  word-break: break-word;
+}
+
+.sidebarListItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.sidebarListItemHint {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: right;
+  font-style: italic;
+  transition: color 0.2s ease;
+}
+
+.sidebarListItem:hover .sidebarListItemHint {
+  color: #4a5568;
+}
+
+.sidebarListItemMore {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+.sidebarNoData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.sidebarDetailsButton {
+  width: 100%;
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebarDetailsButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== ЭЛЕМЕНТЫ СПИСКОВ В САЙДБАРЕ ========== */
+.sideType {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.sideType.sideType-side {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.sideType.sideType-lawyer {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
+.sideType.sideType-decision {
+  background-color: #c6f6d5;
+  color: #276749;
+}
+
+.sideType.sideType-execution {
+  background-color: #e9d8fd;
+  color: #553c9a;
+}
+
+.sideType.sideType-petition {
+  background-color: #feebc8;
+  color: #c05621;
+}
+
+.sideType.sideType-movement {
+  background-color: #c4f1f9;
+  color: #0987a0;
+}
+
+.sidesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 450px;
+  overflow-y: auto;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sideItem {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #2c3e50;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.sideItem:last-child {
+  margin-bottom: 0;
+}
+
+.sideItem:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  transform: translateX(2px);
+}
+
+.sideHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.sideHeader h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.sideRole {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 12px;
+  background: #e9ecef;
+  color: #495057;
+}
+
+.sideDetails {
+  font-size: 12px;
+  color: #6c757d;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.sideAmount {
+  font-weight: 600;
+  color: #38a169;
+  background: #f0fff4;
+  padding: 2px 6px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.sideActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.sideActions .editButton,
+.sideActions .dangerButton {
+  padding: 4px 12px;
+  font-size: 11px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 70px;
+  text-align: center;
+}
+
+.sideActions .editButton {
+  background: #4a5568;
+  color: white;
+}
+
+.sideActions .editButton:hover {
+  background: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sideActions .dangerButton {
+  background: #fc8181;
+  color: #c53030;
+}
+
+.sideActions .dangerButton:hover {
+  background: #f56565;
+  color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(229, 62, 62, 0.1);
+}
+
+.addButton {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  background: #f8f9fa;
+  border: 1px dashed #a0aec0;
+  border-radius: 6px;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  background: #e9ecef;
+  border-color: #2c3e50;
+  color: #2c3e50;
+}
+
+/* ========== МОДАЛЬНЫЕ ОКНА ========== */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.modalContent h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* ========== ЗАГРУЗКА И ОШИБКИ ========== */
+.loading, .error {
+  text-align: center;
+  padding: 48px;
+  font-size: 15px;
+}
+
+.loading {
+  color: #2c3e50;
+}
+
+.error {
+  color: #c53030;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  margin: 16px;
+}
+
+/* ========== АРХИВНЫЕ ПОЛЯ ========== */
+.archivedField {
+  opacity: 0.8;
+  background: #f8f9fa;
+}
+
+.archivedNote {
+  font-size: 11px;
+  color: #c05621;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ========== БЕЙДЖИ СТАТУСОВ ========== */
+.statusBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusActive {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.statusArchived {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 1200px) {
+  .container {
+    padding-left: 20px;
+  }
+  
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .tabGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .headerLeft {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .headerRight {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    border-bottom: 1px solid #dee2e6;
+    border-left: 2px solid transparent;
+    text-align: left;
+  }
+  
+  .activeTab {
+    border-left-color: #2c3e50;
+    border-bottom-color: #dee2e6;
+  }
+  
+  .tabContentWrapper {
+    padding: 16px;
+  }
+  
+  .fieldGroup {
+    padding: 16px;
+  }
+  
+  .backButton, .archiveButton, .unarchiveButton, 
+  .editButton, .saveButton, .cancelButton, .dangerButton {
+    min-width: 100%;
+  }
+}

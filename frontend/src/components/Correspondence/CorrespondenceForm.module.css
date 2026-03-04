@@ -227,3 +227,65 @@
     padding: 0.75rem;
   }
 }
+
+.errorText {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.input.error,
+.select.error,
+.textarea.error {
+  border-color: #f44336;
+}
+
+.input.error:focus,
+.select.error:focus,
+.textarea.error:focus {
+  border-color: #f44336;
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.fileInfo span {
+  color: #333;
+  word-break: break-all;
+}
+
+.removeFileButton {
+  padding: 4px 8px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.removeFileButton:hover {
+  background-color: #d32f2f;
+}
+
+.fileInput {
+  padding: 8px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.fileInput:hover {
+  border-color: #2196F3;
+}

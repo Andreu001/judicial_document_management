@@ -6,51 +6,27 @@
 
 #root {
     display: flex;
-    flex-direction: row; /* Делаем элементы в строку */
-    align-items: flex-start; /* Выравниваем элементы по верху */
+    flex-direction: row;
+    align-items: flex-start;
+    min-height: 100vh;
+    background: #f8fafc;
 }
 
 .App {
     flex-grow: 1;
-    padding: 0; /* Отступы убираем, контролируем их в других блоках */
+    padding: 0;
+    width: 100%;
 }
 
-.post {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 15px;
-    border: 2px solid teal;
-    margin-top: 20px; /* Теперь отступ от createCardButtonContainer */
-    justify-content: space-between;
-    align-items: center;
-    margin-left: 2cm; /* Отступ слева 2 см */
-    margin-right: 2cm; /* Отступ справа 2 см */
-    width: calc(100vw - 6cm - 4cm); /* Учитываем navbar и отступы */
-}
-
-.post__btns{
-    display: flex;
-}
-
-
-
-.page {
-    padding: 10px;
-    border: 1px solid teal;
-    cursor: pointer;
-}
-
-.page__current {
-    border: 2px solid orange;
-    font-weight: bold;
-}
+/* Удаляем старые стили для .post и .page, так как они теперь в модулях */
+/* Оставляем только глобальные стили */
 
 .navbar {
     height: 50px;
     width: 80vw;
     display: flex;
     align-items: center;
-    padding: 0 15px; /* Отступы слева и справа */
+    padding: 0 15px;
     background: lightgray;
 }
 
@@ -60,9 +36,10 @@
 }
 
 .navbar__links > * + * {
-    margin-left: 20px; /* Устанавливаем отступ между элементами */
+    margin-left: 20px;
 }
 
+/* Стили для форм - оставляем */
 .card_form {
     display: 'flex';
     justify-content: 'center';
@@ -73,5 +50,12 @@
     text-align: center;
     padding: 15px 20px;
     border-radius: 20px;
-    margin-bottom: 15px; /* Добавил отступ снизу */
+    margin-bottom: 15px;
+}
+
+/* Адаптивность для корневого элемента */
+@media (max-width: 1200px) {
+    #root {
+        flex-direction: column;
+    }
 }

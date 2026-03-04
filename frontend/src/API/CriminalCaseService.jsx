@@ -725,6 +725,72 @@ static async getJudges() {
       console.error('Error fetching judges:', error);
     }
   }
+
+  // === Исполнения (CriminalExecution) ===
+
+  static async getExecutions(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/executions/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching executions:', error);
+      return [];
+    }
+  }
+
+  static async getExecutionById(proceedingId, executionId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/executions/${executionId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Запись об исполнении не найдена');
+      }
+      console.error('Error fetching execution:', error);
+      throw error;
+    }
+  }
+
+  static async createExecution(proceedingId, executionData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/executions/`,
+        executionData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating execution:', error);
+      throw error;
+    }
+  }
+
+  static async updateExecution(proceedingId, executionId, executionData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/executions/${executionId}/`,
+        executionData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating execution:', error);
+      throw error;
+    }
+  }
+
+  static async deleteExecution(proceedingId, executionId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/executions/${executionId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting execution:', error);
+      throw error;
+    }
+  }
 }
 
 export default CriminalCaseService;

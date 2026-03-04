@@ -15,8 +15,11 @@ const CivilDetail = () => {
   const navigate = useNavigate();
   const [civilData, setCivilData] = useState(null);
   const [sides, setSides] = useState([]);
+  const [lawyers, setLawyers] = useState([]);
   const [decisions, setDecisions] = useState([]);
-  const [procedureActions, setProcedureActions] = useState([]);
+  const [executions, setExecutions] = useState([]);
+  const [movements, setMovements] = useState([]);
+  const [petitions, setPetitions] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -43,6 +46,15 @@ const CivilDetail = () => {
   });
   const [judges, setJudges] = useState([]);
 
+  // Состояния для сворачивания блоков в сайдбаре
+  const [collapsedSections, setCollapsedSections] = useState({
+    sides: true,
+    decisions: true,
+    executions: true,
+    movements: true,
+    petitions: true
+  });
+
   useEffect(() => {
     const fetchCivilDetails = async () => {
       try {
@@ -62,11 +74,20 @@ const CivilDetail = () => {
           const sidesResponse = await CivilCaseService.getSides(civilResponse.id);
           setSides(sidesResponse);
           
+          const lawyersResponse = await CivilCaseService.getLawyers(civilResponse.id);
+          setLawyers(lawyersResponse);
+          
           const decisionsResponse = await CivilCaseService.getDecisions(civilResponse.id);
           setDecisions(decisionsResponse);
           
-          const actionsResponse = await CivilCaseService.getCivilProceedingById(civilResponse.id);
-          setProcedureActions(actionsResponse);
+          const executionsResponse = await CivilCaseService.getExecutions(civilResponse.id);
+          setExecutions(executionsResponse);
+          
+          const movementsResponse = await CivilCaseService.getMovements(civilResponse.id);
+          setMovements(movementsResponse);
+          
+          const petitionsResponse = await CivilCaseService.getPetitions?.(civilResponse.id) || [];
+          setPetitions(petitionsResponse);
         } else {
           setError('Гражданское дело не найдено');
         }
@@ -135,14 +156,8 @@ const CivilDetail = () => {
     }));
   }, [isArchived, isEditing]);
 
-  const [expandedSections, setExpandedSections] = useState({
-    sides: true, // по умолчанию развернуто
-    decisions: true,
-    actions: true
-  });
-
   const toggleSection = (section) => {
-    setExpandedSections(prev => ({
+    setCollapsedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
@@ -184,8 +199,11 @@ const CivilDetail = () => {
       const dataToSend = { ...formData };
 
       delete dataToSend.sides;
+      delete dataToSend.lawyers;
       delete dataToSend.decisions;
-      delete dataToSend.procedure_actions;
+      delete dataToSend.executions;
+      delete dataToSend.movements;
+      delete dataToSend.petitions;
       delete dataToSend.id;
 
       if (isArchived) {
@@ -260,64 +278,28 @@ const CivilDetail = () => {
     setIsEditing(false);
   };
 
-  const handleAddSide = () => {
-    navigate(`/civil-proceedings/${id}/sides/create`);
+  const handleNavigateToSide = (sideId) => {
+    navigate(`/civil-proceedings/${id}/sides/${sideId}`);
   };
 
-  const handleAddDecision = () => {
-    navigate(`/civil-proceedings/${id}/decisions/create`);
+  const handleNavigateToLawyer = (lawyerId) => {
+    navigate(`/civil-proceedings/${id}/lawyers/${lawyerId}`);
   };
 
-  const handleAddProcedureAction = () => {
-    navigate(`/civil-proceedings/${id}/procedure-actions/create`);
+  const handleNavigateToDecision = (decisionId) => {
+    navigate(`/civil-proceedings/${id}/decisions/${decisionId}`);
   };
 
-  const handleEditSide = (sideId) => {
-    navigate(`/civil-proceedings/${id}/sides/${sideId}/edit`);
+  const handleNavigateToExecution = (executionId) => {
+    navigate(`/civil-proceedings/${id}/executions/${executionId}`);
   };
 
-  const handleEditDecision = (decisionId) => {
-    navigate(`/civil-proceedings/${id}/decisions/${decisionId}/edit`);
+  const handleNavigateToMovement = (movementId) => {
+    navigate(`/civil-proceedings/${id}/movements/${movementId}`);
   };
 
-  const handleEditProcedureAction = (actionId) => {
-    navigate(`/civil-proceedings/${id}/procedure-actions/${actionId}/edit`);
-  };
-
-  const handleDeleteSide = async (sideId) => {
-    if (window.confirm('Удалить сторону по делу?')) {
-      try {
-        await CivilCaseService.deleteSide(id, sideId);
-        setSides(sides.filter(s => s.id !== sideId));
-      } catch (error) {
-        console.error('Ошибка удаления стороны:', error);
-        alert('Не удалось удалить сторону');
-      }
-    }
-  };
-
-  const handleDeleteDecision = async (decisionId) => {
-    if (window.confirm('Удалить решение по делу?')) {
-      try {
-        await CivilCaseService.deleteDecision(id, decisionId);
-        setDecisions(decisions.filter(d => d.id !== decisionId));
-      } catch (error) {
-        console.error('Ошибка удаления решения:', error);
-        alert('Не удалось удалить решение');
-      }
-    }
-  };
-
-  const handleDeleteProcedureAction = async (actionId) => {
-    if (window.confirm('Удалить процессуальное действие?')) {
-      try {
-        await CivilCaseService.deleteProcedureAction(id, actionId);
-        setProcedureActions(procedureActions.filter(a => a.id !== actionId));
-      } catch (error) {
-        console.error('Ошибка удаления процессуального действия:', error);
-        alert('Не удалось удалить действие');
-      }
-    }
+  const handleNavigateToPetition = (petitionId) => {
+    navigate(`/civil-proceedings/${id}/petitions/${petitionId}`);
   };
 
   const formatDate = (dateString) => {
@@ -340,6 +322,24 @@ const CivilDetail = () => {
       maximumFractionDigits: 2
     }).format(amount);
   };
+
+  // Объединяем все стороны для отображения
+  const allSides = [
+    ...sides.map(s => ({
+      ...s,
+      sideType: s.plaintiff_name ? 'plaintiff' : s.defendant_name ? 'defendant' : 'third_party',
+      sideTypeLabel: s.plaintiff_name ? 'Истец' : s.defendant_name ? 'Ответчик' : 'Третье лицо',
+      displayName: s.plaintiff_name || s.defendant_name || s.third_parties || 'Сторона',
+      onClick: () => handleNavigateToSide(s.id)
+    })),
+    ...lawyers.map(l => ({
+      ...l,
+      sideType: 'lawyer',
+      sideTypeLabel: 'Адвокат',
+      displayName: l.lawyer_detail?.law_firm_name || 'Адвокат',
+      onClick: () => handleNavigateToLawyer(l.id)
+    }))
+  ];
 
   if (loading) {
     return <div className={styles.loading}>Загрузка данных...</div>;
@@ -507,193 +507,183 @@ const CivilDetail = () => {
           </div>
         </div>
 
-{/* Правая колонка - стороны по делу */}
-<div className={styles.sidebar}>
-  {/* Стороны по делу */}
-  <div className={styles.section}>
-    <div 
-      className={styles.sectionHeader}
-      onClick={() => toggleSection('sides')}
-    >
-      <h2 className={styles.sectionTitle}>
-        <span>Стороны по делу</span>
-        <span className={styles.expandIcon}>
-          {expandedSections.sides ? '▼' : '▶'}
-        </span>
-      </h2>
-    </div>
-    
-    {expandedSections.sides && (
-      <>
-        <button 
-          onClick={handleAddSide}
-          className={styles.addButton}
-        >
-          + Добавить сторону
-        </button>
-        
-        {sides.length > 0 ? (
-          <div className={styles.sidesList}>
-            {sides.map(side => (
-              <div key={side.id} className={styles.sideItem}>
-                <div className={styles.sideHeader}>
-                  <h4>
-                    {side.plaintiff_name || side.defendant_name || 'Сторона по делу'}
-                  </h4>
-                  <span className={styles.sideRole}>
-                    {side.plaintiff_name ? 'Истец' : 
-                     side.defendant_name ? 'Ответчик' : 
-                     side.third_parties ? 'Третье лицо' : 'Сторона'}
-                  </span>
-                </div>
-                {side.main_claim && (
-                  <p className={styles.sideDetails}>
-                    <strong>Требование:</strong> {side.main_claim.substring(0, 100)}
-                    {side.main_claim.length > 100 && '...'}
-                  </p>
-                )}
-                {side.main_claim_amount > 0 && (
-                  <span className={styles.sideAmount}>
-                    Сумма: {formatCurrency(side.main_claim_amount)}
-                  </span>
-                )}
-                <div className={styles.sideActions}>
-                  <button 
-                    onClick={() => handleEditSide(side.id)}
-                    className={styles.editButton}
-                  >
-                    Редактировать
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteSide(side.id)}
-                    className={styles.dangerButton}
-                  >
-                    Удалить
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={styles.noData}>Стороны не добавлены</p>
-        )}
-      </>
-    )}
-  </div>
-
-  {/* Решения по делу */}
-  <div className={styles.section}>
-    <div 
-      className={styles.sectionHeader}
-      onClick={() => toggleSection('decisions')}
-    >
-      <h2 className={styles.sectionTitle}>
-        <span>Решения по делу</span>
-        <span className={styles.expandIcon}>
-          {expandedSections.decisions ? '▼' : '▶'}
-        </span>
-      </h2>
-    </div>
-    
-    {expandedSections.decisions && (
-      <>
-        <button 
-          onClick={handleAddDecision}
-          className={styles.addButton}
-        >
-          + Добавить решение
-        </button>
-        
-        {decisions.length > 0 ? (
-          <div className={styles.sidesList}>
-            {decisions.map(decision => (
-              <div key={decision.id} className={styles.sideItem}>
-                <div className={styles.sideHeader}>
-                  <h4>Решение #{decision.id}</h4>
-                  <span className={styles.sideRole}>
-                    {formatDate(decision.considered_date)}
-                  </span>
-                </div>
-                {decision.ruling_type && (
-                  <p className={styles.sideDetails}>
-                    Вид: {decision.ruling_type}
-                  </p>
-                )}
-                <div className={styles.sideActions}>
-                  <button 
-                    onClick={() => handleEditDecision(decision.id)}
-                    className={styles.editButton}
-                  >
-                    Просмотр
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={styles.noData}>Решения не добавлены</p>
-        )}
-      </>
-    )}
-  </div>
-
-          {/* Процессуальные действия */}
-          <div className={styles.section}>
+        {/* Правая колонка - сайдбар */}
+        <div className={styles.sidebar}>
+          {/* Стороны по делу */}
+          <div className={styles.sidebarSection}>
             <div 
-              className={styles.sectionHeader}
-              onClick={() => toggleSection('actions')}
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('sides')}
             >
-              <h2 className={styles.sectionTitle}>
-                <span>Процессуальные действия</span>
-                <span className={styles.expandIcon}>
-                  {expandedSections.actions ? '▼' : '▶'}
+              <h2 className={styles.sidebarSectionTitle}>
+                Стороны по делу
+                <span className={styles.sidebarSectionCount}>
+                  {allSides.length}
                 </span>
               </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.sides ? '▶' : '▼'}
+              </button>
             </div>
             
-            {expandedSections.actions && (
-              <>
-                <button 
-                  onClick={handleAddProcedureAction}
-                  className={styles.addButton}
-                >
-                  + Добавить действие
-                </button>
-                
-                {procedureActions.length > 0 ? (
-                  <div className={styles.sidesList}>
-                    {procedureActions.map(action => (
-                      <div key={action.id} className={styles.sideItem}>
-                        <div className={styles.sideHeader}>
-                          <h4>
-                            {action.preparation_order_date ? 'Подготовка дела' : 
-                            action.preliminary_hearing_order_date ? 'Предварительное заседание' : 
-                            'Процессуальное действие'}
-                          </h4>
+            {!collapsedSections.sides && (
+              <div className={styles.sidebarSectionContent}>
+                {allSides.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {allSides.slice(0, 5).map(side => (
+                      <div 
+                        key={`${side.sideType}-${side.id}`} 
+                        className={`${styles.sidebarListItem} ${styles[`sideType-${side.sideType}`]}`}
+                        onClick={side.onClick}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {side.displayName}
+                          </span>
+                          <span className={`${styles.sideType} ${styles[`sideType-${side.sideType}`]}`}>
+                            {side.sideTypeLabel}
+                          </span>
                         </div>
-                        {action.control_date && (
-                          <p className={styles.sideDetails}>
-                            Контроль: {formatDate(action.control_date)}
-                          </p>
+                        {side.phone && (
+                          <div className={styles.sidebarListItemSubtitle}>
+                            {side.phone}
+                          </div>
                         )}
-                        <div className={styles.sideActions}>
-                          <button 
-                            onClick={() => handleEditProcedureAction(action.id)}
-                            className={styles.editButton}
-                          >
-                            Просмотр
-                          </button>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
                         </div>
                       </div>
                     ))}
+                    {allSides.length > 5 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {allSides.length - 5} участников
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <p className={styles.noData}>Действия не добавлены</p>
+                  <p className={styles.sidebarNoData}>Нет данных о сторонах по делу</p>
                 )}
-              </>
+              </div>
             )}
           </div>
-        </div>
+
+          {/* Решения */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('decisions')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Решения
+                <span className={styles.sidebarSectionCount}>
+                  {decisions.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.decisions ? '▶' : '▼'}
+              </button>
+            </div>
+            
+            {!collapsedSections.decisions && (
+              <div className={styles.sidebarSectionContent}>
+                {decisions.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {decisions.slice(0, 3).map(decision => (
+                      <div 
+                        key={decision.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => handleNavigateToDecision(decision.id)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {decision.decision_date 
+                              ? `Решение от ${formatDate(decision.decision_date)}`
+                              : `Решение №${decision.id}`
+                            }
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {decision.outcome ? getOptionLabel(options.consideration_result_main, decision.outcome) : 'Результат не указан'}
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {decisions.length > 3 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {decisions.length - 3} решений
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных о решениях</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Исполнение */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('executions')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Исполнение
+                <span className={styles.sidebarSectionCount}>
+                  {executions.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.executions ? '▶' : '▼'}
+              </button>
+            </div>
+            
+            {!collapsedSections.executions && (
+              <div className={styles.sidebarSectionContent}>
+                {executions.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {executions.slice(0, 3).map(execution => (
+                      <div 
+                        key={execution.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => handleNavigateToExecution(execution.id)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {execution.writ_execution_date 
+                              ? `Исполнение от ${formatDate(execution.writ_execution_date)}`
+                              : `Запись об исполнении №${execution.id}`
+                            }
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {execution.execution_result 
+                            ? `Результат: ${execution.execution_result}`
+                            : execution.writ_received_by 
+                              ? `Выдано: ${execution.writ_received_by}`
+                              : 'Информация отсутствует'
+                          }
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {executions.length > 3 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {executions.length - 3} записей
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных об исполнении</p>
+                )}
+              </div>
+            )}
+          </div>
+       </div>
       </div>
 
       <ConfirmDialog

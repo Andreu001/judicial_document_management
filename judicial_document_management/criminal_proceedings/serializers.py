@@ -10,7 +10,10 @@ from .models import (CriminalProceedings,
                      CriminalDecisions,
                      CriminalAppeal,
                      ReferringAuthority, LawyerCriminal,
-                     CriminalSidesCaseInCase, PetitionCriminal)
+                     CriminalSidesCaseInCase, PetitionCriminal,
+                     CriminalExecution)
+from django.contrib.contenttypes.models import ContentType
+from case_documents.models import CaseDocument
 
 
 class SidesCaseInCaseDetailSerializer(serializers.ModelSerializer):
@@ -560,12 +563,192 @@ class CriminalCaseMovementSerializer(serializers.ModelSerializer):
         read_only_fields = ("criminal_proceedings",)
 
 
+class CriminalExecutionSerializer(serializers.ModelSerializer):
+    """Сериализатор для исполнения по уголовному делу"""
+    
+    # Поля для отображения детальной информации о связанных объектах
+    criminal_side_case_execution_detail = serializers.SerializerMethodField(read_only=True)
+    criminal_defendant_execution_detail = serializers.SerializerMethodField(read_only=True)
+    sides_case_lawyer_execution_detail = serializers.SerializerMethodField(read_only=True)
+    
+    # Поля для создания/обновления с возможностью выбора типа стороны
+    execution_recipient_type = serializers.ChoiceField(
+        choices=['side', 'defendant', 'lawyer'],
+        write_only=True,
+        required=False,
+        help_text="Тип получателя: side - сторона, defendant - обвиняемый, lawyer - адвокат"
+    )
+    execution_recipient_id = serializers.IntegerField(
+        write_only=True,
+        required=False,
+        help_text="ID получателя в зависимости от типа"
+    )
+
+    class Meta:
+        model = CriminalExecution
+        fields = [
+            'id',
+            'criminal_proceedings',
+            # Новые поля связей
+            'criminal_side_case_execution',
+            'criminal_defendant_execution',
+            'sides_case_lawyer_execution',
+            # Детальная информация
+            'criminal_side_case_execution_detail',
+            'criminal_defendant_execution_detail',
+            'sides_case_lawyer_execution_detail',
+            # Поля для создания связей
+            'execution_recipient_type',
+            'execution_recipient_id',
+            # Остальные поля
+            'sentence_execution_date',
+            'execution_sent_date',
+            'execution_sent_to',
+            'execution_sent_document',
+            'control_return_date',
+            'control_result',
+            'execution_mark_date',
+            'execution_mark_content',
+            'execution_mark_author',
+            'special_execution_notes',
+            'removal_from_control_date',
+            'removal_from_control_reason',
+            'copies_sent_info',
+        ]
+        read_only_fields = ('criminal_proceedings',)
+
+    def get_criminal_side_case_execution_detail(self, obj):
+        """Детальная информация о стороне (SidesCaseInCase)"""
+        if obj.criminal_side_case_execution:
+            side = obj.criminal_side_case_execution
+            return {
+                'id': side.id,
+                'name': side.name,
+                'address': side.address,
+                'phone': side.phone,
+                'email': side.email,
+                'type': 'Сторона по делу'
+            }
+        return None
+
+    def get_criminal_defendant_execution_detail(self, obj):
+        """Детальная информация об обвиняемом (Defendant)"""
+        if obj.criminal_defendant_execution:
+            defendant = obj.criminal_defendant_execution
+            return {
+                'id': defendant.id,
+                'full_name': defendant.full_name_criminal,
+                'birth_date': defendant.birth_date,
+                'address': defendant.address,
+                'type': 'Обвиняемый'
+            }
+        return None
+
+    def get_sides_case_lawyer_execution_detail(self, obj):
+        """Детальная информация об адвокате (Lawyer)"""
+        if obj.sides_case_lawyer_execution:
+            lawyer = obj.sides_case_lawyer_execution
+            return {
+                'id': lawyer.id,
+                'law_firm_name': lawyer.law_firm_name,
+                'law_firm_phone': lawyer.law_firm_phone,
+                'law_firm_email': lawyer.law_firm_email,
+                'type': 'Адвокат'
+            }
+        return None
+
+    def validate(self, data):
+        """
+        Валидация данных, особенно полей связей
+        """
+        # Если указаны поля для создания связи
+        recipient_type = data.get('execution_recipient_type')
+        recipient_id = data.get('execution_recipient_id')
+        
+        if recipient_type and recipient_id is not None:
+            criminal_proceedings = self.context.get('criminal_proceedings')
+            
+            if not criminal_proceedings:
+                raise serializers.ValidationError(
+                    "Не указано уголовное производство в контексте"
+                )
+            
+            # Проверяем существование объекта в зависимости от типа
+            if recipient_type == 'side':
+                try:
+                    from .models import CriminalSidesCaseInCase
+                    side_obj = CriminalSidesCaseInCase.objects.get(
+                        id=recipient_id,
+                        criminal_proceedings=criminal_proceedings
+                    )
+                    data['criminal_side_case_execution'] = side_obj.criminal_side_case
+                except CriminalSidesCaseInCase.DoesNotExist:
+                    raise serializers.ValidationError(
+                        {'execution_recipient_id': f'Сторона с ID {recipient_id} не найдена в этом деле'}
+                    )
+            
+            elif recipient_type == 'defendant':
+                try:
+                    defendant = Defendant.objects.get(
+                        id=recipient_id,
+                        criminal_proceedings=criminal_proceedings
+                    )
+                    data['criminal_defendant_execution'] = defendant
+                except Defendant.DoesNotExist:
+                    raise serializers.ValidationError(
+                        {'execution_recipient_id': f'Обвиняемый с ID {recipient_id} не найден в этом деле'}
+                    )
+            
+            elif recipient_type == 'lawyer':
+                try:
+                    from .models import LawyerCriminal
+                    lawyer_obj = LawyerCriminal.objects.get(
+                        id=recipient_id,
+                        criminal_proceedings=criminal_proceedings
+                    )
+                    data['sides_case_lawyer_execution'] = lawyer_obj.sides_case_lawyer_criminal
+                except LawyerCriminal.DoesNotExist:
+                    raise serializers.ValidationError(
+                        {'execution_recipient_id': f'Адвокат с ID {recipient_id} не найден в этом деле'}
+                    )
+        
+        # Удаляем вспомогательные поля из данных
+        data.pop('execution_recipient_type', None)
+        data.pop('execution_recipient_id', None)
+        
+        return data
+
+    def create(self, validated_data):
+        """Создание записи об исполнении"""
+        criminal_proceedings = self.context.get('criminal_proceedings')
+        if not criminal_proceedings:
+            raise serializers.ValidationError(
+                {'criminal_proceedings': 'Не указано уголовное производство'}
+            )
+        
+        # Убеждаемся, что в validated_data нет criminal_proceedings
+        validated_data.pop('criminal_proceedings', None)
+        
+        return CriminalExecution.objects.create(
+            criminal_proceedings=criminal_proceedings,
+            **validated_data
+        )
+
+    def update(self, instance, validated_data):
+        """Обновление записи об исполнении"""
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+
 class CriminalProceedingsSerializer(serializers.ModelSerializer):
     defendants = DefendantSerializer(many=True, read_only=True)
     criminal_decisions = CriminalDecisionSerializer(many=True, read_only=True)
     case_movement = CriminalCaseMovementSerializer(read_only=True)
     referring_authority = ReferringAuthoritySerializer(read_only=True)
     registered_case_info = serializers.SerializerMethodField()
+    criminal_executions = CriminalExecutionSerializer(many=True, read_only=True)
 
     # Добавляем поля для отображения ФИО судьи
     presiding_judge_full_name = serializers.SerializerMethodField()
@@ -574,6 +757,7 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
     # Добавляем поле для отображения названия органа
     referring_authority_name = serializers.SerializerMethodField()
     referring_authority_code = serializers.SerializerMethodField()
+    documents_count = serializers.SerializerMethodField()
 
     status_display = serializers.CharField(
         source='get_status_display', 
@@ -658,6 +842,13 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
                 'status': obj.registered_case.get_status_display()
             }
         return None
+
+    def get_documents_count(self, obj):
+        content_type = ContentType.objects.get_for_model(obj)
+        return CaseDocument.objects.filter(
+            content_type=content_type,
+            object_id=obj.id
+        ).count()
 
 
 class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):

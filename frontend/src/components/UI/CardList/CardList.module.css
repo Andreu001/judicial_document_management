@@ -1,13 +1,121 @@
-/* CardList.module.css */
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 1fr; /* Все строки одинаковой высоты */
-  gap: 20px;
-  padding: 20px;
-  margin: 0 auto;
-  align-items: center;
-  margin-top: 50px; /* Отступ от поиска */
-  margin-left: 7cm; /* Отступ слева */
-  margin-right: 2cm; /* Отступ справа */
+  grid-template-columns: repeat(4, 1fr); /* Меняем с 3 на 4 колонки */
+  gap: 16px;
+  padding: 12px 24px;
+  margin-left: 6.3cm;
+  margin-right: 24px; /* Убираем 0cm, делаем отступ справа для дыхания */
+  position: relative;
+  top: 48px;
+}
+
+/* Улучшенная анимация для карточек */
+@keyframes cardAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardHover {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  100% {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(30, 60, 92, 0.15);
+  }
+}
+
+/* Стили для карточки */
+:global(.post) {
+  animation: cardAppear 0.4s ease-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%; /* Гарантируем, что карточка занимает всю ширину ячейки */
+  max-width: 100%; /* Предотвращаем выход за пределы */
+}
+
+:global(.post:hover) {
+  animation: cardHover 0.3s ease-out forwards;
+}
+
+:global(.post-enter) {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+}
+
+:global(.post-enter-active) {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:global(.post-exit) {
+  opacity: 1;
+  transform: scale(1);
+}
+
+:global(.post-exit-active) {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Адаптивность с изменением размеров */
+@media (max-width: 1800px) {
+  .cardGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
+}
+
+@media (max-width: 1600px) {
+  .cardGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .cardGrid {
+    grid-template-columns: repeat(3, 1fr); /* На меньших экранах возвращаем 3 колонки */
+    gap: 12px;
+    padding: 12px 16px;
+    margin-right: 16px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .cardGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+    margin-right: 16px;
+    padding: 12px 16px;
+  }
+  
+  :global(.post:hover) {
+    transform: translateY(-2px) scale(1.01);
+  }
+}
+
+/* Для очень больших экранов можно даже 5 колонок */
+@media (min-width: 2200px) {
+  .cardGrid {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }

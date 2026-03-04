@@ -15,7 +15,9 @@ class CaseRegistryManager:
 
     @transaction.atomic
     def register_case(self, index_code, description=None, case_number=None, 
-                    registration_date=None, business_card_id=None, criminal_proceedings_id=None):
+                    registration_date=None, business_card_id=None, 
+                    criminal_proceedings_id=None, civil_proceedings_id=None,
+                    kas_proceedings_id=None, administrative_proceedings_id=None):
         """
         Регистрация нового дела
         """
@@ -39,15 +41,27 @@ class CaseRegistryManager:
             counter.current_number = case_number
             counter.total_registered += 1
             counter.save()
+            logger.info(f"Сгенерирован новый номер {case_number} для индекса {index_code}")
         else:
-            # Если номер передан явно, проверяем, что он не меньше текущего
-            if case_number <= counter.current_number:
-                raise ValueError(f"Номер {case_number} уже использован или меньше текущего {counter.current_number}")
-            # Обновляем счетчик, если номер больше текущего
+            # Если номер передан явно, проверяем, что он не занят
+            existing_case = RegisteredCase.objects.filter(
+                index=index,
+                case_number=case_number,
+                status__in=['active', 'completed', 'archived']
+            ).exists()
+            
+            if existing_case:
+                raise ValueError(f"Номер {case_number} уже используется для индекса {index_code}")
+            
+            # Если номер больше текущего, обновляем счетчик
             if case_number > counter.current_number:
+                logger.info(f"Обновляем счетчик для индекса {index_code}: {counter.current_number} -> {case_number}")
                 counter.current_number = case_number
                 counter.total_registered += 1
                 counter.save()
+            else:
+                # Если номер меньше текущего, но свободен - используем его
+                logger.info(f"Используем существующий номер {case_number} для индекса {index_code} (текущий счетчик: {counter.current_number})")
         
         # Используем переданную дату или текущую
         if registration_date is None:
@@ -62,6 +76,9 @@ class CaseRegistryManager:
             description=description,
             business_card_id=business_card_id,
             criminal_proceedings_id=criminal_proceedings_id,
+            civil_proceedings_id=civil_proceedings_id,
+            kas_proceedings_id=kas_proceedings_id,
+            administrative_proceedings_id=administrative_proceedings_id,
             registration_date=registration_date
         )
         

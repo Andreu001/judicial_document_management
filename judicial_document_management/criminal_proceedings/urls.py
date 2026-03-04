@@ -8,7 +8,8 @@ from .views import (CriminalProceedingsViewSet, DefendantViewSet,
                     criminal_case_movement_options, LawyerCriminalViewSet,
                     referring_authorities_list, judges_list,
                     lawyer_criminal_options, SidesCaseInCaseViewSet,
-                    PetitionCriminalViewSet, petition_criminal_options)
+                    PetitionCriminalViewSet, petition_criminal_options,
+                    CriminalExecutionViewSet)
 
 router = routers.DefaultRouter()
 
@@ -49,6 +50,11 @@ router.register(
     r"criminal-proceedings/(?P<criminal_proceedings>\d+)/petitions-criminal",
     PetitionCriminalViewSet,
     basename="petitions-criminal"
+)
+router.register(
+    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/executions",
+    CriminalExecutionViewSet,
+    basename="criminal-executions"
 )
 
 urlpatterns = [

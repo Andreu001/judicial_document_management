@@ -2,179 +2,332 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 10px;
-  position: fixed;  /* Фиксируем сверху */
+  padding: 8px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e9f0;
+  position: fixed;
   top: 0;
-  left: 6.4cm; /* Отодвигаем от navbar */
-  width: calc(100vw - 6cm); /* Растягиваем до правого края */
-  z-index: 10; /* Делаем поверх других элементов */
+  left: 6.3cm;
+  width: calc(100vw - 6.3cm);
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.navigation {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.navButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.navButton:hover {
+  background: #f0f2f5;
+  color: #1e3c5c;
+}
+
+.navButton.active {
+  background: #1e3c5c;
+  color: white;
+}
+
+.searchContainer {
+  display: flex;
+  align-items: center;
+  margin: 0 16px;
+  flex: 0 1 300px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid #e5e9f0;
+  border-radius: 4px 0 0 4px;
+  font-size: 13px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #1e3c5c;
   background: white;
 }
 
-.search {
-  flex-grow: 2;
-  margin-right: 20px;
-  display: flex;
-  gap: 10px; /* Отступ между полем ввода и выпадающим списком */
-}
-
-.search input {
-  width: 70%; /* Уменьшаем ширину поля ввода */
-  padding: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  background-color: #f9f9f9;
-}
-
-.search select {
-  width: auto; /* Делаем компактнее */
-  min-width: 150px; /* Минимальная ширина */
-  padding: 8px; /* Меньший отступ */
-  border: 1px solid #71a5a0; /* Цвет границы */
-  border-radius: 6px; /* Закругление */
-  font-size: 14px; /* Уменьшаем шрифт */
-  background-color: #ffffff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-/* Стиль при наведении */
-.search select:hover {
-  background-color: #f0f9f9;
-  border-color: #60b0a0;
-}
-
-/* Стиль при фокусе */
-.search select:focus {
-  outline: none;
-  border-color: #57a098;
-  box-shadow: 0 0 5px rgba(87, 160, 152, 0.5);
-}
-
 .searchButton {
-  background: none;
-  border: none;
+  padding: 6px 12px;
+  background: #f0f2f5;
+  border: 1px solid #e5e9f0;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  color: #4a5568;
+  font-size: 13px;
   cursor: pointer;
-  font-size: 18px;
-  color: #71a5a0;
-  padding: 10px;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-  transition: background-color 0.3s;
+  transition: all 0.2s;
 }
 
 .searchButton:hover {
-  background-color: #e0e0e0;
-}
-
-
-.sort {
-  min-width: 180px;
-  margin-right: 40px;
-}
-
-.sort select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  background-color: #f9f9f9;
-  cursor: pointer;
-  width: 100%;
+  background: #e2e6ea;
+  color: #1e3c5c;
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.notificationButton,
-.profileButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: #71a5a0;
-  transition: color 0.3s, background-color 0.3s;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-}
-
-.notificationButton:hover,
-.profileButton:hover {
-  color: #70bbbb;
-  background-color: #e0e0e0;
+  gap: 12px;
 }
 
 .divider {
   width: 1px;
-  height: 24px;
-  background-color: #ccc; /* Цвет разделителя */
-  margin: 0 10px; /* Отступы вокруг разделителя */
+  height: 20px;
+  background-color: #e5e9f0;
+}
+
+.loginButton {
+  padding: 6px 16px;
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.loginButton:hover {
+  background: #2c4a6e;
 }
 
 .createCardButtonContainer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 30px; /* Уменьшен отступ от поиска */
-  margin-left: 7cm;
-  margin-right: 2cm;
+  padding: 8px 24px;
+  margin-top: -1cm;
+  margin-left: 6.3cm;
+  margin-right: 24px; /* Было 2cm, меняем на 24px для консистентности */
+  background: #ffffff;
+  border-bottom: 1px solid #e5e9f0;
+  position: relative;
+  top: 50px;
 }
+
 
 .categories {
   display: flex;
-  gap: 20px; /* Отступ между категориями */
+  gap: 2px;
+  background: #f8fafc;
+  padding: 2px;
+  border-radius: 6px;
+  flex-wrap: wrap; /* Добавляем перенос при необходимости */
 }
 
-.category {
-  font-size: 16px;
-  color: #2F4F4F;
-  cursor: pointer;
-  padding: 8px 12px;
+.categoryButton {
+  padding: 6px 16px;
+  background: transparent;
+  border: none;
   border-radius: 4px;
-  transition: background-color 0.3s, color 0.3s;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.category:hover {
-  background-color: #f0f0f0; /* Светлый фон при наведении */
+.categoryButton:hover {
+  background: #e9ecef;
+  color: #1e3c5c;
 }
 
-.category.active {
-  color: #023fc2;
-  font-weight: bold;
+.categoryButton.active {
+  background: #1e3c5c;
+  color: white;
 }
 
 .createCardButton {
-  background-color: #157c00;
+  padding: 6px 20px;
+  background: #2f855a;
   color: white;
   border: none;
-  padding: 10px 20px;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 13px;
+  font-weight: 400;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s ease;
+  letter-spacing: 0.3px;
+  white-space: nowrap; /* Предотвращаем перенос текста */
 }
 
-.createCardButton:hover {
-  background-color: #2F4F4F; /* Темно-серый цвет при наведении */
+.createCardButton:hover:not(:disabled) {
+  background: #276749;
 }
 
-.loginButton {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+.createCardButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cardsInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 24px;
+  margin-left: 6.3cm;
+  margin-right: 24px; /* Было 2cm */
+  color: #718096;
+  font-size: 12px;
+  border-bottom: 1px solid #e5e9f0;
+  position: relative;
+  top: 48px;
+}
+
+
+.cardsCount {
+  display: flex;
+  gap: 16px;
+}
+
+.cardsCount span {
+  color: #1e3c5c;
+  font-weight: 500;
+}
+
+.paginationContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0;
+  margin-left: 6.3cm;
+  margin-right: 24px; /* Было 2cm */
+}
+
+.paginationButton {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  color: #4a5568;
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.loginButton:hover {
-  background: #0056b3;
+.paginationButton:hover:not(:disabled) {
+  background: #f0f2f5;
+  border-color: #1e3c5c;
+  color: #1e3c5c;
+}
+
+.paginationButton.active {
+  background: #1e3c5c;
+  border-color: #1e3c5c;
+  color: white;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationArrow {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.paginationEllipsis {
+  color: #a0aec0;
+  padding: 0 4px;
+}
+
+/* Адаптивность */
+@media (max-width: 1400px) {
+  .searchContainer {
+    flex: 0 1 200px;
+  }
+  
+  .navButton {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .categoryButton {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .header {
+    padding: 8px 16px;
+  }
+  
+  .createCardButtonContainer,
+  .cardsInfo,
+  .paginationContainer {
+    padding: 8px 16px;
+    margin-right: 16px;
+  }
+  
+  .categories {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .createCardButtonContainer {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  
+  .categories {
+    width: 100%;
+    overflow-x: auto;
+    padding: 4px;
+  }
+  
+  .paginationContainer {
+    flex-wrap: wrap;
+  }
+}
+
+.calendarButton {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white !important;
+  font-weight: 500;
+  padding: 6px 16px !important;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.calendarButton:hover {
+  background: linear-gradient(135deg, #3182ce, #2c5282);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+}
+
+.calendarButton:active {
+  transform: translateY(0);
 }

@@ -1,0 +1,948 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  padding-left: 260px;
+}
+
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.header h1 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.backButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Список документов ===== */
+.documentList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.documentCard {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.documentCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.documentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.documentTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.documentTitle h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.documentTemplate {
+  font-size: 13px;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.documentMeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.metaValue {
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.documentActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionButton:hover {
+  background: #f8f9fa;
+  transform: scale(1.1);
+}
+
+.signButton:hover {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.deleteButton:hover {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+/* ===== Форма документа ===== */
+.formContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.formContainer h2 {
+  margin: 0 0 24px 0;
+  color: #2c3e50;
+  font-size: 22px;
+  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d;
+  letter-spacing: 0.3px;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.formGroup input:hover,
+.formGroup select:hover,
+.formGroup textarea:hover {
+  border-color: #a0aec0;
+}
+
+.errorInput {
+  border-color: #c53030 !important;
+}
+
+.errorMessage {
+  font-size: 12px;
+  color: #c53030;
+  margin-top: 4px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.submitButton {
+  background-color: #38a169;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 160px;
+}
+
+.submitButton:hover {
+  background-color: #2f855a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cancelButton {
+  background-color: #a0aec0;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.cancelButton:hover {
+  background-color: #718096;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Просмотр документа ===== */
+.detailContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.detailHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.detailTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detailTitle h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.detailMeta {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.documentContent {
+  margin-bottom: 32px;
+}
+
+.documentContent h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.contentText {
+  background: #f8f9fa;
+  padding: 24px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.6;
+  border: 1px solid #e2e8f0;
+}
+
+.contentText p {
+  margin: 0 0 12px 0;
+}
+
+.contentText p:last-child {
+  margin-bottom: 0;
+}
+
+.signatureBlock {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #fef5e7;
+  border-radius: 8px;
+  border-left: 4px solid #d69e2e;
+}
+
+.signatureBlock h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+}
+
+.signatureText {
+  font-style: italic;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.detailActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+/* ===== Статусы документов ===== */
+.statusBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.statusDraft {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.statusSigned {
+  background-color: #c6f6d5;
+  color: #22543d;
+}
+
+/* ===== Пустое состояние ===== */
+.emptyState {
+  text-align: center;
+  padding: 48px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.emptyState p {
+  color: #6c757d;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+
+.addButton {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  background-color: #1e2a36;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Адаптивность ===== */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .documentHeader {
+    flex-direction: column;
+  }
+  
+  .documentTitle {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detailActions {
+    flex-direction: column;
+  }
+  
+  .detailActions button {
+    width: 100%;
+  }
+}
+
+.viewButton, .editButton, .signButton, .deleteButton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  text-align: center;
+}
+
+.viewButton {
+  background-color: #4a5568;
+  color: white;
+}
+
+.viewButton:hover {
+  background-color: #2d3748;
+}
+
+.editButton {
+  background-color: #38a169;
+  color: white;
+}
+
+.editButton:hover {
+  background-color: #2f855a;
+}
+
+.signButton {
+  background-color: #3182ce;
+  color: white;
+}
+
+.signButton:hover {
+  background-color: #2c5282;
+}
+
+.deleteButton {
+  background-color: #c53030;
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: #9b2c2c;
+}
+
+/* Стили для кнопок в детальном просмотре */
+.detailActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.detailActions .editButton,
+.detailActions .signButton,
+.detailActions .deleteButton {
+  padding: 8px 16px;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.formHeader h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.wordActions {
+  display: flex;
+  gap: 10px;
+}
+
+.importButton,
+.exportButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.importButton {
+  background-color: #4a5568;
+  color: white;
+}
+
+.importButton:hover:not(:disabled) {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.exportButton {
+  background-color: #2c3e50;
+  color: white;
+}
+
+.exportButton:hover:not(:disabled) {
+  background-color: #1e2a36;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.importButton:disabled,
+.exportButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.templateHint {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.editorWrapper {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.editorHint {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #f1f8ff;
+  border-radius: 4px;
+  border-left: 3px solid #2c3e50;
+}
+
+/* Стили для TinyMCE в темной теме (опционально) */
+[data-theme="dark"] .editorWrapper {
+  border-color: #4a5568;
+}
+
+[data-theme="dark"] .tox-tinymce {
+  border-color: #4a5568 !important;
+}
+
+/* Добавить в конец файла */
+
+.editorToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.toolbarButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbarButton:hover {
+  background: #edf2f7;
+  border-color: #a0aec0;
+  transform: translateY(-1px);
+}
+
+.toolbarButton:active {
+  transform: translateY(0);
+}
+
+.toolbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.toolbarSeparator {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 8px;
+}
+
+/* Стили для загруженных Word документов */
+.wordDocument {
+  font-family: 'Times New Roman', Times, serif;
+  line-height: 1.5;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 20mm;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .editorToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .toolbarButton {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .toolbarSeparator {
+    display: none;
+  }
+}
+
+:global(.jodit-document-editor) {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+:global(.jodit-container) {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  background: white;
+}
+
+:global(.jodit-toolbar__box) {
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:global(.jodit-toolbar__box .jodit-toolbar-button button) {
+  color: #4a5568 !important;
+}
+
+:global(.jodit-toolbar__box .jodit-toolbar-button button:hover) {
+  background: #edf2f7 !important;
+}
+
+:global(.jodit-status-bar) {
+  background: #f8f9fa !important;
+  border-top: 1px solid #e2e8f0 !important;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Стили для загрузки изображений */
+:global(.jodit-dialog) {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+:global(.jodit-dialog__header) {
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 12px 16px !important;
+}
+
+:global(.jodit-dialog__title) {
+  color: #2c3e50 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+:global(.jodit-dialog__footer) {
+  background: #f8f9fa !important;
+  border-top: 1px solid #e2e8f0 !important;
+  padding: 12px 16px !important;
+}
+
+:global(.jodit-button) {
+  background: #2c3e50 !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+}
+
+:global(.jodit-button:hover) {
+  background: #1e2a36 !important;
+}
+
+:global(.jodit-button.jodit-button_style_outline) {
+  background: transparent !important;
+  color: #4a5568 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:global(.jodit-button.jodit-button_style_outline:hover) {
+  background: #edf2f7 !important;
+}
+
+/* Стили для вставленных изображений */
+:global(.jodit-wysiwyg img) {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #e2e8f0;
+  padding: 4px;
+  background: white;
+  border-radius: 4px;
+}
+
+/* Стили для таблиц */
+:global(.jodit-wysiwyg table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+
+:global(.jodit-wysiwyg table td),
+:global(.jodit-wysiwyg table th) {
+  border: 1px solid #e2e8f0;
+  padding: 8px;
+  text-align: left;
+}
+
+:global(.jodit-wysiwyg table th) {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+.printButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.printButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.pdfButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdfButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.wordButton {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wordButton:hover {
+  background-color: #1e2a36;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Стили для блока с подписью при печати */
+.printSignatureBlock {
+  margin-top: 40px;
+  padding: 20px;
+  border-top: 2px solid #2c3e50;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.printSignatureBlock h3 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.printSignatureText {
+  font-style: italic;
+  color: #4a5568;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Стили для печатной версии */
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+  
+  .printVersion {
+    margin: 0;
+    padding: 2cm;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  
+  .printVersion h1 {
+    font-size: 18pt;
+    text-align: center;
+    margin-bottom: 24pt;
+  }
+  
+  .printVersion .metaInfo {
+    margin-bottom: 20pt;
+    padding: 10pt;
+    border: 1px solid #000;
+    font-size: 10pt;
+  }
+  
+  .printVersion .signature {
+    margin-top: 36pt;
+    padding-top: 18pt;
+    border-top: 1px solid #000;
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .printButton,
+  .pdfButton,
+  .wordButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

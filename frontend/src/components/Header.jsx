@@ -1,15 +1,31 @@
+// Header.jsx (обновленная версия)
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import MyInput from './UI/input/MyInput';
-import MySelect from './UI/select/MySelect';
 import LoginForm from './Auth/LoginForm';
 import UserMenu from './User/UserMenu';
 import NotificationBell from './Notifications/NotificationsBell';
+import MeetingsCalendar from './Calendar/MeetingsCalendar';
 import styles from './UI/Header/Header.module.css';
 
 const Header = ({ filter, setFilter, onSearch }) => {
   const [showLogin, setShowLogin] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const getActiveButton = () => {
+    const params = new URLSearchParams(location.search);
+    const type = params.get('type');
+    return type || 'plenum';
+  };
+
+  const activeType = getActiveButton();
+
+  const handleNavigation = (type) => {
+    navigate(`/legal-documents?type=${type}`);
+  };
 
   const handleSearch = () => {
     if (onSearch) {
@@ -23,46 +39,41 @@ const Header = ({ filter, setFilter, onSearch }) => {
     }
   };
 
+  const handleCalendarClick = () => {
+    setShowCalendar(true);
+  };
+
   return (
     <>
       <div className={styles.header}>
-        <div className={styles.search}>
-          <MyInput
-            value={filter.query}
-            onChange={(e) => setFilter({ ...filter, query: e.target.value })}
-            onKeyDown={handleKeyDown}
-            placeholder="Поиск..."
-          />
-          <button className={styles.searchButton} onClick={handleSearch}>
-            🔍
+        <div className={styles.navigation}>
+          <button 
+            className={`${styles.navButton} ${activeType === 'plenum' ? styles.active : ''}`}
+            onClick={() => handleNavigation('plenum')}
+          >
+            Постановления пленумов ВС РФ
           </button>
-          <MySelect
-            value={filter.searchBy}
-            onChange={(selectedSearchBy) => setFilter({ ...filter, searchBy: selectedSearchBy })}
-            defaultValue="Поиск по"
-            options={[
-              { value: 'name', name: 'По ФИО' },
-              { value: 'caseNumber', name: 'По номеру дела' },
-              { value: 'article', name: 'По статье' },
-            ]}
-          />
-        </div>
-
-        <div className={styles.sort}>
-          <MySelect
-            value={filter.sort}
-            onChange={(selectedSort) => setFilter({ ...filter, sort: selectedSort })}
-            defaultValue="Сортировка"
-            options={[
-              { value: 'receivedDate', name: 'По дате поступления' },
-              { value: 'appointedDate', name: 'По дате назначения' },
-              { value: 'consideredDate', name: 'По дате рассмотрения' },
-            ]}
-          />
+          <button 
+            className={`${styles.navButton} ${activeType === 'review' ? styles.active : ''}`}
+            onClick={() => handleNavigation('review')}
+          >
+            Обзоры практики ВС РФ
+          </button>
+          <button 
+            className={`${styles.navButton} ${activeType === 'reference' ? styles.active : ''}`}
+            onClick={() => handleNavigation('reference')}
+          >
+            Справочные материалы
+          </button>
+          <button 
+            className={`${styles.navButton} ${styles.calendarButton}`}
+            onClick={handleCalendarClick}
+          >
+            📅 Календарь заседаний
+          </button>
         </div>
 
         <div className={styles.actions}>
-          {/* Заменяем кнопку уведомлений на компонент колокольчика */}
           <NotificationBell />
           <div className={styles.divider}></div>
           
@@ -73,7 +84,7 @@ const Header = ({ filter, setFilter, onSearch }) => {
               onClick={() => setShowLogin(true)}
               className={styles.loginButton}
             >
-              👤 Войти
+              Войти
             </button>
           )}
         </div>
@@ -81,6 +92,10 @@ const Header = ({ filter, setFilter, onSearch }) => {
 
       {showLogin && (
         <LoginForm onClose={() => setShowLogin(false)} />
+      )}
+
+      {showCalendar && (
+        <MeetingsCalendar onClose={() => setShowCalendar(false)} />
       )}
     </>
   );

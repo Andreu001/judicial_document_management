@@ -6,8 +6,6 @@ const Navbar = () => {
   const [isExpeditionOpen, setIsExpeditionOpen] = useState(false);
   const [isCourtLevelOpen, setIsCourtLevelOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
-  const userRole = localStorage.getItem('userRole');
 
   const toggleExpeditionMenu = () => {
     setIsExpeditionOpen(!isExpeditionOpen);
@@ -21,63 +19,72 @@ const Navbar = () => {
     setIsCategoriesOpen(!isCategoriesOpen);
   };
 
-  const toggleParticipantsMenu = () => {
-    setIsParticipantsOpen(!isParticipantsOpen);
-  };
-
   return (
     <div className={styles.navbar}>
       <div className={styles.navbar__header}>
-        <div className={styles.navbar__title}>Автоматизированное</div>
-        <div className={styles.navbar__title}>Судопроизводство</div>
+        <div className={styles.navbar__title}>Автоматизированная</div>
+        <div className={styles.navbar__title}>система судопроизводства</div>
       </div>
 
       <div className={styles.navbar__links}>
-        <Link to="/cards">Главная страница</Link>
+        <Link to="/cards">Главная</Link>
+        
         <div className={styles.dropdown}>
-          <button onClick={toggleCourtLevelMenu} className={styles.dropdownButton}>
-            Выбор уровня суда
+          <button 
+            onClick={toggleCourtLevelMenu} 
+            className={styles.dropdownButton}
+            aria-expanded={isCourtLevelOpen}
+          >
+            Уровни судов
           </button>
           {isCourtLevelOpen && (
             <div className={styles.dropdownContent}>
               <Link to="/world-court">Мировой суд</Link>
-              <Link to="/district-court">Районный/городской суд</Link>
-              <Link to="/regional-court">Суд уровня субъекта</Link>
+              <Link to="/district-court">Районный суд</Link>
+              <Link to="/regional-court">Областной суд</Link>
             </div>
           )}
         </div>
+
         <div className={styles.dropdown}>
-          <button onClick={toggleExpeditionMenu} className={styles.dropdownButton}>
+          <button 
+            onClick={toggleExpeditionMenu} 
+            className={styles.dropdownButton}
+            aria-expanded={isExpeditionOpen}
+          >
             Экспедиция
           </button>
           {isExpeditionOpen && (
             <div className={styles.dropdownContent}>
-              <Link to="/in">Входящая корреспонденция</Link>
-              <Link to="/out">Исходящая корреспонденция</Link>
+              <Link to="/in">Входящие документы</Link>
+              <Link to="/out">Исходящие документы</Link>
             </div>
           )}
         </div>
+
         <div className={styles.dropdown}>
-          <button onClick={toggleCategoriesMenu} className={styles.dropdownButton}>
+          <button 
+            onClick={toggleCategoriesMenu} 
+            className={styles.dropdownButton}
+            aria-expanded={isCategoriesOpen}
+          >
             Категории дел
           </button>
           {isCategoriesOpen && (
             <div className={styles.dropdownContent}>
-              <Link to="">Уголовные дела</Link>
-              <Link to="">Гражданские дела</Link>
-              <Link to="">Административные дела</Link>
-              <Link to="">Административные правонарушения</Link>
+              <Link to="/criminal">Уголовные дела</Link>
+              <Link to="/civil">Гражданские дела</Link>
+              <Link to="/administrative">Административные дела</Link>
+              <Link to="/admin-offenses">Адм. правонарушения</Link>
             </div>
           )}
         </div>
-        <Link to="/person-search" className={styles.navbarLink}>
-          Участники процесса
-        </Link>
+
+        <Link to="/person-search">Участники процесса</Link>
         <Link to="/hr">Кадры</Link>
         <Link to="/statistic">Статистика</Link>
         <Link to="/archive">Архив</Link>
-        <Link to="/profile">Профиль</Link>
-        <Link to="/about">О сайте</Link>
+        <Link to="/about">Справка</Link>
       </div>
     </div>
   );

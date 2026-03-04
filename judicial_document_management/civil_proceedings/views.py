@@ -17,6 +17,13 @@ from .serializers import (
     CivilCaseMovementSerializer, CivilPetitionSerializer,
     ReferringAuthorityCivilSerializer, CivilDecisionOptionsSerializer
 )
+from django.contrib.contenttypes.models import ContentType
+from case_documents.models import CaseDocument, DocumentTemplate
+from case_documents.serializers import (
+    CaseDocumentListSerializer, 
+    CaseDocumentDetailSerializer,
+    DocumentTemplateSerializer
+)
 
 
 class CivilProceedingsViewSet(viewsets.ModelViewSet):
@@ -58,6 +65,136 @@ class CivilProceedingsViewSet(viewsets.ModelViewSet):
         proceeding.status = 'active'
         proceeding.save()
         return Response({'message': 'Дело возвращено из архива'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='document-templates')
+    def document_templates(self, request, pk=None):
+        """
+        Возвращает список шаблонов документов, доступных для гражданских дел.
+        """
+        case_category = 'civil'
+        templates = DocumentTemplate.objects.filter(
+            case_category__in=[case_category, 'common'],
+            is_active=True
+        )
+        serializer = DocumentTemplateSerializer(templates, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get', 'post'], url_path='documents')
+    def documents(self, request, pk=None):
+        """
+        Работа со списком документов гражданского дела.
+        """
+        civil_case = self.get_object()
+        content_type = ContentType.objects.get_for_model(civil_case)
+
+        if request.method == 'GET':
+            docs = CaseDocument.objects.filter(
+                content_type=content_type,
+                object_id=civil_case.id
+            )
+            serializer = CaseDocumentListSerializer(
+                docs, 
+                many=True, 
+                context={'request': request}
+            )
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            # Делаем копию данных, чтобы не изменять оригинал
+            data = request.data.copy()
+            
+            # Добавляем content_type и object_id в данные
+            data['content_type'] = content_type.model
+            data['object_id'] = civil_case.id
+            
+            serializer = CaseDocumentDetailSerializer(
+                data=data,
+                context={'request': request, 'case': civil_case}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], url_path='documents/(?P<doc_pk>[^/.]+)')
+    def retrieve_document(self, request, pk=None, doc_pk=None):
+        """
+        Получить конкретный документ по ID.
+        """
+        civil_case = self.get_object()
+        document = self.get_document_object(civil_case, doc_pk)
+        serializer = CaseDocumentDetailSerializer(
+            document, 
+            context={'request': request}
+        )
+        return Response(serializer.data)
+
+    @documents.mapping.put
+    @documents.mapping.patch
+    @documents.mapping.delete
+    def handle_document_detail(self, request, pk=None, doc_pk=None):
+        """
+        Обработка PUT, PATCH, DELETE запросов для конкретного документа.
+        """
+        civil_case = self.get_object()
+        document = self.get_document_object(civil_case, doc_pk)
+
+        if request.method in ['PUT', 'PATCH']:
+            serializer = CaseDocumentDetailSerializer(
+                document,
+                data=request.data,
+                partial=(request.method == 'PATCH'),
+                context={'request': request, 'case': civil_case}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
+        elif request.method == 'DELETE':
+            document.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_document_object(self, civil_case, doc_pk):
+        """
+        Вспомогательный метод для получения документа по ID.
+        """
+        content_type = ContentType.objects.get_for_model(civil_case)
+        return get_object_or_404(
+            CaseDocument,
+            content_type=content_type,
+            object_id=civil_case.id,
+            pk=doc_pk
+        )
+
+    @action(detail=True, methods=['post'], url_path='documents/(?P<doc_pk>[^/.]+)/sign')
+    def sign_document(self, request, pk=None, doc_pk=None):
+        civil_case = self.get_object()
+        content_type = ContentType.objects.get_for_model(civil_case)
+        
+        document = get_object_or_404(
+            CaseDocument,
+            content_type=content_type,
+            object_id=civil_case.id,
+            pk=doc_pk
+        )
+        
+        if document.status == 'signed':
+            return Response(
+                {'detail': 'Документ уже подписан.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        success, message = document.sign(request.user)
+        if success:
+            serializer = CaseDocumentDetailSerializer(
+                document, 
+                context={'request': request}
+            )
+            return Response(serializer.data)
+        else:
+            return Response(
+                {'detail': message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class CivilDecisionViewSet(viewsets.ModelViewSet):

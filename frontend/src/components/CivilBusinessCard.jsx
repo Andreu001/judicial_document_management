@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CivilCaseService from '../API/CivilCaseService';
 import PetitionService from '../API/PetitionService';
 import styles from './UI/Card/CivilBusinessCard.module.css';
+import ConfirmModal from './UI/Modal/ConfirmModal';
 
 const CivilBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -15,6 +16,7 @@ const CivilBusinessCard = ({ card, remove }) => {
   const [petitions, setPetitions] = useState([]);
   const [activeTab, setActiveTab] = useState('summary');
   const [isArchived, setIsArchived] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [quickStats, setQuickStats] = useState({
     sides: 0,
@@ -103,9 +105,9 @@ const CivilBusinessCard = ({ card, remove }) => {
   };
 
   const handleDeleteCivilCard = async () => {
+    setShowDeleteModal(false);
     try {
       if (card.civil_proceedings_id) {
-        // Добавляем флаг, чтобы предотвратить повторное удаление
         if (window.deleteInProgress) return;
         window.deleteInProgress = true;
         
@@ -115,7 +117,6 @@ const CivilBusinessCard = ({ card, remove }) => {
     } catch (error) {
       console.error('Ошибка удаления гражданского дела:', error);
     } finally {
-      // Сбрасываем флаг через небольшую задержку
       setTimeout(() => {
         window.deleteInProgress = false;
       }, 1000);
@@ -666,6 +667,14 @@ const CivilBusinessCard = ({ card, remove }) => {
           <span className={styles.quickActionCount}>{quickStats.petitions}</span>
           Ходатайства
         </button>
+        <button 
+          className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
+          onClick={() => router(`/civil-proceedings/${card.civil_proceedings_id}/documents`)}
+          title="Документы по делу"
+        >
+          <span className={styles.quickActionCount}>0</span>
+          Документы
+        </button>
       </div>
 
       <div className={styles.cardContent}>
@@ -872,7 +881,7 @@ const CivilBusinessCard = ({ card, remove }) => {
         </button>
         <div className={styles.footerActions}>
           <button 
-            onClick={handleDeleteCivilCard}
+            onClick={() => setShowDeleteModal(true)}
             className={styles.dangerButton}
             title="Удалить гражданское дело"
           >
@@ -880,6 +889,12 @@ const CivilBusinessCard = ({ card, remove }) => {
           </button>
         </div>
       </div>
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          message="Вы уверены, что хотите удалить гражданское дело?"
+          onConfirm={handleDeleteCivilCard}
+          onCancel={() => setShowDeleteModal(false)}
+        />
     </div>
   );
 };

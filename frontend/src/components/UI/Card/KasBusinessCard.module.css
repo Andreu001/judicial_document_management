@@ -1,0 +1,656 @@
+/* KasBusinessCard.module.css - Благородная темно-синяя гамма */
+
+.cardContainer {
+  background: linear-gradient(to bottom, #ffffff, #fafafa);
+  border: 1px solid #d9e0e8; /* Более холодный серый */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(30, 40, 60, 0.05); /* Холодная тень */
+  margin-bottom: 20px;
+  transition: all 0.25s cubic-bezier(0.02, 0.8, 0.2, 1);
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.cardContainer:hover {
+  box-shadow: 0 12px 24px rgba(30, 50, 80, 0.12);
+  border-color: #b0c0d0; /* Спокойный серо-голубой */
+}
+
+.cardContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  /* Градиент: от темно-синего к более глубокому индиго */
+  background: linear-gradient(135deg, #4a5b7a, #5b6f94);
+  opacity: 0.9;
+}
+
+/* Заголовок - градиент на основе темно-синего */
+.cardHeader {
+  background: linear-gradient(135deg, #4a5b7a, #5b6f94); /* Темно-синий градиент */
+  color: white;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.headerMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.caseType {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 2px 6px;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.caseNumber {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Roboto Mono', 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.headerMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+.caseJudge {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.caseDate {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* Быстрые действия - исправлено для мобильных устройств */
+.quickActions {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e8f0; /* Спокойный серо-голубой */
+  background: #f5f7fa; /* Благородный серо-голубой фон */
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.quickAction {
+  flex: 1 1 auto;
+  min-width: 70px;
+  padding: 4px 2px;
+  background: white;
+  border: 1px solid #d9e0e8;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #4a5b6a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-height: 28px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.quickAction:hover {
+  border-color: #8a9bb8; /* Темно-синий оттенок при наведении */
+  color: #4a5b7a; /* Основной цвет для текста */
+  background: #f0f4fc;
+}
+
+.quickAction.active {
+  border-color: #5b6f94;
+  background: linear-gradient(145deg, #5b6f94, #4a5b7a);
+  color: white;
+}
+
+/* Убираем счетчики */
+.quickActionCount {
+  display: none;
+}
+
+/* Контент */
+.cardContent {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px 12px;
+  background: white;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f0f3f8;
+}
+
+.cardContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cardContent::-webkit-scrollbar-track {
+  background: #f0f3f8;
+  border-radius: 4px;
+}
+
+.cardContent::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.cardContent::-webkit-scrollbar-thumb:hover {
+  background: #a8b8d0;
+}
+
+/* Содержимое */
+.summaryContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.statItem {
+  text-align: center;
+  padding: 6px 4px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border: 1px solid #e0e8f0;
+  transition: all 0.2s ease;
+}
+
+.statItem:hover {
+  background: white;
+  border-color: #8a9bb8; /* Темно-синий акцент */
+  box-shadow: 0 2px 8px rgba(74, 91, 122, 0.1); /* Тень под цвет */
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #4a5b7a; /* Основной цвет для значений */
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 9px;
+  color: #6a7b8c;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+.courtInfo {
+  background: linear-gradient(to right, #f5f7fa, #ffffff);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 4px solid #5b6f94; /* Темно-синий акцент */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.infoLabel {
+  font-size: 9px;
+  color: #6a7b8c;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.infoValue {
+  font-size: 12px;
+  color: #2a3649;
+  font-weight: 500;
+}
+
+.lastActivity {
+  margin-top: auto;
+  font-size: 8px;
+  color: #99aec9;
+  text-align: right;
+  padding-top: 4px;
+  border-top: 1px solid #e8f0fa;
+  font-style: italic;
+  letter-spacing: 0.2px;
+}
+
+/* Детальная информация */
+.summaryDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #f5f7fa;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 3px 0;
+  border-bottom: 1px dashed #dde5f0;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-size: 9px;
+  color: #7a8b9f;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.detailValue {
+  font-size: 10px;
+  color: #4a5b6a;
+  font-weight: 500;
+  text-align: right;
+  line-height: 1.3;
+}
+
+/* Вкладки с контентом */
+.tabContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tabHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e0e8f0;
+  min-height: 28px;
+  flex-shrink: 0;
+}
+
+.tabHeader h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5b7a; /* Основной цвет */
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.tabHeaderActions {
+  display: flex;
+  gap: 4px;
+}
+
+.addButton {
+  background: linear-gradient(145deg, #5b6f94, #4a5b7a); /* Темно-синий градиент */
+  color: white;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(74, 91, 122, 0.2); /* Тень под цвет */
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.addButton:hover {
+  background: linear-gradient(145deg, #4a5b7a, #3a4b68); /* Более темный оттенок */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 91, 122, 0.3);
+}
+
+.addButton:active {
+  transform: translateY(0);
+}
+
+/* Список элементов */
+.compactList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compactItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.compactItem:hover {
+  border-color: #8a9bb8; /* Темно-синий акцент */
+  background: #f8fcff;
+  box-shadow: 0 4px 12px rgba(74, 91, 122, 0.1); /* Мягкая тень */
+  transform: translateX(2px);
+}
+
+.compactItemContent {
+  flex: 1;
+}
+
+.compactItemTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5b6a;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sideType {
+  font-size: 8px;
+  font-weight: 500;
+  color: #4a5b7a; /* Основной цвет */
+  background: #e8f0fe; /* Очень светлый темно-синий фон */
+  padding: 1px 5px;
+  border-radius: 16px;
+  display: inline-block;
+  letter-spacing: 0.2px;
+}
+
+.compactItemSubtitle {
+  font-size: 9px;
+  color: #7a8b9f;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claimAmount {
+  font-weight: 600;
+  color: #4a5b7a; /* Основной цвет */
+  background: #e8f0fe; /* Светлый фон */
+  padding: 1px 6px;
+  border-radius: 16px;
+  font-size: 9px;
+}
+
+.compactItemActions {
+  display: flex;
+  gap: 4px;
+}
+
+.actionButton, .deleteButton, .editButton {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f5f7fa;
+  color: #4a5b6a;
+}
+
+.actionButton {
+  color: #4a5b7a; /* Основной цвет */
+}
+
+.actionButton:hover {
+  background: #4a5b7a; /* Основной цвет */
+  color: white;
+  transform: scale(1.05);
+}
+
+.editButton {
+  color: #5f6b7a;
+}
+
+.editButton:hover {
+  background: #5f6b7a;
+  color: white;
+  transform: scale(1.05);
+}
+
+.deleteButton {
+  color: #b8776d; /* Оставляем розоватый для удаления */
+}
+
+.deleteButton:hover {
+  background: #b8776d;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Состояние пустого списка */
+.emptyState {
+  text-align: center;
+  padding: 20px 15px;
+  color: #99aec9;
+  font-size: 11px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e0;
+}
+
+.emptyState p {
+  margin: 0 0 10px 0;
+}
+
+.emptyStateButton {
+  background: #5b6f94; /* Темно-синий */
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(74, 91, 122, 0.2);
+}
+
+.emptyStateButton:hover {
+  background: #4a5b7a; /* Более темный */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 91, 122, 0.3);
+}
+
+.noData {
+  text-align: center;
+  color: #99aec9;
+  font-size: 10px;
+  padding: 15px;
+  font-style: italic;
+}
+
+/* Футер */
+.cardFooter {
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-top: 1px solid #e0e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.primaryButton {
+  background: linear-gradient(145deg, #5b6f94, #4a5b7a); /* Темно-синий градиент */
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  margin-right: 8px;
+  box-shadow: 0 2px 4px rgba(74, 91, 122, 0.2);
+}
+
+.primaryButton:hover {
+  background: linear-gradient(145deg, #4a5b7a, #3a4b68); /* Инвертируем и затемняем */
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(74, 91, 122, 0.25);
+}
+
+.footerActions {
+  display: flex;
+  gap: 6px;
+}
+
+.dangerButton {
+  background: white;
+  color: #b8776d;
+  border: 1px solid #b8776d;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dangerButton:hover {
+  background: #b8776d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(184, 119, 109, 0.2);
+}
+
+/* Статус архива */
+.archivedBadge {
+  background: #8a9bb8; /* Темно-синий */
+  color: white;
+  padding: 1px 5px;
+  border-radius: 16px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
+.listSubtitle {
+  margin: 6px 0 3px 0;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6a7b8c;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}
+/* Стили для кнопки документов */
+.documentsButton {
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.documentsButton:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Обновляем быстрые действия для 6 кнопок */
+.quickActions {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f5f7fa;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.quickAction {
+  flex: 1 1 calc(16.666% - 4px); /* Для 6 кнопок */
+  min-width: 70px;
+  padding: 4px 2px;
+  background: white;
+  border: 1px solid #d9e0e8;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #4a5b6a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-height: 28px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .quickAction {
+    flex: 1 1 calc(33.333% - 4px); /* По 3 кнопки в ряд на мобильных */
+  }
+}
+
+@media (max-width: 480px) {
+  .quickAction {
+    flex: 1 1 calc(50% - 4px); /* По 2 кнопки в ряд на очень маленьких экранах */
+  }
+}

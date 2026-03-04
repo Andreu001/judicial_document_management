@@ -1,0 +1,684 @@
+/* KasDetail.module.css - Единый стиль с CriminalDetail */
+
+/* ========== ОСНОВНЫЕ СТИЛИ КОНТЕЙНЕРА ========== */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ========== ЗАГОЛОВОК И НАВИГАЦИЯ ========== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-bottom: 2px solid #e9ecef;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.headerRight {
+  display: flex;
+  gap: 12px;
+}
+
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ========== КНОПКИ ========== */
+.backButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.backButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.archiveButton {
+  background-color: #c05621;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.archiveButton:hover {
+  background-color: #9c4221;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.unarchiveButton {
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.unarchiveButton:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editButton {
+  background-color: #38a169;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.editButton:hover:not(:disabled) {
+  background-color: #2f855a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.saveButton {
+  background-color: #2f855a;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #276749;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.saveButton:disabled {
+  background-color: #9c9c9c;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cancelButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cancelButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dangerButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dangerButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editButtons {
+  display: flex;
+  gap: 12px;
+}
+
+/* ========== ВКЛАДКИ ========== */
+.tabsContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 0 0 24px 0;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 16px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.tab:hover {
+  color: #2c3e50;
+  background: #e9ecef;
+}
+
+.activeTab {
+  color: #2c3e50;
+  border-bottom-color: #2c3e50;
+  background: white;
+}
+
+.disabledTab {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabContentWrapper {
+  padding: 24px;
+}
+
+.tabContent {
+  min-height: 400px;
+}
+
+.tabGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+/* ========== ПОЛЯ ФОРМ ========== */
+.fieldGroup {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 24px;
+}
+
+.subsectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #2c3e50;
+  letter-spacing: 0.3px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.field span {
+  display: block;
+  font-size: 14px;
+  color: #2c3e50;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  min-height: 20px;
+  line-height: 1.5;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: white;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e0;
+  cursor: pointer;
+}
+
+/* ========== САЙДБАР ========== */
+.content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex: 2;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.sectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.expandIcon {
+  color: #6c757d;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.sectionHeader:hover .expandIcon {
+  color: #2c3e50;
+}
+
+.sectionContent {
+  padding: 16px 20px;
+}
+
+/* Списки в сайдбаре */
+.sidesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 450px;
+  overflow-y: auto;
+}
+
+.sideItem {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #2c3e50;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sideItem:hover {
+  background-color: #e9ecef;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sideHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.sideHeader h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+  word-break: break-word;
+  margin: 0;
+}
+
+.sideRole {
+  font-size: 11px;
+  font-weight: 500;
+  color: #2c3e50;
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.sideDetails {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin: 4px 0 0 0;
+}
+
+.sideActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.sideActions .editButton,
+.sideActions .dangerButton {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 70px;
+  text-align: center;
+}
+
+.sideActions .editButton {
+  background: #4a5568;
+  color: white;
+}
+
+.sideActions .editButton:hover {
+  background: #2d3748;
+  transform: translateY(-1px);
+}
+
+.sideActions .dangerButton {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.sideActions .dangerButton:hover {
+  background: #fc8181;
+  color: #9b2c2c;
+  transform: translateY(-1px);
+}
+
+.addButton {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #edf2f7;
+  border: 1px dashed #a0aec0;
+  border-radius: 6px;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  background: #e2e8f0;
+  border-color: #718096;
+  color: #2d3748;
+}
+
+/* Пустые состояния */
+.noData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+  margin-bottom: 16px;
+}
+
+/* ========== АРХИВНЫЕ ДЕЛА ========== */
+.archiveBadge {
+  background-color: #c05621;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 12px;
+  letter-spacing: 0.3px;
+}
+
+/* ========== ЗАГРУЗКА И ОШИБКИ ========== */
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.error {
+  color: #c53030;
+  text-align: center;
+  padding: 24px;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 1200px) {
+  .container {
+    padding-left: 20px;
+  }
+  
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  
+  .tabGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .headerLeft {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .headerRight {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    border-bottom: 1px solid #dee2e6;
+    border-left: 2px solid transparent;
+    text-align: left;
+  }
+  
+  .activeTab {
+    border-left-color: #2c3e50;
+    border-bottom-color: #dee2e6;
+  }
+  
+  .backButton, .archiveButton, .unarchiveButton, 
+  .editButton, .saveButton, .cancelButton, .dangerButton {
+    min-width: 100%;
+  }
+  
+  .sectionHeader {
+    padding: 12px 16px;
+  }
+  
+  .sectionContent {
+    padding: 12px 16px;
+  }
+}

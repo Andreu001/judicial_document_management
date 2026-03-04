@@ -643,3 +643,17 @@
 .formGroup {
   margin-bottom: 1rem;
 }
+
+.adminOffenseIcon {
+  border-left: 4px solid #f59e0b; /* Оранжевый для КоАП */
+}
+
+.otherIcon {
+  border-left: 4px solid #6b7280; /* Серый для прочих материалов */
+}
+
+.helpText {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}

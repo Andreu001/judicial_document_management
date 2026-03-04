@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './DefendantDetail.module.css';
+import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
 
 const DefendantDetail = () => {
   const { proceedingId, id } = useParams();
@@ -27,61 +27,79 @@ const DefendantDetail = () => {
   const [selectedSideId, setSelectedSideId] = useState('');
   const isCreateMode = !id || id === 'create';
 
-useEffect(() => {
-  if (proceedingId) {
-    if (isCreateMode) {
-      // В режиме создания
+  useEffect(() => {
+    if (proceedingId) {
+      if (isCreateMode) {
+        setDefendant(null);
+        setFormData({
+          full_name_criminal: '',
+          article: '',
+          maximum_penalty_article: '',
+          birth_date: '',
+          sex: '',
+          citizenship: '',
+          address: '',
+          special_notes: '',
+          restraint_measure: '',
+          restraint_date: '',
+          restraint_application: '',
+          restraint_change: '',
+          restraint_change_date: '',
+          restraint_change_to: '',
+          conviction_article: '',
+          punishment_type: '',
+          punishment_term: '',
+          additional_punishment: '',
+          parole_info: '',
+          property_damage: '',
+          moral_damage: ''
+        });
+        setSelectedSideId('');
+        setIsEditing(true);
+        setLoading(false);
+      } else if (id) {
+        loadDefendantDetails();
+      }
+      
+      loadOptions();
+      loadSidesCaseOptions();
+      loadCriminalCase();
+    }
+  }, [proceedingId, id]);
+
+  useEffect(() => {
+    if (!isCreateMode && defendant && defendant.id) {
+      loadDecisions();
+    }
+  }, [defendant]);
+
+  const loadDefendantDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await CriminalCaseService.getDefendantById(proceedingId, id);
+      
+      const defendantData = {
+        ...data,
+        name: data?.name || data?.sides_case_defendant?.name || 'Не указано',
+        sides_case_defendant_id: data?.sides_case_defendant_id || 
+                               data?.sides_case_defendant?.id || 
+                               null,
+        sides_case_defendant_name: data?.sides_case_defendant_name || 
+                                 data?.sides_case_defendant?.sides_case || 
+                                 'Не указан'
+      };
+      
+      setDefendant(defendantData);
+      setFormData(defendantData);
+      setSelectedSideId(defendantData?.sides_case_defendant_id ? 
+                        String(defendantData.sides_case_defendant_id) : '');
+      setLoading(false);
+    } catch (error) {
+      console.error('Ошибка загрузки данных подсудимого:', error);
       setLoading(false);
       setDefendant(null);
-      setFormData({});
-      setIsEditing(true); // Важно: в режиме создания сразу включаем редактирование
-    } else if (id) {
-      // В режиме редактирования/просмотра
-      loadDefendantDetails();
     }
-    
-    loadOptions();
-    loadSidesCaseOptions();
-    loadCriminalCase();
-  }
-}, [proceedingId, id]);
-
-const loadDefendantDetails = async () => {
-  if (isCreateMode) {
-    // В режиме создания просто сбрасываем состояние
-    setLoading(false);
-    setDefendant(null);
-    setFormData({});
-    setSelectedSideId('');
-    return;
-  }
-
-  try {
-    setLoading(true);
-    const data = await CriminalCaseService.getDefendantById(proceedingId, id);
-    
-    const defendantData = {
-      ...data,
-      name: data.name || data.sides_case_defendant?.name || 'Не указано',
-      sides_case_defendant_id: data.sides_case_defendant_id || 
-                             data.sides_case_defendant?.id || 
-                             null,
-      sides_case_defendant_name: data.sides_case_defendant_name || 
-                               data.sides_case_defendant?.sides_case || 
-                               'Не указан'
-    };
-    
-    setDefendant(defendantData);
-    setFormData(defendantData);
-    setSelectedSideId(defendantData.sides_case_defendant_id ? 
-                      String(defendantData.sides_case_defendant_id) : '');
-    setLoading(false);
-  } catch (error) {
-    console.error('Ошибка загрузки данных подсудимого:', error);
-    setLoading(false);
-    setDefendant(null);
-  }
-};
+  };
 
   const loadCriminalCase = async () => {
     try {
@@ -109,12 +127,14 @@ const loadDefendantDetails = async () => {
   const loadDecisions = async () => {
     try {
       const response = await CriminalCaseService.getDecisions(proceedingId);
-      if (response && response.length > 0) {
+      if (response && response.length > 0 && defendant?.id) {
         const defendantDecisions = response.filter(decision => 
           decision.defendants?.some(def => def.id === parseInt(id)) || 
           decision.defendant_id === parseInt(id)
         );
         setDecisions(defendantDecisions);
+      } else {
+        setDecisions([]);
       }
     } catch (error) {
       console.error('Ошибка загрузки решений:', error);
@@ -131,30 +151,28 @@ const loadDefendantDetails = async () => {
     }
   };
 
-const handleInputChange = (e) => {
-  const { name, value, type, checked } = e.target;
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-  if (name === 'sides_case_defendant_id') {
-    // Обновляем selectedSideId
-    setSelectedSideId(value);
-    
-    // Обновляем formData с правильным значением
-    const selectedSide = sidesCaseOptions.find(option => 
-      String(option.id) === String(value)
-    );
-    
-    setFormData(prev => ({
-      ...prev,
-      sides_case_defendant_input: value ? parseInt(value, 10) : null,
-      sides_case_defendant_name: selectedSide ? selectedSide.sides_case : ''
-    }));
-  } else {
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  }
-};
+    if (name === 'sides_case_defendant_id') {
+      setSelectedSideId(value);
+      
+      const selectedSide = sidesCaseOptions.find(option => 
+        String(option.id) === String(value)
+      );
+      
+      setFormData(prev => ({
+        ...prev,
+        sides_case_defendant_input: value ? parseInt(value, 10) : null,
+        sides_case_defendant_name: selectedSide ? selectedSide.sides_case : ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -171,16 +189,12 @@ const handleInputChange = (e) => {
       delete dataToSend.name;
       delete dataToSend.full_name;
       
-      console.log('Отправляемые данные:', dataToSend);
-
       const cleanData = {};
       Object.keys(dataToSend).forEach(key => {
-        if (dataToSend[key] !== undefined && dataToSend[key] !== null) {
+        if (dataToSend[key] !== undefined && dataToSend[key] !== null && dataToSend[key] !== '') {
           cleanData[key] = dataToSend[key];
         }
       });
-      
-      console.log('Очищенные данные для отправки:', cleanData);
 
       if (!cleanData.full_name_criminal || !cleanData.full_name_criminal.trim()) {
         alert('Пожалуйста, заполните поле "Полное ФИО"');
@@ -195,18 +209,9 @@ const handleInputChange = (e) => {
       }
       
       if (isCreateMode) {
-
         await CriminalCaseService.createDefendant(proceedingId, cleanData);
         navigate(-1);
-        setFormData({
-          full_name_criminal: '',
-          article: '',
-          maximum_penalty_article: '',
-        });
-        setSelectedSideId('');
-
       } else {
-
         await CriminalCaseService.updateDefendant(proceedingId, id, cleanData);
         setIsEditing(false);
         await loadDefendantDetails();
@@ -215,7 +220,6 @@ const handleInputChange = (e) => {
       setSaving(false);
     } catch (error) {
       console.error('Ошибка сохранения:', error);
-      console.error('Детали ошибки:', error.response?.data);
       setSaving(false);
       
       let errorMessage = 'Не удалось сохранить изменения';
@@ -237,14 +241,14 @@ const handleInputChange = (e) => {
   };
 
   const handleCancel = () => {
-      if (isCreateMode) {
-          navigate(-1);
-      } else {
-          setFormData(defendant);
-          setSelectedSideId(defendant?.sides_case_defendant_id ? 
-                          String(defendant.sides_case_defendant_id) : '');
-          setIsEditing(false);
-      }
+    if (isCreateMode) {
+      navigate(-1);
+    } else {
+      setFormData(defendant || {});
+      setSelectedSideId(defendant?.sides_case_defendant_id ? 
+                        String(defendant.sides_case_defendant_id) : '');
+      setIsEditing(false);
+    }
   };
 
   const handleEditStart = () => {
@@ -258,12 +262,17 @@ const handleInputChange = (e) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Не указано';
-    return new Date(dateString).toLocaleDateString('ru-RU');
+    try {
+      return new Date(dateString).toLocaleDateString('ru-RU');
+    } catch (e) {
+      return 'Не указано';
+    }
   };
 
   const getDisplayValue = (value, optionsArray) => {
     if (!value) return 'Не указано';
-    const option = optionsArray?.find(opt => opt.value === value);
+    if (!optionsArray || !Array.isArray(optionsArray)) return value;
+    const option = optionsArray.find(opt => opt.value === value);
     return option?.label || value;
   };
 
@@ -279,280 +288,281 @@ const handleInputChange = (e) => {
   }
 
   if (!defendant && !isCreateMode) {
-      return (
-          <div className={styles.container}>
-              <div className={styles.error}>
-                  <h2>Подсудимый не найден</h2>
-                  <button 
-                      onClick={() => navigate(-1)}
-                      className={styles.backButton}
-                  >
-                      Вернуться назад
-                  </button>
-              </div>
-          </div>
-      );
+    return (
+      <div className={styles.container}>
+        <div className={styles.error}>
+          <h2>Подсудимый не найден</h2>
+          <button 
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
+          >
+            Вернуться назад
+          </button>
+        </div>
+      </div>
+    );
   }
 
-return (
+  const currentDefendant = isCreateMode ? formData : defendant;
+
+  return (
     <div className={styles.container}>
-        <div className={styles.header}>
-            <div className={styles.headerLeft}>
-                <button 
-                    onClick={() => navigate(-1)}
-                    className={styles.backButton}
-                >
-                    ← Назад
-                </button>
-                <div>
-                    <h1 className={styles.title}>
-                        {isCreateMode ? 'Новый подсудимый' : (defendant?.full_name_criminal || 'Имя не указано')}
-                        {!isCreateMode && (
-                            <span> | Вид стороны: {defendant?.sides_case_defendant_name || 'Не указан'}</span>
-                        )}
-                    </h1>
-                    <div className={styles.subtitle}>
-                        <span>Уголовное дело: {criminalCase?.case_number_criminal || proceedingId}</span>
-                    </div>
-                </div>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <button 
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
+          >
+            ← Назад
+          </button>
+          <div>
+            <h1 className={styles.title}>
+              {isCreateMode ? 'Новый подсудимый' : (currentDefendant?.full_name_criminal || 'Имя не указано')}
+              {!isCreateMode && currentDefendant && (
+                <span className={styles.archiveBadge}>Вид стороны: {currentDefendant?.sides_case_defendant_name || 'Не указан'}</span>
+              )}
+            </h1>
+            <div className={styles.subtitle}>
+              <span>Уголовное дело: {criminalCase?.case_number_criminal || proceedingId}</span>
             </div>
-            
-            <div className={styles.headerRight}>
-                {isCreateMode ? (
-                    <div className={styles.editActions}>
-                        <button 
-                            onClick={handleSave}
-                            disabled={saving}
-                            className={styles.saveButton}
-                        >
-                            {saving ? 'Сохранение...' : 'Сохранить'}
-                        </button>
-                        <button 
-                            onClick={() => navigate(-1)}
-                            className={styles.cancelButton}
-                        >
-                            Отмена
-                        </button>
-                    </div>
-                ) : (
-                    !isEditing ? (
-                        <button 
-                            onClick={handleEditStart}
-                            className={styles.editButton}
-                        >
-                            Редактировать
-                        </button>
-                    ) : (
-                        <div className={styles.editActions}>
-                            <button 
-                                onClick={handleSave}
-                                disabled={saving}
-                                className={styles.saveButton}
-                            >
-                                {saving ? 'Сохранение...' : 'Сохранить'}
-                            </button>
-                            <button 
-                                onClick={handleCancel}
-                                className={styles.cancelButton}
-                            >
-                                Отмена
-                            </button>
-                        </div>
-                    )
-                )}
-            </div>
+          </div>
         </div>
+        
+        <div className={styles.headerRight}>
+          {isCreateMode ? (
+            <>
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className={styles.saveButton}
+              >
+                {saving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+              <button 
+                onClick={() => navigate(-1)}
+                className={styles.cancelButton}
+              >
+                Отмена
+              </button>
+            </>
+          ) : (
+            !isEditing ? (
+              <button 
+                onClick={handleEditStart}
+                className={styles.editButton}
+              >
+                Редактировать
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={styles.saveButton}
+                >
+                  {saving ? 'Сохранение...' : 'Сохранить'}
+                </button>
+                <button 
+                  onClick={handleCancel}
+                  className={styles.cancelButton}
+                >
+                  Отмена
+                </button>
+              </>
+            )
+          )}
+        </div>
+      </div>
 
-        <div className={styles.content}>
-            <div className={styles.mainContent}>
-                <div className={styles.tabsContainer}>
-                    <div className={styles.tabs}>
-                        <button 
-                            className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('basic')}
-                        >
-                            Основные данные
-                        </button>
-                        <button 
-                            className={`${styles.tab} ${activeTab === 'restraint' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('restraint')}
-                        >
-                            Меры пресечения
-                        </button>
-                        <button 
-                            className={`${styles.tab} ${activeTab === 'punishment' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('punishment')}
-                        >
-                            Наказание
-                        </button>
-                        <button 
-                            className={`${styles.tab} ${activeTab === 'financial' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('financial')}
-                        >
-                            Финансовые взыскания
-                        </button>
-                        <button 
-                            className={`${styles.tab} ${activeTab === 'special' ? styles.activeTab : ''}`}
-                            onClick={() => setActiveTab('special')}
-                        >
-                            Особые отметки
-                        </button>
-                    </div>
+      <div className={styles.content}>
+        <div className={styles.mainContent}>
+          <div className={styles.tabsContainer}>
+            <div className={styles.tabs}>
+              <button 
+                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('basic')}
+              >
+                Основные данные
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'restraint' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('restraint')}
+              >
+                Меры пресечения
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'punishment' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('punishment')}
+              >
+                Наказание
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'financial' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('financial')}
+              >
+                Финансовые взыскания
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'special' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('special')}
+              >
+                Особые отметки
+              </button>
+            </div>
 
-                    <div className={styles.tabContentWrapper}>
-                        {activeTab === 'basic' && (
-                            <div className={styles.tabContent}>
-                                <div className={styles.fieldGroup}>
-                                    <h3 className={styles.subsectionTitle}>Личные данные</h3>
-                                    <div className={styles.tabGrid}>
-                                        <div className={styles.field}>
-                                            <label>Полное ФИО *</label>
-                                            {isEditing || isCreateMode ? (
-                                                <input
-                                                    type="text"
-                                                    name="full_name_criminal"
-                                                    value={formData.full_name_criminal || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.input}
-                                                    required
-                                                />
-                                            ) : (
-                                                <span>{defendant?.full_name_criminal || 'Не указано'}</span>
-                                            )}
-                                        </div>
-
-                                        <div className={styles.field}>
-                                            <label>Вид стороны *</label>
-                                            {isEditing || isCreateMode ? (
-                                                <select
-                                                    name="sides_case_defendant_id"
-                                                    value={selectedSideId || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.select}
-                                                    required
-                                                >
-                                                    <option value="">Выберите вид стороны</option>
-                                                    {sidesCaseOptions
-                                                        .filter(side => isDefendantSide(side.id))
-                                                        .map(side => (
-                                                            <option key={side.id} value={String(side.id)}>
-                                                                {side.sides_case}
-                                                            </option>
-                                                        ))}
-                                                </select>
-                                            ) : (
-                                                <span>{defendant?.sides_case_defendant_name || 'Не указан'}</span>
-                                            )}
-                                        </div>
-
-                                        <div className={styles.field}>
-                                            <label>Дата рождения</label>
-                                            {isEditing || isCreateMode ? (
-                                                <input
-                                                    type="date"
-                                                    name="birth_date"
-                                                    value={formData.birth_date || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.input}
-                                                />
-                                            ) : (
-                                                <span>{formatDate(defendant?.birth_date)}</span>
-                                            )}
-                                        </div>
-
-                                        <div className={styles.field}>
-                                            <label>Пол</label>
-                                            {isEditing || isCreateMode ? (
-                                                <select
-                                                    name="sex"
-                                                    value={formData.sex || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.select}
-                                                >
-                                                    <option value="">Выберите пол</option>
-                                                    {options.sex?.map(option => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <span>{getDisplayValue(defendant?.sex, options.sex)}</span>
-                                            )}
-                                        </div>
-
-                                        <div className={styles.field}>
-                                            <label>Гражданство</label>
-                                            {isEditing || isCreateMode ? (
-                                                <input
-                                                    type="text"
-                                                    name="citizenship"
-                                                    value={formData.citizenship || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.input}
-                                                />
-                                            ) : (
-                                                <span>{defendant?.citizenship || 'Не указано'}</span>
-                                            )}
-                                        </div>
-
-                                        <div className={`${styles.field} ${styles.fullWidth}`}>
-                                            <label>Адрес проживания</label>
-                                            {isEditing || isCreateMode ? (
-                                                <textarea
-                                                    name="address"
-                                                    value={formData.address || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.textarea}
-                                                    rows="3"
-                                                />
-                                            ) : (
-                                                <span>{defendant?.address || 'Не указано'}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className={styles.fieldGroup}>
-                                    <h3 className={styles.subsectionTitle}>Уголовная статья</h3>
-                                    <div className={styles.tabGrid}>
-                                        <div className={styles.field}>
-                                            <label>Статья УК РФ</label>
-                                            {isEditing || isCreateMode ? (
-                                                <input
-                                                    type="number"
-                                                    name="article"
-                                                    value={formData.article || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.input}
-                                                />
-                                            ) : (
-                                                <span>ст. {defendant?.article || 'Не указана'}</span>
-                                            )}
-                                        </div>
-
-                                        <div className={styles.field}>
-                                            <label>Максимальное наказание</label>
-                                            {isEditing || isCreateMode ? (
-                                                <input
-                                                    type="number"
-                                                    name="maximum_penalty_article"
-                                                    value={formData.maximum_penalty_article || ''}
-                                                    onChange={handleInputChange}
-                                                    className={styles.input}
-                                                />
-                                            ) : (
-                                                <span>
-                                                    {defendant?.maximum_penalty_article ? `${defendant.maximum_penalty_article} лет` : 'Не указано'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            <div className={styles.tabContentWrapper}>
+              {activeTab === 'basic' && (
+                <div className={styles.tabContent}>
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>Личные данные</h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Полное ФИО *</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="text"
+                            name="full_name_criminal"
+                            value={formData.full_name_criminal || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            required
+                          />
+                        ) : (
+                          <span>{currentDefendant?.full_name_criminal || 'Не указано'}</span>
                         )}
+                      </div>
 
-              {/* Вкладка: Меры пресечения */}
+                      <div className={styles.field}>
+                        <label>Вид стороны *</label>
+                        {isEditing || isCreateMode ? (
+                          <select
+                            name="sides_case_defendant_id"
+                            value={selectedSideId || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                            required
+                          >
+                            <option value="">Выберите вид стороны</option>
+                            {sidesCaseOptions
+                              .filter(side => isDefendantSide(side.id))
+                              .map(side => (
+                                <option key={side.id} value={String(side.id)}>
+                                  {side.sides_case}
+                                </option>
+                              ))}
+                          </select>
+                        ) : (
+                          <span>{currentDefendant?.sides_case_defendant_name || 'Не указан'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дата рождения</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="date"
+                            name="birth_date"
+                            value={formData.birth_date || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(currentDefendant?.birth_date)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Пол</label>
+                        {isEditing || isCreateMode ? (
+                          <select
+                            name="sex"
+                            value={formData.sex || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Выберите пол</option>
+                            {options.sex?.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{getDisplayValue(currentDefendant?.sex, options.sex)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Гражданство</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="text"
+                            name="citizenship"
+                            value={formData.citizenship || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{currentDefendant?.citizenship || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={`${styles.field} ${styles.fullWidth}`}>
+                        <label>Адрес проживания</label>
+                        {isEditing || isCreateMode ? (
+                          <textarea
+                            name="address"
+                            value={formData.address || ''}
+                            onChange={handleInputChange}
+                            className={styles.textarea}
+                            rows="3"
+                          />
+                        ) : (
+                          <span>{currentDefendant?.address || 'Не указано'}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>Уголовная статья</h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Статья УК РФ</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="number"
+                            name="article"
+                            value={formData.article || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>ст. {currentDefendant?.article || 'Не указана'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Максимальное наказание</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="number"
+                            name="maximum_penalty_article"
+                            value={formData.maximum_penalty_article || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>
+                            {currentDefendant?.maximum_penalty_article ? `${currentDefendant.maximum_penalty_article} лет` : 'Не указано'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'restraint' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -574,7 +584,7 @@ return (
                             ))}
                           </select>
                         ) : (
-                          <span>{getDisplayValue(defendant.restraint_measure, options.restraint_measure)}</span>
+                          <span>{getDisplayValue(currentDefendant?.restraint_measure, options.restraint_measure)}</span>
                         )}
                       </div>
 
@@ -589,7 +599,7 @@ return (
                             className={styles.input}
                           />
                         ) : (
-                          <span>{formatDate(defendant.restraint_date)}</span>
+                          <span>{formatDate(currentDefendant?.restraint_date)}</span>
                         )}
                       </div>
 
@@ -610,7 +620,7 @@ return (
                             ))}
                           </select>
                         ) : (
-                          <span>{getDisplayValue(defendant.restraint_application, options.restraint_application)}</span>
+                          <span>{getDisplayValue(currentDefendant?.restraint_application, options.restraint_application)}</span>
                         )}
                       </div>
 
@@ -631,11 +641,11 @@ return (
                             ))}
                           </select>
                         ) : (
-                          <span>{getDisplayValue(defendant.restraint_change, options.restraint_change)}</span>
+                          <span>{getDisplayValue(currentDefendant?.restraint_change, options.restraint_change)}</span>
                         )}
                       </div>
 
-                      {defendant.restraint_change === '1' && (
+                      {currentDefendant?.restraint_change === '1' && (
                         <>
                           <div className={styles.field}>
                             <label>Дата изменения</label>
@@ -648,7 +658,7 @@ return (
                                 className={styles.input}
                               />
                             ) : (
-                              <span>{formatDate(defendant.restraint_change_date)}</span>
+                              <span>{formatDate(currentDefendant?.restraint_change_date)}</span>
                             )}
                           </div>
 
@@ -663,7 +673,7 @@ return (
                                 className={styles.input}
                               />
                             ) : (
-                              <span>{defendant.restraint_change_to || 'Не указано'}</span>
+                              <span>{currentDefendant?.restraint_change_to || 'Не указано'}</span>
                             )}
                           </div>
                         </>
@@ -673,7 +683,6 @@ return (
                 </div>
               )}
 
-              {/* Вкладка: Наказание */}
               {activeTab === 'punishment' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -689,7 +698,7 @@ return (
                             className={styles.input}
                           />
                         ) : (
-                          <span>{defendant.conviction_article || 'Не указано'}</span>
+                          <span>{currentDefendant?.conviction_article || 'Не указано'}</span>
                         )}
                       </div>
 
@@ -704,7 +713,7 @@ return (
                             className={styles.input}
                           />
                         ) : (
-                          <span>{defendant.punishment_type || 'Не указано'}</span>
+                          <span>{currentDefendant?.punishment_type || 'Не указано'}</span>
                         )}
                       </div>
 
@@ -719,7 +728,7 @@ return (
                             className={styles.input}
                           />
                         ) : (
-                          <span>{defendant.punishment_term || 'Не указано'}</span>
+                          <span>{currentDefendant?.punishment_term || 'Не указано'}</span>
                         )}
                       </div>
 
@@ -734,7 +743,7 @@ return (
                             className={styles.input}
                           />
                         ) : (
-                          <span>{defendant.additional_punishment || 'Не указано'}</span>
+                          <span>{currentDefendant?.additional_punishment || 'Не указано'}</span>
                         )}
                       </div>
 
@@ -749,7 +758,7 @@ return (
                             className={styles.input}
                           />
                         ) : (
-                          <span>{defendant.parole_info || 'Не указано'}</span>
+                          <span>{currentDefendant?.parole_info || 'Не указано'}</span>
                         )}
                       </div>
                     </div>
@@ -757,7 +766,6 @@ return (
                 </div>
               )}
 
-              {/* Вкладка: Финансовые взыскания */}
               {activeTab === 'financial' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -775,7 +783,7 @@ return (
                           />
                         ) : (
                           <span>
-                            {defendant.property_damage ? `${defendant.property_damage} руб.` : 'Не указано'}
+                            {currentDefendant?.property_damage ? `${currentDefendant.property_damage} руб.` : 'Не указано'}
                           </span>
                         )}
                       </div>
@@ -793,7 +801,7 @@ return (
                           />
                         ) : (
                           <span>
-                            {defendant.moral_damage ? `${defendant.moral_damage} руб.` : 'Не указано'}
+                            {currentDefendant?.moral_damage ? `${currentDefendant.moral_damage} руб.` : 'Не указано'}
                           </span>
                         )}
                       </div>
@@ -802,7 +810,6 @@ return (
                 </div>
               )}
 
-              {/* Вкладка: Особые отметки */}
               {activeTab === 'special' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -817,7 +824,7 @@ return (
                           rows="6"
                         />
                       ) : (
-                        <span>{defendant.special_notes || 'Нет особых отметок'}</span>
+                        <span>{currentDefendant?.special_notes || 'Нет особых отметок'}</span>
                       )}
                     </div>
                   </div>
@@ -827,42 +834,38 @@ return (
           </div>
         </div>
 
-        {/* Правая колонка - Решения */}
-        <div className={styles.sidebar}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Судебные решения</h2>
-            
-            {decisions.length > 0 ? (
-              <div className={styles.decisionsList}>
-                {decisions.map(decision => (
-                  <div key={decision.id} className={styles.decisionItem}>
-                    <h4>Решение #{decision.id}</h4>
-                    <p>Дата: {decision.decision_date ? formatDate(decision.decision_date) : 'Не указана'}</p>
-                    <p>Суд: {decision.court_name || 'Не указан'}</p>
-                    <p>Статус: {getDisplayValue(options.trial_result, decision.trial_result)}</p>
-                    <p>Обжалование: {decision.appeal_present ? 'Есть' : 'Нет'}</p>
-                    <button 
-                      onClick={() => navigate(`/criminal-proceedings/${proceedingId}/criminal-decisions/${decision.id}`)}
-                      className={styles.viewButton}
-                    >
-                      Просмотреть
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.noDecisions}>
-                <p>Судебных решений не найдено</p>
-                <button 
-                  onClick={() => navigate(`/criminal-proceedings/${proceedingId}/criminal-decisions/create`)}
-                  className={styles.addButton}
-                >
-                  Добавить решение
-                </button>
-              </div>
-            )}
+        {!isCreateMode && (
+          <div className={styles.sidebar}>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Судебные решения</h2>
+              
+              {decisions && decisions.length > 0 ? (
+                <div className={styles.defendantsList}>
+                  {decisions.map(decision => (
+                    <div key={decision.id} className={styles.defendantItem}>
+                      <h4>Решение #{decision.id}</h4>
+                      <p>Дата: {decision.decision_date ? formatDate(decision.decision_date) : 'Не указана'}</p>
+                      <p>Суд: {decision.court_name || 'Не указан'}</p>
+                      <p>Статус: {getDisplayValue(decision.trial_result, options.trial_result)}</p>
+                      <p>Обжалование: {decision.appeal_present ? 'Есть' : 'Нет'}</p>
+                      <button 
+                        onClick={() => navigate(`/criminal-proceedings/${proceedingId}/criminal-decisions/${decision.id}`)}
+                        className={styles.actionButton}
+                        title="Просмотреть"
+                      >
+                        →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.noData}>
+                  <p>Судебных решений не найдено</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

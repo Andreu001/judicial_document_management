@@ -11,6 +11,8 @@ from .models import (
     CivilSidesCaseInCase, CivilLawyer,
     CivilCaseMovement, CivilPetition, ReferringAuthorityCivil
 )
+from django.contrib.contenttypes.models import ContentType
+from case_documents.models import CaseDocument
 
 
 class ReferringAuthorityCivilSerializer(serializers.ModelSerializer):
@@ -743,6 +745,7 @@ class CivilProceedingsSerializer(serializers.ModelSerializer):
     # Вложенные связанные объекты
     civil_decisions = CivilDecisionSerializer(many=True, read_only=True)
     civil_executions = CivilExecutionSerializer(many=True, read_only=True)
+    documents_count = serializers.SerializerMethodField()
 
     class Meta:
         model = CivilProceedings
@@ -788,6 +791,13 @@ class CivilProceedingsSerializer(serializers.ModelSerializer):
             }
         return None
 
+    def get_documents_count(self, obj):
+        content_type = ContentType.objects.get_for_model(obj)
+        return CaseDocument.objects.filter(
+            content_type=content_type,
+            object_id=obj.id
+        ).count()
+
 
 class ArchivedCivilProceedingsSerializer(CivilProceedingsSerializer):
     """Сериализатор только для чтения архивных дел"""
@@ -801,3 +811,55 @@ class ArchivedCivilProceedingsSerializer(CivilProceedingsSerializer):
     def validate_case_number_civil(self, value):
         # Не проверяем уникальность для архивных дел
         return value
+
+
+class CivilDecisionOptionsSerializer(serializers.Serializer):
+    """Сериализатор для получения опций из choices полей модели CivilDecision и CivilExecution"""
+    
+    @staticmethod
+    def get_choices_from_model():
+        """Получает все choices опции из моделей CivilDecision и CivilExecution"""
+        from .models import CivilDecision, CivilExecution
+        
+        choices_data = {}
+        
+        # Опции из CivilDecision
+        decision_fields = CivilDecision._meta.get_fields()
+        for field in decision_fields:
+            if hasattr(field, 'choices') and field.choices:
+                field_name = field.name
+                choices_data[field_name] = [
+                    {'value': choice[0], 'label': choice[1]}
+                    for choice in field.choices
+                ]
+        
+        # Опции из CivilExecution
+        execution_fields = CivilExecution._meta.get_fields()
+        for field in execution_fields:
+            if hasattr(field, 'choices') and field.choices:
+                field_name = field.name
+                choices_data[field_name] = [
+                    {'value': choice[0], 'label': choice[1]}
+                    for choice in field.choices
+                ]
+        
+        # Добавляем опции для апелляции/кассации, если их нет
+        if 'second_instance_result' not in choices_data:
+            choices_data['second_instance_result'] = [
+                {'value': '1', 'label': 'Оставлено без изменения'},
+                {'value': '2', 'label': 'Изменено'},
+                {'value': '3', 'label': 'Отменено с вынесением нового решения'},
+                {'value': '4', 'label': 'Отменено с прекращением производства'},
+                {'value': '5', 'label': 'Возвращено на новое рассмотрение'},
+            ]
+        
+        # Явно добавляем опции для execution_result, если их нет
+        if 'execution_result' not in choices_data:
+            choices_data['execution_result'] = [
+                {'value': '1', 'label': 'Исполнено'},
+                {'value': '2', 'label': 'Не исполнено'},
+                {'value': '3', 'label': 'Возвращён без исполнения'},
+                {'value': '4', 'label': 'Частично исполнено'},
+            ]
+        
+        return choices_data

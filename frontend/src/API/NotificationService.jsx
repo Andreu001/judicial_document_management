@@ -22,6 +22,11 @@ class NotificationService {
     }
   }
 
+  // АЛИАС для обратной совместимости
+  static async getStats() {
+    return this.getNotificationStats();
+  }
+
   static async markAsRead(notificationId) {
     try {
       const response = await baseService.post(`/notifications/notifications/${notificationId}/mark_read/`);
@@ -48,6 +53,17 @@ class NotificationService {
       return response.data;
     } catch (error) {
       console.error('Error marking notification as completed:', error);
+      throw error;
+    }
+  }
+
+  // ИСПРАВЛЕНО: Добавлен static
+  static async deleteNotification(id) {
+    try {
+      const response = await baseService.delete(`/notifications/notifications/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Ошибка удаления уведомления:', error);
       throw error;
     }
   }
@@ -80,6 +96,18 @@ class NotificationService {
       return response.data;
     } catch (error) {
       console.error('Error fetching legal references:', error);
+      throw error;
+    }
+  }
+
+  static async getNotificationsByCase(caseId) {
+    try {
+      const response = await baseService.get('/notifications/notifications/', {
+        params: { case_id: caseId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching notifications for case:', error);
       throw error;
     }
   }

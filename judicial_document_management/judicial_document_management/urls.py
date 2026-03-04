@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
@@ -14,4 +16,13 @@ urlpatterns = [
     path('case-registry/', include('case_registry.urls')),
     path('civil_proceedings/', include('civil_proceedings.urls')),
     path('personnel/', include('personnel.urls')),
+    path('administrative_code/', include('administrative_code.urls')),
+    path('administrative_proceedings/', include('administrative_proceedings.urls')),
+    path('legal-documents/', include('legal_documents.urls')),
+    path('search/', include('search.urls')),
+    path('case-documents/', include('case_documents.urls')),
 ]
+
+# Добавьте для обслуживания медиа-файлов в режиме разработки
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

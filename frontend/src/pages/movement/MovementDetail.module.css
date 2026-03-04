@@ -413,3 +413,14 @@
     font-size: 0.8rem;
   }
 }
+.caseTypeBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  margin-left: 12px;
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #a5d6a7;
+}

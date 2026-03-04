@@ -71,6 +71,18 @@ class CriminalProceedings(models.Model):
         unique=True,
         verbose_name="Номер уголовного дела"
     )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
+        null=True,
+        blank=True
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата обновления",
+        null=True,
+        blank=True
+    )
     # --- Раздел А. Сведения по делу ---
     number_of_persons = models.PositiveIntegerField(
         null=True, blank=True, verbose_name="Число лиц по делу"
@@ -1045,6 +1057,126 @@ def get_registered_case_info(self):
             'status': case.get_status_display()
         }
     return None
+
+
+class CriminalExecution(models.Model):
+    """
+    Исполнение приговора/решения по уголовному делу.
+    Соответствует разделу "Исполнение приговора" в учетно-статистической карточке.
+    Одно дело может иметь несколько записей об исполнении.
+    """
+    criminal_proceedings = models.ForeignKey(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        related_name='criminal_executions',
+        verbose_name="Уголовное производство"
+    )
+
+    criminal_side_case_execution = models.ForeignKey(
+        SidesCaseInCase,
+        on_delete=models.CASCADE,
+        verbose_name="Приговор вступивший в законную силу вручен",
+        blank=True,
+        null=True
+    )
+    criminal_defendant_execution = models.ForeignKey(
+        Defendant,
+        on_delete=models.CASCADE,
+        verbose_name="Приговор вступивший в законную силу вручен",
+        blank=True,
+        null=True
+    )
+    sides_case_lawyer_execution = models.ForeignKey(
+        Lawyer,
+        on_delete=models.CASCADE,
+        verbose_name="Приговор вступивший в законную силу вручен",
+        blank=True,
+        null=True
+    )
+
+    # ------------------- Раздел "Обращение к исполнению" -------------------
+    sentence_execution_date = models.DateField(
+        verbose_name="Дата обращения приговора к исполнению",
+        null=True, blank=True
+    )
+    execution_sent_date = models.DateField(
+        verbose_name="Дата направления для исполнения",
+        null=True, blank=True
+    )
+    execution_sent_to = models.CharField(
+        max_length=500,
+        verbose_name="Куда направлено для исполнения",
+        null=True, blank=True
+    )
+    execution_sent_document = models.CharField(
+        max_length=255,
+        verbose_name="Направленный документ",
+        choices=[
+            ('1', 'Копия приговора'),
+            ('2', 'Исполнительный лист'),
+            ('3', 'Распоряжение об исполнении'),
+            ('4', 'Копия апелляционного определения'),
+            ('5', 'Иное'),
+        ],
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел "Контроль исполнения" -------------------
+    control_return_date = models.DateField(
+        verbose_name="Дата поступления контрольной карточки",
+        null=True, blank=True
+    )
+    control_result = models.CharField(
+        max_length=500,
+        verbose_name="Результат контроля исполнения",
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел "Отметки об исполнении" -------------------
+    execution_mark_date = models.DateField(
+        verbose_name="Дата отметки об исполнении",
+        null=True, blank=True
+    )
+    execution_mark_content = models.TextField(
+        verbose_name="Содержание отметки об исполнении",
+        null=True, blank=True
+    )
+    execution_mark_author = models.CharField(
+        max_length=255,
+        verbose_name="Кто поставил отметку об исполнении",
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел "Особые отметки по исполнению" -------------------
+    special_execution_notes = models.TextField(
+        verbose_name="Особые отметки по исполнению",
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел "Снятие с контроля" -------------------
+    removal_from_control_date = models.DateField(
+        verbose_name="Дата снятия с контроля",
+        null=True, blank=True
+    )
+    removal_from_control_reason = models.CharField(
+        max_length=500,
+        verbose_name="Основание снятия с контроля",
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел "Информация о рассылке" -------------------
+    copies_sent_info = models.TextField(
+        verbose_name="Информация о рассылке копий приговора",
+        null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Исполнение по уголовному делу"
+        verbose_name_plural = "Исполнения по уголовным делам"
+        ordering = ['-execution_sent_date']
+
+    def __str__(self):
+        return f"Исполнение по делу {self.criminal_proceedings.case_number_criminal}"
 
 
 class CriminalRuling(models.Model):

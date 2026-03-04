@@ -1,0 +1,896 @@
+/* LegalDocuments.module.css */
+.container {
+  min-height: 100vh;
+  background: #f7fafc;
+  padding: 1.5rem 1.5rem 1.5rem 17rem;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.filterPanel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 20, 40, 0.02);
+  border: 1px solid #edf2f7;
+}
+
+.filterRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterRow:last-child {
+  margin-bottom: 0;
+}
+
+.searchBox {
+  display: flex;
+  flex: 2;
+  min-width: 300px;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px 0 0 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #1e3c5c;
+  box-shadow: 0 0 0 2px rgba(30, 60, 92, 0.1);
+}
+
+.searchButton {
+  padding: 0.6rem 1.5rem;
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.searchButton:hover {
+  background: #2c4a6e;
+}
+
+.filterSelect, .filterInput {
+  padding: 0.6rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  min-width: 180px;
+  flex: 1;
+}
+
+.filterSelect:focus, .filterInput:focus {
+  outline: none;
+  border-color: #1e3c5c;
+}
+
+.uploadButton {
+  padding: 0.6rem 1.5rem;
+  background: #2f855a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.uploadButton:hover {
+  background: #276749;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e3c5c;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4299e1;
+}
+
+.documentsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.25rem;
+}
+
+.documentCard {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 2px 8px rgba(0, 20, 40, 0.02);
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.documentCard:hover {
+  box-shadow: 0 8px 16px rgba(0, 20, 40, 0.06);
+  border-color: #cbd5e0;
+}
+
+.cardHeader {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.documentType {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  background: #1e3c5c;
+  color: white;
+  border-radius: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.documentCategory {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  background: #f0f2f5;
+  color: #4a5568;
+  border-radius: 16px;
+}
+
+.documentTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.documentMeta {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-bottom: 0.5rem;
+  font-family: 'SF Mono', monospace;
+}
+
+.documentDescription {
+  font-size: 0.85rem;
+  color: #4a5568;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.documentArticles {
+  font-size: 0.8rem;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem;
+  background: #f7fafc;
+  border-radius: 6px;
+  border-left: 3px solid #4299e1;
+}
+
+.documentKeywords {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.documentFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.documentFiles {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fileLink {
+  padding: 0.3rem 0.8rem;
+  background: #f0f2f5;
+  color: #4a5568;
+  text-decoration: none;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.fileLink:hover {
+  background: #e2e8f0;
+  color: #1e3c5c;
+}
+
+.viewButton {
+  padding: 0.3rem 1rem;
+  background: transparent;
+  color: #1e3c5c;
+  border: 1px solid #1e3c5c;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewButton:hover {
+  background: #1e3c5c;
+  color: white;
+}
+
+/* Модальные окна */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.viewModal {
+  max-width: 700px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #edf2f7;
+  background: #f8fafc;
+  border-radius: 16px 16px 0 0;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e3c5c;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  color: #4a5568;
+  background: #edf2f7;
+}
+
+/* Форма загрузки */
+.uploadForm {
+  padding: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 0.3rem;
+}
+
+.formGroup input[type="text"],
+.formGroup input[type="date"],
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.formGroup input[type="file"] {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px dashed #cbd5e0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #1e3c5c;
+  box-shadow: 0 0 0 2px rgba(30, 60, 92, 0.1);
+}
+
+.formRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.formRow .formGroup {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.errorMessage {
+  padding: 0.75rem;
+  background: #fed7d7;
+  color: #c53030;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  border: 1px solid #feb2b2;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.submitButton,
+.cancelButton {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitButton {
+  background: #1e3c5c;
+  color: white;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #2c4a6e;
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+/* Детальный просмотр */
+.documentDetail {
+  padding: 1.5rem;
+}
+
+.detailSection {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
+}
+
+.detailSection h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e3c5c;
+}
+
+.detailRow {
+  display: flex;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.detailLabel {
+  width: 120px;
+  color: #718096;
+  font-weight: 500;
+}
+
+.detailValue {
+  flex: 1;
+  color: #2d3748;
+}
+
+.detailText {
+  margin: 0;
+  line-height: 1.6;
+  color: #4a5568;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.active {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.inactive {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.fileItem:hover {
+  background: #f7fafc;
+  border-color: #1e3c5c;
+}
+
+.fileIcon {
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+}
+
+.fileName {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+.downloadLink {
+  color: #1e3c5c;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.detailMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #a0aec0;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #4299e1;
+  font-size: 1rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e0;
+  color: #718096;
+}
+
+.emptyState p {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .documentsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .filterRow {
+    flex-direction: column;
+  }
+  
+  .searchBox {
+    min-width: auto;
+  }
+  
+  .documentsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modalContent {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .formRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+
+.fileLink {
+  padding: 0.3rem 0.8rem;
+  background: #f0f2f5;
+  color: #4a5568;
+  text-decoration: none;
+  border: none;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fileLink:hover {
+  background: #e2e8f0;
+  color: #1e3c5c;
+  transform: translateY(-1px);
+}
+
+/* Для модального окна просмотра - обновите стили fileItem */
+.fileItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.fileItem:hover {
+  background: #f7fafc;
+  border-color: #1e3c5c;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Добавьте в конец файла */
+
+.fileLink {
+  padding: 0.3rem 0.8rem;
+  background: #f0f2f5;
+  color: #4a5568;
+  text-decoration: none;
+  border: none;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fileLink:hover {
+  transform: translateY(-1px);
+}
+
+.wordFile {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.wordFile:hover {
+  background: #bbdefb;
+}
+
+.pdfFile {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.pdfFile:hover {
+  background: #ffcdd2;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.fileItem:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.fileItem.wordFile:hover {
+  border-color: #0d47a1;
+  background: #f5f9ff;
+}
+
+.fileItem.pdfFile:hover {
+  border-color: #b71c1c;
+  background: #fff5f5;
+}
+
+/* Добавьте эти стили в конец файла LegalDocuments.module.css */
+
+/* Стили для загрузки изображений */
+.fileInput {
+  padding: 0.5rem;
+  border: 1px dashed #cbd5e0;
+  border-radius: 6px;
+  background: #f8fafc;
+  width: 100%;
+  cursor: pointer;
+}
+
+.fileHint {
+  display: block;
+  font-size: 0.7rem;
+  color: #718096;
+  margin-top: 0.25rem;
+}
+
+/* Стили для отображения изображений */
+.imageFile {
+  background: #f3e5f5;
+  color: #4a148c;
+}
+
+.imageFile:hover {
+  background: #e1bee7;
+  border-color: #4a148c;
+}
+
+.imageThumbnailContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.imageThumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.imageThumbnail:hover {
+  transform: scale(1.05);
+  border-color: #1e3c5c;
+}
+
+.imageDownloadButton {
+  padding: 0.4rem 1rem;
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.imageDownloadButton:hover {
+  background: #2c4a6e;
+}
+
+/* Стили для предпросмотра изображений */
+.imagePreviewOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+}
+
+.imagePreviewContainer {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.closePreviewButton {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.closePreviewButton:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.fullPreviewImage {
+  max-width: 85vw;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.imagePreviewActions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.downloadPreviewButton {
+  padding: 0.6rem 1.5rem;
+  background: #1e3c5c;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+  display: inline-block;
+}
+
+.downloadPreviewButton:hover {
+  background: #2c4a6e;
+}
+
+/* Обновленные стили для карточек документов */
+.documentFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fileLink.imageFile {
+  background: #f3e5f5;
+  color: #4a148c;
+}
+
+.fileLink.imageFile:hover {
+  background: #e1bee7;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .imageThumbnailContainer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .imageThumbnail {
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+  }
+  
+  .fullPreviewImage {
+    max-width: 95vw;
+    max-height: 70vh;
+  }
+}

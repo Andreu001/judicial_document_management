@@ -4,6 +4,7 @@ import CriminalCaseService from '../API/CriminalCaseService';
 import PetitionService from '../API/PetitionService';
 import styles from './UI/Card/CriminalBusinessCard.module.css';
 import baseService from '../API/baseService';
+import ConfirmModal from './UI/Modal/ConfirmModal';
 
 const CriminalBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -15,6 +16,8 @@ const CriminalBusinessCard = ({ card, remove }) => {
   const [movements, setMovements] = useState([]);
   const [criminalCase, setCriminalCase] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
+  const [executions, setExecutions] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [quickStats, setQuickStats] = useState({
     allSides: 0,
@@ -74,19 +77,25 @@ const CriminalBusinessCard = ({ card, remove }) => {
         allSides: defendantsData.length + lawyersData.length + otherSidesData.length
       }));
       
-      // ДОБАВЛЯЕМ ЗАГРУЗКУ ДВИЖЕНИЙ ДЕЛА
+      // Загрузка движений дела
       const movementsData = await CriminalCaseService.getCaseMovements(card.criminal_proceedings_id);
       setMovements(movementsData);
       setQuickStats(prev => ({ ...prev, movements: movementsData.length }));
 
-      // ДОБАВЛЯЕМ ЗАГРУЗКУ ХОДАТАЙСТВ
+      // Загрузка ходатайств
       const petitionsData = await CriminalCaseService.getPetitions(card.criminal_proceedings_id);
       setPetitions(petitionsData);
       setQuickStats(prev => ({ ...prev, petitions: petitionsData.length }));
 
+      // Загрузка решений
       const decisionsData = await CriminalCaseService.getDecisions(card.criminal_proceedings_id);
       setDecisions(decisionsData);
       setQuickStats(prev => ({ ...prev, decisions: decisionsData.length }));
+
+      // ЗАГРУЗКА ИСПОЛНЕНИЙ - добавьте этот блок
+      const executionsData = await CriminalCaseService.getExecutions(card.criminal_proceedings_id);
+      setExecutions(executionsData);
+      setQuickStats(prev => ({ ...prev, executions: executionsData.length }));
 
     } catch (error) {
       console.error('Ошибка загрузки связанных данных:', error);
@@ -109,18 +118,17 @@ const CriminalBusinessCard = ({ card, remove }) => {
   };
 
   const handleDeleteCriminalCard = async () => {
-    if (window.confirm('Удалить уголовное дело?')) {
-      try {
-        if (card.criminal_proceedings_id) {
-          await CriminalCaseService.deleteCriminalProceedings(card.criminal_proceedings_id);
-          remove(card.id);
-        } else {
-          console.error('Нет criminal_proceedings_id для удаления');
-        }
-      } catch (error) {
-        console.error('Ошибка удаления уголовного дела:', error);
-        alert('Не удалось удалить уголовное дело');
+    setShowDeleteModal(false);
+    try {
+      if (card.criminal_proceedings_id) {
+        await CriminalCaseService.deleteCriminalProceedings(card.criminal_proceedings_id);
+        remove(card.id);
+      } else {
+        console.error('Нет criminal_proceedings_id для удаления');
       }
+    } catch (error) {
+      console.error('Ошибка удаления уголовного дела:', error);
+      alert('Не удалось удалить уголовное дело');
     }
   };
 
@@ -309,6 +317,57 @@ const CriminalBusinessCard = ({ card, remove }) => {
     });
   };
   
+  const handleAddExecution = () => {
+    if (card.criminal_proceedings_id) {
+      router(`/criminal-proceedings/${card.criminal_proceedings_id}/executions/create`);
+    }
+  };
+
+  const handleDeleteExecution = async (executionId) => {
+    try {
+      await CriminalCaseService.deleteExecution(card.criminal_proceedings_id, executionId);
+      setExecutions(executions.filter(e => e.id !== executionId));
+      setQuickStats(prev => ({ ...prev, executions: prev.executions - 1 }));
+    } catch (error) {
+      console.error('Ошибка удаления записи об исполнении:', error);
+    }
+  };
+  const ExecutionItem = ({ execution }) => (
+    <div className={styles.compactItem}>
+      <div className={styles.compactItemContent}>
+        <div className={styles.compactItemTitle}>
+          Исполнение #{execution.id}
+        </div>
+        {execution.execution_sent_date && (
+          <div className={styles.compactItemSubtitle}>
+            Направлено: {formatDate(execution.execution_sent_date)}
+          </div>
+        )}
+        {execution.execution_sent_to && (
+          <div className={styles.compactItemSubtitle}>
+            {execution.execution_sent_to}
+          </div>
+        )}
+      </div>
+      <div className={styles.compactItemActions}>
+        <button 
+          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/executions/${execution.id}`)}
+          className={styles.actionButton}
+          title="Просмотреть"
+        >
+          →
+        </button>
+        <button 
+          onClick={() => handleDeleteExecution(execution.id)}
+          className={styles.deleteButton}
+          title="Удалить"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+  
   const SideItem = ({ side, type }) => {
     // Проверка валидности ID
     if (!side.id || side.id === 'undefined' || side.id === 'null') {
@@ -410,7 +469,7 @@ const CriminalBusinessCard = ({ card, remove }) => {
     <div className={styles.compactItem}>
       <div className={styles.compactItemContent}>
         <div className={styles.compactItemTitle}>
-          Решение #{decision.id}
+          Решение {decision.id}
         </div>
         {decision.court_consideration_date && (
           <div className={styles.compactItemSubtitle}>
@@ -555,6 +614,22 @@ const CriminalBusinessCard = ({ card, remove }) => {
           Движение
         </button>
         <button 
+          className={`${styles.quickAction} ${activeTab === 'decisions' ? styles.active : ''}`}
+          onClick={handleShowDecisions}
+          title="Решения"
+        >
+          <span className={styles.quickActionCount}>{quickStats.decisions}</span>
+          Решения
+        </button>
+        <button 
+          className={`${styles.quickAction} ${activeTab === 'executions' ? styles.active : ''}`}
+          onClick={() => setActiveTab('executions')}
+          title="Исполнение приговора"
+        >
+          <span className={styles.quickActionCount}>{quickStats.executions || 0}</span>
+          Исполнение
+        </button>
+        <button 
           className={`${styles.quickAction} ${activeTab === 'petitions' ? styles.active : ''}`}
           onClick={handleShowPetitions}
           title="Ходатайства"
@@ -563,12 +638,12 @@ const CriminalBusinessCard = ({ card, remove }) => {
           Ходатайства
         </button>
         <button 
-          className={`${styles.quickAction} ${activeTab === 'decisions' ? styles.active : ''}`}
-          onClick={handleShowDecisions}
-          title="Решения"
+          className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
+          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/documents`)}
+          title="Документы по делу"
         >
-          <span className={styles.quickActionCount}>{quickStats.decisions}</span>
-          Решения
+          <span className={styles.quickActionCount}>0</span>
+          Документы
         </button>
       </div>
       
@@ -703,6 +778,28 @@ const CriminalBusinessCard = ({ card, remove }) => {
             </div>
           </div>
         )}
+        {activeTab === 'executions' && (
+          <div className={styles.tabContent}>
+            <div className={styles.tabHeader}>
+              <h3>Исполнение ({executions.length})</h3>
+              <button 
+                onClick={handleAddExecution}
+                className={styles.addButton}
+              >
+                + Добавить
+              </button>
+            </div>
+            <div className={styles.compactList}>
+              {executions.length > 0 ? (
+                executions.map(execution => (
+                  <ExecutionItem key={execution.id} execution={execution} />
+                ))
+              ) : (
+                <p className={styles.noData}>Нет данных об исполнении</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Футер с основными действиями */}
@@ -715,7 +812,7 @@ const CriminalBusinessCard = ({ card, remove }) => {
         </button>
           <div className={styles.footerActions}>
             <button 
-              onClick={handleDeleteCriminalCard}
+              onClick={() => setShowDeleteModal(true)}
               className={styles.dangerButton}
               title="Удалить уголовное дело"
             >
@@ -723,6 +820,12 @@ const CriminalBusinessCard = ({ card, remove }) => {
             </button>
           </div>
       </div>
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          message="Вы уверены, что хотите удалить уголовное дело?"
+          onConfirm={handleDeleteCriminalCard}
+          onCancel={() => setShowDeleteModal(false)}
+        />
     </div>
   );
 };

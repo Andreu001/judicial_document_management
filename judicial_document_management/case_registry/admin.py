@@ -32,6 +32,19 @@ class RegisteredCaseAdmin(admin.ModelAdmin):
     readonly_fields = ['full_number', 'created_at', 'updated_at', 'deleted_at']
     actions = ['mark_as_deleted']
     
+    # Добавляем поля для отображения связей с разными типами производств
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('index', 'case_number', 'full_number', 'registration_date', 'description', 'status')
+        }),
+        ('Связи с производствами', {
+            'fields': ('business_card', 'criminal_proceedings', 'civil_proceedings', 
+                      'kas_proceedings', 'administrative_proceedings')  # Новые поля
+        }),
+        ('Временные метки', {
+            'fields': ('created_at', 'updated_at', 'deleted_at')
+        }),
+    )
     
     def mark_as_deleted(self, request, queryset):
         for case in queryset:

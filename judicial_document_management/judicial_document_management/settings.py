@@ -20,9 +20,6 @@ ALLOWED_HOSTS = [
     '[::1]',
     'testserver',
     'web',
-    '10.11.10.82',  # замените на ваш реальный IP
-    '*',  # временно разрешить все хосты (для тестирования)
-
 ]
 
 
@@ -50,6 +47,9 @@ INSTALLED_APPS = [
     'case_registry.apps.CaseRegistryConfig',
     'django_filters',
     'personnel',
+    'legal_documents',
+    'search',
+    'case_documents',
 ]
 
 MIDDLEWARE = [
@@ -230,3 +230,69 @@ NOTIFICATIONS_TARGETS = [
         "filters": {},
     },
 ]
+
+# Настройки для загрузки файлов
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Ограничения на размер загружаемых файлов (например, 50MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+# Поддерживаемые форматы файлов
+ALLOWED_UPLOAD_EXTENSIONS = ['.pdf', '.doc', '.docx']
+
+# Настройки логирования
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'level': 'INFO',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'notifications.log',
+            'formatter': 'verbose',
+            'level': 'DEBUG',
+        },
+    },
+    'loggers': {
+        'notifications': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+# Настройки для TinyMCE
+TINYMCE_DEFAULT_CONFIG = {
+    'height': 600,
+    'width': '100%',
+    'menubar': True,
+    'plugins': 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
+    'toolbar': 'undo redo | formatselect | bold italic underline strikethrough | fontselect fontsizeselect | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+    'content_css': '//www.tiny.cloud/css/codepen.min.css',
+}
+
+# Настройки для mammoth (конвертация Word)
+MAMMOTH_CUSTOM_STYLES = {
+    'p[style-name="Heading 1"]': 'h1',
+    'p[style-name="Heading 2"]': 'h2',
+    'p[style-name="Heading 3"]': 'h3',
+    'p[style-name="Title"]': 'h1.title',
+    'p[style-name="Subtitle"]': 'h2.subtitle',
+}

@@ -1,16 +1,50 @@
+// PersonnelPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import ru from 'date-fns/locale/ru';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { ru } from 'date-fns/locale/ru';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import styles from './PersonnelPage.module.css';
 import baseService from '../../API/baseService';
 
+// Полная русификация
 const locales = { ru };
-const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+const localizer = dateFnsLocalizer({
+  format: (date, formatStr) => format(date, formatStr, { locale: ru }),
+  parse: (dateStr, formatStr) => parse(dateStr, formatStr, new Date(), { locale: ru }),
+  startOfWeek: (date) => startOfWeek(date, { locale: ru, weekStartsOn: 1 }), // Понедельник
+  getDay,
+  locales,
+});
+
+// Кастомные форматы для русского языка
+const formats = {
+  weekdayFormat: (date, culture, localizer) => 
+    localizer.format(date, 'EEEE', culture).charAt(0).toUpperCase() + 
+    localizer.format(date, 'EEEE', culture).slice(1, 3),
+  
+  dayFormat: (date, culture, localizer) => 
+    localizer.format(date, 'EEEEEE', culture),
+  
+  monthHeaderFormat: (date, culture, localizer) => 
+    localizer.format(date, 'LLLL yyyy', culture).charAt(0).toUpperCase() + 
+    localizer.format(date, 'LLLL yyyy', culture).slice(1),
+  
+  dayHeaderFormat: (date, culture, localizer) => 
+    localizer.format(date, 'dd MMMM yyyy', culture),
+  
+  dayRangeHeaderFormat: ({ start, end }, culture, localizer) => {
+    const startStr = localizer.format(start, 'dd MMMM', culture);
+    const endStr = localizer.format(end, 'dd MMMM yyyy', culture);
+    return `${startStr} — ${endStr}`;
+  },
+  
+  agendaHeaderFormat: ({ start, end }, culture, localizer) => {
+    const startStr = localizer.format(start, 'dd MMMM yyyy', culture);
+    const endStr = localizer.format(end, 'dd MMMM yyyy', culture);
+    return `${startStr} — ${endStr}`;
+  },
+};
 
 const PersonnelPage = () => {
   const [judges, setJudges] = useState([]);
@@ -38,33 +72,21 @@ const PersonnelPage = () => {
 
   const fetchJudges = async () => {
     try {
-      console.log('Запрос к /personnel/judges/');
       const res = await baseService.get('/personnel/judges/');
-      console.log('Статус ответа:', res.status);
-      console.log('Данные:', res.data);
       setJudges(res.data);
     } catch (e) {
-      console.error('Ошибка загрузки судей');
-      console.error('Статус ошибки:', e.response?.status);
-      console.error('Текст ошибки:', e.response?.data);
-      console.error('Полная ошибка:', e);
+      console.error('Ошибка загрузки судей', e);
     }
   };
 
   const fetchAbsenceTypes = async () => {
     try {
-      console.log('Запрос к /personnel/absence-types/');
       const res = await baseService.get('/personnel/absence-types/');
-      console.log('Ответ от absence-types:', res.data);
-      
-      // Проверяем, есть ли пагинация (поле results)
       if (res.data && res.data.results) {
         setAbsenceTypes(res.data.results);
       } else if (Array.isArray(res.data)) {
-        // Если это уже массив
         setAbsenceTypes(res.data);
       } else {
-        console.error('Неожиданный формат данных:', res.data);
         setAbsenceTypes([]);
       }
     } catch (e) {
@@ -76,9 +98,7 @@ const PersonnelPage = () => {
   const fetchAbsenceRecords = async (userId = '') => {
     try {
       const url = userId ? `/personnel/absence-records/?user_id=${userId}` : '/personnel/absence-records/';
-      console.log('Запрос к', url);
       const res = await baseService.get(url);
-      console.log('Ответ от absence-records:', res.data);
       
       if (res.data && res.data.results) {
         setAbsenceRecords(res.data.results);
@@ -96,7 +116,7 @@ const PersonnelPage = () => {
   // Преобразование записей в события для календаря
   const events = Array.isArray(absenceRecords) ? absenceRecords.map(record => ({
     id: record.id,
-    title: `${record.user_name || 'Судья'} — ${record.absence_type_name || 'Отсутствие'}`,
+    title: `${record.absence_type_name || 'Отсутствие'}`,
     start: new Date(record.block_start_date),
     end: new Date(record.block_end_date),
     resource: record,
@@ -163,21 +183,37 @@ const PersonnelPage = () => {
     }
   };
 
-  // Обработка клика по событию
   const handleSelectEvent = (event) => {
     if (event.resource) {
       openEditForm(event.resource);
     }
   };
 
-  // Фильтр по судье
+  const handleSelectSlot = (slotInfo) => {
+    if (selectedJudge) {
+      const start = format(slotInfo.start, 'yyyy-MM-dd');
+      const end = format(slotInfo.end, 'yyyy-MM-dd');
+      setFormData({
+        ...formData,
+        user: selectedJudge.id,
+        start_date: start,
+        end_date: end,
+        block_start_date: start,
+        block_end_date: end,
+      });
+      setShowForm(true);
+    } else {
+      alert('Сначала выберите судью');
+    }
+  };
+
   const handleJudgeFilter = (e) => {
     const judgeId = e.target.value;
-    setSelectedJudge(judgeId ? { id: judgeId } : null);
+    const judge = judges.find(j => j.id === parseInt(judgeId));
+    setSelectedJudge(judge || null);
     fetchAbsenceRecords(judgeId);
   };
 
-  // Фильтр для выбора судьи в форме
   const handleFormJudgeChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -193,7 +229,7 @@ const PersonnelPage = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Кадры — график отсутствия судей</h1>
+      <h1 className={styles.title}>График отсутствия судей</h1>
 
       <div className={styles.controls}>
         <select onChange={handleJudgeFilter} className={styles.select} value={selectedJudge?.id || ''}>
@@ -204,7 +240,9 @@ const PersonnelPage = () => {
             </option>
           ))}
         </select>
-        <button onClick={openCreateForm} className={styles.addButton}>+ Добавить отсутствие</button>
+        <button onClick={openCreateForm} className={styles.addButton}>
+          + Новая запись
+        </button>
       </div>
 
       {/* Календарь */}
@@ -212,31 +250,55 @@ const PersonnelPage = () => {
         <Calendar
           localizer={localizer}
           events={events}
+          formats={formats}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: 600 }}
+          style={{ height: 500 }}
           popup
           selectable
           onSelectEvent={handleSelectEvent}
+          onSelectSlot={handleSelectSlot}
           eventPropGetter={(event) => ({
-            style: { backgroundColor: event.color, border: 'none', color: '#fff' }
+            style: { 
+              backgroundColor: event.color, 
+              border: 'none', 
+              color: '#fff',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+              padding: '2px 4px'
+            }
           })}
+          dayPropGetter={(date) => {
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            return {
+              style: isWeekend ? { backgroundColor: '#f8f9fa' } : {}
+            };
+          }}
           messages={{
-            next: 'След.',
-            previous: 'Пред.',
+            next: '→',
+            previous: '←',
             today: 'Сегодня',
             month: 'Месяц',
             week: 'Неделя',
             day: 'День',
+            agenda: 'Повестка',
+            date: 'Дата',
+            time: 'Время',
+            event: 'Событие',
+            noEventsInRange: 'Нет событий',
+            showMore: (count) => `+ ещё ${count}`,
           }}
+          tooltipAccessor={(event) => event.resource?.reason || event.title}
+          min={new Date(2020, 0, 1, 8, 0, 0)}
+          max={new Date(2020, 0, 1, 20, 0, 0)}
         />
       </div>
 
-      {/* Форма создания/редактирования (модальное окно) */}
+      {/* Форма создания/редактирования */}
       {showForm && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            <h2>{editingRecord ? 'Редактировать' : 'Новая запись'}</h2>
+            <h2>{editingRecord ? 'Редактировать запись' : 'Новая запись'}</h2>
             <form onSubmit={handleSubmit}>
               <label>
                 Судья

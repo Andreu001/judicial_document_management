@@ -20,17 +20,7 @@ export const BasicInfoTab = ({
         
         <div className={styles.field}>
           <label>Номер дела</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="case_number_civil"
-              value={formData.case_number_civil || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-            />
-          ) : (
-            <span>{civilData.case_number_civil || 'Не указано'}</span>
-          )}
+          <span>{civilData.case_number_civil || 'Не указано'}</span>
         </div>
 
         <div className={styles.field}>

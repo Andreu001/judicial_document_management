@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import correspondenceService from '../../API/CorrespondenceService';
 import baseService from '../../API/baseService';
 import styles from './CorrespondenceDetail.module.css';
+import CaseSearch from './CaseSearch';
 
 const CorrespondenceDetail = ({ type = '' }) => {
   const { id } = useParams();
@@ -48,6 +49,20 @@ const CorrespondenceDetail = ({ type = '' }) => {
       // Определяем начальное значение статуса в зависимости от типа
       const defaultStatus = data.correspondence_type === 'incoming' ? 'received' : 'registered';
       
+      // Функция для получения составного ID из информации о деле
+      const getCompositeId = () => {
+        if (data.criminal_case_info) {
+          return `criminal:${data.criminal_case_info.id}`;
+        } else if (data.civil_case_info) {
+          return `civil:${data.civil_case_info.id}`;
+        } else if (data.admin_case_info) {
+          return `administrative:${data.admin_case_info.id}`;
+        } else if (data.kas_case_info) {
+          return `kas:${data.kas_case_info.id}`;
+        }
+        return '';
+      };
+
       setFormData({
         ...data,
         registration_date: data.registration_date ? 
@@ -56,7 +71,8 @@ const CorrespondenceDetail = ({ type = '' }) => {
         outgoing_date_document: data.outgoing_date_document ? 
           new Date(data.outgoing_date_document).toISOString().split('T')[0] : '',
         business_card: data.business_card ? String(data.business_card) : '',
-        status: data.status || defaultStatus
+        status: data.status || defaultStatus,
+        case_id: getCompositeId() // Добавляем составной ID для CaseSearch
       });
     } catch (err) {
       console.error('Ошибка загрузки деталей корреспонденции:', err);
@@ -83,14 +99,10 @@ const CorrespondenceDetail = ({ type = '' }) => {
     try {
       setSaving(true);
       
-      // Создаем объект для отправки, а не FormData
+      // Создаем объект для отправки
       const dataToSend = { ...formData };
       
       // Конвертируем типы данных
-      if (dataToSend.business_card) {
-        dataToSend.business_card = Number(dataToSend.business_card);
-      }
-      
       if (dataToSend.pages_count) {
         dataToSend.pages_count = Number(dataToSend.pages_count);
       }
@@ -122,16 +134,64 @@ const CorrespondenceDetail = ({ type = '' }) => {
     if (correspondence) {
       const defaultStatus = correspondence.correspondence_type === 'incoming' ? 'received' : 'registered';
       
+      // Функция для получения составного ID из информации о деле
+      const getCompositeId = () => {
+        if (correspondence.criminal_case_info) {
+          return `criminal:${correspondence.criminal_case_info.id}`;
+        } else if (correspondence.civil_case_info) {
+          return `civil:${correspondence.civil_case_info.id}`;
+        } else if (correspondence.admin_case_info) {
+          return `administrative:${correspondence.admin_case_info.id}`;
+        } else if (correspondence.kas_case_info) {
+          return `kas:${correspondence.kas_case_info.id}`;
+        }
+        return '';
+      };
+
       setFormData({
         ...correspondence,
         registration_date: correspondence.registration_date ? 
           new Date(correspondence.registration_date).toISOString().split('T')[0] : 
           new Date().toISOString().split('T')[0],
         business_card: correspondence.business_card ? String(correspondence.business_card) : '',
-        status: correspondence.status || defaultStatus
+        status: correspondence.status || defaultStatus,
+        case_id: getCompositeId() // Восстанавливаем составной ID
       });
     }
     setIsEditing(false);
+  };
+
+  const handleCaseChange = (compositeId) => {
+    console.log('handleCaseChange вызван с compositeId:', compositeId);
+    setFormData(prev => ({
+      ...prev,
+      case_id: compositeId
+    }));
+  };
+
+  const getCaseInfo = () => {
+    if (correspondence.criminal_case_info) {
+      return {
+        ...correspondence.criminal_case_info,
+        link: `/criminal-proceedings/${correspondence.criminal_case_info.id}`
+      };
+    } else if (correspondence.civil_case_info) {
+      return {
+        ...correspondence.civil_case_info,
+        link: `/civil-proceedings/${correspondence.civil_case_info.id}`
+      };
+    } else if (correspondence.admin_case_info) {
+      return {
+        ...correspondence.admin_case_info,
+        link: `/admin-proceedings/${correspondence.admin_case_info.id}`
+      };
+    } else if (correspondence.kas_case_info) {
+      return {
+        ...correspondence.kas_case_info,
+        link: `/kas-proceedings/${correspondence.kas_case_info.id}`
+      };
+    }
+    return null;
   };
 
   const handleDelete = async () => {
@@ -483,25 +543,17 @@ const CorrespondenceDetail = ({ type = '' }) => {
               
               {renderField(
                 'Связанное дело',
-                'business_card',
+                'case_info',
                 isEditing,
                 isEditing ? (
-                  <select 
-                    name="business_card" 
-                    value={formData.business_card || ''} 
-                    onChange={handleInputChange}
-                    className={styles.select}
-                  >
-                    <option value="">Не привязано к делу</option>
-                    {businessCards.map((card) => (
-                      <option key={card.id} value={card.id}>
-                        {card.original_name} - {card.description || 'Без описания'}
-                      </option>
-                    ))}
-                  </select>
-                ) : correspondence.business_card_name ? (
-                  <Link to={`/cards/${correspondence.business_card}`} className={styles.link}>
-                    {correspondence.business_card_name}
+                  <CaseSearch
+                    value={formData.case_id || ''}
+                    onChange={handleCaseChange}
+                    placeholder="Введите номер дела для поиска..."
+                  />
+                ) : getCaseInfo() ? (
+                  <Link to={getCaseInfo().link} className={styles.link}>
+                    {getCaseInfo().full_info}
                   </Link>
                 ) : (
                   'Не связано'

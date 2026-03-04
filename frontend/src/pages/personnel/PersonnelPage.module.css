@@ -1,58 +1,176 @@
 /* PersonnelPage.module.css */
 .container {
   padding: 24px;
-  padding-left: calc(6.3cm + 24px); /* Ширина навбара + отступ */
-  background: #f5f7fa;
+  padding-left: calc(6.3cm + 24px);
+  background: linear-gradient(135deg, #f5f7fa 0%, #e9eef5 100%);
   min-height: 100vh;
-  font-family: 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
   box-sizing: border-box;
 }
 
 .title {
-  margin-bottom: 20px;
-  font-weight: 400;
-  color: #2c3e50;
-  border-bottom: 2px solid #b0c4ce;
-  padding-bottom: 10px;
+  margin-bottom: 24px;
+  font-weight: 500;
+  font-size: 1.8rem;
+  color: #1a2b3c;
+  letter-spacing: -0.01em;
+  border-bottom: 2px solid #cbd5e0;
+  padding-bottom: 12px;
 }
 
 .controls {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 30px;
   align-items: center;
   flex-wrap: wrap;
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .select {
-  padding: 8px 16px;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
-  font-size: 1rem;
-  min-width: 250px;
+  padding: 10px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  min-width: 260px;
   background-color: white;
+  transition: all 0.2s;
+  color: #2d3748;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: #a0b8cc;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #2e86ab;
+  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.1);
 }
 
 .addButton {
-  background-color: #2e86ab;
+  background: linear-gradient(135deg, #2e86ab 0%, #1f5e7a 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  letter-spacing: 0.3px;
 }
 
 .addButton:hover {
-  background-color: #1f5e7a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #1f5e7a 0%, #174a61 100%);
 }
 
 .calendarWrapper {
   background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  transition: box-shadow 0.3s;
+}
+
+.calendarWrapper:hover {
+  box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+/* Кастомизация react-big-calendar */
+.calendarWrapper :global(.rbc-calendar) {
+  font-family: inherit;
+}
+
+.calendarWrapper :global(.rbc-header) {
+  padding: 12px 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  color: #1e293b;
+}
+
+.calendarWrapper :global(.rbc-header + .rbc-header) {
+  border-left: 1px solid #e2e8f0;
+}
+
+.calendarWrapper :global(.rbc-month-view) {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.calendarWrapper :global(.rbc-day-bg + .rbc-day-bg) {
+  border-left: 1px solid #e2e8f0;
+}
+
+.calendarWrapper :global(.rbc-off-range-bg) {
+  background: #f8fafc;
+}
+
+.calendarWrapper :global(.rbc-today) {
+  background-color: #f0f9ff;
+}
+
+.calendarWrapper :global(.rbc-event) {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+
+.calendarWrapper :global(.rbc-event:hover) {
+  transform: scale(1.02);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.calendarWrapper :global(.rbc-show-more) {
+  color: #2e86ab;
+  font-weight: 500;
+  background: transparent;
+}
+
+.calendarWrapper :global(.rbc-toolbar) {
+  margin-bottom: 20px;
+  gap: 8px;
+}
+
+.calendarWrapper :global(.rbc-toolbar button) {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s;
+}
+
+.calendarWrapper :global(.rbc-toolbar button:hover) {
+  background: #f8fafc;
+  border-color: #cbd5e0;
+}
+
+.calendarWrapper :global(.rbc-toolbar button.rbc-active) {
+  background: #2e86ab;
+  border-color: #2e86ab;
+  color: white;
+}
+
+.calendarWrapper :global(.rbc-toolbar button.rbc-active:hover) {
+  background: #1f5e7a;
+}
+
+.calendarWrapper :global(.rbc-toolbar-label) {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #1a2b3c;
 }
 
 /* Модальное окно */
@@ -67,74 +185,163 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .modal {
   background: white;
-  border-radius: 12px;
-  padding: 30px;
-  width: 500px;
+  border-radius: 16px;
+  padding: 32px;
+  width: 520px;
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal h2 {
-  margin-top: 0;
-  color: #2c3e50;
+  margin: 0 0 24px 0;
+  color: #1a2b3c;
+  font-weight: 500;
+  font-size: 1.5rem;
 }
 
 .modal label {
   display: block;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   font-weight: 500;
-  color: #4a5568;
+  color: #2d3748;
+  font-size: 0.95rem;
 }
 
 .modal input,
 .modal select,
 .modal textarea {
   width: 100%;
-  padding: 8px 12px;
-  margin-top: 4px;
-  border: 1px solid #cbd5e0;
-  border-radius: 4px;
+  padding: 10px 14px;
+  margin-top: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 0.95rem;
   box-sizing: border-box;
+  transition: all 0.2s;
+  background-color: white;
+  font-family: inherit;
+}
+
+.modal input:hover,
+.modal select:hover,
+.modal textarea:hover {
+  border-color: #a0b8cc;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+  outline: none;
+  border-color: #2e86ab;
+  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.1);
+}
+
+.modal textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 .modalActions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 25px;
+  margin-top: 30px;
 }
 
 .saveBtn {
-  background-color: #27ae60;
+  background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.saveBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #219a52 0%, #1b8344 100%);
 }
 
 .cancelBtn {
-  background-color: #95a5a6;
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cancelBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #7f8c8d 0%, #6c7a7a 100%);
 }
 
 .deleteBtn {
-  background-color: #e74c3c;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
   margin-right: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.deleteBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #c0392b 0%, #a53124 100%);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+    padding-left: calc(6.3cm + 16px);
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .select {
+    width: 100%;
+  }
+  
+  .calendarWrapper {
+    padding: 16px;
+  }
 }

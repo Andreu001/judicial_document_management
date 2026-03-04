@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalDecisionDetail.module.css';
+import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
 import {
   AppealTab,
   CourtInstanceTab,
@@ -12,24 +12,23 @@ import {
 } from './CriminalTabComponents';
 
 const CriminalDecisionDetail = () => {
-  const { id, proceedingId } = useParams(); // получаем оба параметра
+  const { id, proceedingId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
   const isCreateMode = location.pathname.includes('/create');
   const [decisionData, setDecisionData] = useState(null);
-  const [isEditing, setIsEditing] = useState(isCreateMode); // в режиме создания сразу редактируем
+  const [isEditing, setIsEditing] = useState(isCreateMode);
   const [formData, setFormData] = useState({
-    // начальные данные для нового решения
     appeal_present: null,
     appeal_date: null,
     appeal_number: '',
     appeal_consideration_result: null,
     appeal_consideration_date: null,
     appeal_consideration_time: null,
-    criminal_proceedings: proceedingId // автоматически заполняем ID производства
+    criminal_proceedings: proceedingId
   });
-  const [loading, setLoading] = useState(!isCreateMode); // загрузка только если не режим создания
+  const [loading, setLoading] = useState(!isCreateMode);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [options, setOptions] = useState({
@@ -43,14 +42,12 @@ const CriminalDecisionDetail = () => {
 
   useEffect(() => {
     if (isCreateMode) {
-      // В режиме создания просто загружаем опции и подсудимых
       loadOptions();
       if (proceedingId) {
         loadDefendants(proceedingId);
       }
       setLoading(false);
     } else {
-      // В режиме просмотра/редактирования загружаем данные решения
       fetchDecisionDetails();
     }
   }, [id, proceedingId, isCreateMode]);
@@ -125,14 +122,9 @@ const CriminalDecisionDetail = () => {
       const dataToSend = { ...formData };
       
       if (isCreateMode) {
-        // Создание нового решения
-        const createdData = await CriminalCaseService.createDecision(proceedingId, dataToSend);
-        setDecisionData(createdData);
-        setFormData(createdData);
-        // Перенаправляем на страницу созданного решения
+        await CriminalCaseService.createDecision(proceedingId, dataToSend);
         navigate(-1);
       } else {
-        // Обновление существующего решения
         delete dataToSend.id;
         delete dataToSend.criminal_proceedings;
         delete dataToSend.created_at;
@@ -161,10 +153,8 @@ const CriminalDecisionDetail = () => {
 
   const handleCancel = () => {
     if (isCreateMode) {
-      // В режиме создания возвращаемся назад
       navigate(-1);
     } else {
-      // В режиме редактирования отменяем изменения
       setFormData(decisionData);
       setIsEditing(false);
     }
@@ -216,20 +206,19 @@ const CriminalDecisionDetail = () => {
               Редактировать
             </button>
           ) : (
-            <div className={styles.editButtons}>
+            <>
               <button onClick={handleSave} className={styles.saveButton} disabled={saving}>
-                {saving ? 'Сохранение...' : isCreateMode ? 'Создать' : 'Сохранить'}
+                {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
               <button onClick={handleCancel} className={styles.cancelButton}>
-                {isCreateMode ? 'Отмена' : 'Отменить'}
+                Отмена
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>
 
       <div className={styles.content}>
-        {/* Основной контент с вкладками */}
         <div className={styles.mainContent}>
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
@@ -324,10 +313,9 @@ const CriminalDecisionDetail = () => {
           </div>
         </div>
 
-        {/* Правая колонка - обвиняемые */}
         <div className={styles.sidebar}>
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Б. Стороны по делу</h2>
+            <h2 className={styles.sectionTitle}>Стороны по делу</h2>
             
             {defendants.length > 0 ? (
               <div className={styles.defendantsList}>
@@ -341,7 +329,7 @@ const CriminalDecisionDetail = () => {
                 ))}
               </div>
             ) : (
-              <p>Обвиняемые не добавлены</p>
+              <p className={styles.noData}>Обвиняемые не добавлены</p>
             )}
           </div>
         </div>

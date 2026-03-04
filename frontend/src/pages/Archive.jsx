@@ -1,6 +1,9 @@
+// Обновленный Archive.jsx - с поддержкой КАС
 import React, { useState, useEffect } from 'react';
 import CriminalCaseService from '../API/CriminalCaseService';
 import CivilCaseService from '../API/CivilCaseService';
+import AdministrativeCaseService from '../API/AdministrativeCaseService';
+import KasCaseService from '../API/KasCaseService'; // Добавляем импорт
 import styles from './Archive.module.css';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from './ConfirmDialog';
@@ -9,14 +12,15 @@ const Archive = () => {
     const [archivedProceedings, setArchivedProceedings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [editingNoteId, setEditingNoteId] = useState(null);
-    const [editedFields, setEditedFields] = useState({
+    const [expandedYears, setExpandedYears] = useState({});
+    const [editingId, setEditingId] = useState(null);
+    const [editData, setEditData] = useState({
         archive_notes: '',
         special_notes: '',
         case_to_archive_date: ''
     });
     const [updating, setUpdating] = useState(false);
-    const [activeTab, setActiveTab] = useState('all'); // 'all', 'criminal', 'civil'
+    const [activeFilter, setActiveFilter] = useState('all'); // all, criminal, civil, administrative, kas
     const navigate = useNavigate();
     const [confirmDialog, setConfirmDialog] = useState({
         isOpen: false,
@@ -33,238 +37,256 @@ const Archive = () => {
         try {
             setLoading(true);
             
-            // Загружаем архивные уголовные дела
-            let criminalData = [];
-            try {
-                criminalData = await CriminalCaseService.getArchivedProceedings();
-                console.log('Criminal archived data loaded:', criminalData);
-            } catch (err) {
-                console.error('Error loading criminal archived proceedings:', err);
-            }
-            
-            // Загружаем архивные гражданские дела
-            let civilData = [];
-            try {
-                civilData = await CivilCaseService.getArchivedProceedings();
-                console.log('Civil archived data loaded:', civilData);
-            } catch (err) {
-                console.error('Error loading civil archived proceedings:', err);
-            }
-            
-            // Преобразуем данные для единообразного отображения
-            const transformedCriminalData = criminalData.map(item => ({
-                ...item,
-                case_type: 'criminal',
-                case_number: item.case_number_criminal || 'Без номера',
-                case_category: item.article_criminal || '—',
-                case_result: item.case_result || '—',
-                archived_date: item.archived_date || item.case_to_archive_date,
-                archive_notes: item.archive_notes || '',
-                special_notes: item.special_notes || '',
-                incoming_date: item.incoming_date
-            }));
-            
-            const transformedCivilData = civilData.map(item => ({
-                ...item,
-                case_type: 'civil',
-                case_number: item.case_number_civil || 'Без номера',
-                case_category: item.category || '—',
-                case_result: item.case_result || '—',
-                archived_date: item.archived_date || item.case_to_archive_date,
-                archive_notes: item.archive_notes || '',
-                special_notes: item.special_notes || '',
-                incoming_date: item.incoming_date
-            }));
-            
-            // Объединяем все дела
-            const allData = [...transformedCriminalData, ...transformedCivilData];
-            
-            // Сортируем по дате архивации (от новых к старым)
-            allData.sort((a, b) => {
-                const dateA = a.archived_date ? new Date(a.archived_date) : new Date(0);
-                const dateB = b.archived_date ? new Date(b.archived_date) : new Date(0);
+            // Загружаем все категории
+            const [criminalData, civilData, administrativeData, kasData] = await Promise.all([
+                CriminalCaseService.getArchivedProceedings().catch(() => []),
+                CivilCaseService.getArchivedProceedings().catch(() => []),
+                AdministrativeCaseService.getArchivedProceedings().catch(() => []),
+                KasCaseService.getArchivedProceedings().catch(() => []) // Добавляем загрузку КАС
+            ]);
+
+            // Преобразуем данные
+            const transformed = [
+                ...criminalData.map(item => ({
+                    ...item,
+                    category: 'criminal',
+                    caseNumber: item.case_number_criminal || 'б/н',
+                    caseInfo: item.article_criminal || '—',
+                    result: item.case_result || '—',
+                    archivedDate: item.archived_date || item.case_to_archive_date,
+                    incomingDate: item.incoming_date,
+                    archiveNotes: item.archive_notes || '',
+                    specialNotes: item.special_notes || ''
+                })),
+                ...civilData.map(item => ({
+                    ...item,
+                    category: 'civil',
+                    caseNumber: item.case_number_civil || 'б/н',
+                    caseInfo: item.category || '—',
+                    result: item.case_result || '—',
+                    archivedDate: item.archived_date || item.case_to_archive_date,
+                    incomingDate: item.incoming_date,
+                    archiveNotes: item.archive_notes || '',
+                    specialNotes: item.special_notes || ''
+                })),
+                ...administrativeData.map(item => ({
+                    ...item,
+                    category: 'administrative',
+                    caseNumber: item.case_number_admin || 'б/н',
+                    caseInfo: item.article_number ? `Ст. ${item.article_number}` : '—',
+                    result: item.status_display || item.status || '—',
+                    archivedDate: item.archived_date || item.case_to_archive_date,
+                    incomingDate: item.incoming_date,
+                    archiveNotes: item.archive_notes || '',
+                    specialNotes: item.special_notes || ''
+                })),
+                ...kasData.map(item => ({ // Добавляем преобразование для КАС
+                    ...item,
+                    category: 'kas',
+                    caseNumber: item.case_number_kas || 'б/н',
+                    caseInfo: item.case_category || '—',
+                    result: item.status_display || item.status || '—',
+                    archivedDate: item.archived_date || item.case_to_archive_date,
+                    incomingDate: item.incoming_date,
+                    archiveNotes: item.archive_notes || '',
+                    specialNotes: item.special_notes || ''
+                }))
+            ];
+
+            // Сортируем по дате архивации (новые сверху)
+            transformed.sort((a, b) => {
+                const dateA = a.archivedDate ? new Date(a.archivedDate) : new Date(0);
+                const dateB = b.archivedDate ? new Date(b.archivedDate) : new Date(0);
                 return dateB - dateA;
             });
+
+            setArchivedProceedings(transformed);
             
-            setArchivedProceedings(allData);
-            setLoading(false);
+            // По умолчанию раскрываем текущий год
+            const years = {};
+            const currentYear = new Date().getFullYear();
+            transformed.forEach(p => {
+                if (p.archivedDate) {
+                    const year = new Date(p.archivedDate).getFullYear();
+                    years[year] = year === currentYear;
+                }
+            });
+            setExpandedYears(years);
+            
         } catch (err) {
-            console.error('Error loading archived proceedings:', err);
-            setError('Ошибка загрузки архивных дел: ' + err.message);
+            setError('Ошибка загрузки архива: ' + err.message);
+        } finally {
             setLoading(false);
         }
+    };
+
+    const toggleYear = (year) => {
+        setExpandedYears(prev => ({
+            ...prev,
+            [year]: !prev[year]
+        }));
+    };
+
+    const handleEdit = (proceeding) => {
+        setEditingId(`${proceeding.category}-${proceeding.id}`);
+        setEditData({
+            archive_notes: proceeding.archiveNotes || '',
+            special_notes: proceeding.specialNotes || '',
+            case_to_archive_date: proceeding.archivedDate ? proceeding.archivedDate.split('T')[0] : ''
+        });
+    };
+
+    const handleSave = async (proceeding) => {
+        try {
+            setUpdating(true);
+            
+            const service = {
+                criminal: CriminalCaseService,
+                civil: CivilCaseService,
+                administrative: AdministrativeCaseService,
+                kas: KasCaseService // Добавляем сервис для КАС
+            }[proceeding.category];
+
+            const updateMethod = {
+                criminal: 'updateCriminalProceedings',
+                civil: 'updateCivilProceedings',
+                administrative: 'updateAdministrativeProceedings',
+                kas: 'updateKasProceedings' // Добавляем метод для КАС
+            }[proceeding.category];
+
+            await service[updateMethod](proceeding.id, {
+                archive_notes: editData.archive_notes,
+                special_notes: editData.special_notes,
+                case_to_archive_date: editData.case_to_archive_date
+            });
+
+            // Обновляем локальное состояние
+            setArchivedProceedings(prev => 
+                prev.map(p => 
+                    p.id === proceeding.id && p.category === proceeding.category
+                        ? {
+                            ...p,
+                            archiveNotes: editData.archive_notes,
+                            specialNotes: editData.special_notes,
+                            archivedDate: editData.case_to_archive_date || p.archivedDate
+                          }
+                        : p
+                )
+            );
+
+            setEditingId(null);
+        } catch (err) {
+            alert('Ошибка сохранения: ' + err.message);
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setEditingId(null);
+        setEditData({ archive_notes: '', special_notes: '', case_to_archive_date: '' });
     };
 
     const handleUnarchive = (proceeding) => {
         setConfirmDialog({
             isOpen: true,
             title: 'Возврат из архива',
-            message: `Вернуть ${proceeding.case_type === 'criminal' ? 'уголовное' : 'гражданское'} дело №${proceeding.case_number} из архива?`,
+            message: `Вернуть дело №${proceeding.caseNumber} из архива?`,
             onConfirm: async () => {
                 try {
-                    console.log('Unarchiving proceeding ID:', proceeding.id, 'Type:', proceeding.case_type);
+                    const service = {
+                        criminal: CriminalCaseService,
+                        civil: CivilCaseService,
+                        administrative: AdministrativeCaseService,
+                        kas: KasCaseService // Добавляем сервис для КАС
+                    }[proceeding.category];
+
+                    const unarchiveMethod = {
+                        criminal: 'unarchiveCriminalProceeding',
+                        civil: 'unarchiveCivilProceeding',
+                        administrative: 'unarchiveAdministrativeProceeding',
+                        kas: 'unarchiveKasProceeding' // Добавляем метод для КАС
+                    }[proceeding.category];
+
+                    await service[unarchiveMethod](proceeding.id);
                     
-                    if (proceeding.case_type === 'criminal') {
-                        await CriminalCaseService.unarchiveCriminalProceeding(proceeding.id);
-                    } else {
-                        await CivilCaseService.unarchiveCivilProceeding(proceeding.id);
-                    }
-                    
-                    loadArchivedProceedings();
+                    // Удаляем из списка
+                    setArchivedProceedings(prev => 
+                        prev.filter(p => !(p.id === proceeding.id && p.category === proceeding.category))
+                    );
                 } catch (err) {
-                    console.error('Error unarchiving:', err);
-                    alert('Ошибка возврата из архива: ' + (err.response?.data?.error || err.message));
+                    alert('Ошибка возврата из архива: ' + err.message);
                 }
                 setConfirmDialog(prev => ({ ...prev, isOpen: false }));
             }
         });
     };
 
-    const handleViewCase = (proceeding) => {
-        console.log('Viewing case ID:', proceeding.id, 'Type:', proceeding.case_type);
-        
-        if (proceeding.case_type === 'criminal') {
-            navigate(`/criminal-proceedings/${proceeding.id}`);
-        } else {
-            navigate(`/civil-proceedings/${proceeding.id}`);
-        }
-    };
-
-    const handleEditNotes = (proceedingId, proceedingData) => {
-        setEditingNoteId(proceedingId);
-        setEditedFields({
-            archive_notes: proceedingData.archive_notes || '',
-            special_notes: proceedingData.special_notes || '',
-            case_to_archive_date: proceedingData.case_to_archive_date || proceedingData.archived_date || ''
-        });
-    };
-
-    const handleFieldChange = (fieldName, value) => {
-        setEditedFields(prev => ({
-            ...prev,
-            [fieldName]: value
-        }));
-    };
-
-    const handleSaveNotes = async (proceedingId) => {
-        const proceeding = archivedProceedings.find(p => p.id === proceedingId);
-        if (!proceeding) {
-            alert('Дело не найдено');
-            return;
-        }
-
-        const isEmpty = Object.values(editedFields).every(value => !value || !value.toString().trim());
-        if (isEmpty) {
-            setConfirmDialog({
-                isOpen: true,
-                title: 'Сохранение пустых полей',
-                message: 'Сохранить все пустые поля?',
-                onConfirm: async () => {
-                    await saveNotes(proceedingId, proceeding.case_type);
-                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                }
-            });
-            return;
-        }
-        
-        await saveNotes(proceedingId, proceeding.case_type);
-    };
-
-    const saveNotes = async (proceedingId, caseType) => {
-        try {
-            setUpdating(true);
-            console.log('Saving notes for proceeding:', proceedingId, 'Type:', caseType, 'Fields:', editedFields);
-
-            const proceeding = archivedProceedings.find(p => p.id === proceedingId);
-            if (!proceeding) {
-                throw new Error('Дело не найдено');
-            }
-
-            const updatedData = {
-                archive_notes: editedFields.archive_notes,
-                special_notes: editedFields.special_notes,
-                case_to_archive_date: editedFields.case_to_archive_date
-            };
-
-            if (caseType === 'criminal') {
-                await CriminalCaseService.updateCriminalProceedings(proceedingId, updatedData);
-            } else {
-                await CivilCaseService.updateCivilProceedings(proceedingId, updatedData);
-            }
-
-            setArchivedProceedings(prev => 
-                prev.map(p => 
-                    p.id === proceedingId 
-                        ? { 
-                            ...p, 
-                            archive_notes: editedFields.archive_notes,
-                            special_notes: editedFields.special_notes,
-                            case_to_archive_date: editedFields.case_to_archive_date,
-                            archived_date: editedFields.case_to_archive_date || p.archived_date
-                        } 
-                        : p
-                )
-            );
-            
-            setEditingNoteId(null);
-            setEditedFields({
-                archive_notes: '',
-                special_notes: '',
-                case_to_archive_date: ''
-            });
-        } catch (err) {
-            console.error('Error saving notes:', err);
-            alert('Ошибка сохранения примечаний: ' + (err.response?.data?.error || err.message));
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    const handleCancelEdit = () => {
-        setEditingNoteId(null);
-        setEditedFields({
-            archive_notes: '',
-            special_notes: '',
-            case_to_archive_date: ''
-        });
+    const handleView = (proceeding) => {
+        const routes = {
+            criminal: '/criminal-proceedings/',
+            civil: '/civil-proceedings/',
+            administrative: '/admin-proceedings/',
+            kas: '/kas-proceedings/' // Добавляем маршрут для КАС
+        };
+        navigate(`${routes[proceeding.category]}${proceeding.id}`);
     };
 
     const formatDate = (dateString) => {
         if (!dateString) return '—';
         try {
-            return new Date(dateString).toLocaleDateString('ru-RU');
+            return new Date(dateString).toLocaleDateString('ru-RU', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
         } catch {
             return '—';
         }
     };
 
-    const formatDateForInput = (dateString) => {
-        if (!dateString) return '';
-        try {
-            const date = new Date(dateString);
-            return date.toISOString().split('T')[0];
-        } catch {
-            return '';
-        }
+    // Фильтрация по категории
+    const filteredProceedings = archivedProceedings.filter(p => 
+        activeFilter === 'all' ? true : p.category === activeFilter
+    );
+
+    // Группировка по годам
+    const groupedByYear = filteredProceedings.reduce((acc, proceeding) => {
+        if (!proceeding.archivedDate) return acc;
+        const year = new Date(proceeding.archivedDate).getFullYear();
+        if (!acc[year]) acc[year] = [];
+        acc[year].push(proceeding);
+        return acc;
+    }, {});
+
+    // Сортируем годы по убыванию
+    const sortedYears = Object.keys(groupedByYear).sort((a, b) => b - a);
+
+    // Подсчет статистики
+    const counts = {
+        all: archivedProceedings.length,
+        criminal: archivedProceedings.filter(p => p.category === 'criminal').length,
+        civil: archivedProceedings.filter(p => p.category === 'civil').length,
+        administrative: archivedProceedings.filter(p => p.category === 'administrative').length,
+        kas: archivedProceedings.filter(p => p.category === 'kas').length // Добавляем статистику для КАС
     };
 
-    const getFilteredProceedings = () => {
-        if (activeTab === 'criminal') {
-            return archivedProceedings.filter(p => p.case_type === 'criminal');
-        } else if (activeTab === 'civil') {
-            return archivedProceedings.filter(p => p.case_type === 'civil');
-        }
-        return archivedProceedings;
+    const getCategoryLabel = (category) => {
+        const labels = {
+            criminal: 'Уголовное',
+            civil: 'Гражданское',
+            administrative: 'Административное (КоАП)',
+            kas: 'Административное (КАС)'
+        };
+        return labels[category] || category;
     };
 
-    const getCaseTypeLabel = (caseType) => {
-        return caseType === 'criminal' ? 'Уголовное' : 'Гражданское';
-    };
-
-    const getCounts = () => {
-        const criminalCount = archivedProceedings.filter(p => p.case_type === 'criminal').length;
-        const civilCount = archivedProceedings.filter(p => p.case_type === 'civil').length;
-        return { criminal: criminalCount, civil: civilCount, total: archivedProceedings.length };
+    const getCategoryShortLabel = (category) => {
+        const labels = {
+            criminal: 'Уг',
+            civil: 'Гр',
+            administrative: 'АП',
+            kas: 'КАС'
+        };
+        return labels[category] || category;
     };
 
     if (loading) {
@@ -275,193 +297,254 @@ const Archive = () => {
         return <div className={styles.error}>{error}</div>;
     }
 
-    const counts = getCounts();
-    const filteredProceedings = getFilteredProceedings();
-
     return (
         <div className={styles.container}>
             <h1 className={styles.title}>Архив дел</h1>
-            
-            {/* Табы для фильтрации */}
-            <div className={styles.tabs}>
+
+            {/* Статистика */}
+            <div className={styles.statsBar}>
                 <button 
-                    className={`${styles.tab} ${activeTab === 'all' ? styles.activeTab : ''}`}
-                    onClick={() => setActiveTab('all')}
+                    className={`${styles.statBadge} ${activeFilter === 'all' ? styles.active : ''}`}
+                    onClick={() => setActiveFilter('all')}
                 >
-                    Все дела ({counts.total})
+                    Все ({counts.all})
                 </button>
                 <button 
-                    className={`${styles.tab} ${activeTab === 'criminal' ? styles.activeTab : ''}`}
-                    onClick={() => setActiveTab('criminal')}
+                    className={`${styles.statBadge} ${activeFilter === 'criminal' ? styles.active : ''}`}
+                    onClick={() => setActiveFilter('criminal')}
                 >
                     Уголовные ({counts.criminal})
                 </button>
                 <button 
-                    className={`${styles.tab} ${activeTab === 'civil' ? styles.activeTab : ''}`}
-                    onClick={() => setActiveTab('civil')}
+                    className={`${styles.statBadge} ${activeFilter === 'civil' ? styles.active : ''}`}
+                    onClick={() => setActiveFilter('civil')}
                 >
                     Гражданские ({counts.civil})
                 </button>
+                <button 
+                    className={`${styles.statBadge} ${activeFilter === 'administrative' ? styles.active : ''}`}
+                    onClick={() => setActiveFilter('administrative')}
+                >
+                    Адм. (КоАП) ({counts.administrative})
+                </button>
+                <button 
+                    className={`${styles.statBadge} ${activeFilter === 'kas' ? styles.active : ''}`}
+                    onClick={() => setActiveFilter('kas')}
+                >
+                    Адм. (КАС) ({counts.kas})
+                </button>
             </div>
-            
+
             {filteredProceedings.length === 0 ? (
                 <div className={styles.emptyArchive}>
-                    <p>В архиве нет {activeTab === 'criminal' ? 'уголовных' : activeTab === 'civil' ? 'гражданских' : ''} дел</p>
+                    <p>В архиве нет дел</p>
                 </div>
             ) : (
-                <div className={styles.proceedingsList}>
-                    {filteredProceedings.map(proceeding => (
-                        <div key={`${proceeding.case_type}-${proceeding.id}`} className={styles.archiveCard}>
-                            <div className={styles.cardHeader}>
-                                <div className={styles.caseType}>
-                                    {getCaseTypeLabel(proceeding.case_type)}
-                                </div>
-                                <div className={styles.caseNumber}>
-                                    Дело №{proceeding.case_number}
-                                </div>
-                                <div className={styles.archiveDate}>
-                                    Сдано в архив: {formatDate(proceeding.archived_date)}
-                                </div>
-                            </div>
-                            
-                            <div className={styles.cardContent}>
-                                <div className={styles.infoRow}>
-                                    <span className={styles.label}>Дата поступления:</span>
-                                    <span>{formatDate(proceeding.incoming_date)}</span>
-                                </div>
-                                <div className={styles.infoRow}>
-                                    <span className={styles.label}>
-                                        {proceeding.case_type === 'criminal' ? 'Статья:' : 'Категория:'}
+                <div className={styles.archiveContent}>
+                    {sortedYears.map(year => (
+                        <div key={year} className={styles.yearGroup}>
+                            <div 
+                                className={styles.yearHeader}
+                                onClick={() => toggleYear(year)}
+                            >
+                                <span className={styles.yearTitle}>
+                                    {year} год
+                                    <span className={styles.expandIcon}>
+                                        {expandedYears[year] ? '▼' : '▶'}
                                     </span>
-                                    <span>{proceeding.case_category}</span>
-                                </div>
-                                <div className={styles.infoRow}>
-                                    <span className={styles.label}>Результат:</span>
-                                    <span>{proceeding.case_result || '—'}</span>
-                                </div>
-                                
-                                {/* Поля для редактирования */}
-                                <div className={styles.editableFields}>
-                                    {editingNoteId === proceeding.id ? (
-                                        <div className={styles.notesEditContainer}>
-                                            {/* Архивные примечания */}
-                                            <div className={styles.fieldGroup}>
-                                                <label className={styles.fieldLabel}>
-                                                    Архивные примечания:
-                                                </label>
-                                                <textarea
-                                                    value={editedFields.archive_notes}
-                                                    onChange={(e) => handleFieldChange('archive_notes', e.target.value)}
-                                                    className={styles.notesTextarea}
-                                                    rows={3}
-                                                    placeholder="Введите архивные примечания..."
-                                                    disabled={updating}
-                                                />
-                                            </div>
-                                            
-                                            {/* Особые примечания */}
-                                            <div className={styles.fieldGroup}>
-                                                <label className={styles.fieldLabel}>
-                                                    Особые примечания:
-                                                </label>
-                                                <textarea
-                                                    value={editedFields.special_notes}
-                                                    onChange={(e) => handleFieldChange('special_notes', e.target.value)}
-                                                    className={styles.notesTextarea}
-                                                    rows={3}
-                                                    placeholder="Введите особые примечания..."
-                                                    disabled={updating}
-                                                />
-                                            </div>
-                                            
-                                            {/* Дата передачи в архив */}
-                                            <div className={styles.fieldGroup}>
-                                                <label className={styles.fieldLabel}>
-                                                    Дата передачи в архив:
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    value={formatDateForInput(editedFields.case_to_archive_date)}
-                                                    onChange={(e) => handleFieldChange('case_to_archive_date', e.target.value)}
-                                                    className={styles.dateInput}
-                                                    disabled={updating}
-                                                />
-                                            </div>
-                                            
-                                            <div className={styles.notesEditActions}>
-                                                <button
-                                                    onClick={() => handleSaveNotes(proceeding.id)}
-                                                    className={styles.saveButton}
-                                                    disabled={updating}
-                                                >
-                                                    {updating ? 'Сохранение...' : 'Сохранить все'}
-                                                </button>
-                                                <button
-                                                    onClick={handleCancelEdit}
-                                                    className={styles.cancelButton}
-                                                    disabled={updating}
-                                                >
-                                                    Отмена
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className={styles.notesDisplay}>
-                                            {/* Архивные примечания */}
-                                            <div className={styles.notesRow}>
-                                                <span className={styles.label}>Архивные примечания:</span>
-                                                <span className={styles.notesText}>
-                                                    {proceeding.archive_notes || '—'}
-                                                </span>
-                                            </div>
-                                            
-                                            {/* Особые примечания */}
-                                            <div className={styles.notesRow}>
-                                                <span className={styles.label}>Особые примечания:</span>
-                                                <span className={styles.notesText}>
-                                                    {proceeding.special_notes || '—'}
-                                                </span>
-                                            </div>
-                                            
-                                            {/* Дата передачи в архив */}
-                                            <div className={styles.notesRow}>
-                                                <span className={styles.label}>Дата передачи в архив:</span>
-                                                <span className={styles.notesText}>
-                                                    {formatDate(proceeding.case_to_archive_date || proceeding.archived_date) || '—'}
-                                                </span>
-                                            </div>
-                                            
-                                            <button
-                                                onClick={() => handleEditNotes(proceeding.id, proceeding)}
-                                                className={styles.editNotesButton}
+                                </span>
+                                <span className={styles.yearCount}>
+                                    {groupedByYear[year].length} дел
+                                </span>
+                            </div>
+
+                            {expandedYears[year] && (
+                                <div className={styles.cardsGrid}>
+                                    {groupedByYear[year].map(proceeding => {
+                                        const isEditing = editingId === `${proceeding.category}-${proceeding.id}`;
+                                        const categoryClass = {
+                                            criminal: styles.criminalCard,
+                                            civil: styles.civilCard,
+                                            administrative: styles.adminCard,
+                                            kas: styles.kasCard
+                                        }[proceeding.category];
+
+                                        const headerClass = {
+                                            criminal: styles.criminalHeader,
+                                            civil: styles.civilHeader,
+                                            administrative: styles.adminHeader,
+                                            kas: styles.kasHeader
+                                        }[proceeding.category];
+
+                                        return (
+                                            <div 
+                                                key={`${proceeding.category}-${proceeding.id}`}
+                                                className={`${styles.archiveCard} ${categoryClass}`}
                                             >
-                                                ✏️ Редактировать примечания
-                                            </button>
-                                        </div>
-                                    )}
+                                                <div className={`${styles.cardHeader} ${headerClass}`}>
+                                                    <span className={styles.caseType}>
+                                                        {getCategoryShortLabel(proceeding.category)}
+                                                    </span>
+                                                    <span className={styles.caseNumber}>
+                                                        №{proceeding.caseNumber}
+                                                    </span>
+                                                </div>
+
+                                                <div className={styles.cardBody}>
+                                                    <div className={styles.infoRow}>
+                                                        <span className={styles.infoLabel}>Сдано:</span>
+                                                        <span className={styles.infoValue}>
+                                                            {formatDate(proceeding.archivedDate)}
+                                                        </span>
+                                                    </div>
+                                                    <div className={styles.infoRow}>
+                                                        <span className={styles.infoLabel}>Поступило:</span>
+                                                        <span className={styles.infoValue}>
+                                                            {formatDate(proceeding.incomingDate)}
+                                                        </span>
+                                                    </div>
+                                                    <div className={styles.infoRow}>
+                                                        <span className={styles.infoLabel}>
+                                                            {proceeding.category === 'criminal' ? 'Статья:' :
+                                                             proceeding.category === 'civil' ? 'Категория:' :
+                                                             proceeding.category === 'administrative' ? 'Статья:' :
+                                                             'Категория:'}
+                                                        </span>
+                                                        <span className={styles.infoValue}>
+                                                            {proceeding.caseInfo}
+                                                        </span>
+                                                    </div>
+                                                    <div className={styles.infoRow}>
+                                                        <span className={styles.infoLabel}>Результат:</span>
+                                                        <span className={styles.infoValue}>
+                                                            {proceeding.result}
+                                                        </span>
+                                                    </div>
+
+                                                    {isEditing ? (
+                                                        <div className={styles.editContainer}>
+                                                            <div className={styles.editField}>
+                                                                <label className={styles.editLabel}>
+                                                                    Архивные примечания
+                                                                </label>
+                                                                <textarea
+                                                                    className={styles.editTextarea}
+                                                                    value={editData.archive_notes}
+                                                                    onChange={(e) => setEditData(prev => ({ 
+                                                                        ...prev, 
+                                                                        archive_notes: e.target.value 
+                                                                    }))}
+                                                                    rows={2}
+                                                                    disabled={updating}
+                                                                />
+                                                            </div>
+                                                            <div className={styles.editField}>
+                                                                <label className={styles.editLabel}>
+                                                                    Особые примечания
+                                                                </label>
+                                                                <textarea
+                                                                    className={styles.editTextarea}
+                                                                    value={editData.special_notes}
+                                                                    onChange={(e) => setEditData(prev => ({ 
+                                                                        ...prev, 
+                                                                        special_notes: e.target.value 
+                                                                    }))}
+                                                                    rows={2}
+                                                                    disabled={updating}
+                                                                />
+                                                            </div>
+                                                            <div className={styles.editField}>
+                                                                <label className={styles.editLabel}>
+                                                                    Дата передачи в архив
+                                                                </label>
+                                                                <input
+                                                                    type="date"
+                                                                    className={styles.editInput}
+                                                                    value={editData.case_to_archive_date}
+                                                                    onChange={(e) => setEditData(prev => ({ 
+                                                                        ...prev, 
+                                                                        case_to_archive_date: e.target.value 
+                                                                    }))}
+                                                                    disabled={updating}
+                                                                />
+                                                            </div>
+                                                            <div className={styles.editActions}>
+                                                                <button 
+                                                                    className={styles.saveBtn}
+                                                                    onClick={() => handleSave(proceeding)}
+                                                                    disabled={updating}
+                                                                >
+                                                                    {updating ? '...' : 'Сохранить'}
+                                                                </button>
+                                                                <button 
+                                                                    className={styles.cancelBtn}
+                                                                    onClick={handleCancel}
+                                                                    disabled={updating}
+                                                                >
+                                                                    Отмена
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {(proceeding.archiveNotes || proceeding.specialNotes) && (
+                                                                <div className={styles.notesSection}>
+                                                                    {proceeding.archiveNotes && (
+                                                                        <div className={styles.notesItem}>
+                                                                            <span className={styles.notesLabel}>
+                                                                                Архивные:
+                                                                            </span>
+                                                                            <span className={styles.notesText}>
+                                                                                {proceeding.archiveNotes}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                    {proceeding.specialNotes && (
+                                                                        <div className={styles.notesItem}>
+                                                                            <span className={styles.notesLabel}>
+                                                                                Особые:
+                                                                            </span>
+                                                                            <span className={styles.notesText}>
+                                                                                {proceeding.specialNotes}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <button 
+                                                                className={styles.editNotesBtn}
+                                                                onClick={() => handleEdit(proceeding)}
+                                                            >
+                                                                ✎ Редактировать примечания
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                <div className={styles.cardActions}>
+                                                    <button 
+                                                        className={styles.viewBtn}
+                                                        onClick={() => handleView(proceeding)}
+                                                    >
+                                                        Открыть
+                                                    </button>
+                                                    <button 
+                                                        className={styles.unarchiveBtn}
+                                                        onClick={() => handleUnarchive(proceeding)}
+                                                    >
+                                                        Вернуть
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            </div>
-                            
-                            <div className={styles.cardActions}>
-                                <button 
-                                    onClick={() => handleViewCase(proceeding)}
-                                    className={styles.viewButton}
-                                >
-                                    Просмотреть дело
-                                </button>
-                                <button 
-                                    onClick={() => handleUnarchive(proceeding)}
-                                    className={styles.unarchiveButton}
-                                >
-                                    Вернуть из архива
-                                </button>
-                            </div>
+                            )}
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Модальное окно подтверждения */}
             <ConfirmDialog
                 isOpen={confirmDialog.isOpen}
                 title={confirmDialog.title}
