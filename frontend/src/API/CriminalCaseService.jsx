@@ -791,6 +791,254 @@ static async getJudges() {
       throw error;
     }
   }
+
+  // === Карточка на подсудимого (CriminalPersonCard) ===
+  
+  static async getPersonCards(proceedingId = null, defendantId = null) {
+    try {
+      let url = `${BASE_URL}person-cards/`;
+      const params = [];
+      if (proceedingId) params.push(`proceeding_id=${proceedingId}`);
+      if (defendantId) params.push(`defendant_id=${defendantId}`);
+      if (params.length) url += `?${params.join('&')}`;
+      
+      const response = await baseService.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching person cards:', error);
+      return [];
+    }
+  }
+  
+  static async getPersonCardById(id) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${id}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error fetching person card:', error);
+      throw error;
+    }
+  }
+  
+  static async getPersonCardByDefendant(defendantId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/by-defendant/${defendantId}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Карточка не найдена');
+      }
+      console.error('Error fetching person card by defendant:', error);
+      throw error;
+    }
+  }
+  
+  static async createPersonCard(cardData) {
+    try {
+      const response = await baseService.post(`${BASE_URL}person-cards/`, cardData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating person card:', error);
+      throw error;
+    }
+  }
+  
+  static async updatePersonCard(cardId, cardData) {
+    try {
+      const cleanedData = this.cleanData(cardData);
+      const response = await baseService.patch(`${BASE_URL}person-cards/${cardId}/`, cleanedData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating person card:', error);
+      throw error;
+    }
+  }
+  
+  static async deletePersonCard(cardId) {
+    try {
+      await baseService.delete(`${BASE_URL}person-cards/${cardId}/`);
+    } catch (error) {
+      console.error('Error deleting person card:', error);
+      throw error;
+    }
+  }
+  
+  static async markPersonCardCompleted(cardId) {
+    try {
+      const response = await baseService.post(`${BASE_URL}person-cards/${cardId}/mark_completed/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking person card as completed:', error);
+      throw error;
+    }
+  }
+  
+  // === Предыдущие судимости ===
+  
+  static async getPreviousConvictions(cardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${cardId}/previous-convictions/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching previous convictions:', error);
+      return [];
+    }
+  }
+  
+  static async createPreviousConviction(cardId, convictionData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}person-cards/${cardId}/previous-convictions/`,
+        convictionData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating previous conviction:', error);
+      throw error;
+    }
+  }
+  
+  static async updatePreviousConviction(cardId, convictionId, convictionData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}person-cards/${cardId}/previous-convictions/${convictionId}/`,
+        convictionData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating previous conviction:', error);
+      throw error;
+    }
+  }
+  
+  static async deletePreviousConviction(cardId, convictionId) {
+    try {
+      await baseService.delete(`${BASE_URL}person-cards/${cardId}/previous-convictions/${convictionId}/`);
+    } catch (error) {
+      console.error('Error deleting previous conviction:', error);
+      throw error;
+    }
+  }
+  
+  // === Составы преступлений ===
+  
+  static async getCrimeCompositions(cardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${cardId}/crime-compositions/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching crime compositions:', error);
+      return [];
+    }
+  }
+  
+  static async createCrimeComposition(cardId, crimeData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}person-cards/${cardId}/crime-compositions/`,
+        crimeData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating crime composition:', error);
+      throw error;
+    }
+  }
+  
+  static async updateCrimeComposition(cardId, crimeId, crimeData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}person-cards/${cardId}/crime-compositions/${crimeId}/`,
+        crimeData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating crime composition:', error);
+      throw error;
+    }
+  }
+  
+  static async deleteCrimeComposition(cardId, crimeId) {
+    try {
+      await baseService.delete(`${BASE_URL}person-cards/${cardId}/crime-compositions/${crimeId}/`);
+    } catch (error) {
+      console.error('Error deleting crime composition:', error);
+      throw error;
+    }
+  }
+  
+  // === Назначенные наказания ===
+  
+  static async getSentences(cardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${cardId}/sentences/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sentences:', error);
+      return [];
+    }
+  }
+  
+  static async createSentence(cardId, sentenceData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}person-cards/${cardId}/sentences/`,
+        sentenceData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating sentence:', error);
+      throw error;
+    }
+  }
+  
+  static async updateSentence(cardId, sentenceId, sentenceData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}person-cards/${cardId}/sentences/${sentenceId}/`,
+        sentenceData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating sentence:', error);
+      throw error;
+    }
+  }
+  
+  static async deleteSentence(cardId, sentenceId) {
+    try {
+      await baseService.delete(`${BASE_URL}person-cards/${cardId}/sentences/${sentenceId}/`);
+    } catch (error) {
+      console.error('Error deleting sentence:', error);
+      throw error;
+    }
+  }
+  
+  static async getPersonCardStatistics(cardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${cardId}/statistics/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching person card statistics:', error);
+      return null;
+    }
+  }
+  static async getPersonCardByDefendant(defendantId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/by-defendant/${defendantId}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // Возвращаем специальный объект, чтобы отличить отсутствие карточки
+        throw new Error('NOT_FOUND');
+      }
+      console.error('Error fetching person card by defendant:', error);
+      throw error;
+    }
+  }
 }
 
 export default CriminalCaseService;

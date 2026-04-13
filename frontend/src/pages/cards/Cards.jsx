@@ -14,10 +14,11 @@ import { useProtectedFetching } from '../../hooks/useProtectedFetching';
 import { useCard } from '../../hooks/useCard';
 import CategoryBasedForm from '../../components/CategoryBasedForm';
 import styles from '../../components/UI/Header/Header.module.css';
-import searchStyles from '../../components/Search/Search.module.css'; // Новый стиль
+import searchStyles from '../../components/Search/Search.module.css';
 import { useAuth } from '../../context/AuthContext';
 import cl from '../../components/UI/loader/Loader.module.css';
 import SearchResults from '../../components/Search/SearchResults';
+import OtherMaterialService from '../../API/OtherMaterialService';
 
 function Cards() {
   const [allCards, setAllCards] = useState([]);
@@ -141,7 +142,6 @@ const sortCards = useCallback((cards, sortBy) => {
             criminal_proceedings_id: caseItem.id,
             status: caseItem.status || 'active',
             status_display: caseItem.status_display,
-            // Проверяем наличие решения и исполнения
             has_decision: caseItem.sentence_date || (caseItem.criminal_decisions?.length > 0),
             has_execution: caseItem.criminal_executions?.length > 0,
           }));
@@ -230,7 +230,40 @@ const sortCards = useCallback((cards, sortBy) => {
           console.error('Ошибка загрузки административных дел (КАС):', error);
         }
 
-        const allLoadedCards = [...regularCards, ...criminalCards, ...civilCards, ...adminOffenseCards, ...kasCards];
+        // Загрузка иных материалов (индекс 15)
+        let otherMaterialCards = [];
+        try {
+          const otherResponse = await OtherMaterialService.getAllOtherMaterials();
+          otherMaterialCards = otherResponse.map(caseItem => ({
+            id: `other-${caseItem.id}`,
+            real_id: caseItem.id,
+            case_number: caseItem.registration_number || 'Номер не указан',
+            case_category_title: 'Прочие материалы',
+            case_category: 7,
+            pub_date: caseItem.created_at,
+            registration_date: caseItem.registration_date,
+            incoming_date: caseItem.incoming_date,
+            created_at: caseItem.created_at,
+            updated_at: caseItem.updated_at,
+            author_name: caseItem.author_name || 'Не указан',
+            is_other_material: true,
+            other_material_id: caseItem.id,
+            status: caseItem.status || 'active',
+            status_display: caseItem.status_display,
+            title: caseItem.title,
+            description: caseItem.description,
+            sender: caseItem.sender,
+            consideration_date: caseItem.consideration_date,
+            consideration_result: caseItem.consideration_result,
+            registration_number: caseItem.registration_number,
+            has_decision: false,
+            has_execution: false,
+          }));
+        } catch (error) {
+          console.error('Ошибка загрузки иных материалов:', error);
+        }
+
+        const allLoadedCards = [...regularCards, ...criminalCards, ...civilCards, ...adminOffenseCards, ...kasCards, ...otherMaterialCards];
         
         // Обновляем статусы на основе наличия решений и исполнений
         const updatedCards = allLoadedCards.map(card => {
@@ -462,7 +495,8 @@ const sortCards = useCallback((cards, sortBy) => {
             'Административное правонарушение',
             'Административное судопроизводство', 
             'Гражданское судопроизводство', 
-            'Уголовное судопроизводство'
+            'Уголовное судопроизводство',
+            'Прочие материалы'
           ].map(
             (category) => (
               <button

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'legal_documents',
     'search',
     'case_documents',
+    'other_materials',
 ]
 
 MIDDLEWARE = [

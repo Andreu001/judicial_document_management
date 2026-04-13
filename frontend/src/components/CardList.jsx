@@ -1,10 +1,10 @@
 import React, { useRef } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import BusinessCard from './BusinessCard';
 import CriminalBusinessCard from './CriminalBusinessCard';
 import CivilBusinessCard from './CivilBusinessCard';
 import AdministrativeBusinessCard from './AdministrativeBusinessCard';
 import KasBusinessCard from './KasBusinessCard';
+import OtherMaterialBusinessCard from './OtherMaterialBusinessCard';
 import styles from './UI/CardList/CardList.module.css';
 
 const CardList = (props) => {
@@ -81,7 +81,7 @@ const CardList = (props) => {
                 </div>
               </CSSTransition>
             );
-          } else {
+          } else if (card.is_kas) {
             return (
               <CSSTransition
                 key={card.id}
@@ -95,6 +95,40 @@ const CardList = (props) => {
                     number={index + 1} 
                     card={card} 
                   />
+                </div>
+              </CSSTransition>
+            );
+          } else if (card.is_other_material) {  // Добавляем проверку для иных материалов
+            return (
+              <CSSTransition
+                key={card.id}
+                nodeRef={nodeRefs.current[card.id]}
+                timeout={500}
+                classNames="post"
+              >
+                <div ref={nodeRefs.current[card.id]}>
+                  <OtherMaterialBusinessCard 
+                    remove={() => remove(card.id)} 
+                    number={index + 1} 
+                    card={card} 
+                  />
+                </div>
+              </CSSTransition>
+            );
+          } else {
+            // Если ничего не подошло, показываем заглушку
+            return (
+              <CSSTransition
+                key={card.id}
+                nodeRef={nodeRefs.current[card.id]}
+                timeout={500}
+                classNames="post"
+              >
+                <div ref={nodeRefs.current[card.id]} className={styles.defaultCard}>
+                  <div className={styles.defaultCardContent}>
+                    <h3>{card.original_name || 'Карточка'}</h3>
+                    <p>Тип не определен</p>
+                  </div>
                 </div>
               </CSSTransition>
             );

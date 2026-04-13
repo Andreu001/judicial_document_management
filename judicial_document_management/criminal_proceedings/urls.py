@@ -10,9 +10,14 @@ from .views import (CriminalProceedingsViewSet, DefendantViewSet,
                     lawyer_criminal_options, SidesCaseInCaseViewSet,
                     PetitionCriminalViewSet, petition_criminal_options,
                     CriminalExecutionViewSet)
+from .views_person_card import (
+    CriminalPersonCardViewSet, PreviousConvictionViewSet,
+    CrimeCompositionViewSet, SentencedPunishmentViewSet
+)
 
 router = routers.DefaultRouter()
 
+# Стандартные маршруты
 router.register(
     r"archived-criminal-proceedings", ArchivedCriminalProceedingsViewSet,
     basename="archived-criminal-proceedings"
@@ -55,6 +60,28 @@ router.register(
     r"criminal-proceedings/(?P<criminal_proceedings>\d+)/executions",
     CriminalExecutionViewSet,
     basename="criminal-executions"
+)
+
+router.register(
+    r"person-cards",
+    CriminalPersonCardViewSet,
+    basename="person-cards"
+)
+
+router.register(
+    r"person-cards/(?P<person_card_id>\d+)/previous-convictions",
+    PreviousConvictionViewSet,
+    basename="previous-convictions"
+)
+router.register(
+    r"person-cards/(?P<person_card_id>\d+)/crime-compositions",
+    CrimeCompositionViewSet,
+    basename="crime-compositions"
+)
+router.register(
+    r"person-cards/(?P<person_card_id>\d+)/sentences",
+    SentencedPunishmentViewSet,
+    basename="sentences"
 )
 
 urlpatterns = [

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
+import styles from './CriminalDetail.module.css';
 
 const DefendantDetail = () => {
   const { proceedingId, id } = useParams();
@@ -329,6 +329,15 @@ const DefendantDetail = () => {
         </div>
         
         <div className={styles.headerRight}>
+          {!isCreateMode && (
+            <button 
+              onClick={() => navigate(`/criminal-proceedings/${proceedingId}/defendants/${id}/person-card`)}
+              className={styles.personCardButton}
+            >
+              Статистическая карточка
+            </button>
+          )}
+          
           {isCreateMode ? (
             <>
               <button 

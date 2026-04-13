@@ -42,6 +42,11 @@ import LegalDocuments from './LegalDocument/LegalDocuments';
 import DocumentsPage from './Documents/DocumentsPage';
 import DocumentFormPage from './Documents/DocumentFormPage';
 import DocumentDetailPage from './Documents/DocumentDetailPage';
+import CriminalPersonCard from './CriminalCase/CriminalPersonCard';
+import OtherMaterialDetail from './OtherMaterials/OtherMaterialDetail';
+import OtherMaterialSideDetail from './OtherMaterials/OtherMaterialSideDetail';
+import OtherMaterialMovementDetail from './OtherMaterials/OtherMaterialMovementDetail';
+import OtherMaterialPetitionDetail from './OtherMaterials/OtherMaterialPetitionDetail';
 
 
 
@@ -139,6 +144,7 @@ const AppRouter = () => {
                 {/* Подсудимые */}
                 <Route path="/criminal-proceedings/:proceedingId/defendants/create" element={<DefendantDetail />} />
                 <Route path="/criminal-proceedings/:proceedingId/defendants/:id" element={<DefendantDetail />} />
+                <Route path="/criminal-proceedings/:proceedingId/defendants/:defendantId/person-card" element={<CriminalPersonCard />} />
                 
                 {/* Адвокаты */}
                 <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/create" element={<CriminalLawyerDetails />} />
@@ -232,6 +238,26 @@ const AppRouter = () => {
                 {/* Исполнение по административному делу */}
                 <Route path="kas-proceedings/:proceedingId/executions/create" element={<KasExecutionDetail />} />
                 <Route path="kas-proceedings/:proceedingId/executions/:executionId" element={<KasExecutionDetail />} />
+
+                {/* ========== Иные материалы (индекс 15) ========== */}
+                <Route path="other-materials/create" element={<OtherMaterialDetail />} />
+                <Route path="other-materials/:id" element={<OtherMaterialDetail />} />
+
+                <Route path="other-materials/:materialId/sides/create" element={<OtherMaterialSideDetail />} />
+                <Route path="other-materials/:materialId/sides/:sideId" element={<OtherMaterialSideDetail />} />
+
+                <Route path="other-materials/:materialId/lawyers/create" element={<LawyerDetails />} />
+                <Route path="other-materials/:materialId/lawyers/:lawyerId" element={<LawyerDetails />} />
+
+                <Route path="other-materials/:materialId/movements/create" element={<OtherMaterialMovementDetail />} />
+                <Route path="other-materials/:materialId/movements/:movementId" element={<OtherMaterialMovementDetail />} />
+
+                <Route path="other-materials/:materialId/petitions/create" element={<OtherMaterialPetitionDetail />} />
+                <Route path="other-materials/:materialId/petitions/:petitionId" element={<OtherMaterialPetitionDetail />} />
+
+                <Route path="other-materials/:materialId/documents" element={<DocumentsPage caseType="other" />} />
+                <Route path="other-materials/:materialId/documents/create" element={<DocumentFormPage caseType="other" />} />
+                <Route path="other-materials/:materialId/documents/:documentId" element={<DocumentDetailPage caseType="other" />} />
             </Route>
         </Routes>
     );

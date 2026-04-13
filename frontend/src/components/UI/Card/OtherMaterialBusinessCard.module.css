@@ -1,0 +1,533 @@
+/* OtherMaterialBusinessCard.module.css - Деловая темно-фиолетовая гамма */
+
+.cardContainer {
+  background: linear-gradient(to bottom, #ffffff, #fafafa);
+  border: 1px solid #d4d0dc; /* Приглушенный серо-фиолетовый */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(40, 30, 60, 0.08); /* Темная тень */
+  margin-bottom: 20px;
+  transition: all 0.25s cubic-bezier(0.02, 0.8, 0.2, 1);
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.cardContainer:hover {
+  box-shadow: 0 12px 24px rgba(40, 30, 60, 0.15);
+  border-color: #b8b0cc;
+}
+
+.cardContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #4a3a6e, #6b5590); /* Темный приглушенный фиолетовый */
+  opacity: 0.9;
+}
+
+/* Заголовок - темный фиолетовый градиент */
+.cardHeader {
+  background: linear-gradient(135deg, #4a3a6e, #5d4a82);
+  color: white;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.headerMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.caseType {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2px 6px;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.caseNumber {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Roboto Mono', 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.caseTitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.caseResponsible {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.caseDate {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* Быстрые действия */
+.quickActionsWrapper {
+  flex-shrink: 0;
+}
+
+.quickActions {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e0dce8;
+  background: #f0eef5; /* Светлый серо-фиолетовый фон */
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.quickAction {
+  flex: 1 1 auto;
+  min-width: 70px;
+  padding: 4px 2px;
+  background: white;
+  border: 1px solid #d4d0dc;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #4a3f5e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-height: 28px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.quickAction:hover {
+  border-color: #8a7aa8;
+  color: #4a3a6e;
+  background: #e8e4f0;
+}
+
+.quickAction.active {
+  border-color: #5d4a82;
+  background: linear-gradient(145deg, #5d4a82, #4a3a6e);
+  color: white;
+}
+
+.quickActionCount {
+  display: none;
+}
+
+/* Контент */
+.cardContent {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px 12px;
+  background: white;
+  scrollbar-width: thin;
+  scrollbar-color: #c8c0d8 #f0eef5;
+}
+
+.cardContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cardContent::-webkit-scrollbar-track {
+  background: #f0eef5;
+  border-radius: 4px;
+}
+
+.cardContent::-webkit-scrollbar-thumb {
+  background: #c8c0d8;
+  border-radius: 4px;
+}
+
+.cardContent::-webkit-scrollbar-thumb:hover {
+  background: #a898c0;
+}
+
+/* Содержимое */
+.summaryContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summaryDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f0eef5;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px dashed #e0dce8;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-size: 10px;
+  color: #7a6a8e;
+  font-weight: 500;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.detailValue {
+  font-size: 11px;
+  color: #3a3050;
+  font-weight: 500;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.lastActivity {
+  margin-top: auto;
+  font-size: 8px;
+  color: #9a8ab0;
+  text-align: right;
+  padding-top: 4px;
+  border-top: 1px solid #e0dce8;
+  font-style: italic;
+  letter-spacing: 0.2px;
+}
+
+/* Вкладки с контентом */
+.tabContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tabHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e0dce8;
+  min-height: 28px;
+  flex-shrink: 0;
+}
+
+.tabHeader h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a3a6e;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.tabHeaderActions {
+  display: flex;
+  gap: 4px;
+}
+
+.addButton {
+  background: linear-gradient(145deg, #6b5590, #4a3a6e);
+  color: white;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(74, 58, 110, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.addButton:hover {
+  background: linear-gradient(145deg, #5d4a82, #3a2a5a);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 58, 110, 0.3);
+}
+
+.addButton:active {
+  transform: translateY(0);
+}
+
+/* Список элементов */
+.compactList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compactItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: white;
+  border: 1px solid #e0dce8;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.compactItem:hover {
+  border-color: #a898c0;
+  background: #f8f6fc;
+  box-shadow: 0 4px 12px rgba(74, 58, 110, 0.1);
+  transform: translateX(2px);
+}
+
+.compactItemContent {
+  flex: 1;
+}
+
+.compactItemTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3a3050;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sideType {
+  font-size: 8px;
+  font-weight: 500;
+  color: #5d4a82;
+  background: #e8e4f0;
+  padding: 1px 5px;
+  border-radius: 16px;
+  display: inline-block;
+  letter-spacing: 0.2px;
+}
+
+.compactItemSubtitle {
+  font-size: 9px;
+  color: #7a6a8e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compactItemActions {
+  display: flex;
+  gap: 4px;
+}
+
+.actionButton, .deleteButton {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #f0eef5;
+  color: #4a3f5e;
+}
+
+.actionButton {
+  color: #5d4a82;
+}
+
+.actionButton:hover {
+  background: #5d4a82;
+  color: white;
+  transform: scale(1.05);
+}
+
+.deleteButton {
+  color: #b8776d;
+}
+
+.deleteButton:hover {
+  background: #b8776d;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Состояние пустого списка */
+.emptyState {
+  text-align: center;
+  padding: 20px 15px;
+  color: #9a8ab0;
+  font-size: 11px;
+  background: #f0eef5;
+  border-radius: 8px;
+  border: 1px dashed #c8c0d8;
+}
+
+.emptyState p {
+  margin: 0 0 10px 0;
+}
+
+.emptyStateButton {
+  background: #6b5590;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(74, 58, 110, 0.2);
+}
+
+.emptyStateButton:hover {
+  background: #5d4a82;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 58, 110, 0.3);
+}
+
+.noData {
+  text-align: center;
+  color: #9a8ab0;
+  font-size: 10px;
+  padding: 15px;
+  font-style: italic;
+}
+
+/* Футер */
+.cardFooter {
+  padding: 8px 12px;
+  background: #f0eef5;
+  border-top: 1px solid #e0dce8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.primaryButton {
+  background: linear-gradient(145deg, #6b5590, #4a3a6e);
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  margin-right: 8px;
+  box-shadow: 0 2px 4px rgba(74, 58, 110, 0.2);
+}
+
+.primaryButton:hover {
+  background: linear-gradient(145deg, #5d4a82, #3a2a5a);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(74, 58, 110, 0.25);
+}
+
+.footerActions {
+  display: flex;
+  gap: 6px;
+}
+
+.dangerButton {
+  background: white;
+  color: #b8776d;
+  border: 1px solid #b8776d;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dangerButton:hover {
+  background: #b8776d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(184, 119, 109, 0.2);
+}
+
+/* Статус архива */
+.archivedBadge {
+  background: #8a7aa8;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 16px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
+.listSubtitle {
+  margin: 6px 0 3px 0;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6a5a80;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .quickAction {
+    flex: 1 1 calc(33.333% - 4px);
+  }
+}
+
+@media (max-width: 480px) {
+  .quickAction {
+    flex: 1 1 calc(50% - 4px);
+  }
+  
+  .detailLabel {
+    width: 80px;
+  }
+}

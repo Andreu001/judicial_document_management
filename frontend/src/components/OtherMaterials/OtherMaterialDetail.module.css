@@ -1,0 +1,604 @@
+/* OtherMaterialDetail.module.css */
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 20px 260px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ========== ЗАГОЛОВОК ========== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.headerRight {
+  display: flex;
+  gap: 12px;
+}
+
+.title {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.archiveBadge {
+  background-color: #c05621;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
+/* ========== КНОПКИ ========== */
+.backButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: #2d3748;
+  transform: translateY(-1px);
+}
+
+.archiveButton {
+  background-color: #c05621;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.archiveButton:hover {
+  background-color: #9c4221;
+  transform: translateY(-1px);
+}
+
+.unarchiveButton {
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.unarchiveButton:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+}
+
+.editButton {
+  background-color: #38a169;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background-color: #2f855a;
+  transform: translateY(-1px);
+}
+
+.editButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.saveButton {
+  background-color: #2f855a;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #276749;
+  transform: translateY(-1px);
+}
+
+.saveButton:disabled {
+  background-color: #9c9c9c;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background-color: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background-color: #9b2c2c;
+  transform: translateY(-1px);
+}
+
+.editButtons {
+  display: flex;
+  gap: 12px;
+}
+
+/* ========== ВКЛАДКИ ========== */
+.tabsContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 16px;
+  gap: 4px;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: #2c3e50;
+  background: #e9ecef;
+}
+
+.activeTab {
+  color: #2c3e50;
+  border-bottom-color: #2c3e50;
+  background: white;
+}
+
+.tabContentWrapper {
+  padding: 24px;
+}
+
+.tabGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+/* ========== ПОЛЯ ФОРМ ========== */
+.fieldGroup {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 24px;
+}
+
+.fieldGroup:last-child {
+  margin-bottom: 0;
+}
+
+.subsectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 6px;
+}
+
+.field span {
+  display: block;
+  font-size: 14px;
+  color: #2c3e50;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  min-height: 20px;
+  line-height: 1.5;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: white;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23718096' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.2em;
+  padding-right: 2rem;
+}
+
+/* ========== САЙДБАР ========== */
+.content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex: 2;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 350px;
+  background: transparent;
+}
+
+.sidebarSection {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.sidebarSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.sidebarSectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebarSectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarSectionCount {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.sidebarToggleButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.sidebarToggleButton:hover {
+  color: #2c3e50;
+}
+
+.sidebarSectionContent {
+  padding: 16px 20px;
+}
+
+.sidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebarListItem {
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebarListItem:hover {
+  background-color: #e9ecef;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sidebarListItem.participantType-side:hover {
+  border-left-color: #c53030;
+}
+
+.sidebarListItem.participantType-lawyer:hover {
+  border-left-color: #3182ce;
+}
+
+.sidebarListItem.participantType-movement:hover {
+  border-left-color: #00b5d8;
+}
+
+.sidebarListItem.participantType-petition:hover {
+  border-left-color: #d69e2e;
+}
+
+.sidebarListItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.sidebarListItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+  word-break: break-word;
+}
+
+.sidebarListItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.sidebarListItemHint {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: right;
+  font-style: italic;
+}
+
+.sidebarListItem:hover .sidebarListItemHint {
+  color: #4a5568;
+}
+
+.sidebarListItemMore {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+.sidebarNoData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+.participantType {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.participantType-side {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.participantType-lawyer {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
+.participantType-movement {
+  background-color: #c4f1f9;
+  color: #0987a0;
+}
+
+.participantType-petition {
+  background-color: #feebc8;
+  color: #c05621;
+}
+
+.addButton {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  background: #f8f9fa;
+  border: 1px dashed #a0aec0;
+  border-radius: 6px;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  background: #e9ecef;
+  border-color: #2c3e50;
+  color: #2c3e50;
+}
+
+/* ========== ЗАГРУЗКА И ОШИБКИ ========== */
+.loading, .error {
+  text-align: center;
+  padding: 48px;
+  font-size: 15px;
+}
+
+.loading {
+  color: #2c3e50;
+}
+
+.error {
+  color: #c53030;
+  background: #fed7d7;
+  border: 1px solid #fc8181;
+  border-radius: 8px;
+  margin: 16px;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 1200px) {
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .tabGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .headerLeft {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .headerRight {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  .tab {
+    border-bottom: 1px solid #dee2e6;
+    border-left: 2px solid transparent;
+    text-align: left;
+  }
+  
+  .activeTab {
+    border-left-color: #2c3e50;
+    border-bottom-color: #dee2e6;
+  }
+  
+  .tabContentWrapper {
+    padding: 16px;
+  }
+  
+  .fieldGroup {
+    padding: 16px;
+  }
+  
+  .backButton, .archiveButton, .unarchiveButton, 
+  .editButton, .saveButton, .cancelButton {
+    width: 100%;
+  }
+}

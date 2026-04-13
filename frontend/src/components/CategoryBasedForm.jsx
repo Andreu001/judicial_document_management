@@ -284,14 +284,14 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
     
     // Определяем, какие индексы относятся к выбранной категории
     if (categoryName.includes('уголов')) {
-      // Уголовное судопроизводство: основные индексы 1, 3, 4, 6, 8, 9у, 10, 14
+      // Уголовное судопроизводство: основные индексы 1, 3, 4, 6, 7, 8, 9у, 10, 14
       // Показываем только основные индексы (без подындексов)
       filtered = registryIndexes.filter(idx => {
         const index = idx.index;
         // Не включаем подындексы в основной список
         if (index.includes('/')) return false;
         
-        return ['1', '3', '4', '6', '8', '9у', '10', '14'].includes(index);
+        return ['1', '3', '4', '6', '7', '8', '9у', '10', '14'].includes(index);
       });
     } else if (categoryName.includes('граждан')) {
       // Гражданское судопроизводство: индексы 2, 11, 13
@@ -309,9 +309,9 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
         ['2а', '9а', '13а'].includes(idx.index)
       );
     } else if (categoryName.includes('прочие')) {
-      // Прочие материалы: индексы 7, 9м, 15
+      // Прочие материалы: индексы 15
       filtered = registryIndexes.filter(idx => 
-        ['7', '9м', '15'].includes(idx.index) && !idx.index.includes('/')
+        ['15'].includes(idx.index) && !idx.index.includes('/')
       );
     } else {
       // По умолчанию - все основные индексы
@@ -584,15 +584,23 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
         navigate(`/kas-proceedings/${proceeding.id}`);
         
       } else if (proceedingType === 'other') {
-        // Создание прочих материалов
-        console.log('Создание прочих материалов с номером:', card.original_name);
+        // Создание иных материалов (индекс 15)
+        console.log('Создание иных материалов с номером:', card.original_name);
         
-        // Здесь можно добавить логику для прочих материалов
-        // Например, можно использовать общий сервис или показать сообщение
+        // Импортируем сервис для иных материалов
+        const OtherMaterialService = (await import('../API/OtherMaterialService')).default;
         
-        alert(`Созданы прочие материалы с номером: ${card.original_name}`);
-        if (create) create({ id: Date.now(), ...card });
-        if (onCancel) onCancel();
+        const otherMaterialData = {
+          registration_number: card.original_name,
+          title: card.original_name, // Временно используем номер как название
+          status: 'active',
+          registration_date: new Date().toISOString().split('T')[0],
+        };
+        
+        const proceeding = await OtherMaterialService.createOtherMaterial(otherMaterialData);
+        
+        if (create) create(proceeding);
+        navigate(`/other-materials/${proceeding.id}`);
       } else {
         // Если тип не определен, показываем сообщение об ошибке
         console.error('Неизвестный тип производства:', proceedingType);
