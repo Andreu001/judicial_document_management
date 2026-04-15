@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
+import styles from './CriminalDetail.module.css';
 import {
   AppealTab,
   CourtInstanceTab,

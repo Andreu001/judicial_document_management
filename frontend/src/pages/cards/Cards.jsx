@@ -439,10 +439,21 @@ const sortCards = useCallback((cards, sortBy) => {
 
   const changePage = (newPage) => {
     setPage(newPage);
-    window.scrollTo({
-      top: document.querySelector(`.${styles.createCardButtonContainer}`)?.offsetTop - 100 || 0,
-      behavior: 'smooth'
-    });
+    
+    // Плавная прокрутка к началу списка карточек
+    const targetElement = document.querySelector(`.${styles.cardsInfo}`) || 
+                          document.querySelector(`.${styles.createCardButtonContainer}`);
+    
+    if (targetElement) {
+      const offset = 80; // Отступ от верхней границы
+      const elementPosition = targetElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const handleCreateCardClick = () => {
@@ -563,21 +574,49 @@ const sortCards = useCallback((cards, sortBy) => {
         </div>
       </div>
 
-      {/* Информация о количестве карточек */}
-      <div className={styles.cardsInfo}>
-        <div className={styles.cardsCount}>
-          <span>{filteredCards.length}</span> карточек найдено
+      <div className={styles.statsBar}>
+        <div className={styles.statsLeft}>
+          <span className={styles.statsCount}>
+            Всего {filteredCards.length}
+          </span>
+          <span className={styles.statsLabel}>
+            {filteredCards.length === 1 ? 'карточка' : filteredCards.length >= 2 && filteredCards.length <= 4 ? 'карточки' : 'карточек'}
+          </span>
           {searchMode && (
-            <span className={searchStyles.searchInfo}>
-              (результаты поиска)
+            <span className={styles.searchBadge}>
+              результаты поиска
             </span>
           )}
         </div>
-        <div>
-          Показано с {filteredCards.length > 0 ? (page - 1) * limit + 1 : 0} по {Math.min(page * limit, filteredCards.length)} из {filteredCards.length}
+        
+        <div className={styles.statsDivider}></div>
+        
+        <div className={styles.statsRight}>
+          <span className={styles.statsRange}>
+            {filteredCards.length > 0 ? (page - 1) * limit + 1 : 0}
+          </span>
+          <span className={styles.statsRangeSeparator}>–</span>
+          <span className={styles.statsRange}>
+            {Math.min(page * limit, filteredCards.length)}
+          </span>
+          <span className={styles.statsTotal}>
+            из {filteredCards.length}
+          </span>
         </div>
       </div>
 
+      {/* Верхняя пагинация - компактная */}
+      {filteredCards.length > 0 && totalPages > 1 && (
+        <div className={styles.topPagination}>
+          <Pagination 
+            page={page} 
+            changePage={changePage} 
+            totalPages={totalPages}
+            compact={true}
+          />
+        </div>
+      )}
+      
       <Modal visible={modal} setVisible={setModal}>
         {showForm && <CategoryBasedForm create={createCard} onCancel={handleCloseModal} />}
       </Modal>
@@ -603,8 +642,9 @@ const sortCards = useCallback((cards, sortBy) => {
         </>
       )}
 
-      {filteredCards.length > 0 && (
-        <div className={styles.paginationContainer}>
+      {/* Нижняя пагинация */}
+      {filteredCards.length > 0 && totalPages > 1 && (
+        <div className={styles.bottomPagination}>
           <Pagination page={page} changePage={changePage} totalPages={totalPages} />
         </div>
       )}

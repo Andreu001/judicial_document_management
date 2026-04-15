@@ -22,6 +22,7 @@ urlpatterns = [
     path('search/', include('search.urls')),
     path('case-documents/', include('case_documents.urls')),
     path('other-materials/', include('other_materials.urls')),
+    path('case-management/', include('case_management.urls')),
 ]
 
 # Добавьте для обслуживания медиа-файлов в режиме разработки

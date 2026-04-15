@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
+import styles from './CriminalDetail.module.css';
+import NotificationPanel from '../CaseManagement/NotificationPanel';
 
-const CriminalLawyerDetails = () => {
+const CriminalLawyerDetails = (onNotificationCreated) => {
   const { proceedingId, lawyerId } = useParams();
   const navigate = useNavigate();
   const [lawyer, setLawyer] = useState(null);
@@ -17,9 +18,20 @@ const CriminalLawyerDetails = () => {
   const [selectedSideId, setSelectedSideId] = useState('');
   
   const isCreateMode = !lawyerId || lawyerId === 'create';
+  const [criminalCase, setCriminalCase] = useState(null);
+
+  const loadCriminalCase = async () => {
+    try {
+      const data = await CriminalCaseService.getCriminalProceedingById(proceedingId);
+      setCriminalCase(data);
+    } catch (error) {
+      console.error('Ошибка загрузки уголовного дела:', error);
+    }
+  };
 
   useEffect(() => {
     if (proceedingId) {
+      loadCriminalCase();
       if (isCreateMode) {
         setLoading(false);
         setLawyer(null);
@@ -614,6 +626,15 @@ const CriminalLawyerDetails = () => {
           </div>
         </div>
       </div>
+        <NotificationPanel 
+          criminalCaseId={proceedingId}
+          participant={{
+            id: lawyer.id,
+            type: 'lawyer',
+            name: lawyer.law_firm_name || lawyer.name
+          }}
+          onNotificationCreated={onNotificationCreated}
+        />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CivilCaseService from '../../API/CivilCaseService';
-import styles from './CivilDetail.module.css'; // Импортируем из общего файла
+import styles from './CivilDetail.module.css';
 
 const CivilExecutionDetail = () => {
   const { proceedingId, executionId } = useParams();

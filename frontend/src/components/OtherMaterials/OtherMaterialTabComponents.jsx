@@ -124,10 +124,10 @@ export const BasicInfoTab = ({
       </div>
 
       <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>Ответственный</h3>
+        <h3 className={styles.subsectionTitle}>Судья</h3>
         
         <div className={styles.field}>
-          <label>Ответственное лицо</label>
+          <label>Судья</label>
           {isEditing ? (
             <select
               name="responsible_person"
@@ -135,7 +135,7 @@ export const BasicInfoTab = ({
               onChange={handleInputChange}
               className={styles.select}
             >
-              <option value="">Выберите ответственного</option>
+              <option value="">Выберите судью</option>
               {responsiblePersons.map(person => (
                 <option key={person.id} value={person.id}>
                   {person.full_name} ({person.role_display})

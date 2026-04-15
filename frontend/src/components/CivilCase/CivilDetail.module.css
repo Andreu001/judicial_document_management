@@ -1160,3 +1160,254 @@
     width: 100%;
   }
 }
+/* ========== ХОД ДЕЛА (СПРАВОЧНЫЙ ЛИСТ) ========== */
+.progress-sidebar {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.progress-sidebar__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.progress-sidebar__header:hover {
+  background: #f1f3f5;
+}
+
+.progress-sidebar__headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-sidebar__chevron {
+  transition: transform 0.2s;
+  color: #868e96;
+}
+
+.progress-sidebar__chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.progress-sidebar__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.progress-sidebar__count {
+  background: #e9ecef;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.progress-sidebar__badge {
+  font-size: 11px;
+  background: #e9ecef;
+  color: #6c757d;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.progress-sidebar__body {
+  padding: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Таймлайн */
+.progress-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.progress-timeline-item {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+
+.progress-timeline-item__marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+}
+
+.progress-timeline-item__dot {
+  width: 12px;
+  height: 12px;
+  background: #3182ce;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #3182ce;
+  z-index: 1;
+}
+
+.progress-timeline-item__line {
+  position: absolute;
+  top: 16px;
+  bottom: -12px;
+  width: 2px;
+  background: #e9ecef;
+}
+
+.progress-timeline-item:last-child .progress-timeline-item__line {
+  display: none;
+}
+
+/* Карточка события */
+.progress-timeline-item__card {
+  flex: 1;
+  padding-bottom: 20px;
+}
+
+.progress-event-card {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 14px 16px;
+  border-left: 3px solid #3182ce;
+  transition: all 0.2s;
+}
+
+.progress-event-card:hover {
+  background: #f1f3f5;
+  transform: translateX(2px);
+}
+
+.progress-event-card__date {
+  font-size: 11px;
+  font-weight: 500;
+  color: #868e96;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.progress-event-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 6px;
+}
+
+.progress-event-card__description {
+  font-size: 13px;
+  color: #495057;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.progress-event-card__author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #adb5bd;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Пустое состояние */
+.progress-empty {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px dashed #dee2e6;
+}
+
+.progress-empty svg {
+  margin-bottom: 12px;
+  color: #adb5bd;
+}
+
+.progress-empty p {
+  color: #868e96;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Кнопка "Показать еще" */
+.progress-showMore {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  color: #3182ce;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.progress-showMore:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+/* Загрузка */
+.progress-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: #868e96;
+  font-size: 13px;
+}
+
+.progress-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e9ecef;
+  border-top-color: #3182ce;
+  border-radius: 50%;
+  animation: progress-spin 0.8s linear infinite;
+}
+
+@keyframes progress-spin {
+  to { transform: rotate(360deg); }
+}
+.notificationManageButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.notificationManageButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}

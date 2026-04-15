@@ -16,6 +16,7 @@ const LawyerDetails = () => {
   const [lawyerData, setLawyerData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'bank', 'payment'
+    
   const [formData, setFormData] = useState({
     // CivilLawyer / AdminLawyer / KasLawyer fields
     sides_case_role: '',

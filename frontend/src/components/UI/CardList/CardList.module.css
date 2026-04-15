@@ -1,10 +1,10 @@
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Меняем с 3 на 4 колонки */
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  padding: 12px 24px;
+  padding: 20px 24px;
   margin-left: 6.3cm;
-  margin-right: 24px; /* Убираем 0cm, делаем отступ справа для дыхания */
+  margin-right: 24px;
   position: relative;
   top: 48px;
 }
@@ -39,8 +39,8 @@
   background: white;
   border-radius: 8px;
   overflow: hidden;
-  width: 100%; /* Гарантируем, что карточка занимает всю ширину ячейки */
-  max-width: 100%; /* Предотвращаем выход за пределы */
+  width: 100%;
+  max-width: 100%;
 }
 
 :global(.post:hover) {
@@ -88,9 +88,9 @@
 
 @media (max-width: 1400px) {
   .cardGrid {
-    grid-template-columns: repeat(3, 1fr); /* На меньших экранах возвращаем 3 колонки */
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    padding: 12px 16px;
+    padding: 16px 16px;
     margin-right: 16px;
   }
 }

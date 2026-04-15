@@ -583,7 +583,7 @@ const CriminalBusinessCard = ({ card, remove }) => {
           <div className={styles.caseArticle}>
               {criminalCase?.presiding_judge_full_name && (
                 <div className={styles.detailRow}>
-                  <div className={styles.detailLabel}>Судья:
+                  <div className={styles.detailLabel}>Судья: 
                     {criminalCase.presiding_judge_full_name}</div>
                 </div>
               )}

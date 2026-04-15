@@ -140,7 +140,7 @@ const OtherMaterialBusinessCard = ({ card, remove }) => {
           </div>
           <div className={styles.headerMeta}>
             <div className={styles.caseResponsible}>
-              {material?.responsible_person_full_name ? `Ответственный: ${material.responsible_person_full_name}` : 'Ответственный не назначен'}
+              {material?.responsible_person_full_name ? `Судья: ${material.responsible_person_full_name}` : 'Судья не назначен'}
             </div>
             <div className={styles.caseDate}>
               {formatDate(material?.registration_date || card.registration_date)}

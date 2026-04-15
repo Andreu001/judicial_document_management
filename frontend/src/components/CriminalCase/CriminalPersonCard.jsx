@@ -128,25 +128,22 @@ const CriminalPersonCard = () => {
       setDefendant(defendantData);
       setCriminalCase(caseData);
       
-      // Загружаем карточку, если существует
-      try {
-        const cardData = await CriminalCaseService.getPersonCardByDefendant(defendantId);
-        setCard(cardData);
-        setFormData({
-          ...cardData,
-          // Убираем вложенные данные
-          previous_convictions: undefined,
-          crime_compositions: undefined,
-          sentences: undefined
-        });
-        setPreviousConvictions(cardData.previous_convictions || []);
-        setCrimeCompositions(cardData.crime_compositions || []);
-        setSentences(cardData.sentences || []);
-      } catch (error) {
-        // Карточки нет - это нормально
-        console.log('Карточка не найдена, будет создана новая');
-        setCard(null);
-        // Не сбрасываем форму полностью, оставляем текущие данные
+      // Заменяем try/catch на простую проверку
+      const cardData = await CriminalCaseService.getPersonCardByDefendant(defendantId);
+      if (cardData) {
+          setCard(cardData);
+          setFormData({
+              ...cardData,
+              previous_convictions: undefined,
+              crime_compositions: undefined,
+              sentences: undefined
+          });
+          setPreviousConvictions(cardData.previous_convictions || []);
+          setCrimeCompositions(cardData.crime_compositions || []);
+          setSentences(cardData.sentences || []);
+      } else {
+          console.log('Карточка не найдена, будет создана новая');
+          setCard(null);
       }
       
       setLoading(false);
@@ -437,16 +434,6 @@ const CriminalPersonCard = () => {
         {activeMainTab === 'section1' && (
           <div className={styles.section}>
             <div className={styles.formGrid}>
-              <div className={styles.fieldGroup}>
-                <label>Дата рождения</label>
-                <input
-                  type="date"
-                  name="birth_date"
-                  value={formData.birth_date || ''}
-                  onChange={handleInputChange}
-                  className={styles.input}
-                />
-              </div>
               
               <div className={styles.fieldGroup}>
                 <label>Возраст на дату совершения преступления</label>
@@ -458,20 +445,6 @@ const CriminalPersonCard = () => {
                   className={styles.input}
                   placeholder="лет"
                 />
-              </div>
-              
-              <div className={styles.fieldGroup}>
-                <label>Пол</label>
-                <select
-                  name="sex"
-                  value={formData.sex || ''}
-                  onChange={handleInputChange}
-                  className={styles.select}
-                >
-                  <option value="">Выберите</option>
-                  <option value="1">Мужской</option>
-                  <option value="2">Женский</option>
-                </select>
               </div>
               
               <div className={styles.fieldGroup}>
@@ -503,22 +476,6 @@ const CriminalPersonCard = () => {
                   <option value="1">Несовершеннолетние дети, в том числе малолетние</option>
                   <option value="2">Несовершеннолетние дети старше 14 лет</option>
                   <option value="3">Взрослые нетрудоспособные</option>
-                </select>
-              </div>
-              
-              <div className={styles.fieldGroup}>
-                <label>Гражданство</label>
-                <select
-                  name="citizenship"
-                  value={formData.citizenship || ''}
-                  onChange={handleInputChange}
-                  className={styles.select}
-                >
-                  <option value="">Выберите</option>
-                  <option value="1">Российская Федерация</option>
-                  <option value="2">Другие государства СНГ</option>
-                  <option value="3">Иные государства</option>
-                  <option value="4">Без гражданства</option>
                 </select>
               </div>
               

@@ -10,10 +10,7 @@ const CivilSideDetail = () => {
   const [sideData, setSideData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    // CivilSidesCaseInCase fields
     sides_case_role: '',
-    
-    // SidesCaseInCase fields
     name: '',
     status: 'individual',
     date_sending_agenda: '',

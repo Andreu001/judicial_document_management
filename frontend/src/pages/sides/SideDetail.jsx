@@ -124,6 +124,7 @@ const SideDetails = () => {
   const tabs = [
     { id: 'basic', label: 'Основная информация' },
     { id: 'contact', label: 'Контактная информация' },
+    { id: 'notifications', label: 'Извещения' },
     { id: 'documents', label: 'Документы' },
     { id: 'additional', label: 'Дополнительно' }
   ];
@@ -322,6 +323,13 @@ const SideDetails = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Вкладка: Извещения */}
+            {activeTab === 'notifications' && (
+              <div className={styles.fieldGroup}>
+                <h3 className={styles.subsectionTitle}>Извещения и уведомления</h3>
               </div>
             )}
 

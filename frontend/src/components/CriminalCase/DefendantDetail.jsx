@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
 import styles from './CriminalDetail.module.css';
+import NotificationPanel from '../CaseManagement/NotificationPanel';
 
-const DefendantDetail = () => {
+const DefendantDetail = (onNotificationCreated) => {
   const { proceedingId, id } = useParams();
   const navigate = useNavigate();
   const [defendant, setDefendant] = useState(null);
@@ -26,6 +27,14 @@ const DefendantDetail = () => {
   const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
   const [selectedSideId, setSelectedSideId] = useState('');
   const isCreateMode = !id || id === 'create';
+
+  // Опции для гражданства
+  const citizenshipOptions = [
+    { value: '1', label: 'Российская Федерация' },
+    { value: '2', label: 'другие государства СНГ' },
+    { value: '3', label: 'иные государства' },
+    { value: '4', label: 'без гражданства' },
+  ];
 
   useEffect(() => {
     if (proceedingId) {
@@ -276,6 +285,13 @@ const DefendantDetail = () => {
     return option?.label || value;
   };
 
+  // Функция для отображения значения гражданства
+  const getCitizenshipDisplayValue = (value) => {
+    if (!value) return 'Не указано';
+    const option = citizenshipOptions.find(opt => opt.value === value);
+    return option?.label || value;
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -319,7 +335,7 @@ const DefendantDetail = () => {
             <h1 className={styles.title}>
               {isCreateMode ? 'Новый подсудимый' : (currentDefendant?.full_name_criminal || 'Имя не указано')}
               {!isCreateMode && currentDefendant && (
-                <span className={styles.archiveBadge}>Вид стороны: {currentDefendant?.sides_case_defendant_name || 'Не указан'}</span>
+                <div><span className={styles.archiveBadge}>Вид стороны: {currentDefendant?.sides_case_defendant_name || 'Не указан'}</span></div>
               )}
             </h1>
             <div className={styles.subtitle}>
@@ -504,15 +520,21 @@ const DefendantDetail = () => {
                       <div className={styles.field}>
                         <label>Гражданство</label>
                         {isEditing || isCreateMode ? (
-                          <input
-                            type="text"
+                          <select
                             name="citizenship"
                             value={formData.citizenship || ''}
                             onChange={handleInputChange}
-                            className={styles.input}
-                          />
+                            className={styles.select}
+                          >
+                            <option value="">Выберите гражданство</option>
+                            {citizenshipOptions.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
                         ) : (
-                          <span>{currentDefendant?.citizenship || 'Не указано'}</span>
+                          <span>{getCitizenshipDisplayValue(currentDefendant?.citizenship)}</span>
                         )}
                       </div>
 
@@ -843,37 +865,16 @@ const DefendantDetail = () => {
           </div>
         </div>
 
-        {!isCreateMode && (
-          <div className={styles.sidebar}>
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>Судебные решения</h2>
-              
-              {decisions && decisions.length > 0 ? (
-                <div className={styles.defendantsList}>
-                  {decisions.map(decision => (
-                    <div key={decision.id} className={styles.defendantItem}>
-                      <h4>Решение #{decision.id}</h4>
-                      <p>Дата: {decision.decision_date ? formatDate(decision.decision_date) : 'Не указана'}</p>
-                      <p>Суд: {decision.court_name || 'Не указан'}</p>
-                      <p>Статус: {getDisplayValue(decision.trial_result, options.trial_result)}</p>
-                      <p>Обжалование: {decision.appeal_present ? 'Есть' : 'Нет'}</p>
-                      <button 
-                        onClick={() => navigate(`/criminal-proceedings/${proceedingId}/criminal-decisions/${decision.id}`)}
-                        className={styles.actionButton}
-                        title="Просмотреть"
-                      >
-                        →
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.noData}>
-                  <p>Судебных решений не найдено</p>
-                </div>
-              )}
-            </div>
-          </div>
+        {!isCreateMode && criminalCase && currentDefendant && (
+          <NotificationPanel 
+            criminalCaseId={proceedingId}
+            participant={{
+              id: currentDefendant.id,
+              type: 'defendant',
+              name: currentDefendant.full_name_criminal || currentDefendant.name
+            }}
+            onNotificationCreated={onNotificationCreated}
+          />
         )}
       </div>
     </div>

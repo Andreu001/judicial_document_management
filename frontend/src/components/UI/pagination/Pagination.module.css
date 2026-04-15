@@ -1,34 +1,54 @@
+/* Pagination.module.css (обновленный) */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 24px 0;
-  margin-left: 6.3cm;
-  margin-right: 2cm;
+  gap: 6px;
+  padding: 16px 0;
   flex-wrap: wrap;
+  background: transparent;
+}
+
+/* Компактная версия для верхней пагинации */
+.pagination.compact {
+  padding: 8px 0;
+  gap: 4px;
+}
+
+.paginationNumbers {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .paginationButton {
-  min-width: 40px;
-  height: 40px;
-  padding: 0 12px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border: 1px solid #e5e9f0;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   color: #4a5568;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.compact .paginationButton {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+  border-radius: 8px;
 }
 
 .paginationButton:hover:not(:disabled) {
-  background: #f0f2f5;
+  background: #f7fafc;
   border-color: #1e3c5c;
   color: #1e3c5c;
   transform: translateY(-1px);
@@ -37,62 +57,82 @@
 
 .paginationButton:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .paginationButton.active {
-  background: #1e3c5c;
+  background: linear-gradient(135deg, #1e3c5c 0%, #2c5282 100%);
   border-color: #1e3c5c;
   color: white;
-  box-shadow: 0 4px 12px rgba(30, 60, 92, 0.2);
+  box-shadow: 0 4px 12px rgba(30, 60, 92, 0.25);
 }
 
 .paginationButton:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   background: #f8fafc;
+  transform: none;
 }
 
 .paginationArrow {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.paginationEllipsis {
-  color: #a0aec0;
-  padding: 0 4px;
+.compact .paginationArrow {
   font-size: 14px;
-  font-weight: 500;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
+.paginationEllipsis {
+  color: #a0aec0;
+  padding: 0 2px;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 28px;
+  text-align: center;
+}
+
+.compact .paginationEllipsis {
+  min-width: 24px;
+  font-size: 12px;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 640px) {
   .pagination {
     gap: 4px;
-    padding: 16px 0;
-    margin-right: 16px;
   }
   
   .paginationButton {
-    min-width: 36px;
-    height: 36px;
-    padding: 0 8px;
-    font-size: 13px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    font-size: 12px;
   }
   
   .paginationArrow {
-    font-size: 16px;
+    font-size: 12px;
+  }
+  
+  .paginationEllipsis {
+    min-width: 20px;
+    font-size: 11px;
+  }
+  
+  /* На мобильных скрываем кнопки первой/последней страницы */
+  .paginationButton:first-child,
+  .paginationButton:last-child {
+    display: none;
   }
 }
 
-/* Анимация появления */
+/* Анимация */
 @keyframes paginationAppear {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
@@ -101,5 +141,118 @@
 }
 
 .pagination {
-  animation: paginationAppear 0.4s ease-out;
+  animation: paginationAppear 0.3s ease-out;
+}
+/* Добавьте в конец файла Pagination.module.css */
+
+/* Стили для быстрого перехода */
+.paginationJump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.paginationSeparator {
+  color: #cbd5e0;
+  font-size: 14px;
+  margin: 0 4px;
+}
+
+.paginationJumpInput {
+  width: 70px;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.paginationJumpInput:focus {
+  outline: none;
+  border-color: #1e3c5c;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(30, 60, 92, 0.1);
+}
+
+.paginationJumpInput::-webkit-inner-spin-button,
+.paginationJumpInput::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
+
+.paginationJumpButton {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paginationJumpButton:hover {
+  background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+  border-color: #1e3c5c;
+  color: #1e3c5c;
+  transform: translateY(-1px);
+}
+
+/* Стили для скролла при пагинации */
+.paginationNumbers {
+  scrollbar-width: thin;
+}
+
+/* Анимация для кнопок при наведении */
+.paginationButton {
+  position: relative;
+  overflow: hidden;
+}
+
+.paginationButton::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(30, 60, 92, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.paginationButton:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Индикатор загрузки при смене страницы */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.paginationButton:active {
+  transform: scale(0.95);
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+  .paginationJump {
+    display: none;
+  }
+  
+  .paginationButton:first-child,
+  .paginationButton:last-child {
+    display: flex;
+  }
 }

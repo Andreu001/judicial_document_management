@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import baseService from '../../API/baseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import styles from './CriminalDetail.module.css';
-import CriminalNotifications from './CriminalNotifications';
-import RulingEditor from './RulingEditor';
 import {
   BasicInfoTab,
   EvidenceTab,
@@ -14,6 +12,7 @@ import {
   AdditionalTab
 } from './CriminalTabComponents';
 import ConfirmDialog from '../../pages/ConfirmDialog';
+import ProgressLog from '../CaseManagement/ProgressLog';
 
 const CriminalDetail = () => {
   const { id } = useParams();
@@ -45,11 +44,11 @@ const CriminalDetail = () => {
   });
   const [showRulingModal, setShowRulingModal] = useState(false);
   const [rulingType, setRulingType] = useState('');
-  const [showRulingEditor, setShowRulingEditor] = useState(false);
   const [currentRuling, setCurrentRuling] = useState(null);
   const [referringAuthorities, setReferringAuthorities] = useState([]);
   const [judges, setJudges] = useState([]);
   const [isArchived, setIsArchived] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState(0);
 
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -79,38 +78,8 @@ const CriminalDetail = () => {
     
     return formData.judge_decision === hearingAppointmentOption.value;
   };
-
-  const generateRuling = async (type) => {
-    setRulingType(type);
-    setShowRulingModal(false);
-    setShowRulingEditor(true);
-    
-    // Создаем новое постановление с шаблоном
-    setCurrentRuling(null);
-  };
-
-  const handleSaveRuling = async (rulingData) => {
-    try {
-      if (currentRuling && currentRuling.id) {
-        // Обновление существующего
-        await CriminalCaseService.updateRuling(id, currentRuling.id, rulingData);
-      } else {
-        // Создание нового
-        await CriminalCaseService.createRuling(id, rulingData);
-      }
-      setShowRulingEditor(false);
-      setCurrentRuling(null);
-    } catch (error) {
-      console.error('Error saving ruling:', error);
-      alert('Ошибка сохранения постановления');
-    }
-  };
-
-  // Функция отмены редактирования
-  const handleCancelRuling = () => {
-    setShowRulingEditor(false);
-    setCurrentRuling(null);
-    setRulingType('');
+  const handleProgressRefresh = () => {
+    setRefreshProgress(prev => prev + 1);
   };
 
   // CriminalDetail.jsx - исправленная функция checkDeadlines
@@ -466,40 +435,6 @@ const CriminalDetail = () => {
     }))
   ];
 
-  // Модальное окно для формирования постановления
-  const RulingModal = () => (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <h3>Формирование постановления</h3>
-        <p>Выберите тип постановления:</p>
-        
-        <div className={styles.rulingOptions}>
-          <button 
-            className={styles.rulingButton}
-            onClick={() => generateRuling('preliminary_hearing')}
-          >
-            О назначении предварительного слушания
-          </button>
-          
-          <button 
-            className={styles.rulingButton}
-            onClick={() => generateRuling('court_session')}
-          >
-            О назначении судебного заседания
-          </button>
-        </div>
-        
-        <div className={styles.modalActions}>
-          <button 
-            className={styles.cancelButton}
-            onClick={() => setShowRulingModal(false)}
-          >
-            Отмена
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return <div className={styles.loading}>Загрузка данных...</div>;
@@ -685,225 +620,14 @@ const CriminalDetail = () => {
             </div>
           </div>
         </div>
-
-        {/* Правая колонка - обновленные блоки */}
+                {/* Сайдбар с ходом дела */}
         <div className={styles.sidebar}>
-          {/* Блок "Стороны по делу" */}
-          <div className={styles.sidebarSection}>
-            <div 
-              className={styles.sidebarSectionHeader}
-              onClick={() => toggleSection('sides')}
-            >
-              <h2 className={styles.sidebarSectionTitle}>
-                Стороны по делу 
-                <span className={styles.sidebarSectionCount}>
-                  {allSides.length}
-                </span>
-              </h2>
-              <button className={styles.sidebarToggleButton}>
-                {collapsedSections.sides ? '▶' : '▼'}
-              </button>
-            </div>
-            
-            {!collapsedSections.sides && (
-              <div className={styles.sidebarSectionContent}>
-                {allSides.length > 0 ? (
-                  <div className={styles.sidebarList}>
-                    {allSides.slice(0, 5).map(side => {
-                      // Определяем путь в зависимости от типа стороны
-                      let detailPath = '';
-                      if (side.sideType === 'defendant') {
-                        detailPath = `/criminal-proceedings/${id}/defendants/${side.id}`;
-                      } else if (side.sideType === 'lawyer') {
-                        detailPath = `/criminal-proceedings/${id}/lawyers-criminal/${side.id}`;
-                      } else {
-                        detailPath = `/criminal-proceedings/${id}/sides-case-in-case/${side.id}`;
-                      }
-                      
-                      return (
-                        <div 
-                          key={`${side.sideType}-${side.id}`} 
-                          className={`${styles.sidebarListItem} ${styles[`sideType-${side.sideType}`]}`}
-                          onClick={() => navigate(detailPath)}
-                        >
-                          <div className={styles.sidebarListItemHeader}>
-                            <span className={styles.sidebarListItemTitle}>
-                              {side.displayName}
-                            </span>
-                            <span className={`${styles.sideType} ${styles[`sideType-${side.sideType}`]}`}>
-                              {side.sideTypeLabel}
-                            </span>
-                          </div>
-                          <div className={styles.sidebarListItemSubtitle}>
-                            {side.statusText}
-                          </div>
-                          <div className={styles.sidebarListItemHint}>
-                            Нажмите для просмотра →
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {allSides.length > 5 && (
-                      <div className={styles.sidebarListItemMore}>
-                        + еще {allSides.length - 5} участников
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className={styles.sidebarNoData}>Нет данных о сторонах по делу</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Блок "Решения" */}
-          <div className={styles.sidebarSection}>
-            <div 
-              className={styles.sidebarSectionHeader}
-              onClick={() => toggleSection('decisions')}
-            >
-              <h2 className={styles.sidebarSectionTitle}>
-                Решения 
-                <span className={styles.sidebarSectionCount}>
-                  {decisions.length}
-                </span>
-              </h2>
-              <button className={styles.sidebarToggleButton}>
-                {collapsedSections.decisions ? '▶' : '▼'}
-              </button>
-            </div>
-            
-            {!collapsedSections.decisions && (
-              <div className={styles.sidebarSectionContent}>
-                {decisions.length > 0 ? (
-                  <div className={styles.sidebarList}>
-                    {decisions.slice(0, 3).map(decision => (
-                      <div 
-                        key={decision.id} 
-                        className={styles.sidebarListItem}
-                        onClick={() => navigate(`/criminal-proceedings/${id}/criminal-decisions/${decision.id}`)}
-                      >
-                        <div className={styles.sidebarListItemHeader}>
-                          <span className={styles.sidebarListItemTitle}>
-                            {decision.court_consideration_date 
-                              ? `Решение от ${formatDate(decision.court_consideration_date)}`
-                              : `Решение №${decision.id}`
-                            }
-                          </span>
-                        </div>
-                        <div className={styles.sidebarListItemSubtitle}>
-                          {decision.appeal_consideration_result 
-                            ? getOptionLabel(options.appeal_consideration_result || [], decision.appeal_consideration_result)
-                            : 'Результат не указан'
-                          }
-                        </div>
-                        <div className={styles.sidebarListItemHint}>
-                          Нажмите для просмотра →
-                        </div>
-                      </div>
-                    ))}
-                    {decisions.length > 3 && (
-                      <div className={styles.sidebarListItemMore}>
-                        + еще {decisions.length - 3} решений
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className={styles.sidebarNoData}>Нет данных о решениях</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Блок "Исполнение" */}
-          <div className={styles.sidebarSection}>
-            <div 
-              className={styles.sidebarSectionHeader}
-              onClick={() => toggleSection('executions')}
-            >
-              <h2 className={styles.sidebarSectionTitle}>
-                Исполнение 
-                <span className={styles.sidebarSectionCount}>
-                  {executions.length}
-                </span>
-              </h2>
-              <button className={styles.sidebarToggleButton}>
-                {collapsedSections.executions ? '▶' : '▼'}
-              </button>
-            </div>
-            
-            {!collapsedSections.executions && (
-              <div className={styles.sidebarSectionContent}>
-                {executions.length > 0 ? (
-                  <div className={styles.sidebarList}>
-                    {executions.slice(0, 3).map(execution => (
-                      <div 
-                        key={execution.id} 
-                        className={styles.sidebarListItem}
-                        onClick={() => navigate(`/criminal-proceedings/${id}/executions/${execution.id}`)}
-                      >
-                        <div className={styles.sidebarListItemHeader}>
-                          <span className={styles.sidebarListItemTitle}>
-                            {execution.sentence_execution_date 
-                              ? `Исполнение от ${formatDate(execution.sentence_execution_date)}`
-                              : `Запись об исполнении №${execution.id}`
-                            }
-                          </span>
-                        </div>
-                        <div className={styles.sidebarListItemSubtitle}>
-                          {execution.execution_sent_to 
-                            ? `Направлено: ${execution.execution_sent_to}`
-                            : execution.control_result 
-                              ? `Результат: ${execution.control_result}`
-                              : 'Информация отсутствует'
-                          }
-                        </div>
-                        <div className={styles.sidebarListItemHint}>
-                          Нажмите для просмотра →
-                        </div>
-                      </div>
-                    ))}
-                    {executions.length > 3 && (
-                      <div className={styles.sidebarListItemMore}>
-                        + еще {executions.length - 3} записей
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className={styles.sidebarNoData}>Нет данных об исполнении</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Уведомления по делу - теперь внутри sidebar */}
-          <CriminalNotifications 
-            id={id} 
-            criminalData={criminalData} 
+          <ProgressLog 
+            criminalCaseId={id} 
+            onRefresh={refreshProgress}
           />
         </div>
       </div>
-
-      {showRulingModal && <RulingModal />}
-
-      {showRulingEditor && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContentLarge}>
-            <RulingEditor
-              rulingData={currentRuling}
-              onSave={handleSaveRuling}
-              onCancel={handleCancelRuling}
-              templateVariables={{
-                caseNumber: criminalData.case_number_criminal,
-                judgeName: criminalData.judge_name,
-                incomingDate: criminalData.incoming_date,
-                defendants: defendants
-              }}
-              rulingType={rulingType}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Модальное окно подтверждения */}
       <ConfirmDialog

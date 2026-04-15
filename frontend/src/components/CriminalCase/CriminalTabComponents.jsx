@@ -364,16 +364,6 @@ export const CaseCategoryTab = ({ isEditing,
 
         <div className={styles.fieldGroup}>
           <h3 className={styles.subsectionTitle}>Решение судьи при назначении дела</h3>
-          
-          {/* Кнопка формирования постановления */}
-          <div className={styles.rulingSection}>
-            <button 
-              className={styles.generateRulingButton}
-              onClick={() => setShowRulingModal(true)}
-            >
-              Сформировать постановление о назначении дела
-            </button>
-          </div>
 
           <div className={styles.field}>
             <label>Решение судьи</label>

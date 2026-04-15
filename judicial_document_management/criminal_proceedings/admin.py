@@ -31,7 +31,7 @@ class SentencedPunishmentInline(admin.TabularInline):
 @admin.register(CriminalPersonCard)
 class CriminalPersonCardAdmin(admin.ModelAdmin):
     list_display = ['id', 'get_defendant_name', 'get_case_number', 'is_completed', 'created_at']
-    list_filter = ['is_completed', 'sex', 'education', 'court_result']
+    list_filter = ['is_completed', 'education', 'court_result']
     search_fields = ['defendant__full_name_criminal', 'criminal_proceedings__case_number_criminal']
     readonly_fields = ['created_at', 'updated_at']
     
@@ -43,7 +43,7 @@ class CriminalPersonCardAdmin(admin.ModelAdmin):
         }),
         ('Раздел 1. Сведения о подсудимом', {
             'fields': (
-                'birth_date', 'age_at_crime', 'sex', 'family_status', 'dependents',
+                'birth_date', 'age_at_crime', 'family_status', 'dependents',
                 'citizenship', 'residence', 'education', 'occupation', 'profession_profile',
                 'position', 'official', 'prior_convictions_count'
             )

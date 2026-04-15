@@ -1,4 +1,5 @@
 import baseService from './baseService';
+import CaseManagementService from './CaseManagementService';
 
 const BASE_URL = '/civil_proceedings/';
 
@@ -57,6 +58,26 @@ class CivilCaseService {
         `${BASE_URL}civil-proceedings/`,
         cleanedData
       );
+      
+      // Автоматически создаем запись в справочном листе о поступлении дела
+      const caseId = response.data.id;
+      const actionTypes = await this.getProgressActionTypes();
+      const caseReceivedAction = actionTypes.find(a => a.code === 'case_received');
+      
+      if (caseReceivedAction && caseId) {
+        try {
+          await CaseManagementService.createProgressEntry({
+            case_type: 'civil_proceedings',
+            case_id: caseId,
+            action_type_id: caseReceivedAction.id,
+            description: `Дело №${response.data.case_number_civil} поступило в суд${response.data.incoming_from ? ` из ${response.data.incoming_from}` : ''}`,
+            action_date: response.data.incoming_date || new Date().toISOString().split('T')[0]
+          });
+        } catch (err) {
+          console.warn('Could not create auto progress entry:', err);
+        }
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error creating civil proceedings:', error);

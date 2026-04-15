@@ -454,7 +454,13 @@ class Defendant(models.Model):
 
     # Пункт 1 - Гражданство
     citizenship = models.CharField(
-        max_length=50, null=True, blank=True, verbose_name="Гражданство"
+        max_length=50, null=True, blank=True, verbose_name="Гражданство",
+        choices = [
+            ('1', 'Российская Федерация'),
+            ('2', 'другие государства СНГ'),
+            ('3', 'иные государства'),
+            ('4', 'без гражданства'),
+        ]
     )
 
     # Пункт 2 - Результат рассмотрения дела (будет из CSV)

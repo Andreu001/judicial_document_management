@@ -118,13 +118,12 @@
   padding: 8px 24px;
   margin-top: -1cm;
   margin-left: 6.3cm;
-  margin-right: 24px; /* Было 2cm, меняем на 24px для консистентности */
+  margin-right: 24px;
   background: #ffffff;
   border-bottom: 1px solid #e5e9f0;
   position: relative;
   top: 50px;
 }
-
 
 .categories {
   display: flex;
@@ -132,7 +131,7 @@
   background: #f8fafc;
   padding: 2px;
   border-radius: 6px;
-  flex-wrap: wrap; /* Добавляем перенос при необходимости */
+  flex-wrap: wrap;
 }
 
 .categoryButton {
@@ -169,7 +168,7 @@
   cursor: pointer;
   transition: background-color 0.2s ease;
   letter-spacing: 0.3px;
-  white-space: nowrap; /* Предотвращаем перенос текста */
+  white-space: nowrap;
 }
 
 .createCardButton:hover:not(:disabled) {
@@ -181,83 +180,106 @@
   cursor: not-allowed;
 }
 
-.cardsInfo {
+/* ========== НОВЫЙ СТАТИСТИЧЕСКИЙ БЛОК ========== */
+.statsBar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 6px 24px;
+  justify-content: space-between;
+  padding: 10px 24px;
   margin-left: 6.3cm;
-  margin-right: 24px; /* Было 2cm */
-  color: #718096;
-  font-size: 12px;
-  border-bottom: 1px solid #e5e9f0;
+  margin-right: 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+  position: relative;
+  top: 48px;
+  margin-bottom: 16px;
+}
+
+.statsLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.statsCount {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e3c5c;
+  letter-spacing: -0.3px;
+}
+
+.statsLabel {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.searchBadge {
+  margin-left: 10px;
+  padding: 2px 8px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.statsDivider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+}
+
+.statsRight {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.statsRange {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.statsRangeSeparator {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 2px;
+}
+
+.statsTotal {
+  font-size: 13px;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+/* Верхняя пагинация */
+.topPagination {
+  margin-left: 6.3cm;
+  margin-right: 24px;
+  margin-bottom: 20px;
+  padding: 0;
   position: relative;
   top: 48px;
 }
 
-
-.cardsCount {
-  display: flex;
-  gap: 16px;
+.topPagination :global(.pagination) {
+  padding: 0;
+  justify-content: flex-start;
+  border: none;
 }
 
-.cardsCount span {
-  color: #1e3c5c;
-  font-weight: 500;
-}
-
-.paginationContainer {
+/* Нижняя пагинация */
+.bottomPagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 24px 0;
   margin-left: 6.3cm;
-  margin-right: 24px; /* Было 2cm */
-}
-
-.paginationButton {
-  min-width: 36px;
-  height: 36px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border: 1px solid #e5e9f0;
-  border-radius: 6px;
-  color: #4a5568;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.paginationButton:hover:not(:disabled) {
-  background: #f0f2f5;
-  border-color: #1e3c5c;
-  color: #1e3c5c;
-}
-
-.paginationButton.active {
-  background: #1e3c5c;
-  border-color: #1e3c5c;
-  color: white;
-}
-
-.paginationButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.paginationArrow {
-  font-size: 18px;
-  line-height: 1;
-}
-
-.paginationEllipsis {
-  color: #a0aec0;
-  padding: 0 4px;
+  margin-right: 24px;
+  padding: 24px 0 32px;
+  position: relative;
+  top: 48px;
 }
 
 /* Адаптивность */
@@ -283,10 +305,15 @@
   }
   
   .createCardButtonContainer,
-  .cardsInfo,
-  .paginationContainer {
-    padding: 8px 16px;
+  .statsBar,
+  .topPagination,
+  .bottomPagination {
+    margin-left: 6.3cm;
     margin-right: 16px;
+  }
+  
+  .statsBar {
+    padding: 8px 16px;
   }
   
   .categories {
@@ -307,8 +334,18 @@
     padding: 4px;
   }
   
-  .paginationContainer {
-    flex-wrap: wrap;
+  .statsBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .statsDivider {
+    display: none;
+  }
+  
+  .topPagination :global(.pagination) {
+    justify-content: center;
   }
 }
 

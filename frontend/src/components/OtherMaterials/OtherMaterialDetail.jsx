@@ -105,7 +105,7 @@ const OtherMaterialDetail = () => {
       const persons = await OtherMaterialService.getResponsiblePersons();
       setResponsiblePersons(persons);
     } catch (error) {
-      console.error('Ошибка загрузки ответственных лиц:', error);
+      console.error('Ошибка загрузки судьи:', error);
       setResponsiblePersons([]);
     }
   };

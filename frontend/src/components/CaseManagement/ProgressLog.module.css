@@ -1,0 +1,290 @@
+.progressLog {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f8f9fa;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.header:hover {
+  background: #e9ecef;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  background: #2c3e50;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* Обновите стиль toggleButton */
+.toggleButton {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.toggleButton:hover {
+  background: #e9ecef;
+  color: #2c3e50;
+}
+
+/* Если хотите использовать иконки вместо текста, можно так: */
+.toggleButton::before {
+  content: '▼';
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.header[data-collapsed="true"] .toggleButton::before {
+  transform: rotate(-90deg);
+}
+
+.deadlinesBlock {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  gap: 24px;
+}
+
+.deadlineItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.deadlineLabel {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.deadlineValue {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.deadlineValue.warning {
+  color: #e67e22;
+}
+
+.deadlineValue.violation {
+  color: #c53030;
+}
+
+.violationBadge {
+  background: #c53030;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.addButton {
+  width: calc(100% - 32px);
+  margin: 12px 16px;
+  padding: 8px 12px;
+  background: #2c3e50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addButton:hover {
+  background: #1a2632;
+}
+
+.form {
+  padding: 16px;
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.select, .dateInput {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.textarea {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+}
+
+.saveButton {
+  flex: 1;
+  padding: 8px 12px;
+  background: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.saveButton:hover {
+  background: #2f855a;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 8px 12px;
+  background: #c53030;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  background: #9b2c2c;
+}
+
+.entriesList {
+  padding: 0 16px 16px 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.entryItem {
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.entryItem:last-child {
+  border-bottom: none;
+}
+
+.entryHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.entryDate {
+  font-size: 11px;
+  color: #6c757d;
+  background: #f1f3f5;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.entryType {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.entryActions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.editEntryButton, .deleteEntryButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.editEntryButton {
+  color: #3182ce;
+}
+
+.editEntryButton:hover {
+  background: #e2e8f0;
+}
+
+.deleteEntryButton {
+  color: #c53030;
+}
+
+.deleteEntryButton:hover {
+  background: #fed7d7;
+}
+
+.entryDescription {
+  font-size: 12px;
+  color: #4a5568;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.entryAuthor {
+  font-size: 10px;
+  color: #a0aec0;
+}
+
+.emptyState {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 24px;
+  font-size: 13px;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 13px;
+}

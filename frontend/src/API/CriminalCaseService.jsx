@@ -823,19 +823,6 @@ static async getJudges() {
     }
   }
   
-  static async getPersonCardByDefendant(defendantId) {
-    try {
-      const response = await baseService.get(`${BASE_URL}person-cards/by-defendant/${defendantId}/`);
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 404) {
-        throw new Error('Карточка не найдена');
-      }
-      console.error('Error fetching person card by defendant:', error);
-      throw error;
-    }
-  }
-  
   static async createPersonCard(cardData) {
     try {
       const response = await baseService.post(`${BASE_URL}person-cards/`, cardData);
@@ -1032,8 +1019,8 @@ static async getJudges() {
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
-        // Возвращаем специальный объект, чтобы отличить отсутствие карточки
-        throw new Error('NOT_FOUND');
+        // Возвращаем null вместо ошибки
+        return null;
       }
       console.error('Error fetching person card by defendant:', error);
       throw error;

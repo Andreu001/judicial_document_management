@@ -579,9 +579,6 @@ class CriminalPersonCard(models.Model):
     
     # ==================== Раздел 1. Сведения о подсудимом ====================
     
-    # 1.1 Дата рождения (берется из Defendant, дублируем для карточки)
-    birth_date = models.DateField(verbose_name="Дата рождения", null=True, blank=True)
-    
     # 1.2 Возраст на дату совершения преступления
     age_at_crime = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(14), MaxValueValidator(99)],
@@ -589,17 +586,11 @@ class CriminalPersonCard(models.Model):
         null=True, blank=True
     )
     
-    # 1.3 Пол
-    sex = models.CharField(max_length=10, choices=SEX_CHOICES, verbose_name="Пол", null=True, blank=True)
-    
     # 1.4 Семейное положение
     family_status = models.CharField(max_length=10, choices=FAMILY_STATUS_CHOICES, verbose_name="Семейное положение", null=True, blank=True)
     
     # 1.5 Наличие иждивенцев
     dependents = models.CharField(max_length=10, choices=DEPENDENTS_CHOICES, verbose_name="Наличие иждивенцев", null=True, blank=True)
-    
-    # 1.6 Гражданство
-    citizenship = models.CharField(max_length=10, choices=CITIZENSHIP_CHOICES, verbose_name="Гражданство", null=True, blank=True)
     
     # 1.7 Место жительства
     residence = models.CharField(max_length=10, choices=RESIDENCE_CHOICES, verbose_name="Место жительства", null=True, blank=True)

@@ -1,0 +1,154 @@
+[
+  {
+    "model": "case_management.notificationtype",
+    "pk": 1,
+    "fields": {
+      "name": "Почтовое отправление (заказное письмо)",
+      "code": "mail"
+    }
+  },
+  {
+    "model": "case_management.notificationtype",
+    "pk": 2,
+    "fields": {
+      "name": "СМС-уведомление",
+      "code": "sms"
+    }
+  },
+  {
+    "model": "case_management.notificationtype",
+    "pk": 3,
+    "fields": {
+      "name": "Телефонограмма",
+      "code": "phone_call"
+    }
+  },
+  {
+    "model": "case_management.notificationtype",
+    "pk": 4,
+    "fields": {
+      "name": "Уведомление по электронной почте",
+      "code": "email"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 1,
+    "fields": {
+      "name": "Поступление дела в суд",
+      "code": "case_received"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 2,
+    "fields": {
+      "name": "Принятие дела к производству",
+      "code": "case_accepted"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 3,
+    "fields": {
+      "name": "Назначение судьи",
+      "code": "case_assigned"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 4,
+    "fields": {
+      "name": "Направление извещения участнику",
+      "code": "send_notification"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 5,
+    "fields": {
+      "name": "Истребование документов",
+      "code": "request_docs"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 6,
+    "fields": {
+      "name": "Обращение к исполнению",
+      "code": "execution"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 7,
+    "fields": {
+      "name": "Отложение судебного заседания",
+      "code": "hearing_postponed"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 8,
+    "fields": {
+      "name": "Приостановление производства по делу",
+      "code": "case_suspended"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 9,
+    "fields": {
+      "name": "Возобновление производства по делу",
+      "code": "case_resumed"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 10,
+    "fields": {
+      "name": "Вынесение решения/приговора",
+      "code": "decision_announced"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 11,
+    "fields": {
+      "name": "Сдача дела в архив",
+      "code": "case_archived"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 12,
+    "fields": {
+      "name": "Получение доказательств",
+      "code": "receive_docs"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 13,
+    "fields": {
+      "name": "Проведение судебного заседания",
+      "code": "hearing_held"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 14,
+    "fields": {
+      "name": "Назначение судебного заседания",
+      "code": "hearing_scheduled"
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 15,
+    "fields": {
+      "name": "Вынесение определения",
+      "code": "ruling_made"
+    }
+  }
+]

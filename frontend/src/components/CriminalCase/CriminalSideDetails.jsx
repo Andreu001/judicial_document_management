@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
-import styles from './CriminalDetail.module.css'; // Используем единый файл стилей
+import styles from './CriminalDetail.module.css';
+import NotificationPanel from '../CaseManagement/NotificationPanel';
 
-const CriminalSideDetails = () => {
+const CriminalSideDetails = (onNotificationCreated) => {
   const { proceedingId, sideId } = useParams();
   const navigate = useNavigate();
   const [side, setSide] = useState(null);
@@ -20,6 +21,7 @@ const CriminalSideDetails = () => {
 
   useEffect(() => {
     if (proceedingId) {
+      loadCriminalCase();
       if (isCreateMode) {
         setLoading(false);
         setSide(null);
@@ -32,6 +34,17 @@ const CriminalSideDetails = () => {
       }
     }
   }, [proceedingId, sideId]);
+
+  const [criminalCase, setCriminalCase] = useState(null);
+
+  const loadCriminalCase = async () => {
+    try {
+      const data = await CriminalCaseService.getCriminalProceedingById(proceedingId);
+      setCriminalCase(data);
+    } catch (error) {
+      console.error('Ошибка загрузки уголовного дела:', error);
+    }
+  };
 
   const loadSideDetails = async () => {
     if (isCreateMode) {
@@ -732,12 +745,24 @@ const CriminalSideDetails = () => {
                   ) : (
                     <span>{side?.additional_info || 'Нет примечаний'}</span>
                   )}
+                  
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+      {!isCreateMode && criminalCase && side && (
+        <NotificationPanel 
+          criminalCaseId={proceedingId}
+          participant={{
+            id: side.id,
+            type: 'side',
+            name: side.name || 'Сторона'
+          }}
+          onNotificationCreated={onNotificationCreated}
+        />
+      )}
     </div>
   );
 };
