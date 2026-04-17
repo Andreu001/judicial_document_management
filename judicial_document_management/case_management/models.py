@@ -1,3 +1,5 @@
+# case_management/models.py
+
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -16,11 +18,56 @@ class NotificationType(models.Model):
     def __str__(self):
         return self.name
 
+
+class NotificationTemplate(models.Model):
+    """Шаблон повестки для разных категорий дел и типов участников"""
+    
+    CASE_CATEGORY_CHOICES = [
+        ('criminal', 'Уголовное дело'),
+        ('civil', 'Гражданское дело'),
+        ('administrative', 'Административное дело (КАС)'),
+        ('coap', 'Дело об административном правонарушении (КоАП)'),
+    ]
+    
+    # Типы участников согласно формам повесток
+    PARTICIPANT_TYPE_CHOICES = [
+        ('defendant', 'Подсудимый / Ответчик'),
+        ('side', 'Истец / Свидетель'),
+        ('victim', 'Потерпевший'),
+        ('witness', 'Свидетель'),
+        ('expert', 'Эксперт / Специалист / Переводчик'),
+        ('representative', 'Представитель / Адвокат'),
+        ('inmate', 'Подсудимый под стражей (требование о доставке)'),
+    ]
+    
+    name = models.CharField(max_length=200, verbose_name="Название шаблона")
+    case_category = models.CharField(max_length=20, choices=CASE_CATEGORY_CHOICES, verbose_name="Категория дела")
+    participant_type = models.CharField(max_length=20, choices=PARTICIPANT_TYPE_CHOICES, verbose_name="Тип участника")
+    
+    # HTML-шаблон с переменными
+    content = models.TextField(verbose_name="Содержимое шаблона")
+    
+    # Номер формы согласно инструкции
+    form_number = models.CharField(max_length=10, blank=True, null=True, verbose_name="Номер формы")
+    
+    variables_description = models.TextField(blank=True, null=True, verbose_name="Описание переменных")
+    
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
+    
+    class Meta:
+        verbose_name = "Шаблон повестки"
+        verbose_name_plural = "Шаблоны повесток"
+        ordering = ['case_category', 'participant_type', 'order']
+        unique_together = ['case_category', 'participant_type']
+    
+    def __str__(self):
+        return f"{self.get_case_category_display()} - {self.get_participant_type_display()}"
+
+
 class Notification(models.Model):
-    """
-    Модель для учета извещений участников процесса.
-    Связана с конкретным участником (сторона или адвокат) через GenericForeignKey.
-    """
+    """Модель для учета извещений участников процесса."""
+    
     STATUS_CHOICES = [
         ('pending', 'Ожидает отправки'),
         ('sent', 'Отправлено'),
@@ -29,16 +76,20 @@ class Notification(models.Model):
     ]
     
     DELIVERY_METHODS = [
-        ('post', 'Почта России'),
+        ('post', 'Почта России (заказное письмо)'),
         ('email', 'Электронная почта'),
         ('sms', 'СМС-сообщение'),
         ('phone_call', 'Телефонограмма'),
         ('telegram', 'Телеграмма'),
-        ('in_person', 'Вручено лично'),
-        ('via_representative', 'Через дознавателя/следователя'),
+        ('fax', 'Факсимильная связь'),
+        ('in_person', 'Вручено лично под расписку'),
+        ('via_representative', 'Через представителя (администрация/семья)'),
+        ('electronic_summon', 'Электронная повестка (ГАС Правосудие)'),
+        ('vks', 'Видео-конференц-связь'),
+        ('detention_facility', 'Требование в СИЗО (форма №33/№37)'),
     ]
     
-    # Связь с участником (сторона или адвокат)
+    # Связь с участником
     content_type = models.ForeignKey(
         ContentType, 
         on_delete=models.CASCADE,
@@ -47,11 +98,18 @@ class Notification(models.Model):
     object_id = models.PositiveIntegerField()
     participant = GenericForeignKey('content_type', 'object_id')
     
-    # Тип уведомления (повестка, СМС, телефонограмма и т.д.)
     notification_type = models.ForeignKey(NotificationType, on_delete=models.PROTECT, verbose_name="Тип уведомления")
-    delivery_method = models.CharField(max_length=20, choices=DELIVERY_METHODS, verbose_name="Способ доставки")
+    delivery_method = models.CharField(max_length=30, choices=DELIVERY_METHODS, verbose_name="Способ доставки")
     
-    # Связь с делом (для удобства и быстрых выборок)
+    notification_template = models.ForeignKey(
+        NotificationTemplate, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name="Шаблон повестки"
+    )
+    
+    # Связь с делом
     case_content_type = models.ForeignKey(
         ContentType, 
         on_delete=models.CASCADE, 
@@ -60,16 +118,28 @@ class Notification(models.Model):
     case_object_id = models.PositiveIntegerField()
     case = GenericForeignKey('case_content_type', 'case_object_id')
     
+    # Текст повестки (с подставленными данными)
+    notification_text = models.TextField(blank=True, null=True, verbose_name="Текст уведомления")
+    
     # Данные отправки
     sent_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время отправки")
     delivery_date = models.DateTimeField(null=True, blank=True, verbose_name="Дата и время вручения")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='sent', verbose_name="Статус")
     
-    # Дополнительная информация
+    # Информация о получателе
     recipient_address = models.TextField(blank=True, null=True, verbose_name="Адрес получателя (для почты)")
     recipient_phone = models.CharField(max_length=50, blank=True, null=True, verbose_name="Номер телефона (для СМС/звонка)")
     recipient_email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    
+    # Согласие на уведомление
+    consent_sms = models.BooleanField(default=False, verbose_name="Согласие на СМС-уведомление")
+    consent_email = models.BooleanField(default=False, verbose_name="Согласие на Email-уведомление")
+    
     notes = models.TextField(blank=True, null=True, verbose_name="Примечания")
+    
+    # Информация о заседании
+    hearing_date = models.DateTimeField(null=True, blank=True, verbose_name="Дата и время заседания")
+    hearing_room = models.CharField(max_length=100, blank=True, null=True, verbose_name="Зал суда")
     
     # Кто создал
     created_by = models.ForeignKey(
@@ -89,8 +159,9 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.get_status_display()} {self.notification_type.name} для {self.participant} от {self.sent_date}"
 
+
 class ProgressActionType(models.Model):
-    """Справочник действий для справочного листа (направление повесток, истребование документов и т.д.)"""
+    """Справочник действий для справочного листа"""
     name = models.CharField(max_length=200, verbose_name="Название действия")
     code = models.CharField(max_length=50, unique=True, verbose_name="Код")
     
@@ -101,11 +172,10 @@ class ProgressActionType(models.Model):
     def __str__(self):
         return self.name
 
+
 class CaseProgressEntry(models.Model):
-    """
-    Модель для записей в справочном листе (ход дела).
-    """
-    # Связь с делом
+    """Модель для записей в справочном листе"""
+    
     case_content_type = models.ForeignKey(
         ContentType, 
         on_delete=models.CASCADE, 
@@ -114,15 +184,9 @@ class CaseProgressEntry(models.Model):
     case_object_id = models.PositiveIntegerField()
     case = GenericForeignKey('case_content_type', 'case_object_id')
     
-    # Действие
     action_type = models.ForeignKey(ProgressActionType, on_delete=models.PROTECT, verbose_name="Действие")
-    description = models.TextField(
-        verbose_name="Описание действия",
-        null=True, 
-        blank=True,
-    )
+    description = models.TextField(verbose_name="Описание действия", null=True, blank=True)
     
-    # Дата и информация
     created_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания записи")
     action_date = models.DateField(verbose_name="Дата действия")
     author = models.ForeignKey(
@@ -133,7 +197,6 @@ class CaseProgressEntry(models.Model):
         related_name='case_management_progress_entries'
     )
     
-    # Связь с конкретным уведомлением, если запись о нем
     related_notification = models.ForeignKey(
         Notification, 
         on_delete=models.SET_NULL, 

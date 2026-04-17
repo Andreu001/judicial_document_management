@@ -193,3 +193,240 @@
   padding: 20px;
   font-size: 12px;
 }
+
+.count {
+  background: #2c3e50;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 8px;
+}
+
+.deleteNotificationButton {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #c53030;
+  cursor: pointer;
+  padding: 0 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.deleteNotificationButton:hover:not(:disabled) {
+  background: #fed7d7;
+  transform: scale(1.1);
+}
+
+.deleteNotificationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.statusBadge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.statusBadge.sent {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.statusBadge.delivered {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.statusBadge.pending {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.statusBadge.failed {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.notificationDeliveryDate {
+  font-size: 11px;
+  color: #38a169;
+  margin-top: 4px;
+}
+/* Добавьте в конец файла NotificationPanel.module.css */
+
+/* Модальное окно */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 900px;  /* Увеличил с 800px до 900px */
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #2c3e50;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0 8px;
+}
+
+.modalClose:hover {
+  color: #c53030;
+}
+
+.modalForm {
+  padding: 20px;
+}
+
+.formSection {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.formSection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.formSection h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.hearingInfo {
+  font-size: 11px;
+  color: #2c5282;
+  background: #bee3f8;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.previewText,
+.editTextArea textarea {
+  width: 100%;
+  min-height: 400px;
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #e9ecef;
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.editTextButton,
+.cancelEditButton {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.cancelEditButton {
+  background: #c53030;
+}
+
+.previewContent {
+  padding: 16px;
+  font-size: 13px;  /* Увеличил с 12px до 13px */
+  line-height: 1.5;
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  max-height: 400px;  /* Увеличил с 300px до 400px */
+  overflow-y: auto;
+  background: white;
+}
+
+.previewLoading {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+}
+
+.count {
+  background: #2c3e50;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 8px;
+}

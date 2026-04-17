@@ -1,6 +1,9 @@
+// ProgressLog.jsx
+
 import React, { useState, useEffect } from 'react';
 import CaseManagementService from '../../API/CaseManagementService';
 import CriminalCaseService from '../../API/CriminalCaseService';
+import ConfirmModal from '../UI/Modal/ConfirmModal';
 import styles from './ProgressLog.module.css';
 
 const ProgressLog = ({ criminalCaseId, onRefresh }) => {
@@ -20,8 +23,10 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     appointmentDeadline: null,
     appointmentViolation: false
   });
+  
+  // Состояние для модального окна удаления
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, entryId: null });
 
-  // Загрузка записей и типов действий
   const loadData = async () => {
     if (!criminalCaseId) return;
     try {
@@ -41,7 +46,6 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     }
   };
 
-  // Расчет сроков
   const calculateDeadlines = (caseData) => {
     if (!caseData) return;
 
@@ -49,13 +53,11 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     const judgeAcceptanceDate = caseData.judge_acceptance_date ? new Date(caseData.judge_acceptance_date) : null;
     const today = new Date();
 
-    // Дни в производстве
     let daysInProduction = null;
     if (incomingDate) {
       daysInProduction = Math.floor((today - incomingDate) / (1000 * 60 * 60 * 24));
     }
 
-    // Срок назначения дела
     let appointmentDeadline = null;
     let appointmentViolation = false;
     if (incomingDate && judgeAcceptanceDate) {
@@ -81,7 +83,6 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     loadData();
   }, [criminalCaseId, onRefresh]);
 
-  // Обработчики CRUD операций
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -124,14 +125,27 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     setShowAddForm(true);
   };
 
-  const handleDelete = async (entryId) => {
-    if (window.confirm('Удалить эту запись?')) {
+  // Открыть модальное окно удаления
+  const openDeleteModal = (entryId) => {
+    setDeleteModal({ isOpen: true, entryId });
+  };
+
+  // Закрыть модальное окно
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, entryId: null });
+  };
+
+  // Выполнить удаление
+  const confirmDelete = async () => {
+    if (deleteModal.entryId) {
       try {
-        await CaseManagementService.deleteProgressEntry(criminalCaseId, entryId);
+        await CaseManagementService.deleteProgressEntry(criminalCaseId, deleteModal.entryId);
         await loadData();
       } catch (error) {
         console.error('Error deleting progress entry:', error);
         alert('Ошибка удаления записи');
+      } finally {
+        closeDeleteModal();
       }
     }
   };
@@ -159,14 +173,11 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
           Ход дела (Справочный лист)
           <span className={styles.count}>{progressEntries.length}</span>
         </h3>
-        <button className={styles.toggleButton}>
-          {isCollapsed ? '▼' : '▲'}
-        </button>
+        <span className={styles.toggleIndicator}>{isCollapsed ? 'Развернуть' : 'Свернуть'}</span>
       </div>
 
       {!isCollapsed && (
         <>
-          {/* Блок сроков */}
           <div className={styles.deadlinesBlock}>
             <div className={styles.deadlineItem}>
               <span className={styles.deadlineLabel}>В производстве:</span>
@@ -178,12 +189,11 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
               <span className={styles.deadlineLabel}>Срок назначения:</span>
               <span className={`${styles.deadlineValue} ${deadlines.appointmentViolation ? styles.violation : ''}`}>
                 {deadlines.appointmentDeadline ? `${deadlines.appointmentDeadline} дн.` : '—'}
-                {deadlines.appointmentViolation && <span className={styles.violationBadge}>❗ Нарушен</span>}
+                {deadlines.appointmentViolation && <span className={styles.violationBadge}>Нарушен</span>}
               </span>
             </div>
           </div>
 
-          {/* Кнопка добавления */}
           <button 
             className={styles.addButton}
             onClick={() => {
@@ -196,10 +206,9 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
               setShowAddForm(true);
             }}
           >
-            + Добавить действие
+            + Добавить запись
           </button>
 
-          {/* Форма добавления/редактирования */}
           {showAddForm && (
             <form className={styles.form} onSubmit={handleSubmit}>
               <select
@@ -227,7 +236,7 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
                 value={formData.description}
                 onChange={handleInputChange}
                 className={styles.textarea}
-                placeholder="Описание действия (необязательно)"
+                placeholder="Описание (необязательно)"
                 rows={2}
               />
               <div className={styles.formActions}>
@@ -248,44 +257,53 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
             </form>
           )}
 
-          {/* Список записей */}
           <div className={styles.entriesList}>
             {progressEntries.length === 0 && !showAddForm && (
               <div className={styles.emptyState}>Нет записей о ходе дела</div>
             )}
             {progressEntries.map(entry => (
               <div key={entry.id} className={styles.entryItem}>
-                <div className={styles.entryHeader}>
-                  <span className={styles.entryDate}>{formatDate(entry.action_date)}</span>
-                  <span className={styles.entryType}>{getActionTypeName(entry)}</span>
-                  <div className={styles.entryActions}>
+                <div className={styles.entryRow}>
+                  <div className={styles.entryInfo}>
+                    <span className={styles.entryDate}>{formatDate(entry.action_date)}</span>
+                    <span className={styles.entryType}>{getActionTypeName(entry)}</span>
+                    {entry.description && (
+                      <span className={styles.entryDescription}>{entry.description}</span>
+                    )}
+                    {entry.author_name && (
+                      <span className={styles.entryAuthor}>{entry.author_name}</span>
+                    )}
+                  </div>
+                  <div className={styles.entryControls}>
                     <button 
                       onClick={() => handleEdit(entry)} 
-                      className={styles.editEntryButton}
+                      className={styles.editButton}
                       title="Редактировать"
                     >
                       ✎
                     </button>
                     <button 
-                      onClick={() => handleDelete(entry.id)} 
-                      className={styles.deleteEntryButton}
+                      onClick={() => openDeleteModal(entry.id)} 
+                      className={styles.deleteButton}
                       title="Удалить"
                     >
                       ×
                     </button>
                   </div>
                 </div>
-                {entry.description && (
-                  <div className={styles.entryDescription}>{entry.description}</div>
-                )}
-                {entry.author_name && (
-                  <div className={styles.entryAuthor}>Кто выполнил: {entry.author_name}</div>
-                )}
               </div>
             ))}
           </div>
         </>
       )}
+
+      {/* Модальное окно подтверждения удаления */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        message="Вы уверены, что хотите удалить эту запись?"
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteModal}
+      />
     </div>
   );
 };

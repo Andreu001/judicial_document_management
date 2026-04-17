@@ -1,3 +1,5 @@
+// DefendantDetail.jsx - полностью обновленный файл
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
@@ -5,7 +7,7 @@ import baseService from '../../API/baseService';
 import styles from './CriminalDetail.module.css';
 import NotificationPanel from '../CaseManagement/NotificationPanel';
 
-const DefendantDetail = (onNotificationCreated) => {
+const DefendantDetail = () => {
   const { proceedingId, id } = useParams();
   const navigate = useNavigate();
   const [defendant, setDefendant] = useState(null);
@@ -27,6 +29,9 @@ const DefendantDetail = (onNotificationCreated) => {
   const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
   const [selectedSideId, setSelectedSideId] = useState('');
   const isCreateMode = !id || id === 'create';
+  
+  // Состояние для обновления списка уведомлений
+  const [refreshNotifications, setRefreshNotifications] = useState(0);
 
   // Опции для гражданства
   const citizenshipOptions = [
@@ -269,6 +274,11 @@ const DefendantDetail = (onNotificationCreated) => {
     setIsEditing(true);
   };
 
+  // Обработчик создания уведомления для обновления списка
+  const handleNotificationCreated = () => {
+    setRefreshNotifications(prev => prev + 1);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Не указано';
     try {
@@ -285,7 +295,6 @@ const DefendantDetail = (onNotificationCreated) => {
     return option?.label || value;
   };
 
-  // Функция для отображения значения гражданства
   const getCitizenshipDisplayValue = (value) => {
     if (!value) return 'Не указано';
     const option = citizenshipOptions.find(opt => opt.value === value);
@@ -865,16 +874,20 @@ const DefendantDetail = (onNotificationCreated) => {
           </div>
         </div>
 
-        {!isCreateMode && criminalCase && currentDefendant && (
-          <NotificationPanel 
-            criminalCaseId={proceedingId}
-            participant={{
-              id: currentDefendant.id,
-              type: 'defendant',
-              name: currentDefendant.full_name_criminal || currentDefendant.name
-            }}
-            onNotificationCreated={onNotificationCreated}
-          />
+        {/* Панель уведомлений - только в режиме просмотра (не в режиме создания и не в режиме редактирования) */}
+        {!isCreateMode && !isEditing && criminalCase && currentDefendant && (
+          <div className={styles.sidebar}>
+            <NotificationPanel 
+              criminalCaseId={proceedingId}
+              participant={{
+                id: currentDefendant.id,
+                type: 'defendant',
+                name: currentDefendant.full_name_criminal || currentDefendant.name
+              }}
+              onNotificationCreated={handleNotificationCreated}
+              refreshTrigger={refreshNotifications}
+            />
+          </div>
         )}
       </div>
     </div>

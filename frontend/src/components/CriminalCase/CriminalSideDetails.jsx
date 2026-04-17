@@ -270,7 +270,7 @@ const CriminalSideDetails = (onNotificationCreated) => {
               )}
             </h1>
             <div className={styles.subtitle}>
-              <span>Уголовное дело: {proceedingId}</span>
+              <span>Уголовное дело: {criminalCase?.case_number_criminal || proceedingId}</span>
             </div>
           </div>
         </div>
@@ -321,448 +321,455 @@ const CriminalSideDetails = (onNotificationCreated) => {
         </div>
       </div>
 
-      <div className={styles.tabsContainer}>
-        <div className={styles.tabs}>
-          {tabs.map(tab => (
-            <button 
-              key={tab.id}
-              className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className={styles.content}>
+        <div className={styles.mainContent}>
+          <div className={styles.tabsContainer}>
+            <div className={styles.tabs}>
+              {tabs.map(tab => (
+                <button 
+                  key={tab.id}
+                  className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-        <div className={styles.tabContentWrapper}>
-          <div className={styles.tabContent}>
-            {activeTab === 'general' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Выбор типа стороны
-                </h3>
-                <div className={styles.field}>
-                  <label>Вид стороны *</label>
-                  {isEditing || isCreateMode ? (
-                    <select
-                      name="sides_case_criminal"
-                      value={selectedSideId || ''}
-                      onChange={handleInputChange}
-                      className={styles.select}
-                      required
-                    >
-                      <option value="">Выберите вид стороны</option>
-                      {sidesCaseOptions.map(sideOption => (
-                        <option key={sideOption.id} value={String(sideOption.id)}>
-                          {sideOption.sides_case}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span>{getSideTypeName(side?.sides_case_criminal_id)}</span>
-                  )}
-                </div>
+            <div className={styles.tabContentWrapper}>
+              <div className={styles.tabContent}>
+                {activeTab === 'general' && (
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>
+                      Выбор типа стороны
+                    </h3>
+                    <div className={styles.field}>
+                      <label>Вид стороны *</label>
+                      {isEditing || isCreateMode ? (
+                        <select
+                          name="sides_case_criminal"
+                          value={selectedSideId || ''}
+                          onChange={handleInputChange}
+                          className={styles.select}
+                          required
+                        >
+                          <option value="">Выберите вид стороны</option>
+                          {sidesCaseOptions.map(sideOption => (
+                            <option key={sideOption.id} value={String(sideOption.id)}>
+                              {sideOption.sides_case}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span>{getSideTypeName(side?.sides_case_criminal_id)}</span>
+                      )}
+                    </div>
 
-                <h3 className={styles.subsectionTitle} style={{ marginTop: '2rem' }}>
-                  Общая информация
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field}>
-                    <label>ФИО / Наименование *</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        required
-                        placeholder="Полное имя или наименование организации"
-                      />
-                    ) : (
-                      <span>{side?.name || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Статус *</label>
-                    {isEditing || isCreateMode ? (
-                      <select
-                        name="status"
-                        value={formData.status || 'individual'}
-                        onChange={handleInputChange}
-                        className={styles.select}
-                      >
-                        <option value="individual">Физическое лицо</option>
-                        <option value="legal">Юридическое лицо</option>
-                      </select>
-                    ) : (
-                      <span>
-                        {formData.status === 'individual' ? 'Физическое лицо' : 
-                         formData.status === 'legal' ? 'Юридическое лицо' : 
-                         formData.status || 'Не указано'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Дата отправки повестки</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="date"
-                        name="date_sending_agenda"
-                        value={formData.date_sending_agenda || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{formatDate(side?.date_sending_agenda)}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Гражданство</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="text"
-                        name="citizenship"
-                        value={formData.citizenship || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        placeholder="Гражданство"
-                      />
-                    ) : (
-                      <span>{side?.citizenship || 'Не указано'}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'personal' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Личные данные
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field}>
-                    <label>Дата рождения</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="date"
-                        name="birth_date"
-                        value={formData.birth_date || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{formatDate(side?.birth_date)}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Пол</label>
-                    {isEditing || isCreateMode ? (
-                      <select
-                        name="gender"
-                        value={formData.gender || ''}
-                        onChange={handleInputChange}
-                        className={styles.select}
-                      >
-                        <option value="">Не указан</option>
-                        <option value="male">Мужской</option>
-                        <option value="female">Женский</option>
-                      </select>
-                    ) : (
-                      <span>
-                        {formData.gender === 'male' ? 'Мужской' : 
-                         formData.gender === 'female' ? 'Женский' : 
-                         'Не указан'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'documents' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Основной документ
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field}>
-                    <label>Тип документа</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="text"
-                        name="document_type"
-                        value={formData.document_type || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        placeholder="Паспорт, Свидетельство и т.д."
-                      />
-                    ) : (
-                      <span>{side?.document_type || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Серия</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="text"
-                        name="document_series"
-                        value={formData.document_series || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        placeholder="Серия документа"
-                      />
-                    ) : (
-                      <span>{side?.document_series || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Номер</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="text"
-                        name="document_number"
-                        value={formData.document_number || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        placeholder="Номер документа"
-                      />
-                    ) : (
-                      <span>{side?.document_number || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Кем выдан</label>
-                    {isEditing || isCreateMode ? (
-                      <textarea
-                        name="document_issued_by"
-                        value={formData.document_issued_by || ''}
-                        onChange={handleInputChange}
-                        className={styles.textarea}
-                        rows="2"
-                        placeholder="Кем выдан документ"
-                      />
-                    ) : (
-                      <span>{side?.document_issued_by || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Дата выдачи</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="date"
-                        name="document_issue_date"
-                        value={formData.document_issue_date || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{formatDate(side?.document_issue_date)}</span>
-                    )}
-                  </div>
-                </div>
-
-                {formData.status === 'legal' && (
-                  <>
                     <h3 className={styles.subsectionTitle} style={{ marginTop: '2rem' }}>
-                      Реквизиты юридического лица
+                      Общая информация
                     </h3>
                     <div className={styles.tabGrid}>
                       <div className={styles.field}>
-                        <label>ИНН</label>
+                        <label>ФИО / Наименование *</label>
                         {isEditing || isCreateMode ? (
                           <input
                             type="text"
-                            name="inn"
-                            value={formData.inn || ''}
+                            name="name"
+                            value={formData.name || ''}
                             onChange={handleInputChange}
                             className={styles.input}
-                            placeholder="Идентификационный номер налогоплательщика"
+                            required
+                            placeholder="Полное имя или наименование организации"
                           />
                         ) : (
-                          <span>{side?.inn || 'Не указано'}</span>
+                          <span>{side?.name || 'Не указано'}</span>
                         )}
                       </div>
 
                       <div className={styles.field}>
-                        <label>КПП</label>
+                        <label>Статус *</label>
                         {isEditing || isCreateMode ? (
-                          <input
-                            type="text"
-                            name="kpp"
-                            value={formData.kpp || ''}
+                          <select
+                            name="status"
+                            value={formData.status || 'individual'}
                             onChange={handleInputChange}
-                            className={styles.input}
-                            placeholder="Код причины постановки на учет"
-                          />
+                            className={styles.select}
+                          >
+                            <option value="individual">Физическое лицо</option>
+                            <option value="legal">Юридическое лицо</option>
+                          </select>
                         ) : (
-                          <span>{side?.kpp || 'Не указано'}</span>
+                          <span>
+                            {formData.status === 'individual' ? 'Физическое лицо' : 
+                             formData.status === 'legal' ? 'Юридическое лицо' : 
+                             formData.status || 'Не указано'}
+                          </span>
                         )}
                       </div>
 
                       <div className={styles.field}>
-                        <label>ОГРН</label>
+                        <label>Дата отправки повестки</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="date"
+                            name="date_sending_agenda"
+                            value={formData.date_sending_agenda || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(side?.date_sending_agenda)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Гражданство</label>
                         {isEditing || isCreateMode ? (
                           <input
                             type="text"
-                            name="ogrn"
-                            value={formData.ogrn || ''}
+                            name="citizenship"
+                            value={formData.citizenship || ''}
                             onChange={handleInputChange}
                             className={styles.input}
-                            placeholder="Основной государственный регистрационный номер"
+                            placeholder="Гражданство"
                           />
                         ) : (
-                          <span>{side?.ogrn || 'Не указано'}</span>
+                          <span>{side?.citizenship || 'Не указано'}</span>
                         )}
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
-              </div>
-            )}
 
-            {activeTab === 'contacts' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Контактная информация
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field}>
-                    <label>Адрес</label>
-                    {isEditing || isCreateMode ? (
-                      <textarea
-                        name="address"
-                        value={formData.address || ''}
-                        onChange={handleInputChange}
-                        className={styles.textarea}
-                        rows="2"
-                        placeholder="Фактический адрес проживания/нахождения"
-                      />
-                    ) : (
-                      <span>{side?.address || 'Не указано'}</span>
+                {activeTab === 'personal' && (
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>
+                      Личные данные
+                    </h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Дата рождения</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="date"
+                            name="birth_date"
+                            value={formData.birth_date || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(side?.birth_date)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Пол</label>
+                        {isEditing || isCreateMode ? (
+                          <select
+                            name="gender"
+                            value={formData.gender || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Не указан</option>
+                            <option value="male">Мужской</option>
+                            <option value="female">Женский</option>
+                          </select>
+                        ) : (
+                          <span>
+                            {formData.gender === 'male' ? 'Мужской' : 
+                             formData.gender === 'female' ? 'Женский' : 
+                             'Не указан'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'documents' && (
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>
+                      Основной документ
+                    </h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Тип документа</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="text"
+                            name="document_type"
+                            value={formData.document_type || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            placeholder="Паспорт, Свидетельство и т.д."
+                          />
+                        ) : (
+                          <span>{side?.document_type || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Серия</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="text"
+                            name="document_series"
+                            value={formData.document_series || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            placeholder="Серия документа"
+                          />
+                        ) : (
+                          <span>{side?.document_series || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Номер</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="text"
+                            name="document_number"
+                            value={formData.document_number || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            placeholder="Номер документа"
+                          />
+                        ) : (
+                          <span>{side?.document_number || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Кем выдан</label>
+                        {isEditing || isCreateMode ? (
+                          <textarea
+                            name="document_issued_by"
+                            value={formData.document_issued_by || ''}
+                            onChange={handleInputChange}
+                            className={styles.textarea}
+                            rows="2"
+                            placeholder="Кем выдан документ"
+                          />
+                        ) : (
+                          <span>{side?.document_issued_by || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дата выдачи</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="date"
+                            name="document_issue_date"
+                            value={formData.document_issue_date || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(side?.document_issue_date)}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {formData.status === 'legal' && (
+                      <>
+                        <h3 className={styles.subsectionTitle} style={{ marginTop: '2rem' }}>
+                          Реквизиты юридического лица
+                        </h3>
+                        <div className={styles.tabGrid}>
+                          <div className={styles.field}>
+                            <label>ИНН</label>
+                            {isEditing || isCreateMode ? (
+                              <input
+                                type="text"
+                                name="inn"
+                                value={formData.inn || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Идентификационный номер налогоплательщика"
+                              />
+                            ) : (
+                              <span>{side?.inn || 'Не указано'}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>КПП</label>
+                            {isEditing || isCreateMode ? (
+                              <input
+                                type="text"
+                                name="kpp"
+                                value={formData.kpp || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Код причины постановки на учет"
+                              />
+                            ) : (
+                              <span>{side?.kpp || 'Не указано'}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>ОГРН</label>
+                            {isEditing || isCreateMode ? (
+                              <input
+                                type="text"
+                                name="ogrn"
+                                value={formData.ogrn || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Основной государственный регистрационный номер"
+                              />
+                            ) : (
+                              <span>{side?.ogrn || 'Не указано'}</span>
+                            )}
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
+                )}
 
-                  {formData.status === 'legal' && (
-                    <div className={styles.field}>
-                      <label>Юридический адрес</label>
+                {activeTab === 'contacts' && (
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>
+                      Контактная информация
+                    </h3>
+                    <div className={styles.tabGrid}>
+                      <div className={styles.field}>
+                        <label>Адрес</label>
+                        {isEditing || isCreateMode ? (
+                          <textarea
+                            name="address"
+                            value={formData.address || ''}
+                            onChange={handleInputChange}
+                            className={styles.textarea}
+                            rows="2"
+                            placeholder="Фактический адрес проживания/нахождения"
+                          />
+                        ) : (
+                          <span>{side?.address || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      {formData.status === 'legal' && (
+                        <div className={styles.field}>
+                          <label>Юридический адрес</label>
+                          {isEditing || isCreateMode ? (
+                            <textarea
+                              name="legal_address"
+                              value={formData.legal_address || ''}
+                              onChange={handleInputChange}
+                              className={styles.textarea}
+                              rows="2"
+                              placeholder="Юридический адрес организации"
+                            />
+                          ) : (
+                            <span>{side?.legal_address || 'Не указано'}</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className={styles.field}>
+                        <label>Телефон</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            placeholder="Контактный телефон"
+                          />
+                        ) : (
+                          <span>{side?.phone || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Email</label>
+                        {isEditing || isCreateMode ? (
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            placeholder="Электронная почта"
+                          />
+                        ) : (
+                          <span>{side?.email || 'Не указано'}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'additional' && (
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>
+                      Дополнительная информация
+                    </h3>
+                    
+                    {formData.status === 'legal' && (
+                      <div className={styles.tabGrid}>
+                        <div className={styles.field}>
+                          <label>ФИО руководителя</label>
+                          {isEditing || isCreateMode ? (
+                            <input
+                              type="text"
+                              name="director_name"
+                              value={formData.director_name || ''}
+                              onChange={handleInputChange}
+                              className={styles.input}
+                              placeholder="ФИО руководителя организации"
+                            />
+                          ) : (
+                            <span>{side?.director_name || 'Не указано'}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={styles.field} style={{ marginTop: '2rem' }}>
+                      <label>Дополнительная информация</label>
                       {isEditing || isCreateMode ? (
                         <textarea
-                          name="legal_address"
-                          value={formData.legal_address || ''}
+                          name="additional_info"
+                          value={formData.additional_info || ''}
                           onChange={handleInputChange}
                           className={styles.textarea}
-                          rows="2"
-                          placeholder="Юридический адрес организации"
+                          rows="4"
+                          placeholder="Любая дополнительная информация о стороне..."
                         />
                       ) : (
-                        <span>{side?.legal_address || 'Не указано'}</span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className={styles.field}>
-                    <label>Телефон</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        placeholder="Контактный телефон"
-                      />
-                    ) : (
-                      <span>{side?.phone || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Email</label>
-                    {isEditing || isCreateMode ? (
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                        placeholder="Электронная почта"
-                      />
-                    ) : (
-                      <span>{side?.email || 'Не указано'}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'additional' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Дополнительная информация
-                </h3>
-                
-                {formData.status === 'legal' && (
-                  <div className={styles.tabGrid}>
-                    <div className={styles.field}>
-                      <label>ФИО руководителя</label>
-                      {isEditing || isCreateMode ? (
-                        <input
-                          type="text"
-                          name="director_name"
-                          value={formData.director_name || ''}
-                          onChange={handleInputChange}
-                          className={styles.input}
-                          placeholder="ФИО руководителя организации"
-                        />
-                      ) : (
-                        <span>{side?.director_name || 'Не указано'}</span>
+                        <span>{side?.additional_info || 'Нет примечаний'}</span>
                       )}
                     </div>
                   </div>
                 )}
-
-                <div className={styles.field} style={{ marginTop: '2rem' }}>
-                  <label>Дополнительная информация</label>
-                  {isEditing || isCreateMode ? (
-                    <textarea
-                      name="additional_info"
-                      value={formData.additional_info || ''}
-                      onChange={handleInputChange}
-                      className={styles.textarea}
-                      rows="4"
-                      placeholder="Любая дополнительная информация о стороне..."
-                    />
-                  ) : (
-                    <span>{side?.additional_info || 'Нет примечаний'}</span>
-                  )}
-                  
-                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
+
+        {/* Сайдбар с уведомлениями - ТОЛЬКО для существующей стороны (не в режиме создания) */}
+        {!isCreateMode && criminalCase && side && (
+          <div className={styles.sidebar}>
+            <NotificationPanel 
+              criminalCaseId={proceedingId}
+              participant={{
+                id: side.id,
+                type: 'side',
+                name: side.name || 'Сторона'
+              }}
+              onNotificationCreated={onNotificationCreated}
+            />
+          </div>
+        )}
       </div>
-      {!isCreateMode && criminalCase && side && (
-        <NotificationPanel 
-          criminalCaseId={proceedingId}
-          participant={{
-            id: side.id,
-            type: 'side',
-            name: side.name || 'Сторона'
-          }}
-          onNotificationCreated={onNotificationCreated}
-        />
-      )}
     </div>
   );
 };

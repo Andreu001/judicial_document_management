@@ -1,3 +1,5 @@
+// API/CaseManagementService.js
+
 import baseService from './baseService';
 
 const BASE_URL = '/case-management/';
@@ -24,6 +26,35 @@ class CaseManagementService {
     }
   }
 
+  // === Шаблоны повесток ===
+  static async getNotificationTemplates(params = {}) {
+    try {
+      const queryParams = new URLSearchParams(params).toString();
+      const url = `${BASE_URL}notification-templates/${queryParams ? `?${queryParams}` : ''}`;
+      const response = await baseService.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching notification templates:', error);
+      return [];
+    }
+  }
+
+  static async previewNotificationTemplate(templateId, caseId, participantType, participantId, hearingDate, hearingRoom) {
+    try {
+      const response = await baseService.post(`${BASE_URL}notification-templates/${templateId}/preview/`, {
+        case_id: caseId,
+        participant_type: participantType,
+        participant_id: participantId,
+        hearing_date: hearingDate,
+        hearing_room: hearingRoom
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error previewing template:', error);
+      throw error;
+    }
+  }
+
   // === Типы действий для хода дела ===
   static async getProgressActionTypes() {
     try {
@@ -35,7 +66,7 @@ class CaseManagementService {
     }
   }
 
-  // === Записи хода дела (Progress Entries) для уголовного дела ===
+  // === Записи хода дела (Progress Entries) ===
   static async getProgressEntries(caseId) {
     try {
       const response = await baseService.get(`${BASE_URL}criminal/${caseId}/progress-entries/`);
@@ -77,7 +108,7 @@ class CaseManagementService {
     }
   }
 
-  // === Уведомления (Notifications) для участников ===
+  // === Уведомления (Notifications) ===
   static async getNotifications(caseId, params = {}) {
     try {
       const queryParams = new URLSearchParams(params).toString();
@@ -93,7 +124,7 @@ class CaseManagementService {
   static async createNotification(caseId, notificationData) {
     try {
       const cleanedData = this.cleanData(notificationData);
-      console.log('Sending notification data:', cleanedData); // Для отладки
+      console.log('Sending notification data:', cleanedData);
       const response = await baseService.post(`${BASE_URL}criminal/${caseId}/notifications/`, cleanedData);
       return response.data;
     } catch (error) {

@@ -1,77 +1,62 @@
+/* ProgressLog.module.css */
 .progressLog {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin-bottom: 20px;
+  background: #ffffff;
+  border-radius: 0px;
+  box-shadow: none;
+  margin-bottom: 0;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  background: #f8f9fa;
+  align-items: baseline;
+  padding: 12px 0;
+  background: transparent;
   cursor: pointer;
-  border-bottom: 1px solid #e9ecef;
-  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #e5e7eb;
+  transition: opacity 0.2s ease;
+  user-select: none;
 }
 
 .header:hover {
-  background: #e9ecef;
+  opacity: 0.8;
 }
 
 .title {
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #2c3e50;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .count {
-  background: #2c3e50;
-  color: white;
+  background: #e5e7eb;
+  color: #374151;
   font-size: 11px;
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 20px;
 }
 
-/* Обновите стиль toggleButton */
-.toggleButton {
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #6c757d;
-  cursor: pointer;
-  padding: 4px 8px;
-  transition: all 0.2s ease;
-  border-radius: 4px;
-}
-
-.toggleButton:hover {
-  background: #e9ecef;
-  color: #2c3e50;
-}
-
-/* Если хотите использовать иконки вместо текста, можно так: */
-.toggleButton::before {
-  content: '▼';
-  display: inline-block;
-  transition: transform 0.2s ease;
-}
-
-.header[data-collapsed="true"] .toggleButton::before {
-  transform: rotate(-90deg);
+.toggleIndicator {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+  text-transform: lowercase;
+  letter-spacing: 0.2px;
 }
 
 .deadlinesBlock {
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  padding: 12px 0;
+  background: transparent;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   gap: 24px;
 }
@@ -80,211 +65,233 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .deadlineLabel {
-  color: #6c757d;
-  font-weight: 500;
+  color: #6b7280;
+  font-weight: 400;
 }
 
 .deadlineValue {
-  font-weight: 600;
-  color: #2c3e50;
+  font-weight: 500;
+  color: #111827;
 }
 
 .deadlineValue.warning {
-  color: #e67e22;
+  color: #d97706;
 }
 
 .deadlineValue.violation {
-  color: #c53030;
+  color: #dc2626;
 }
 
 .violationBadge {
-  background: #c53030;
-  color: white;
+  background: #fee2e2;
+  color: #b91c1c;
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 12px;
   margin-left: 8px;
+  font-weight: 400;
 }
 
 .addButton {
-  width: calc(100% - 32px);
-  margin: 12px 16px;
-  padding: 8px 12px;
-  background: #2c3e50;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  width: 100%;
+  margin: 12px 0;
+  padding: 6px 12px;
+  background: transparent;
+  color: #3b82f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
 .addButton:hover {
-  background: #1a2632;
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 .form {
-  padding: 16px;
-  border-top: 1px solid #e9ecef;
-  border-bottom: 1px solid #e9ecef;
-  background: #f8f9fa;
+  padding: 12px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  margin-bottom: 8px;
 }
 
 .select, .dateInput {
   width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
   box-sizing: border-box;
+  background: white;
 }
 
 .textarea {
   width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
   resize: vertical;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .formActions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .saveButton {
   flex: 1;
-  padding: 8px 12px;
-  background: #38a169;
+  padding: 6px 12px;
+  background: #10b981;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .saveButton:hover {
-  background: #2f855a;
+  background: #059669;
 }
 
 .cancelButton {
   flex: 1;
-  padding: 8px 12px;
-  background: #c53030;
+  padding: 6px 12px;
+  background: #ef4444;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .cancelButton:hover {
-  background: #9b2c2c;
+  background: #dc2626;
 }
 
 .entriesList {
-  padding: 0 16px 16px 16px;
+  padding: 0;
   max-height: 400px;
   overflow-y: auto;
 }
 
 .entryItem {
-  padding: 12px 0;
-  border-bottom: 1px solid #e9ecef;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .entryItem:last-child {
   border-bottom: none;
 }
 
-.entryHeader {
+.entryRow {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.entryInfo {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 6px;
+  font-size: 11px;
 }
 
 .entryDate {
-  font-size: 11px;
-  color: #6c757d;
-  background: #f1f3f5;
-  padding: 2px 8px;
-  border-radius: 12px;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 400;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
 }
 
 .entryType {
-  font-size: 13px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.entryActions {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-.editEntryButton, .deleteEntryButton {
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.editEntryButton {
-  color: #3182ce;
-}
-
-.editEntryButton:hover {
-  background: #e2e8f0;
-}
-
-.deleteEntryButton {
-  color: #c53030;
-}
-
-.deleteEntryButton:hover {
-  background: #fed7d7;
+  font-weight: 500;
+  color: #111827;
+  font-size: 11px;
 }
 
 .entryDescription {
-  font-size: 12px;
-  color: #4a5568;
-  margin-bottom: 4px;
-  line-height: 1.4;
+  color: #4b5563;
+  font-size: 10px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .entryAuthor {
-  font-size: 10px;
-  color: #a0aec0;
+  color: #9ca3af;
+  font-size: 9px;
+}
+
+.entryControls {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.editButton, .deleteButton {
+  background: none;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.editButton {
+  color: #6b7280;
+}
+
+.editButton:hover {
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+.deleteButton {
+  color: #6b7280;
+}
+
+.deleteButton:hover {
+  color: #ef4444;
+  background: #fee2e2;
 }
 
 .emptyState {
   text-align: center;
-  color: #a0aec0;
-  font-style: italic;
-  padding: 24px;
-  font-size: 13px;
+  color: #9ca3af;
+  font-style: normal;
+  padding: 24px 0;
+  font-size: 11px;
+  border-top: 1px solid #f3f4f6;
 }
 
 .loading {
-  padding: 20px;
+  padding: 20px 0;
   text-align: center;
-  color: #6c757d;
-  font-size: 13px;
+  color: #6b7280;
+  font-size: 11px;
 }
