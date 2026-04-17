@@ -572,41 +572,41 @@ class Defendant(models.Model):
 
 
 class LawyerCriminal(models.Model):
-    '''Модель для адвокатов с информацией об оплате'''
-
-    sides_case_lawyer = models.ForeignKey(
-        SidesCase,
-        on_delete=models.CASCADE,
-        related_name='criminal_lawyer',
-        verbose_name='Адвокат по делу'
-    )
-    sides_case_lawyer_criminal = models.ForeignKey(
-        Lawyer,
-        on_delete=models.CASCADE,
-        related_name='lawyer_info',
-        verbose_name='Сторона (адвокат)',
-        blank=True,
-        null=True
-    )
+    '''Модель для адвокатов в уголовных делах'''
+    
     criminal_proceedings = models.ForeignKey(
         CriminalProceedings,
         on_delete=models.CASCADE,
-        related_name="criminal_sides_lawyer",
-        verbose_name="Уголовное производство",
+        related_name='criminal_lawyers',
+        verbose_name="Уголовное производство"
+    )
+    
+    lawyer = models.ForeignKey(
+        'business_card.Lawyer',
+        on_delete=models.CASCADE,
+        related_name='criminal_lawyers',
+        verbose_name="Адвокат",
         null=True,
         blank=True
     )
-
+    
+    sides_case_role = models.ForeignKey(
+        'business_card.SidesCase',
+        on_delete=models.CASCADE,
+        related_name='criminal_lawyers',
+        verbose_name="Роль в деле",
+        null=True,
+        blank=True
+    )
+    
     class Meta:
-        verbose_name = 'Адвокат'
-        verbose_name_plural = 'Адвокаты'
+        verbose_name = "Адвокат в уголовном деле"
+        verbose_name_plural = "Адвокаты в уголовных делах"
 
-    @property
-    def sides_case_defendant_name(self):
-        """Название вида стороны (для отображения)"""
-        if self.sides_case_defendant:
-            return self.sides_case_defendant.sides_case
-        return None
+    def __str__(self):
+        if self.lawyer:
+            return f"Адвокат: {self.lawyer.law_firm_name}"
+        return f"Адвокат по делу {self.criminal_proceedings.case_number_criminal}"
 
 
 class CriminalSidesCaseInCase(models.Model):
@@ -645,8 +645,16 @@ class CriminalSidesCaseInCase(models.Model):
         return f'Адвокат: {self.criminal_side_case.name}'
 
 
+# criminal_case/models.py - исправленная модель PetitionCriminal
+
 class PetitionCriminal(models.Model):
     '''Модель для ходатайств в уголовном деле'''
+
+    PETITIONER_TYPES = [
+        ('criminal_defendant', 'Обвиняемый'),
+        ('criminal_lawyer', 'Адвокат'),
+        ('criminal_side', 'Сторона по делу'),
+    ]
 
     petitions_criminal = models.ManyToManyField(
         Petitions,
@@ -677,31 +685,115 @@ class PetitionCriminal(models.Model):
         null=True,
         blank=True
     )
-    content_type = models.ForeignKey(
-        ContentType,
-        on_delete=models.SET_NULL,
+    
+    petitions_incase = models.ForeignKey(
+        'business_card.PetitionsInCase',
+        on_delete=models.CASCADE,
+        verbose_name="Ходатайство в деле",
+        related_name='criminal_petitions',
         null=True,
-        blank=True,
-        verbose_name="Тип стороны",
-        #limit_choices_to={
-           # 'model__in': ('defendant', 'lawyercriminal', 'criminalsidescaseincase')
-       # }
+        blank=True
     )
-    object_id = models.PositiveIntegerField(
+    
+    # ДОБАВИТЬ ЭТИ ПОЛЯ:
+    petitioner_type = models.CharField(
+        max_length=30,
+        choices=PETITIONER_TYPES,
+        verbose_name="Тип заявителя",
         null=True,
-        blank=True,
-        verbose_name="ID стороны"
+        blank=True
     )
-    petitioner = GenericForeignKey('content_type', 'object_id')
+    petitioner_id = models.PositiveIntegerField(
+        verbose_name="ID заявителя",
+        null=True,
+        blank=True
+    )
     
     class Meta:
         verbose_name = 'Ходатайство уголовного дела'
         verbose_name_plural = 'Ходатайства уголовного дела'
+        indexes = [
+            models.Index(fields=['petitioner_type', 'petitioner_id']),
+        ]
     
     def __str__(self):
         if self.petitions_criminal:
             return f'Ходатайство: {self.petitions_criminal}'
         return 'Ходатайство'
+    
+    @property
+    def petitioner(self):
+        """Получение объекта заявителя"""
+        if not self.petitioner_type or not self.petitioner_id:
+            return None
+        
+        if self.petitioner_type == 'criminal_defendant':
+            try:
+                return Defendant.objects.get(id=self.petitioner_id, criminal_proceedings=self.criminal_proceedings)
+            except Defendant.DoesNotExist:
+                return None
+        elif self.petitioner_type == 'criminal_lawyer':
+            try:
+                return LawyerCriminal.objects.get(id=self.petitioner_id, criminal_proceedings=self.criminal_proceedings)
+            except LawyerCriminal.DoesNotExist:
+                return None
+        elif self.petitioner_type == 'criminal_side':
+            try:
+                return CriminalSidesCaseInCase.objects.get(id=self.petitioner_id, criminal_proceedings=self.criminal_proceedings)
+            except CriminalSidesCaseInCase.DoesNotExist:
+                return None
+        return None
+    
+    @property
+    def petitioner_info(self):
+        """Получение информации о заявителе для отображения"""
+        petitioner = self.petitioner
+        if not petitioner:
+            return None
+        
+        if self.petitioner_type == 'criminal_defendant':
+            return {
+                'id': petitioner.id,
+                'type': 'criminal_defendant',
+                'type_label': 'Обвиняемый',
+                'name': petitioner.full_name_criminal or 'Неизвестно',
+                'role': 'Обвиняемый',
+                'detail': {
+                    'full_name': petitioner.full_name_criminal,
+                    'birth_date': petitioner.birth_date,
+                    'address': petitioner.address,
+                }
+            }
+        elif self.petitioner_type == 'criminal_lawyer':
+            lawyer_detail = petitioner.lawyer
+            role_detail = petitioner.sides_case_role
+            return {
+                'id': petitioner.id,
+                'type': 'criminal_lawyer',
+                'type_label': 'Адвокат',
+                'name': lawyer_detail.law_firm_name if lawyer_detail else 'Неизвестно',
+                'role': role_detail.sides_case if role_detail else 'Адвокат',
+                'detail': {
+                    'law_firm_name': lawyer_detail.law_firm_name if lawyer_detail else None,
+                    'phone': lawyer_detail.law_firm_phone if lawyer_detail else None,
+                }
+            }
+        elif self.petitioner_type == 'criminal_side':
+            side_detail = petitioner.criminal_side_case
+            role_detail = petitioner.sides_case_criminal
+            return {
+                'id': petitioner.id,
+                'type': 'criminal_side',
+                'type_label': 'Сторона',
+                'name': side_detail.name if side_detail else 'Неизвестно',
+                'role': role_detail.sides_case if role_detail else 'Сторона',
+                'detail': {
+                    'name': side_detail.name if side_detail else None,
+                    'phone': side_detail.phone if side_detail else None,
+                    'address': side_detail.address if side_detail else None,
+                }
+            }
+        return None
 
 
 class CriminalDecision(models.Model):
@@ -1255,10 +1347,24 @@ def delete_related_sidescaseincase(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=LawyerCriminal)
 def delete_related_lawyer(sender, instance, **kwargs):
-    """Удалить связанного Lawyer при удалении связи"""
-    if instance.sides_case_lawyer_criminal:
+    """Удалить связанного Lawyer при удалении связи, если он не используется в других делах"""
+    if instance.lawyer:
+        other_usages = LawyerCriminal.objects.filter(lawyer=instance.lawyer).exclude(id=instance.id).count()
+        if other_usages == 0:
+            try:
+                instance.lawyer.delete()
+                logger.info(f"Deleted related Lawyer {instance.lawyer.id}")
+            except Exception as e:
+                logger.error(f"Error deleting Lawyer: {e}")
+
+
+@receiver(post_delete, sender=PetitionCriminal)
+def delete_related_petitions_incase(sender, instance, **kwargs):
+    """Удалить связанный PetitionsInCase при удалении PetitionCriminal"""
+    if instance.petitions_incase:
         try:
-            instance.sides_case_lawyer_criminal.delete()
-            logger.info(f"Deleted related Lawyer {instance.sides_case_lawyer_criminal.id}")
+            petitions_incase_id = instance.petitions_incase.id
+            instance.petitions_incase.delete()
+            logger.info(f"Deleted related PetitionsInCase {petitions_incase_id} for PetitionCriminal {instance.id}")
         except Exception as e:
-            logger.error(f"Error deleting Lawyer: {e}")
+            logger.error(f"Error deleting PetitionsInCase: {e}")

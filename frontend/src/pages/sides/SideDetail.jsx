@@ -1,37 +1,176 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import baseService from '../../API/baseService';
-import SideService from '../../API/SideService';
+import AdministrativeCaseService from '../../API/AdministrativeCaseService';
+import CivilCaseService from '../../API/CivilCaseService';
+import CriminalCaseService from '../../API/CriminalCaseService';
+import KasCaseService from '../../API/KasCaseService';
+import NotificationPanel from '../../components/CaseManagement/NotificationPanel';
 import styles from './SideDetails.module.css';
 
-const SideDetails = () => {
-  const { cardId, sideId } = useParams();
+const SideDetail = () => {
+  const { proceedingId, sideId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [side, setSide] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
-  const [activeTab, setActiveTab] = useState('basic'); // Добавляем состояние для активной вкладки
+  const [activeTab, setActiveTab] = useState('main');
+  const [personType, setPersonType] = useState('individual');
+  const [sideRoles, setSideRoles] = useState([]);
+  const [error, setError] = useState(null);
+  const [refreshNotifications, setRefreshNotifications] = useState(0);
+
+  // Функция для обновления уведомлений
+  const handleNotificationCreated = () => {
+    setRefreshNotifications(prev => prev + 1);
+  };
+
+  // Определяем тип дела по пути URL
+  const getCaseType = () => {
+    if (location.pathname.includes('/criminal-proceedings/')) return 'criminal';
+    if (location.pathname.includes('/civil-proceedings/')) return 'civil';
+    if (location.pathname.includes('/admin-proceedings/')) return 'admin';
+    if (location.pathname.includes('/kas-proceedings/')) return 'kas';
+    if (location.pathname.includes('/other-materials/')) return 'other';
+    return 'unknown';
+  };
+
+  const caseType = getCaseType();
+  const isCreateMode = !sideId || sideId === 'create';
+
+  // Получаем соответствующий сервис
+  const getService = () => {
+    switch (caseType) {
+      case 'criminal': return CriminalCaseService;
+      case 'civil': return CivilCaseService;
+      case 'admin': return AdministrativeCaseService;
+      case 'kas': return KasCaseService;
+      default: return null;
+    }
+  };
+
+  const service = getService();
 
   useEffect(() => {
-    if (cardId && sideId) {
-      loadSideDetails();
-      loadSidesCaseOptions();
+    if (proceedingId) {
+      loadSideRoles();
+      if (isCreateMode) {
+        setLoading(false);
+        setSide(null);
+        setFormData(getEmptyFormData());
+        setIsEditing(true);
+      } else if (sideId) {
+        loadSideDetails();
+      }
     }
-  }, [cardId, sideId]);
+  }, [proceedingId, sideId, caseType]);
+
+  const getEmptyFormData = () => ({
+    sides_case_role: '',
+    name: '',
+    status: 'individual',
+    date_sending_agenda: '',
+    birth_date: '',
+    gender: '',
+    document_type: '',
+    document_number: '',
+    document_series: '',
+    document_issued_by: '',
+    document_issue_date: '',
+    inn: '',
+    kpp: '',
+    ogrn: '',
+    legal_address: '',
+    director_name: '',
+    address: '',
+    phone: '',
+    email: '',
+    additional_info: '',
+    citizenship: ''
+  });
+
+  const loadSideRoles = async () => {
+    try {
+      let roles = [];
+      if (caseType === 'criminal') {
+        const response = await baseService.get('/business_card/sides/');
+        roles = response.data || [];
+      } else if (service && service.getSideRoles) {
+        roles = await service.getSideRoles();
+      } else {
+        const response = await baseService.get('/business_card/sides/');
+        roles = response.data || [];
+      }
+      setSideRoles(roles);
+    } catch (error) {
+      console.error('Error fetching side roles:', error);
+      setSideRoles([]);
+    }
+  };
 
   const loadSideDetails = async () => {
     try {
       setLoading(true);
-      const response = await SideService.getAllSide(cardId);
-      const sideData = response.data.find(s => s.id === parseInt(sideId));
-      setSide(sideData);
-      setFormData(sideData || {});
+      let data;
+      
+      switch (caseType) {
+        case 'criminal':
+          data = await CriminalCaseService.getSideById(proceedingId, sideId);
+          break;
+        case 'civil':
+          data = await CivilCaseService.getSideById(proceedingId, sideId);
+          break;
+        case 'admin':
+          data = await AdministrativeCaseService.getSideById(proceedingId, sideId);
+          break;
+        case 'kas':
+          data = await KasCaseService.getSideById(proceedingId, sideId);
+          break;
+        default:
+          throw new Error('Unknown case type');
+      }
+      
+      console.log('Side data received:', data);
+      setSide(data);
+
+      // Извлекаем данные в зависимости от структуры
+      const sideInCaseDetail = data.sides_case_incase_detail || data.criminal_side_case_detail || {};
+      const roleDetail = data.sides_case_role_detail || {};
+
+      setFormData({
+        sides_case_role: data.sides_case_role || roleDetail?.id || '',
+        name: sideInCaseDetail.name || data.name || '',
+        status: sideInCaseDetail.status || data.status || 'individual',
+        date_sending_agenda: sideInCaseDetail.date_sending_agenda || data.date_sending_agenda || '',
+        birth_date: sideInCaseDetail.birth_date || data.birth_date || '',
+        gender: sideInCaseDetail.gender || data.gender || '',
+        document_type: sideInCaseDetail.document_type || data.document_type || '',
+        document_number: sideInCaseDetail.document_number || data.document_number || '',
+        document_series: sideInCaseDetail.document_series || data.document_series || '',
+        document_issued_by: sideInCaseDetail.document_issued_by || data.document_issued_by || '',
+        document_issue_date: sideInCaseDetail.document_issue_date || data.document_issue_date || '',
+        inn: sideInCaseDetail.inn || data.inn || '',
+        kpp: sideInCaseDetail.kpp || data.kpp || '',
+        ogrn: sideInCaseDetail.ogrn || data.ogrn || '',
+        legal_address: sideInCaseDetail.legal_address || data.legal_address || '',
+        director_name: sideInCaseDetail.director_name || data.director_name || '',
+        address: sideInCaseDetail.address || data.address || '',
+        phone: sideInCaseDetail.phone || data.phone || '',
+        email: sideInCaseDetail.email || data.email || '',
+        additional_info: sideInCaseDetail.additional_info || data.additional_info || '',
+        citizenship: sideInCaseDetail.citizenship || data.citizenship || ''
+      });
+      
+      setPersonType(sideInCaseDetail.status || data.status || 'individual');
       setLoading(false);
     } catch (error) {
-      console.error('Ошибка загрузки данных стороны:', error);
+      console.error('Error loading side details:', error);
+      setError('Не удалось загрузить данные стороны');
       setLoading(false);
     }
   };
@@ -53,22 +192,134 @@ const SideDetails = () => {
     }));
   };
 
+  const handlePersonTypeChange = (e) => {
+    const newType = e.target.value;
+    setPersonType(newType);
+    setFormData(prev => ({
+      ...prev,
+      status: newType
+    }));
+    if (newType !== 'individual') {
+      setActiveTab('main');
+    }
+  };
+
+  const handleDateChange = (name, dateString) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: dateString || null
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      await SideService.updateSide(cardId, sideId, formData);
-      setIsEditing(false);
-      await loadSideDetails();
+      setError(null);
+
+      // Создаем вложенную структуру для отправки
+      const sidesCaseInCaseData = {
+        name: formData.name,
+        status: formData.status,
+        date_sending_agenda: formData.date_sending_agenda || null,
+        birth_date: formData.birth_date || null,
+        gender: formData.gender || null,
+        document_type: formData.document_type || null,
+        document_number: formData.document_number || null,
+        document_series: formData.document_series || null,
+        document_issued_by: formData.document_issued_by || null,
+        document_issue_date: formData.document_issue_date || null,
+        inn: formData.inn || null,
+        kpp: formData.kpp || null,
+        ogrn: formData.ogrn || null,
+        legal_address: formData.legal_address || null,
+        director_name: formData.director_name || null,
+        address: formData.address || null,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        additional_info: formData.additional_info || null,
+        citizenship: formData.citizenship || null
+      };
+
+      // Удаляем пустые значения
+      Object.keys(sidesCaseInCaseData).forEach(key => {
+        if (sidesCaseInCaseData[key] === '' || sidesCaseInCaseData[key] === null || sidesCaseInCaseData[key] === undefined) {
+          delete sidesCaseInCaseData[key];
+        }
+      });
+
+      let sideData;
+      
+      // Формируем данные в зависимости от типа дела
+      if (caseType === 'criminal') {
+        sideData = {
+          sides_case_criminal: formData.sides_case_role ? parseInt(formData.sides_case_role, 10) : null,
+          criminal_side_case_data: sidesCaseInCaseData
+        };
+      } else {
+        sideData = {
+          sides_case_role: formData.sides_case_role,
+          sides_case_incase_data: sidesCaseInCaseData
+        };
+      }
+
+      console.log('Sending data:', sideData);
+
+      if (!isCreateMode) {
+        // Обновление существующей стороны
+        switch (caseType) {
+          case 'criminal':
+            await CriminalCaseService.updateSide(proceedingId, sideId, sideData);
+            break;
+          case 'civil':
+            await CivilCaseService.updateSide(proceedingId, sideId, sideData);
+            break;
+          case 'admin':
+            await AdministrativeCaseService.updateSide(proceedingId, sideId, sideData);
+            break;
+          case 'kas':
+            await KasCaseService.updateSide(proceedingId, sideId, sideData);
+            break;
+        }
+        setIsEditing(false);
+        await loadSideDetails();
+      } else {
+        // Создание новой стороны
+        switch (caseType) {
+          case 'criminal':
+            await CriminalCaseService.createSide(proceedingId, sideData);
+            break;
+          case 'civil':
+            await CivilCaseService.createSide(proceedingId, sideData);
+            break;
+          case 'admin':
+            await AdministrativeCaseService.createSide(proceedingId, sideData);
+            break;
+          case 'kas':
+            await KasCaseService.createSide(proceedingId, sideData);
+            break;
+        }
+        navigate(-1);
+      }
+      
       setSaving(false);
     } catch (error) {
-      console.error('Ошибка сохранения:', error);
+      console.error('Error saving side:', error);
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          JSON.stringify(error.response?.data) || 
+                          error.message;
+      setError('Ошибка при сохранении стороны: ' + errorMessage);
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setFormData(side);
-    setIsEditing(false);
+    if (isCreateMode) {
+      navigate(-1);
+    } else {
+      setFormData(side);
+      setIsEditing(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -76,23 +327,24 @@ const SideDetails = () => {
     return new Date(dateString).toLocaleDateString('ru-RU');
   };
 
-  const getStatusDisplay = (status) => {
-    const statusMap = {
-      'individual': 'Физическое лицо',
-      'legal': 'Юридическое лицо',
-      'government': 'Орган власти',
-      'other': 'Иное'
-    };
-    return statusMap[status] || status;
+  const getSideTypeName = (roleId) => {
+    if (!roleId) return 'Не указан';
+    const role = sideRoles.find(option => option.id == roleId);
+    return role ? role.sides_case : `ID: ${roleId}`;
   };
 
-  const getGenderDisplay = (gender) => {
-    const genderMap = {
-      'male': 'Мужской',
-      'female': 'Женский'
-    };
-    return genderMap[gender] || gender;
+  // Получаем имя стороны для отображения
+  const getSideName = () => {
+    if (formData?.name) {
+      return formData.name;
+    }
+    if (side?.sides_case_incase_detail?.name) {
+      return side.sides_case_incase_detail.name;
+    }
+    return 'Сторона по делу';
   };
+
+  const showNotificationPanel = sideId && sideId !== 'create' && !isEditing && side;
 
   if (loading) {
     return (
@@ -105,27 +357,10 @@ const SideDetails = () => {
     );
   }
 
-  if (!side) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.notFound}>
-          <h2>Сторона не найдена</h2>
-          <button 
-            onClick={() => navigate(`/cases/${cardId}`)}
-            className={styles.backButton}
-          >
-            Вернуться к делу
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const tabs = [
-    { id: 'basic', label: 'Основная информация' },
-    { id: 'contact', label: 'Контактная информация' },
-    { id: 'notifications', label: 'Извещения' },
-    { id: 'documents', label: 'Документы' },
+    { id: 'main', label: 'Основная информация' },
+    { id: 'physical', label: 'Данные физического лица' },
+    { id: 'contacts', label: 'Контактная информация' },
     { id: 'additional', label: 'Дополнительно' }
   ];
 
@@ -137,28 +372,23 @@ const SideDetails = () => {
             onClick={() => navigate(-1)}
             className={styles.backButton}
           >
-            Назад к делу
+            ← Назад
           </button>
-          <h1 className={styles.title}>
-            {side.name || 'Сторона по делу'}
-          </h1>
-            {side.sides_case_name && side.sides_case_name.length > 0 && (
-              <div className={styles.sideType}>
-                <strong>Вид стороны: {side.sides_case_name.join(', ')}</strong>
+          <div>
+            <h1 className={styles.title}>
+              {isCreateMode ? 'Новая сторона' : (formData.name || 'Сторона по делу')}
+            </h1>
+            {!isCreateMode && side && (
+              <div className={styles.subtitle}>
+                <span>Вид стороны: {getSideTypeName(side.sides_case_role)}</span>
               </div>
             )}
+          </div>
         </div>
         
         <div className={styles.headerRight}>
-          {!isEditing ? (
-            <button 
-              onClick={() => setIsEditing(true)}
-              className={styles.editButton}
-            >
-              Редактировать
-            </button>
-          ) : (
-            <div className={styles.editActions}>
+          {isCreateMode ? (
+            <>
               <button 
                 onClick={handleSave}
                 disabled={saving}
@@ -167,254 +397,344 @@ const SideDetails = () => {
                 {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
               <button 
-                onClick={handleCancel}
+                onClick={() => navigate(-1)}
                 className={styles.cancelButton}
               >
                 Отмена
               </button>
-            </div>
+            </>
+          ) : (
+            !isEditing ? (
+              <button 
+                onClick={() => setIsEditing(true)}
+                className={styles.editButton}
+              >
+                Редактировать
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={styles.saveButton}
+                >
+                  {saving ? 'Сохранение...' : 'Сохранить'}
+                </button>
+                <button 
+                  onClick={handleCancel}
+                  className={styles.cancelButton}
+                >
+                  Отмена
+                </button>
+              </>
+            )
           )}
         </div>
       </div>
 
-      <div className={styles.tabsContainer}>
-        <div className={styles.tabs}>
-          {tabs.map(tab => (
-            <button 
-              key={tab.id}
-              className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {error && <div className={styles.error}>{error}</div>}
 
-        <div className={styles.tabContentWrapper}>
-          <div className={styles.tabContent}>
-            {/* Вкладка: Основная информация */}
-            {activeTab === 'basic' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Основные данные
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field}>
-                    <label>ФИО / Наименование</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{side.name || 'Не указано'}</span>
+      <div className={styles.content}>
+        <div className={styles.mainContent}>
+          <div className={styles.tabsContainer}>
+            <div className={styles.tabs}>
+              {tabs.map(tab => (
+                <button 
+                  key={tab.id}
+                  className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''} ${tab.id === 'physical' && personType !== 'individual' ? styles.disabledTab : ''}`}
+                  onClick={() => (tab.id === 'physical' ? personType === 'individual' : true) && setActiveTab(tab.id)}
+                  disabled={tab.id === 'physical' && personType !== 'individual'}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.tabContentWrapper}>
+              <div className={styles.tabContent}>
+                {/* Вкладка: Основная информация */}
+                {activeTab === 'main' && (
+                  <>
+                    {/* Выбор роли */}
+                    <div className={styles.fieldGroup}>
+                      <h3 className={styles.subsectionTitle}>Роль в деле</h3>
+                      <div className={styles.field}>
+                        <label>Вид стороны *</label>
+                        {(isEditing || isCreateMode) ? (
+                          <select
+                            name="sides_case_role"
+                            value={formData.sides_case_role || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                            required
+                          >
+                            <option value="">Выберите вид стороны</option>
+                            {sideRoles.map(role => (
+                              <option key={role.id} value={role.id}>
+                                {role.sides_case || role.name || 'Без названия'}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{getSideTypeName(formData.sides_case_role)}</span>
+                        )}
+                        {sideRoles.length === 0 && !loading && (
+                          <div style={{ color: 'orange', fontSize: '12px', marginTop: '5px' }}>
+                            Роли не загружены. Проверьте подключение к серверу.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Основная информация */}
+                    <div className={styles.fieldGroup}>
+                      <h3 className={styles.subsectionTitle}>Основная информация</h3>
+                      <div className={styles.tabGrid}>
+                        <div className={styles.field}>
+                          <label>ФИО / Наименование *</label>
+                          {(isEditing || isCreateMode) ? (
+                            <input
+                              type="text"
+                              name="name"
+                              value={formData.name || ''}
+                              onChange={handleInputChange}
+                              className={styles.input}
+                              placeholder="Введите ФИО или наименование"
+                              required
+                            />
+                          ) : (
+                            <span>{formData.name || 'Не указано'}</span>
+                          )}
+                        </div>
+
+                        <div className={styles.field}>
+                          <label>Статус лица</label>
+                          {(isEditing || isCreateMode) ? (
+                            <select
+                              name="status"
+                              value={personType}
+                              onChange={handlePersonTypeChange}
+                              className={styles.select}
+                            >
+                              <option value="individual">Физическое лицо</option>
+                              <option value="legal">Юридическое лицо</option>
+                              <option value="government">Орган власти</option>
+                              <option value="other">Иное</option>
+                            </select>
+                          ) : (
+                            <span>
+                              {personType === 'individual' ? 'Физическое лицо' : 
+                               personType === 'legal' ? 'Юридическое лицо' : 
+                               personType === 'government' ? 'Орган власти' :
+                               personType === 'other' ? 'Иное' : 
+                               personType || 'Не указано'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className={styles.field}>
+                          <label>Дата направления повестки</label>
+                          {(isEditing || isCreateMode) ? (
+                            <input
+                              type="date"
+                              name="date_sending_agenda"
+                              value={formData.date_sending_agenda || ''}
+                              onChange={(e) => handleDateChange('date_sending_agenda', e.target.value)}
+                              className={styles.input}
+                            />
+                          ) : (
+                            <span>{formatDate(formData.date_sending_agenda)}</span>
+                          )}
+                        </div>
+
+                        <div className={styles.field}>
+                          <label>Гражданство</label>
+                          {(isEditing || isCreateMode) ? (
+                            <input
+                              type="text"
+                              name="citizenship"
+                              value={formData.citizenship || ''}
+                              onChange={handleInputChange}
+                              className={styles.input}
+                              placeholder="Гражданство"
+                            />
+                          ) : (
+                            <span>{formData.citizenship || 'Не указано'}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Юридическое лицо */}
+                    {(personType === 'legal') && (
+                      <div className={styles.fieldGroup}>
+                        <h3 className={styles.subsectionTitle}>Данные юридического лица</h3>
+                        <div className={styles.tabGrid}>
+                          <div className={styles.field}>
+                            <label>ИНН</label>
+                            {(isEditing || isCreateMode) ? (
+                              <input
+                                type="text"
+                                name="inn"
+                                value={formData.inn || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                              />
+                            ) : (
+                              <span>{formData.inn || 'Не указано'}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>КПП</label>
+                            {(isEditing || isCreateMode) ? (
+                              <input
+                                type="text"
+                                name="kpp"
+                                value={formData.kpp || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                              />
+                            ) : (
+                              <span>{formData.kpp || 'Не указано'}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>ОГРН</label>
+                            {(isEditing || isCreateMode) ? (
+                              <input
+                                type="text"
+                                name="ogrn"
+                                value={formData.ogrn || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                              />
+                            ) : (
+                              <span>{formData.ogrn || 'Не указано'}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Юридический адрес</label>
+                            {(isEditing || isCreateMode) ? (
+                              <textarea
+                                name="legal_address"
+                                value={formData.legal_address || ''}
+                                onChange={handleInputChange}
+                                className={styles.textarea}
+                                rows={2}
+                              />
+                            ) : (
+                              <span>{formData.legal_address || 'Не указано'}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>ФИО руководителя</label>
+                            {(isEditing || isCreateMode) ? (
+                              <input
+                                type="text"
+                                name="director_name"
+                                value={formData.director_name || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                              />
+                            ) : (
+                              <span>{formData.director_name || 'Не указано'}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </div>
-                  
-                  <div className={styles.field}>
-                    <label>Дата рождения</label>
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        name="birth_date"
-                        value={formData.birth_date || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{formatDate(side.birth_date)}</span>
+
+                    {/* Орган власти / Иное */}
+                    {(personType === 'government' || personType === 'other') && (
+                      <div className={styles.fieldGroup}>
+                        <h3 className={styles.subsectionTitle}>
+                          {personType === 'government' ? 'Данные органа власти' : 'Дополнительные данные'}
+                        </h3>
+                        <div className={styles.field}>
+                          <label>Полное наименование</label>
+                          {(isEditing || isCreateMode) ? (
+                            <input
+                              type="text"
+                              name="name"
+                              value={formData.name || ''}
+                              onChange={handleInputChange}
+                              className={styles.input}
+                              placeholder="Введите полное наименование"
+                            />
+                          ) : (
+                            <span>{formData.name || 'Не указано'}</span>
+                          )}
+                        </div>
+                      </div>
                     )}
-                  </div>
+                  </>
+                )}
 
-                  <div className={styles.field}>
-                    <label>Пол</label>
-                    {isEditing ? (
-                      <select
-                        name="gender"
-                        value={formData.gender || ''}
-                        onChange={handleInputChange}
-                        className={styles.select}
-                      >
-                        <option value="">Выберите пол</option>
-                        <option value="male">Мужской</option>
-                        <option value="female">Женский</option>
-                      </select>
-                    ) : (
-                      <span>{getGenderDisplay(side.gender)}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Статус лица</label>
-                    {isEditing ? (
-                      <select
-                        name="status"
-                        value={formData.status || ''}
-                        onChange={handleInputChange}
-                        className={styles.select}
-                      >
-                        <option value="">Выберите статус</option>
-                        <option value="individual">Физическое лицо</option>
-                        <option value="legal">Юридическое лицо</option>
-                        <option value="government">Орган власти</option>
-                        <option value="other">Иное</option>
-                      </select>
-                    ) : (
-                      <span>{getStatusDisplay(side.status)}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Сторона по делу</label>
-                    {isEditing ? (
-                      <select
-                        multiple
-                        name="sides_case"
-                        value={formData.sides_case || []}
-                        onChange={(e) => {
-                          const selected = Array.from(e.target.selectedOptions, option => option.value);
-                          setFormData(prev => ({ ...prev, sides_case: selected }));
-                        }}
-                        className={styles.select}
-                      >
-                        {sidesCaseOptions.map(option => (
-                          <option key={option.id} value={option.id}>
-                            {option.sides_case}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span>
-                        {(() => {
-                          const sideIds = Array.isArray(side.sides_case) 
-                            ? side.sides_case.map(item => typeof item === 'object' ? item.id : item)
-                            : side.sides_case ? [side.sides_case] : [];
-
-                          const selectedOptions = sideIds
-                            .map(id => {
-                              const option = sidesCaseOptions.find(opt => opt.id == id);
-                              return option ? option.sides_case : null;
-                            })
-                            .filter(Boolean);
-                          
-                          return selectedOptions.length > 0 
-                            ? selectedOptions.join(', ') 
-                            : 'Не указано';
-                        })()}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Дата направления повестки</label>
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        name="date_sending_agenda"
-                        value={formData.date_sending_agenda || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{formatDate(side.date_sending_agenda)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Вкладка: Извещения */}
-            {activeTab === 'notifications' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>Извещения и уведомления</h3>
-              </div>
-            )}
-
-            {/* Вкладка: Контактная информация */}
-            {activeTab === 'contact' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Контактная информация
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field}>
-                    <label>Телефон</label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{side.phone || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Email</label>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email || ''}
-                        onChange={handleInputChange}
-                        className={styles.input}
-                      />
-                    ) : (
-                      <span>{side.email || 'Не указано'}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.field}>
-                    <label>Адрес</label>
-                    {isEditing ? (
-                      <textarea
-                        name="address"
-                        value={formData.address || ''}
-                        onChange={handleInputChange}
-                        className={styles.textarea}
-                        rows="2"
-                      />
-                    ) : (
-                      <span>{side.address || 'Не указано'}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Вкладка: Документы */}
-            {activeTab === 'documents' && (
-              <>
-                {side.status === 'individual' && (
+                {/* Вкладка: Данные физического лица */}
+                {activeTab === 'physical' && personType === 'individual' && (
                   <div className={styles.fieldGroup}>
-                    <h3 className={styles.subsectionTitle}>
-                      Данные физического лица
-                    </h3>
+                    <h3 className={styles.subsectionTitle}>Данные физического лица</h3>
                     <div className={styles.tabGrid}>
                       <div className={styles.field}>
+                        <label>Дата рождения</label>
+                        {(isEditing || isCreateMode) ? (
+                          <input
+                            type="date"
+                            name="birth_date"
+                            value={formData.birth_date || ''}
+                            onChange={(e) => handleDateChange('birth_date', e.target.value)}
+                            className={styles.input}
+                          />
+                        ) : (
+                          <span>{formatDate(formData.birth_date)}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Пол</label>
+                        {(isEditing || isCreateMode) ? (
+                          <select
+                            name="gender"
+                            value={formData.gender || ''}
+                            onChange={handleInputChange}
+                            className={styles.select}
+                          >
+                            <option value="">Не указан</option>
+                            <option value="male">Мужской</option>
+                            <option value="female">Женский</option>
+                          </select>
+                        ) : (
+                          <span>
+                            {formData.gender === 'male' ? 'Мужской' : 
+                             formData.gender === 'female' ? 'Женский' : 
+                             'Не указан'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.field}>
                         <label>Тип документа</label>
-                        {isEditing ? (
+                        {(isEditing || isCreateMode) ? (
                           <input
                             type="text"
                             name="document_type"
                             value={formData.document_type || ''}
                             onChange={handleInputChange}
                             className={styles.input}
+                            placeholder="Паспорт, в/у и т.д."
                           />
                         ) : (
-                          <span>{side.document_type || 'Не указано'}</span>
+                          <span>{formData.document_type || 'Не указано'}</span>
                         )}
                       </div>
 
                       <div className={styles.field}>
                         <label>Серия документа</label>
-                        {isEditing ? (
+                        {(isEditing || isCreateMode) ? (
                           <input
                             type="text"
                             name="document_series"
@@ -423,13 +743,13 @@ const SideDetails = () => {
                             className={styles.input}
                           />
                         ) : (
-                          <span>{side.document_series || 'Не указано'}</span>
+                          <span>{formData.document_series || 'Не указано'}</span>
                         )}
                       </div>
 
                       <div className={styles.field}>
                         <label>Номер документа</label>
-                        {isEditing ? (
+                        {(isEditing || isCreateMode) ? (
                           <input
                             type="text"
                             name="document_number"
@@ -438,158 +758,162 @@ const SideDetails = () => {
                             className={styles.input}
                           />
                         ) : (
-                          <span>{side.document_number || 'Не указано'}</span>
+                          <span>{formData.document_number || 'Не указано'}</span>
                         )}
                       </div>
 
                       <div className={styles.field}>
                         <label>Кем выдан</label>
-                        {isEditing ? (
+                        {(isEditing || isCreateMode) ? (
                           <textarea
                             name="document_issued_by"
                             value={formData.document_issued_by || ''}
                             onChange={handleInputChange}
                             className={styles.textarea}
-                            rows="2"
+                            rows={2}
                           />
                         ) : (
-                          <span>{side.document_issued_by || 'Не указано'}</span>
+                          <span>{formData.document_issued_by || 'Не указано'}</span>
                         )}
                       </div>
 
                       <div className={styles.field}>
                         <label>Дата выдачи</label>
-                        {isEditing ? (
+                        {(isEditing || isCreateMode) ? (
                           <input
                             type="date"
                             name="document_issue_date"
                             value={formData.document_issue_date || ''}
-                            onChange={handleInputChange}
+                            onChange={(e) => handleDateChange('document_issue_date', e.target.value)}
                             className={styles.input}
                           />
                         ) : (
-                          <span>{formatDate(side.document_issue_date)}</span>
+                          <span>{formatDate(formData.document_issue_date)}</span>
                         )}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {side.status === 'legal' && (
+                {/* Вкладка: Контактная информация */}
+                {activeTab === 'contacts' && (
                   <div className={styles.fieldGroup}>
-                    <h3 className={styles.subsectionTitle}>
-                      Данные юридического лица
-                    </h3>
+                    <h3 className={styles.subsectionTitle}>Контактная информация</h3>
                     <div className={styles.tabGrid}>
                       <div className={styles.field}>
-                        <label>ИНН</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="inn"
-                            value={formData.inn || ''}
-                            onChange={handleInputChange}
-                            className={styles.input}
-                          />
-                        ) : (
-                          <span>{side.inn || 'Не указано'}</span>
-                        )}
-                      </div>
-
-                      <div className={styles.field}>
-                        <label>КПП</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="kpp"
-                            value={formData.kpp || ''}
-                            onChange={handleInputChange}
-                            className={styles.input}
-                          />
-                        ) : (
-                          <span>{side.kpp || 'Не указано'}</span>
-                        )}
-                      </div>
-
-                      <div className={styles.field}>
-                        <label>ОГРН</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="ogrn"
-                            value={formData.ogrn || ''}
-                            onChange={handleInputChange}
-                            className={styles.input}
-                          />
-                        ) : (
-                          <span>{side.ogrn || 'Не указано'}</span>
-                        )}
-                      </div>
-
-                      <div className={styles.field}>
-                        <label>Юридический адрес</label>
-                        {isEditing ? (
+                        <label>Адрес</label>
+                        {(isEditing || isCreateMode) ? (
                           <textarea
-                            name="legal_address"
-                            value={formData.legal_address || ''}
+                            name="address"
+                            value={formData.address || ''}
                             onChange={handleInputChange}
                             className={styles.textarea}
-                            rows="2"
+                            rows={2}
+                            placeholder="Адрес проживания/нахождения"
                           />
                         ) : (
-                          <span>{side.legal_address || 'Не указано'}</span>
+                          <span>{formData.address || 'Не указано'}</span>
+                        )}
+                      </div>
+
+                      {personType === 'legal' && (
+                        <div className={styles.field}>
+                          <label>Юридический адрес</label>
+                          {(isEditing || isCreateMode) ? (
+                            <textarea
+                              name="legal_address"
+                              value={formData.legal_address || ''}
+                              onChange={handleInputChange}
+                              className={styles.textarea}
+                              rows={2}
+                              placeholder="Юридический адрес"
+                            />
+                          ) : (
+                            <span>{formData.legal_address || 'Не указано'}</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className={styles.field}>
+                        <label>Телефон</label>
+                        {(isEditing || isCreateMode) ? (
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone || ''}
+                            onChange={handleInputChange}
+                            className={styles.input}
+                            placeholder="+7 (___) ___-__-__"
+                          />
+                        ) : (
+                          <span>{formData.phone || 'Не указано'}</span>
                         )}
                       </div>
 
                       <div className={styles.field}>
-                        <label>ФИО руководителя</label>
-                        {isEditing ? (
+                        <label>Email</label>
+                        {(isEditing || isCreateMode) ? (
                           <input
-                            type="text"
-                            name="director_name"
-                            value={formData.director_name || ''}
+                            type="email"
+                            name="email"
+                            value={formData.email || ''}
                             onChange={handleInputChange}
                             className={styles.input}
+                            placeholder="email@example.com"
                           />
                         ) : (
-                          <span>{side.director_name || 'Не указано'}</span>
+                          <span>{formData.email || 'Не указано'}</span>
                         )}
                       </div>
                     </div>
                   </div>
                 )}
-              </>
-            )}
 
-            {/* Вкладка: Дополнительно */}
-            {activeTab === 'additional' && (
-              <div className={styles.fieldGroup}>
-                <h3 className={styles.subsectionTitle}>
-                  Дополнительная информация
-                </h3>
-                <div className={styles.tabGrid}>
-                  <div className={styles.field} style={{ gridColumn: 'span 2' }}>
-                    <label>Примечания</label>
-                    {isEditing ? (
-                      <textarea
-                        name="additional_info"
-                        value={formData.additional_info || ''}
-                        onChange={handleInputChange}
-                        className={styles.textarea}
-                        rows="6"
-                      />
-                    ) : (
-                      <span>{side.additional_info || 'Нет дополнительной информации'}</span>
-                    )}
+                {/* Вкладка: Дополнительно */}
+                {activeTab === 'additional' && (
+                  <div className={styles.fieldGroup}>
+                    <h3 className={styles.subsectionTitle}>Дополнительная информация</h3>
+                    <div className={styles.field}>
+                      <label>Дополнительная информация</label>
+                      {(isEditing || isCreateMode) ? (
+                        <textarea
+                          name="additional_info"
+                          value={formData.additional_info || ''}
+                          onChange={handleInputChange}
+                          className={styles.textarea}
+                          rows={4}
+                          placeholder="Примечания, комментарии..."
+                        />
+                      ) : (
+                        <span>{formData.additional_info || 'Нет дополнительной информации'}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
+
+        {/* Боковая панель с уведомлениями - для уголовных дел */}
+        {showNotificationPanel && (
+          <div className={styles.sidebar}>
+            <NotificationPanel 
+              caseId={proceedingId}
+              caseType={caseType}
+              participant={{
+                id: parseInt(sideId),
+                type: 'sidescaseincase',
+                name: getSideName()
+              }}
+              onNotificationCreated={handleNotificationCreated}
+              refreshTrigger={refreshNotifications}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default SideDetails;
+export default SideDetail;

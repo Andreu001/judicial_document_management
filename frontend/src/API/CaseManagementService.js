@@ -1,5 +1,3 @@
-// API/CaseManagementService.js
-
 import baseService from './baseService';
 
 const BASE_URL = '/case-management/';
@@ -66,10 +64,11 @@ class CaseManagementService {
     }
   }
 
-  // === Записи хода дела (Progress Entries) ===
-  static async getProgressEntries(caseId) {
+  // === Записи хода дела (Progress Entries) - универсально ===
+  static async getProgressEntries(caseType, caseId) {
     try {
-      const response = await baseService.get(`${BASE_URL}criminal/${caseId}/progress-entries/`);
+      const url = `${BASE_URL}${caseType}/${caseId}/progress-entries/`;
+      const response = await baseService.get(url);
       return response.data;
     } catch (error) {
       console.error('Error fetching progress entries:', error);
@@ -77,10 +76,10 @@ class CaseManagementService {
     }
   }
 
-  static async createProgressEntry(caseId, entryData) {
+  static async createProgressEntry(caseType, caseId, entryData) {
     try {
       const cleanedData = this.cleanData(entryData);
-      const response = await baseService.post(`${BASE_URL}criminal/${caseId}/progress-entries/`, cleanedData);
+      const response = await baseService.post(`${BASE_URL}${caseType}/${caseId}/progress-entries/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating progress entry:', error);
@@ -88,10 +87,10 @@ class CaseManagementService {
     }
   }
 
-  static async updateProgressEntry(caseId, entryId, entryData) {
+  static async updateProgressEntry(caseType, caseId, entryId, entryData) {
     try {
       const cleanedData = this.cleanData(entryData);
-      const response = await baseService.patch(`${BASE_URL}criminal/${caseId}/progress-entries/${entryId}/`, cleanedData);
+      const response = await baseService.patch(`${BASE_URL}${caseType}/${caseId}/progress-entries/${entryId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating progress entry:', error);
@@ -99,20 +98,20 @@ class CaseManagementService {
     }
   }
 
-  static async deleteProgressEntry(caseId, entryId) {
+  static async deleteProgressEntry(caseType, caseId, entryId) {
     try {
-      await baseService.delete(`${BASE_URL}criminal/${caseId}/progress-entries/${entryId}/`);
+      await baseService.delete(`${BASE_URL}${caseType}/${caseId}/progress-entries/${entryId}/`);
     } catch (error) {
       console.error('Error deleting progress entry:', error);
       throw error;
     }
   }
 
-  // === Уведомления (Notifications) ===
+  // === Уведомления (Notifications) - универсально ===
   static async getNotifications(caseId, params = {}) {
     try {
       const queryParams = new URLSearchParams(params).toString();
-      const url = `${BASE_URL}criminal/${caseId}/notifications/${queryParams ? `?${queryParams}` : ''}`;
+      const url = `${BASE_URL}notifications/${queryParams ? `?${queryParams}` : ''}`;
       const response = await baseService.get(url);
       return response.data;
     } catch (error) {
@@ -125,7 +124,8 @@ class CaseManagementService {
     try {
       const cleanedData = this.cleanData(notificationData);
       console.log('Sending notification data:', cleanedData);
-      const response = await baseService.post(`${BASE_URL}criminal/${caseId}/notifications/`, cleanedData);
+      // Используем универсальный эндпоинт с case_id в query параметре
+      const response = await baseService.post(`${BASE_URL}notifications/?case_id=${caseId}`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating notification:', error);
@@ -134,10 +134,10 @@ class CaseManagementService {
     }
   }
 
-  static async updateNotification(caseId, notificationId, notificationData) {
+  static async updateNotification(notificationId, notificationData) {
     try {
       const cleanedData = this.cleanData(notificationData);
-      const response = await baseService.patch(`${BASE_URL}criminal/${caseId}/notifications/${notificationId}/`, cleanedData);
+      const response = await baseService.patch(`${BASE_URL}notifications/${notificationId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating notification:', error);
@@ -147,7 +147,7 @@ class CaseManagementService {
 
   static async deleteNotification(caseId, notificationId) {
     try {
-      await baseService.delete(`${BASE_URL}criminal/${caseId}/notifications/${notificationId}/`);
+      await baseService.delete(`${BASE_URL}notifications/${notificationId}/`);
     } catch (error) {
       console.error('Error deleting notification:', error);
       throw error;

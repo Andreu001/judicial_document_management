@@ -1,224 +1,4 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.contrib.contenttypes.models import ContentType
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from criminal_proceedings.models import CriminalProceedings
-from .models import Notification, NotificationType, CaseProgressEntry, ProgressActionType
-from .serializers import (
-    NotificationSerializer, NotificationTypeSerializer,
-    CaseProgressEntrySerializer, ProgressActionTypeSerializer, NotificationCreateSerializer
-)
-
-# Маппинг case_type на model_name
-CASE_TYPE_TO_MODEL = {
-    'civil_proceedings': 'civilproceedings',
-    'criminal_proceedings': 'criminalproceedings',
-    'administrative_proceedings': 'administrativeproceedings',
-    'administrative_code': 'administrativecode',
-    'kas_proceedings': 'kasproceedings',
-}
-
-class NotificationTypeViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = NotificationType.objects.all()
-    serializer_class = NotificationTypeSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class ProgressActionTypeViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ProgressActionType.objects.all()
-    serializer_class = ProgressActionTypeSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class NotificationViewSet(viewsets.ModelViewSet):
-    queryset = Notification.objects.all()
-    serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        case_type = self.request.query_params.get('case_type')
-        case_id = self.request.query_params.get('case_id')
-        
-        if case_type and case_id:
-            try:
-                model_name = CASE_TYPE_TO_MODEL.get(case_type, case_type.lower())
-                content_type = ContentType.objects.get(app_label=case_type, model=model_name)
-                return queryset.filter(case_content_type=content_type, case_object_id=case_id)
-            except ContentType.DoesNotExist:
-                return queryset.none()
-        
-        participant_type = self.request.query_params.get('participant_type')
-        participant_id = self.request.query_params.get('participant_id')
-        
-        if participant_type and participant_id:
-            try:
-                content_type = ContentType.objects.get(app_label='business_card', model=participant_type)
-                return queryset.filter(content_type=content_type, object_id=participant_id)
-            except ContentType.DoesNotExist:
-                return queryset.none()
-        
-        return queryset
-    
-    def perform_create(self, serializer):
-        serializer.save()
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return NotificationCreateSerializer
-        return NotificationSerializer
-
-class CaseProgressEntryViewSet(viewsets.ModelViewSet):
-    queryset = CaseProgressEntry.objects.all()  # ← ДОБАВИТЬ ЭТУ СТРОКУ
-    serializer_class = CaseProgressEntrySerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()  # ← ИЗМЕНИТЬ
-        case_type = self.request.query_params.get('case_type')
-        case_id = self.request.query_params.get('case_id')
-        
-        if case_type and case_id:
-            try:
-                model_name = CASE_TYPE_TO_MODEL.get(case_type, case_type.lower())
-                content_type = ContentType.objects.get(app_label=case_type, model=model_name)
-                return queryset.filter(case_content_type=content_type, case_object_id=case_id)
-            except ContentType.DoesNotExist:
-                return queryset.none()
-        
-        return queryset
-    
-    def create(self, request, *args, **kwargs):
-        case_type = request.data.get('case_type')
-        case_id = request.data.get('case_id')
-        action_type_id = request.data.get('action_type_id')
-        description = request.data.get('description')
-        action_date = request.data.get('action_date')
-        
-        if not all([case_type, case_id, action_type_id]):
-            return Response(
-                {'error': 'Missing required fields: case_type, case_id, action_type_id'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        model_name = CASE_TYPE_TO_MODEL.get(case_type, case_type.lower())
-        
-        try:
-            content_type = ContentType.objects.get(app_label=case_type, model=model_name)
-            case_obj = content_type.get_object_for_this_type(pk=case_id)
-        except ContentType.DoesNotExist:
-            return Response(
-                {'error': f'Invalid case_type: {case_type}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        entry = CaseProgressEntry.objects.create(
-            case=case_obj,
-            action_type_id=action_type_id,
-            description=description or '',
-            action_date=action_date or timezone.now().date(),
-            author=request.user
-        )
-        
-        serializer = self.get_serializer(entry)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    @action(detail=False, methods=['post'])
-    def auto_create(self, request):
-        """Автоматическое создание записи при отправке уведомления"""
-        case_type = request.data.get('case_type')
-        case_id = request.data.get('case_id')
-        notification_id = request.data.get('notification_id')
-        action_type_id = request.data.get('action_type_id')
-        description = request.data.get('description')
-        
-        if not all([case_type, case_id, notification_id, action_type_id]):
-            return Response(
-                {'error': 'Missing required fields'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        model_name = CASE_TYPE_TO_MODEL.get(case_type, case_type.lower())
-        
-        try:
-            content_type = ContentType.objects.get(app_label=case_type, model=model_name)
-            case_obj = content_type.get_object_for_this_type(pk=case_id)
-        except ContentType.DoesNotExist:
-            return Response({'error': f'Invalid case_type: {case_type}'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        notification = get_object_or_404(Notification, pk=notification_id)
-        
-        entry = CaseProgressEntry.objects.create(
-            case=case_obj,
-            action_type_id=action_type_id,
-            description=description or f"Направлено извещение: {notification.notification_type.name}",
-            action_date=timezone.now().date(),
-            author=request.user,
-            related_notification=notification
-        )
-        
-        return Response(CaseProgressEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
-    
-
-class CriminalCaseProgressViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с записями хода дела конкретного уголовного производства"""
-    serializer_class = CaseProgressEntrySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        case_id = self.kwargs.get('case_id')
-        if not case_id:
-            return CaseProgressEntry.objects.none()
-        
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        content_type = ContentType.objects.get_for_model(criminal_case)
-        return CaseProgressEntry.objects.filter(
-            case_content_type=content_type,
-            case_object_id=criminal_case.id
-        ).order_by('-action_date', '-created_date')
-
-    def perform_create(self, serializer):
-        case_id = self.kwargs.get('case_id')
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        content_type = ContentType.objects.get_for_model(criminal_case)
-        serializer.save(
-            case_content_type=content_type,
-            case_object_id=criminal_case.id,
-            author=self.request.user
-        )
-
-
-class CriminalCaseNotificationViewSet(viewsets.ModelViewSet):
-    """ViewSet для работы с уведомлениями конкретного уголовного производства"""
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        case_id = self.kwargs.get('case_id')
-        if not case_id:
-            return Notification.objects.none()
-        
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        content_type = ContentType.objects.get_for_model(criminal_case)
-        return Notification.objects.filter(
-            case_content_type=content_type,
-            case_object_id=criminal_case.id
-        ).order_by('-sent_date')
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            from .serializers import NotificationCreateForParticipantSerializer
-            return NotificationCreateForParticipantSerializer
-        return NotificationSerializer
-
-    def perform_create(self, serializer):
-        case_id = self.kwargs.get('case_id')
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        case_content_type = ContentType.objects.get_for_model(criminal_case)
-        serializer.save(
-            case_content_type=case_content_type,
-            case_object_id=criminal_case.id,
-            created_by=self.request.user
-        )# case_management/views.py
+# case_management/views.py
 
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -226,7 +6,6 @@ from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from criminal_proceedings.models import CriminalProceedings
 from .models import (
     Notification, NotificationType, NotificationTemplate,
     CaseProgressEntry, ProgressActionType
@@ -278,24 +57,15 @@ class NotificationTemplateViewSet(viewsets.ReadOnlyModelViewSet):
         if not case_id:
             return Response({'error': 'Не указан ID дела'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Получаем дело
-        case = get_object_or_404(CriminalProceedings, pk=case_id)
+        # Получаем дело - динамически определяем модель
+        case = self._get_case_by_id(case_id)
+        if not case:
+            return Response({'error': f'Дело с ID {case_id} не найдено'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Получаем участника
+        # Получаем участника - динамически
         participant = None
         if participant_type and participant_id:
-            from criminal_proceedings.models import Defendant, LawyerCriminal, CriminalSidesCaseInCase
-            model_map = {
-                'defendant': Defendant,
-                'lawyer': LawyerCriminal,
-                'side': CriminalSidesCaseInCase
-            }
-            model = model_map.get(participant_type)
-            if model:
-                try:
-                    participant = model.objects.get(id=participant_id)
-                except model.DoesNotExist:
-                    pass
+            participant = self._get_participant_by_type_and_id(participant_type, participant_id)
         
         context = NotificationService.prepare_context(case, participant, hearing_date, hearing_room)
         rendered_text = NotificationService.render_notification_text(template.content, context)
@@ -307,6 +77,112 @@ class NotificationTemplateViewSet(viewsets.ReadOnlyModelViewSet):
             'rendered_text': rendered_text,
             'variables_used': context
         })
+    
+    def _get_case_by_id(self, case_id):
+        """Динамическое получение дела по ID из любого приложения"""
+        case_models = self._get_all_case_models()
+        
+        for model in case_models:
+            try:
+                return model.objects.get(id=case_id)
+            except model.DoesNotExist:
+                continue
+        return None
+    
+    def _get_all_case_models(self):
+        """Получение всех моделей дел из всех приложений"""
+        case_models = []
+        
+        try:
+            from criminal_proceedings.models import CriminalProceedings
+            case_models.append(CriminalProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from civil_proceedings.models import CivilProceedings
+            case_models.append(CivilProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from administrative_proceedings.models import AdministrativeProceedings as AdminProc
+            case_models.append(AdminProc)
+        except ImportError:
+            pass
+        
+        try:
+            from kas_proceedings.models import KasProceedings
+            case_models.append(KasProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from admin_proceedings.models import AdminProceedings
+            case_models.append(AdminProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from other_materials.models import OtherMaterial
+            case_models.append(OtherMaterial)
+        except ImportError:
+            pass
+        
+        return case_models
+    
+    def _get_all_participant_models(self):
+        """Получение всех моделей участников из всех приложений"""
+        participant_models = []
+        
+        # Уголовные участники
+        try:
+            from criminal_proceedings.models import Defendant, LawyerCriminal, CriminalSidesCaseInCase, Victim, Witness, Expert
+            participant_models.extend([Defendant, LawyerCriminal, CriminalSidesCaseInCase, Victim, Witness, Expert])
+        except ImportError:
+            pass
+        
+        # Гражданские участники
+        try:
+            from civil_proceedings.models import CivilSide, CivilRepresentative
+            participant_models.extend([CivilSide, CivilRepresentative])
+        except ImportError:
+            pass
+        
+        # Административные участники
+        try:
+            from administrative_proceedings.models import AdministrativeSide, AdministrativeRepresentative
+            participant_models.extend([AdministrativeSide, AdministrativeRepresentative])
+        except ImportError:
+            pass
+        
+        # КАС участники
+        try:
+            from kas_proceedings.models import KasSide, KasRepresentative
+            participant_models.extend([KasSide, KasRepresentative])
+        except ImportError:
+            pass
+        
+        return participant_models
+    
+    def _get_participant_by_type_and_id(self, participant_type, participant_id):
+        """Динамическое получение участника по типу и ID"""
+        participant_models = self._get_all_participant_models()
+        
+        participant_type_lower = participant_type.lower()
+        
+        for model in participant_models:
+            model_name_lower = model.__name__.lower()
+            # Проверяем совпадение по имени модели
+            if (participant_type_lower == model_name_lower or 
+                participant_type_lower in model_name_lower or 
+                model_name_lower in participant_type_lower):
+                try:
+                    return model.objects.get(id=participant_id)
+                except model.DoesNotExist:
+                    continue
+        
+        return None
 
 
 class ProgressActionTypeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -316,43 +192,32 @@ class ProgressActionTypeViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
-    queryset = Notification.objects.all()
-    serializer_class = NotificationSerializer
+    """Универсальный ViewSet для работы с уведомлениями любых дел"""
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        case_type = self.request.query_params.get('case_type')
+        queryset = Notification.objects.all()
         case_id = self.request.query_params.get('case_id')
         
-        if case_type and case_id:
-            try:
-                app_label_map = {
-                    'criminal_proceedings': 'criminal_proceedings',
-                    'civil_proceedings': 'civil_proceedings',
-                    'administrative_proceedings': 'administrative_proceedings',
-                }
-                model_name_map = {
-                    'criminal_proceedings': 'criminalproceedings',
-                    'civil_proceedings': 'civilproceedings',
-                    'administrative_proceedings': 'administrativeproceedings',
-                }
-                app_label = app_label_map.get(case_type, case_type)
-                model_name = model_name_map.get(case_type, case_type.lower())
-                content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+        if case_id:
+            # Ищем дело среди всех типов
+            case = self._get_case_by_id(case_id)
+            if case:
+                content_type = ContentType.objects.get_for_model(case)
                 return queryset.filter(case_content_type=content_type, case_object_id=case_id)
-            except ContentType.DoesNotExist:
-                return queryset.none()
         
+        # Фильтр по участнику
         participant_type = self.request.query_params.get('participant_type')
         participant_id = self.request.query_params.get('participant_id')
         
         if participant_type and participant_id:
-            try:
-                content_type = ContentType.objects.get(app_label='criminal_proceedings', model=participant_type)
-                return queryset.filter(content_type=content_type, object_id=participant_id)
-            except ContentType.DoesNotExist:
-                return queryset.none()
+            # Пробуем найти модель по имени
+            for app_label in ['criminal_proceedings', 'civil_proceedings', 'administrative_proceedings', 'kas_proceedings', 'admin_proceedings']:
+                try:
+                    content_type = ContentType.objects.get(app_label=app_label, model=participant_type.lower())
+                    return queryset.filter(content_type=content_type, object_id=participant_id)
+                except ContentType.DoesNotExist:
+                    continue
         
         return queryset
     
@@ -363,14 +228,78 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        case_id = self.request.data.get('case_id') or self.kwargs.get('case_id')
+        case_id = self.request.query_params.get('case_id') or self.request.data.get('case_id')
         if case_id:
-            try:
-                case = CriminalProceedings.objects.get(pk=case_id)
+            case = self._get_case_by_id(case_id)
+            if case:
                 context['case'] = case
-            except CriminalProceedings.DoesNotExist:
-                pass
         return context
+
+    def perform_create(self, serializer):
+        case = self.get_serializer_context().get('case')
+        if case:
+            case_content_type = ContentType.objects.get_for_model(case)
+            serializer.save(
+                case_content_type=case_content_type,
+                case_object_id=case.id,
+                created_by=self.request.user
+            )
+        else:
+            serializer.save(created_by=self.request.user)
+    
+    def _get_case_by_id(self, case_id):
+        """Динамическое получение дела по ID из любого приложения"""
+        case_models = self._get_all_case_models()
+        
+        for model in case_models:
+            try:
+                return model.objects.get(id=case_id)
+            except model.DoesNotExist:
+                continue
+        return None
+    
+    def _get_all_case_models(self):
+        """Получение всех моделей дел из всех приложений"""
+        case_models = []
+        
+        # Пробуем импортировать модели из разных приложений
+        try:
+            from criminal_proceedings.models import CriminalProceedings
+            case_models.append(CriminalProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from civil_proceedings.models import CivilProceedings
+            case_models.append(CivilProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from administrative_proceedings.models import AdministrativeProceedings as AdminProc
+            case_models.append(AdminProc)
+        except ImportError:
+            pass
+        
+        try:
+            from kas_proceedings.models import KasProceedings
+            case_models.append(KasProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from admin_proceedings.models import AdminProceedings
+            case_models.append(AdminProceedings)
+        except ImportError:
+            pass
+        
+        try:
+            from other_materials.models import OtherMaterial
+            case_models.append(OtherMaterial)
+        except ImportError:
+            pass
+        
+        return case_models
 
 
 class CriminalCaseProgressViewSet(viewsets.ModelViewSet):
@@ -383,22 +312,35 @@ class CriminalCaseProgressViewSet(viewsets.ModelViewSet):
         if not case_id:
             return CaseProgressEntry.objects.none()
         
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        content_type = ContentType.objects.get_for_model(criminal_case)
-        return CaseProgressEntry.objects.filter(
-            case_content_type=content_type,
-            case_object_id=criminal_case.id
-        ).order_by('-action_date', '-created_date')
+        # Динамически получаем дело
+        try:
+            from criminal_proceedings.models import CriminalProceedings
+            criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(criminal_case)
+            return CaseProgressEntry.objects.filter(
+                case_content_type=content_type,
+                case_object_id=criminal_case.id
+            ).order_by('-action_date', '-created_date')
+        except ImportError:
+            return CaseProgressEntry.objects.none()
 
     def perform_create(self, serializer):
         case_id = self.kwargs.get('case_id')
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        content_type = ContentType.objects.get_for_model(criminal_case)
-        serializer.save(
-            case_content_type=content_type,
-            case_object_id=criminal_case.id,
-            author=self.request.user
-        )
+        try:
+            from criminal_proceedings.models import CriminalProceedings
+            criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(criminal_case)
+            
+            description = self.request.data.get('description', '')
+            
+            serializer.save(
+                case_content_type=content_type,
+                case_object_id=criminal_case.id,
+                author=self.request.user,
+                description=description or ''
+            )
+        except ImportError:
+            pass
 
 
 class CriminalCaseNotificationViewSet(viewsets.ModelViewSet):
@@ -410,12 +352,16 @@ class CriminalCaseNotificationViewSet(viewsets.ModelViewSet):
         if not case_id:
             return Notification.objects.none()
         
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        content_type = ContentType.objects.get_for_model(criminal_case)
-        return Notification.objects.filter(
-            case_content_type=content_type,
-            case_object_id=criminal_case.id
-        ).order_by('-sent_date')
+        try:
+            from criminal_proceedings.models import CriminalProceedings
+            criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(criminal_case)
+            return Notification.objects.filter(
+                case_content_type=content_type,
+                case_object_id=criminal_case.id
+            ).order_by('-sent_date')
+        except ImportError:
+            return Notification.objects.none()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -427,18 +373,23 @@ class CriminalCaseNotificationViewSet(viewsets.ModelViewSet):
         case_id = self.kwargs.get('case_id')
         if case_id:
             try:
+                from criminal_proceedings.models import CriminalProceedings
                 case = CriminalProceedings.objects.get(pk=case_id)
                 context['case'] = case
-            except CriminalProceedings.DoesNotExist:
+            except (ImportError, CriminalProceedings.DoesNotExist):
                 pass
         return context
 
     def perform_create(self, serializer):
         case_id = self.kwargs.get('case_id')
-        criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
-        case_content_type = ContentType.objects.get_for_model(criminal_case)
-        serializer.save(
-            case_content_type=case_content_type,
-            case_object_id=criminal_case.id,
-            created_by=self.request.user
-        )
+        try:
+            from criminal_proceedings.models import CriminalProceedings
+            criminal_case = get_object_or_404(CriminalProceedings, pk=case_id)
+            case_content_type = ContentType.objects.get_for_model(criminal_case)
+            serializer.save(
+                case_content_type=case_content_type,
+                case_object_id=criminal_case.id,
+                created_by=self.request.user
+            )
+        except ImportError:
+            serializer.save(created_by=self.request.user)

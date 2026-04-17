@@ -42,7 +42,7 @@ router.register(
     basename="criminal-case-movement"
 )
 router.register(
-    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/lawyers-criminal",
+    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/lawyers",
     LawyerCriminalViewSet,
     basename="lawyers-criminal"
 )
@@ -52,7 +52,7 @@ router.register(
     basename="sides-case-in-case"
 )
 router.register(
-    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/petitions-criminal",
+    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/petitions",
     PetitionCriminalViewSet,
     basename="petitions-criminal"
 )

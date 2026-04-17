@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import LawyerService from '../../API/LawyerService';
 import KasCaseService from '../../API/KasCaseService';
+import CriminalCaseService from '../../API/CriminalCaseService';
+import NotificationPanel from '../../components/CaseManagement/NotificationPanel';
 import styles from './LawyerDetails.module.css';
 
 const LawyerDetails = () => {
@@ -11,33 +13,26 @@ const LawyerDetails = () => {
   
   // Определяем тип дела по URL
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
-                   location.pathname.includes('/kas-proceedings/') ? 'kas' : 'civil';
+                   location.pathname.includes('/kas-proceedings/') ? 'kas' :
+                   location.pathname.includes('/criminal-proceedings/') ? 'criminal' : 'civil';
   
   const [lawyerData, setLawyerData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('main'); // 'main', 'bank', 'payment'
+  const [activeTab, setActiveTab] = useState('main');
+  const [refreshNotifications, setRefreshNotifications] = useState(0);
     
   const [formData, setFormData] = useState({
-    // CivilLawyer / AdminLawyer / KasLawyer fields
     sides_case_role: '',
-    
-    // Lawyer fields
     law_firm_name: '',
     law_firm_address: '',
     law_firm_phone: '',
     law_firm_email: '',
-    
-    // Bank details
     bank_name: '',
     bank_bik: '',
     correspondent_account: '',
     payment_account: '',
-    
-    // Lawyer certificate
     lawyer_certificate_number: '',
     lawyer_certificate_date: '',
-    
-    // Payment info
     days_for_payment: '',
     payment_amount: '',
     payment_date: '',
@@ -49,64 +44,58 @@ const LawyerDetails = () => {
   const [error, setError] = useState(null);
   const [sideRoles, setSideRoles] = useState([]);
 
+  // Функция для обновления уведомлений
+  const handleNotificationCreated = () => {
+    setRefreshNotifications(prev => prev + 1);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // Загружаем роли сторон (общие для всех типов дел)
         const rolesResponse = await LawyerService.getSideRoles();
         setSideRoles(rolesResponse || []);
         
-        // Проверяем, что lawyerId существует и это не 'create'
         if (lawyerId && lawyerId !== 'create') {
-          // Проверяем, что ID является числом
           const numericId = parseInt(lawyerId);
           if (!isNaN(numericId)) {
             let data;
             
-            // Для дел КАС используем отдельный сервис
             if (caseType === 'kas') {
               data = await KasCaseService.getLawyerById(proceedingId, numericId);
+            } else if (caseType === 'criminal') {
+              data = await CriminalCaseService.getLawyerById(proceedingId, numericId);
             } else {
-              // Для гражданских и административных дел используем универсальный метод
               data = await LawyerService.getLawyerById(proceedingId, numericId, caseType);
             }
             
             console.log('Received lawyer data:', data);
             setLawyerData(data);
 
-            // Заполняем форму данными из lawyer_detail
             setFormData({
               sides_case_role: data.sides_case_role?.id || data.sides_case_role || '',
-              
-              // Данные из lawyer_detail
               law_firm_name: data.lawyer_detail?.law_firm_name || '',
               law_firm_address: data.lawyer_detail?.law_firm_address || '',
               law_firm_phone: data.lawyer_detail?.law_firm_phone || '',
               law_firm_email: data.lawyer_detail?.law_firm_email || '',
-              
               bank_name: data.lawyer_detail?.bank_name || '',
               bank_bik: data.lawyer_detail?.bank_bik || '',
               correspondent_account: data.lawyer_detail?.correspondent_account || '',
               payment_account: data.lawyer_detail?.payment_account || '',
-              
               lawyer_certificate_number: data.lawyer_detail?.lawyer_certificate_number || '',
               lawyer_certificate_date: data.lawyer_detail?.lawyer_certificate_date || '',
-              
               days_for_payment: data.lawyer_detail?.days_for_payment || '',
               payment_amount: data.lawyer_detail?.payment_amount || '',
               payment_date: data.lawyer_detail?.payment_date || '',
               notes: data.lawyer_detail?.notes || ''
             });
             
-            setIsEditing(false); // Режим просмотра/редактирования
+            setIsEditing(false);
           } else {
-            // Если ID не число, значит это 'create' или что-то другое
             setIsEditing(true);
           }
         } else {
-          // Если lawyerId === 'create' или отсутствует
           setIsEditing(true);
         }
       } catch (err) {
@@ -134,33 +123,26 @@ const LawyerDetails = () => {
     setError(null);
 
     try {
-      // Формируем данные для отправки в формате, который ожидает бэкенд
       const requestData = {
-        // Данные для создания/обновления адвоката
         lawyer_data: {
           law_firm_name: formData.law_firm_name,
           law_firm_address: formData.law_firm_address || null,
           law_firm_phone: formData.law_firm_phone || null,
           law_firm_email: formData.law_firm_email || null,
-          
           bank_name: formData.bank_name || null,
           bank_bik: formData.bank_bik || null,
           correspondent_account: formData.correspondent_account || null,
           payment_account: formData.payment_account || null,
-          
           lawyer_certificate_number: formData.lawyer_certificate_number || null,
           lawyer_certificate_date: formData.lawyer_certificate_date || null,
-          
           days_for_payment: formData.days_for_payment ? parseInt(formData.days_for_payment) : null,
           payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
           payment_date: formData.payment_date || null,
           notes: formData.notes || null
         },
-        // Роль стороны (ID)
         sides_case_role: parseInt(formData.sides_case_role)
       };
 
-      // Удаляем пустые значения из lawyer_data
       Object.keys(requestData.lawyer_data).forEach(key => {
         if (requestData.lawyer_data[key] === '' || 
             requestData.lawyer_data[key] === null || 
@@ -173,22 +155,23 @@ const LawyerDetails = () => {
       console.log('Case type:', caseType);
 
       if (lawyerId && lawyerId !== 'create' && lawyerId !== 'undefined' && lawyerId !== 'null') {
-        // Для обновления
         if (caseType === 'kas') {
           await KasCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+        } else if (caseType === 'criminal') {
+          await CriminalCaseService.updateLawyer(proceedingId, lawyerId, requestData);
         } else {
           await LawyerService.updateLawyer(proceedingId, lawyerId, requestData, caseType);
         }
       } else {
-        // Для создания
         if (caseType === 'kas') {
           await KasCaseService.createLawyer(proceedingId, requestData);
+        } else if (caseType === 'criminal') {
+          await CriminalCaseService.createLawyer(proceedingId, requestData);
         } else {
           await LawyerService.createLawyer(proceedingId, requestData, caseType);
         }
       }
       
-      // После успешного сохранения возвращаемся назад
       navigate(-1);
     } catch (err) {
       console.error('Error saving lawyer:', err);
@@ -202,7 +185,6 @@ const LawyerDetails = () => {
     }
   };
 
-  // Определяем заголовок в зависимости от типа дела
   const getTitle = () => {
     const action = lawyerId && lawyerId !== 'create' ? 'Редактирование' : 'Добавление';
     
@@ -214,6 +196,9 @@ const LawyerDetails = () => {
       case 'kas':
         caseTypeText = 'представителя (КАС РФ)';
         break;
+      case 'criminal':
+        caseTypeText = 'адвоката (уголовное)';
+        break;
       default:
         caseTypeText = 'адвоката (гражданское)';
     }
@@ -221,23 +206,34 @@ const LawyerDetails = () => {
     return `${action} ${caseTypeText}`;
   };
 
+  // Получаем имя адвоката для отображения
+  const getLawyerName = () => {
+    if (lawyerData?.lawyer_detail?.law_firm_name) {
+      return lawyerData.lawyer_detail.law_firm_name;
+    }
+    if (formData?.law_firm_name) {
+      return formData.law_firm_name;
+    }
+    return 'Адвокат';
+  };
+
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
+
+const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing && lawyerData;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <button 
-            onClick={() => navigate(-1)} 
-            className={styles.backButton}
-          >
+          <button onClick={() => navigate(-1)} className={styles.backButton}>
             ← Назад
           </button>
-          <h1 className={styles.title}>
-            {getTitle()}
-          </h1>
+          <h1 className={styles.title}>{getTitle()}</h1>
+          {caseType === 'criminal' && (
+            <span className={styles.caseTypeBadge}>Уголовное дело</span>
+          )}
           {caseType === 'admin' && (
             <span className={styles.caseTypeBadge}>Административное правонарушение</span>
           )}
@@ -246,17 +242,10 @@ const LawyerDetails = () => {
           )}
         </div>
         <div className={styles.headerRight}>
-          <button 
-            onClick={handleSubmit} 
-            className={styles.saveButton}
-            disabled={saving}
-          >
+          <button onClick={handleSubmit} className={styles.saveButton} disabled={saving}>
             {saving ? 'Сохранение...' : 'Сохранить'}
           </button>
-          <button 
-            onClick={() => navigate(-1)} 
-            className={styles.cancelButton}
-          >
+          <button onClick={() => navigate(-1)} className={styles.cancelButton}>
             Отмена
           </button>
         </div>
@@ -267,7 +256,6 @@ const LawyerDetails = () => {
       <div className={styles.content}>
         <div className={styles.mainContent}>
           <div className={styles.tabsContainer}>
-            {/* Вкладки */}
             <div className={styles.tabs}>
               <button
                 className={`${styles.tab} ${activeTab === 'main' ? styles.activeTab : ''}`}
@@ -291,10 +279,8 @@ const LawyerDetails = () => {
 
             <div className={styles.tabContentWrapper}>
               <form onSubmit={handleSubmit}>
-                {/* Вкладка: Основная информация */}
                 {activeTab === 'main' && (
                   <div className={styles.tabContent}>
-                    {/* Роль в деле */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Роль в деле</h3>
                       <div className={styles.field}>
@@ -317,15 +303,9 @@ const LawyerDetails = () => {
                             <option value="" disabled>Загрузка ролей...</option>
                           )}
                         </select>
-                        {sideRoles.length === 0 && !loading && (
-                          <div style={{ color: 'orange', fontSize: '12px', marginTop: '5px' }}>
-                            Роли не загружены. Проверьте подключение к серверу.
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    {/* Основная информация об адвокате/защитнике */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Основная информация</h3>
                       
@@ -379,7 +359,6 @@ const LawyerDetails = () => {
                       </div>
                     </div>
 
-                    {/* Данные адвокатского удостоверения */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Адвокатское удостоверение</h3>
                       
@@ -407,10 +386,8 @@ const LawyerDetails = () => {
                       </div>
                     </div>
 
-                    {/* Примечания (только на основной вкладке для краткости) */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Примечания</h3>
-                      
                       <div className={styles.field}>
                         <textarea
                           name="notes"
@@ -425,7 +402,6 @@ const LawyerDetails = () => {
                   </div>
                 )}
 
-                {/* Вкладка: Банковские реквизиты */}
                 {activeTab === 'bank' && (
                   <div className={styles.tabContent}>
                     <div className={styles.fieldGroup}>
@@ -482,7 +458,6 @@ const LawyerDetails = () => {
                   </div>
                 )}
 
-                {/* Вкладка: Оплата за счет федерального бюджета */}
                 {activeTab === 'payment' && (
                   <div className={styles.tabContent}>
                     <div className={styles.fieldGroup}>
@@ -532,6 +507,23 @@ const LawyerDetails = () => {
             </div>
           </div>
         </div>
+
+        {/* Боковая панель с уведомлениями - для уголовных дел */}
+        {showNotificationPanel && (
+          <div className={styles.sidebar}>
+            <NotificationPanel 
+              caseId={proceedingId}
+              caseType={caseType}
+                participant={{
+                  id: parseInt(lawyerId),
+                  type: 'lawyercriminal',
+                  name: getLawyerName()
+                }}
+              onNotificationCreated={handleNotificationCreated}
+              refreshTrigger={refreshNotifications}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

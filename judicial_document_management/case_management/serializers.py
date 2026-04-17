@@ -39,16 +39,36 @@ class CaseProgressEntrySerializer(serializers.ModelSerializer):
         model = CaseProgressEntry
         fields = '__all__'
         read_only_fields = ('id', 'created_date', 'author', 'case_content_type', 'case_object_id')
+        extra_kwargs = {
+            'description': {'required': False, 'allow_blank': True, 'allow_null': True}
+        }
     
     def get_author_name(self, obj):
         if obj.author:
             return obj.author.get_full_name() or obj.author.username
         return "Система"
     
+    def to_internal_value(self, data):
+        """Обработка пустого значения description"""
+        internal_value = super().to_internal_value(data)
+        # Если description не передан или пустая строка/null, устанавливаем пустую строку
+        if 'description' not in internal_value or internal_value.get('description') is None:
+            internal_value['description'] = ''
+        return internal_value
+    
     def create(self, validated_data):
         validated_data.pop('case', None)
         validated_data['author'] = self.context['request'].user
+        # Убеждаемся, что description не None
+        if validated_data.get('description') is None:
+            validated_data['description'] = ''
         return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        # Убеждаемся, что description не None при обновлении
+        if validated_data.get('description') is None:
+            validated_data['description'] = ''
+        return super().update(instance, validated_data)
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -121,28 +141,76 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
             'hearing_date', 'hearing_room', 'consent_sms', 'consent_email'
         ]
         read_only_fields = ['id', 'sent_date', 'status']
-    
-    def validate(self, data):
-        participant_type = data.pop('participant_type')
-        participant_id = data.pop('participant_id')
-        
-        # Импортируем модели
-        from criminal_proceedings.models import Defendant, LawyerCriminal, CriminalSidesCaseInCase
-        
-        model_map = {
-            'defendant': Defendant,
-            'lawyer': LawyerCriminal,
-            'side': CriminalSidesCaseInCase
+
+
+    def _get_participant_model(self, participant_type):
+        # Прямое соответствие - самый простой способ
+        direct_mapping = {
+            'defendant': 'Defendant',
+            'lawyercriminal': 'LawyerCriminal', 
+            'sidescaseincase': 'SidesCaseInCase',
+            'side': 'SidesCaseInCase',
+            'civilside': 'CivilSide',
+            'adminside': 'AdministrativeSide',
+            'kasside': 'KasSide',
         }
         
-        model = model_map.get(participant_type)
+        participant_type_lower = participant_type.lower()
+        
+        if participant_type_lower in direct_mapping:
+            model_name = direct_mapping[participant_type_lower]
+            # Импортируем модели напрямую
+            try:
+                from criminal_proceedings.models import Defendant, LawyerCriminal, SidesCaseInCase
+                from civil_proceedings.models import CivilSide
+                from administrative_proceedings.models import AdministrativeSide
+                from kas_proceedings.models import KasSide
+                
+                models_map = {
+                    'Defendant': Defendant,
+                    'LawyerCriminal': LawyerCriminal,
+                    'SidesCaseInCase': SidesCaseInCase,
+                    'CivilSide': CivilSide,
+                    'AdministrativeSide': AdministrativeSide,
+                    'KasSide': KasSide,
+                }
+                return models_map.get(model_name)
+            except ImportError:
+                pass
+        
+        return None
+    
+    def validate(self, data):
+        print("=== Validation start ===")
+        print(f"Input data: {data}")
+        
+        participant_type = data.pop('participant_type', None)
+        participant_id = data.pop('participant_id', None)
+        
+        print(f"participant_type: {participant_type}, participant_id: {participant_id}")
+        
+        if not participant_type or not participant_id:
+            raise serializers.ValidationError({
+                'participant_type': 'Не указан тип участника',
+                'participant_id': 'Не указан ID участника'
+            })
+        
+        model = self._get_participant_model(participant_type)
+        
+        print(f"Found model: {model}")
+        
         if not model:
-            raise serializers.ValidationError({'participant_type': f'Неизвестный тип участника: {participant_type}'})
+            raise serializers.ValidationError({
+                'participant_type': f'Неизвестный тип участника: {participant_type}. Доступные типы: defendant, lawyer, side, victim, witness, expert'
+            })
         
         try:
             participant = model.objects.get(id=participant_id)
+            print(f"Found participant: {participant}")
         except model.DoesNotExist:
-            raise serializers.ValidationError({'participant_id': f'Участник типа {participant_type} с ID {participant_id} не найден'})
+            raise serializers.ValidationError({
+                'participant_id': f'Участник типа {participant_type} с ID {participant_id} не найден'
+            })
         
         data['participant'] = participant
         
@@ -154,8 +222,11 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         data['_consent_sms'] = data.pop('consent_sms', False)
         data['_consent_email'] = data.pop('consent_email', False)
         
+        print(f"Validated data after processing: {data.keys()}")
+        print("=== Validation end ===")
+        
         return data
-    
+
     def create(self, validated_data):
         template_id = validated_data.pop('_template_id', None)
         notification_text_edited = validated_data.pop('_notification_text_edited', None)
@@ -203,6 +274,11 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         elif notification_text_edited:
             validated_data['notification_text'] = notification_text_edited
         
+        # Удаляем все поля, которые начинаются с '_' (они не нужны для создания)
+        keys_to_remove = [key for key in validated_data.keys() if key.startswith('_')]
+        for key in keys_to_remove:
+            validated_data.pop(key, None)
+        
         notification = super().create(validated_data)
         
         # Создаем запись в справочном листе
@@ -210,7 +286,6 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         
         case = self.context.get('case')
         if case:
-            # Используем get_or_create с правильными параметрами
             action_type, created = ProgressActionType.objects.get_or_create(
                 code='send_notification',
                 defaults={

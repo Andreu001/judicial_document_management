@@ -878,12 +878,13 @@ const DefendantDetail = () => {
         {!isCreateMode && !isEditing && criminalCase && currentDefendant && (
           <div className={styles.sidebar}>
             <NotificationPanel 
-              criminalCaseId={proceedingId}
-              participant={{
-                id: currentDefendant.id,
-                type: 'defendant',
-                name: currentDefendant.full_name_criminal || currentDefendant.name
-              }}
+              caseId={proceedingId}
+              caseType="criminal"
+                participant={{
+                  id: currentDefendant.id,
+                  type: 'defendant',
+                  name: currentDefendant.full_name_criminal || currentDefendant.name
+                }}
               onNotificationCreated={handleNotificationCreated}
               refreshTrigger={refreshNotifications}
             />

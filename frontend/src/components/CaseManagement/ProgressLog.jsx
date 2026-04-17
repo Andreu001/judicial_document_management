@@ -1,4 +1,4 @@
-// ProgressLog.jsx
+// ProgressLog.jsx - исправленная версия с возможностью сохранять пустой комментарий
 
 import React, { useState, useEffect } from 'react';
 import CaseManagementService from '../../API/CaseManagementService';
@@ -24,7 +24,6 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     appointmentViolation: false
   });
   
-  // Состояние для модального окна удаления
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, entryId: null });
 
   const loadData = async () => {
@@ -96,10 +95,17 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     }
 
     try {
+      // Исправление: отправляем description как пустую строку, если поле пустое
+      const dataToSend = {
+        action_type: formData.action_type,
+        action_date: formData.action_date,
+        description: formData.description || ''  // Пустая строка вместо null/undefined
+      };
+      
       if (editingEntry) {
-        await CaseManagementService.updateProgressEntry(criminalCaseId, editingEntry.id, formData);
+        await CaseManagementService.updateProgressEntry(criminalCaseId, editingEntry.id, dataToSend);
       } else {
-        await CaseManagementService.createProgressEntry(criminalCaseId, formData);
+        await CaseManagementService.createProgressEntry(criminalCaseId, dataToSend);
       }
       setShowAddForm(false);
       setEditingEntry(null);
@@ -125,17 +131,14 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     setShowAddForm(true);
   };
 
-  // Открыть модальное окно удаления
   const openDeleteModal = (entryId) => {
     setDeleteModal({ isOpen: true, entryId });
   };
 
-  // Закрыть модальное окно
   const closeDeleteModal = () => {
     setDeleteModal({ isOpen: false, entryId: null });
   };
 
-  // Выполнить удаление
   const confirmDelete = async () => {
     if (deleteModal.entryId) {
       try {
@@ -297,7 +300,6 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
         </>
       )}
 
-      {/* Модальное окно подтверждения удаления */}
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         message="Вы уверены, что хотите удалить эту запись?"

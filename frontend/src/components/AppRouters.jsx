@@ -14,10 +14,7 @@ import Layout from './Layout';
 import DefendantDetail from "./CriminalCase/DefendantDetail";
 import CriminalDetail from "./CriminalCase/CriminalDetail";
 import CriminalDecisionDetail from "./CriminalCase/CriminalDecisionDetail";
-import CriminalLawyerDetails from "./CriminalCase/CriminalLawyerDetails";
-import CriminalSideDetails from "./CriminalCase/CriminalSideDetails";
 import CriminalMovementDetail from "./CriminalCase/CriminalMovementDetail";
-import PetitionCriminal from "./CriminalCase/PetitionCriminal";
 import CorrespondenceIn from "./Correspondence/CorrespondenceIn";
 import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
@@ -25,16 +22,13 @@ import CorrespondenceDetail from "./Correspondence/CorrespondenceDetail";
 import LawyerDetails from "../pages/sides/LawyerDetails";
 import PersonSearch from "./ParticipantsProcess/PersonSearch";
 import CivilDetail from "./CivilCase/CivilDetail";
-import CivilSideDetail from "./CivilCase/CivilSideDetail";
 import CivilDecisionDetail from "./CivilCase/CivilDecisionDetail";
 import CivilExecutionDetail from "./CivilCase/CivilExecutionDetail";
 import PersonnelPage from '../pages/personnel/PersonnelPage';
 import AdministrativeDetail from './AdminCase/AdministrativeDetail';
-import AdministrativeSideDetail from './AdminCase/AdministrativeSideDetail';
 import AdministrativeDecisionDetail from './AdminCase/AdministrativeDecisionDetail';
 import AdministrativeProcedureActionDetail from './AdminCase/AdministrativeProcedureActionDetail';
 import KasDetail from './KasCase/KasDetail';
-import KasSideDetail from './KasCase/KasSideDetail';
 import KasDecisionDetail from './KasCase/KasDecisionDetail';
 import KasExecutionDetail from './KasCase/KasExecutionDetail';
 import CriminalExecutionDetail from "./CriminalCase/CriminalExecutionDetail";
@@ -44,7 +38,6 @@ import DocumentFormPage from './Documents/DocumentFormPage';
 import DocumentDetailPage from './Documents/DocumentDetailPage';
 import CriminalPersonCard from './CriminalCase/CriminalPersonCard';
 import OtherMaterialDetail from './OtherMaterials/OtherMaterialDetail';
-import OtherMaterialSideDetail from './OtherMaterials/OtherMaterialSideDetail';
 import OtherMaterialMovementDetail from './OtherMaterials/OtherMaterialMovementDetail';
 import OtherMaterialPetitionDetail from './OtherMaterials/OtherMaterialPetitionDetail';
 
@@ -129,9 +122,8 @@ const AppRouter = () => {
                 {/* Уголовные производства */}
                 <Route path="criminal-proceedings/:id" element={<CriminalDetail />} />
 
-                <Route path="criminal-proceedings/:proceedingId/petitions/create" element={<PetitionCriminal />} />
-                <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionCriminal />} />
-                <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId/edit" element={<PetitionCriminal />} />
+                <Route path="criminal-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
+                <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
 
                 {/* Движение уголовного дела */}
                 <Route path="criminal-proceedings/:cardId/criminal-case-movement/:moveId" element={<CriminalMovementDetail />} />
@@ -147,16 +139,16 @@ const AppRouter = () => {
                 <Route path="/criminal-proceedings/:proceedingId/defendants/:defendantId/person-card" element={<CriminalPersonCard />} />
                 
                 {/* Адвокаты */}
-                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/create" element={<CriminalLawyerDetails />} />
-                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/:lawyerId" element={<CriminalLawyerDetails />} />
+                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/create" element={<LawyerDetails />} />
+                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/:lawyerId" element={<LawyerDetails />} />
                 
-                {/* Стороны */}
-                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/create" element={<CriminalSideDetails />} />
-                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/:sideId" element={<CriminalSideDetails />} />
+                {/* Уголовные дела - стороны */}
+                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/create" element={<SideDetail />} />
+                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/:sideId" element={<SideDetail />} />
                 {/* Исполнение */}
                 <Route path="criminal-proceedings/:proceedingId/executions/create" element={<CriminalExecutionDetail />} />
                 <Route path="criminal-proceedings/:proceedingId/executions/:executionId" element={<CriminalExecutionDetail />} />
-
+                
                 {/* Гражданское судопроизводство */}
                 <Route path="civil-proceedings/:id" element={<CivilDetail />} />
                 <Route path="civil-proceedings/create" element={<CivilDetail />} />
@@ -170,9 +162,9 @@ const AppRouter = () => {
                 <Route path="civil-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
                 <Route path="civil-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
 
-                {/* Стороны по гражданскому делу */}
-                <Route path="civil-proceedings/:proceedingId/sides/create" element={<CivilSideDetail />} />
-                <Route path="civil-proceedings/:proceedingId/sides/:sideId" element={<CivilSideDetail />} />
+                {/* Гражданские дела - стороны */}
+                <Route path="civil-proceedings/:proceedingId/sides/create" element={<SideDetail />} />
+                <Route path="civil-proceedings/:proceedingId/sides/:sideId" element={<SideDetail />} />
 
                 {/* Решения по гражданскому делу */}
                 <Route path="civil-proceedings/:proceedingId/decisions/create" element={<CivilDecisionDetail />} />
@@ -187,9 +179,9 @@ const AppRouter = () => {
                 <Route path="admin-proceedings/create" element={<AdministrativeDetail />} />
                 <Route path="admin-proceedings/:id" element={<AdministrativeDetail />} />
 
-                {/* Стороны по административному делу (переиспользуем существующий AdminSideDetail) */}
-                <Route path="admin-proceedings/:proceedingId/sides/create" element={<AdministrativeSideDetail />} />
-                <Route path="admin-proceedings/:proceedingId/sides/:sideId" element={<AdministrativeSideDetail />} />
+                {/* Административные правонарушения (КОАП) - стороны */}
+                <Route path="admin-proceedings/:proceedingId/sides/create" element={<SideDetail />} />
+                <Route path="admin-proceedings/:proceedingId/sides/:sideId" element={<SideDetail />} />
 
                 {/* Защитники/представители (переиспользуем LawyerDetails) */}
                 <Route path="admin-proceedings/:proceedingId/lawyers/create" element={<LawyerDetails />} />
@@ -210,14 +202,16 @@ const AppRouter = () => {
                 {/* Исполнение по административному делу (свой компонент AdminProcedureActionDetail) */}
                 <Route path="admin-proceedings/:proceedingId/executions/create" element={<AdministrativeProcedureActionDetail />} />
                 <Route path="admin-proceedings/:proceedingId/executions/:executionId" element={<AdministrativeProcedureActionDetail />} />
+
+
                 {/* ========== Административные дела (КАС РФ) ========== */}
                 {/* Основная карточка дела (создание, просмотр, редактирование) */}
                 <Route path="kas-proceedings/create" element={<KasDetail />} />
                 <Route path="kas-proceedings/:id" element={<KasDetail />} />
 
-                {/* Стороны по административному делу */}
-                <Route path="kas-proceedings/:proceedingId/sides/create" element={<KasSideDetail />} />
-                <Route path="kas-proceedings/:proceedingId/sides/:sideId" element={<KasSideDetail />} />
+                {/* Административные дела (КАС) - стороны */}
+                <Route path="kas-proceedings/:proceedingId/sides/create" element={<SideDetail />} />
+                <Route path="kas-proceedings/:proceedingId/sides/:sideId" element={<SideDetail />} />
 
                 {/* Представители */}
                 <Route path="kas-proceedings/:proceedingId/lawyers/create" element={<LawyerDetails />} />
@@ -243,8 +237,9 @@ const AppRouter = () => {
                 <Route path="other-materials/create" element={<OtherMaterialDetail />} />
                 <Route path="other-materials/:id" element={<OtherMaterialDetail />} />
 
-                <Route path="other-materials/:materialId/sides/create" element={<OtherMaterialSideDetail />} />
-                <Route path="other-materials/:materialId/sides/:sideId" element={<OtherMaterialSideDetail />} />
+                {/* Иные материалы - стороны */}
+                <Route path="other-materials/:materialId/sides/create" element={<SideDetail />} />
+                <Route path="other-materials/:materialId/sides/:sideId" element={<SideDetail />} />
 
                 <Route path="other-materials/:materialId/lawyers/create" element={<LawyerDetails />} />
                 <Route path="other-materials/:materialId/lawyers/:lawyerId" element={<LawyerDetails />} />

@@ -468,17 +468,16 @@ class CriminalCaseMovementViewSet(viewsets.ModelViewSet):
 class LawyerCriminalViewSet(viewsets.ModelViewSet):
     """ViewSet для адвокатов в уголовных делах"""
     serializer_class = LawyerCriminalSerializer
-    
+
     def get_queryset(self):
         criminal_proceedings_id = self.kwargs.get("criminal_proceedings")
         if criminal_proceedings_id:
             return LawyerCriminal.objects.filter(
                 criminal_proceedings_id=criminal_proceedings_id
-            ).select_related('sides_case_lawyer_criminal', 'sides_case_lawyer')
+            ).select_related('lawyer', 'sides_case_role')
         return LawyerCriminal.objects.none()
-    
+
     def get_serializer_context(self):
-        """Добавляем criminal_proceedings в контекст сериализатора"""
         context = super().get_serializer_context()
         criminal_proceedings_id = self.kwargs.get("criminal_proceedings")
         if criminal_proceedings_id:
@@ -488,12 +487,33 @@ class LawyerCriminalViewSet(viewsets.ModelViewSet):
             except CriminalProceedings.DoesNotExist:
                 pass
         return context
-    
+
     def perform_create(self, serializer):
         criminal_proceedings_id = self.kwargs.get("criminal_proceedings")
         if criminal_proceedings_id:
             proceedings = get_object_or_404(CriminalProceedings, pk=criminal_proceedings_id)
             serializer.save(criminal_proceedings=proceedings)
+
+    def destroy(self, request, *args, **kwargs):
+        """Переопределяем метод удаления для проверки использования адвоката в других делах"""
+        instance = self.get_object()
+        lawyer = instance.lawyer
+        
+        other_usages = LawyerCriminal.objects.filter(lawyer=lawyer).exclude(id=instance.id).count()
+        
+        if other_usages == 0:
+            instance.delete()
+            lawyer.delete()
+            return Response(
+                {'message': 'Адвокат полностью удален из системы'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        else:
+            instance.delete()
+            return Response(
+                {'message': 'Связь с делом удалена, но адвокат сохранен (используется в других делах)'},
+                status=status.HTTP_204_NO_CONTENT
+            )
 
 
 class SidesCaseInCaseViewSet(viewsets.ModelViewSet):
@@ -536,12 +556,11 @@ class PetitionCriminalViewSet(viewsets.ModelViewSet):
         criminal_proceedings_id = self.kwargs.get("criminal_proceedings")
         if criminal_proceedings_id:
             return PetitionCriminal.objects.filter(
-                criminal_proceedings_id=criminal_proceedings_id  # Правильное имя поля
-            ).prefetch_related('petitions_criminal')  # Используем prefetch_related для ManyToMany
+                criminal_proceedings_id=criminal_proceedings_id
+            ).select_related('petitions_incase')
         return PetitionCriminal.objects.none()
     
     def get_serializer_context(self):
-        """Добавляем criminal_proceedings в контекст"""
         context = super().get_serializer_context()
         criminal_proceedings_id = self.kwargs.get("criminal_proceedings")
         if criminal_proceedings_id:

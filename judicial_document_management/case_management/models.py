@@ -185,7 +185,7 @@ class CaseProgressEntry(models.Model):
     case = GenericForeignKey('case_content_type', 'case_object_id')
     
     action_type = models.ForeignKey(ProgressActionType, on_delete=models.PROTECT, verbose_name="Действие")
-    description = models.TextField(verbose_name="Описание действия", null=True, blank=True)
+    description = models.TextField(verbose_name="Описание действия", null=True, blank=True, default='')
     
     created_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания записи")
     action_date = models.DateField(verbose_name="Дата действия")

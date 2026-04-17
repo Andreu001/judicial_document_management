@@ -320,3 +320,44 @@
 .sideType strong {
   color: #333;
 }
+/* Стили для боковой панели */
+.content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin: 0 2rem 2rem 0;
+}
+
+.mainContent {
+  flex: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 320px;
+  max-width: 400px;
+  position: sticky;
+  top: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .content {
+    flex-direction: column;
+    margin: 0 0 2rem 0;
+  }
+  
+  .sidebar {
+    width: 100%;
+    max-width: none;
+    position: static;
+  }
+}
+
+/* Стиль для disabled таба */
+.disabledTab {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

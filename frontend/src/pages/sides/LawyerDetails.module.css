@@ -450,3 +450,36 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
 }
+/* Стили для боковой панели */
+.content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.sidebar {
+  flex: 1;
+  min-width: 320px;
+  max-width: 400px;
+  position: sticky;
+  top: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    max-width: none;
+    position: static;
+  }
+}

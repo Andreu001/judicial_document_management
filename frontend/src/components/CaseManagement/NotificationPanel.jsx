@@ -1,22 +1,27 @@
-// CaseManagement/NotificationPanel.jsx
+// NotificationPanel.jsx - УНИВЕРСАЛЬНАЯ ВЕРСИЯ для любых типов дел и участников
 
 import React, { useState, useEffect } from 'react';
 import CaseManagementService from '../../API/CaseManagementService';
 import ConfirmModal from '../UI/Modal/ConfirmModal';
 import styles from './NotificationPanel.module.css';
 
-const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated, refreshTrigger }) => {
+const NotificationPanel = ({ 
+  caseId,
+  caseType,
+  participant,
+  onNotificationCreated, 
+  refreshTrigger 
+}) => {
   const [notificationTypes, setNotificationTypes] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   
-  // Состояние для модального окна удаления
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, notificationId: null });
   
-  // Данные формы
   const [formData, setFormData] = useState({
     notification_type: '',
     delivery_method: 'post',
@@ -32,16 +37,19 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     notes: ''
   });
   
-  // Предпросмотр текста повестки
   const [previewText, setPreviewText] = useState('');
   const [editedText, setEditedText] = useState('');
   const [isEditingText, setIsEditingText] = useState(false);
 
+  // ✅ ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ ВЫЗВАНЫ ДО ЛЮБЫХ УСЛОВНЫХ RETURN
   useEffect(() => {
-    loadNotificationTypes();
-    loadTemplates();
-    loadNotifications();
-  }, [criminalCaseId, participant, refreshTrigger]);
+    // Проверяем наличие необходимых данных внутри эффекта
+    if (caseId && participant) {
+      loadNotificationTypes();
+      loadTemplates();
+      loadNotifications();
+    }
+  }, [caseId, caseType, participant, refreshTrigger]);
 
   const loadNotificationTypes = async () => {
     const types = await CaseManagementService.getNotificationTypes();
@@ -49,16 +57,29 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
   };
 
   const loadTemplates = async () => {
-    const allTemplates = await CaseManagementService.getNotificationTemplates({ is_active: true });
+    const params = {};
+    if (caseType) {
+      // Маппинг типа дела в категорию для шаблонов
+      const categoryMap = {
+        'criminal': 'criminal',
+        'civil': 'civil',
+        'admin': 'coap',
+        'kas': 'administrative',
+        'other': 'criminal'
+      };
+      params.case_category = categoryMap[caseType] || 'criminal';
+    }
+    const allTemplates = await CaseManagementService.getNotificationTemplates(params);
     setTemplates(allTemplates);
   };
 
   const loadNotifications = async () => {
-    if (!criminalCaseId || !participant) return;
+    if (!caseId || !participant) return;
     try {
-      const allNotifications = await CaseManagementService.getNotifications(criminalCaseId);
+      const allNotifications = await CaseManagementService.getNotifications(caseId);
+      // Фильтруем по participant_id и participant_type
       const filtered = allNotifications.filter(n => 
-        n.participant_id === participant.id && 
+        String(n.participant_id) === String(participant.id) && 
         n.participant_type === participant.type
       );
       setNotifications(filtered);
@@ -75,11 +96,10 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     }));
   };
 
-  // При выборе шаблона - получаем предпросмотр
   const handleTemplateChange = async (templateId) => {
     setFormData(prev => ({ ...prev, template_id: templateId }));
     
-    if (templateId && participant && criminalCaseId) {
+    if (templateId && participant && caseId) {
       setPreviewLoading(true);
       try {
         let hearingDateTime = null;
@@ -91,7 +111,7 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
         
         const preview = await CaseManagementService.previewNotificationTemplate(
           templateId,
-          criminalCaseId,
+          caseId,
           participant.type,
           participant.id,
           hearingDateTime,
@@ -110,9 +130,8 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     }
   };
 
-  // Обновление предпросмотра при изменении даты/времени/зала
   const updatePreview = async () => {
-    if (formData.template_id && participant && criminalCaseId) {
+    if (formData.template_id && participant && caseId) {
       setPreviewLoading(true);
       try {
         let hearingDateTime = null;
@@ -124,7 +143,7 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
         
         const preview = await CaseManagementService.previewNotificationTemplate(
           formData.template_id,
-          criminalCaseId,
+          caseId,
           participant.type,
           participant.id,
           hearingDateTime,
@@ -143,7 +162,7 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     }
   };
 
-  // Обновляем предпросмотр при изменении даты/времени
+  // ✅ ВТОРОЙ useEffect ТОЖЕ ПЕРЕМЕЩЁН В БЕЗОПАСНОЕ МЕСТО (ДО УСЛОВНОГО RETURN)
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (formData.template_id && (formData.hearing_date || formData.hearing_time || formData.hearing_room)) {
@@ -153,6 +172,12 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     
     return () => clearTimeout(delayDebounce);
   }, [formData.hearing_date, formData.hearing_time, formData.hearing_room]);
+
+  // ✅ ПРОВЕРКА В КОНЦЕ, ПОСЛЕ ВСЕХ ХУКОВ
+  if (!caseId || !participant) {
+    console.warn('NotificationPanel: missing caseId or participant', { caseId, participant });
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -169,11 +194,6 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
 
     setLoading(true);
     try {
-      let participantType = participant.type;
-      if (participantType === 'defendant') participantType = 'defendant';
-      else if (participantType === 'lawyer') participantType = 'lawyer';
-      else if (participantType === 'side') participantType = 'side';
-      
       let hearingDateTime = null;
       if (formData.hearing_date) {
         hearingDateTime = formData.hearing_time 
@@ -194,11 +214,11 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
         consent_sms: formData.consent_sms,
         consent_email: formData.consent_email,
         notes: formData.notes || '',
-        participant_type: participantType,
+        participant_type: participant.type,
         participant_id: participant.id
       };
       
-      await CaseManagementService.createNotification(criminalCaseId, notificationData);
+      await CaseManagementService.createNotification(caseId, notificationData);
       
       if (onNotificationCreated && typeof onNotificationCreated === 'function') {
         onNotificationCreated();
@@ -239,21 +259,18 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     setIsEditingText(false);
   };
 
-  // Открыть модальное окно удаления
   const openDeleteModal = (notificationId) => {
     setDeleteModal({ isOpen: true, notificationId });
   };
 
-  // Закрыть модальное окно
   const closeDeleteModal = () => {
     setDeleteModal({ isOpen: false, notificationId: null });
   };
 
-  // Выполнить удаление
   const confirmDelete = async () => {
     if (deleteModal.notificationId) {
       try {
-        await CaseManagementService.deleteNotification(criminalCaseId, deleteModal.notificationId);
+        await CaseManagementService.deleteNotification(caseId, deleteModal.notificationId);
         await loadNotifications();
         if (onNotificationCreated && typeof onNotificationCreated === 'function') {
           onNotificationCreated();
@@ -305,7 +322,6 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
     return statuses[status] || status;
   };
 
-  // Группировка шаблонов по категориям
   const getTemplatesByCategory = () => {
     const grouped = {};
     templates.forEach(template => {
@@ -320,72 +336,83 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
 
   return (
     <div className={styles.notificationPanel}>
-      <div className={styles.header}>
+      <div className={styles.header} onClick={() => setIsCollapsed(!isCollapsed)}>
         <h4 className={styles.title}>
           Уведомления и повестки
+          <span className={styles.count}>{notifications.length}</span>
         </h4>
-        <button 
-          className={styles.addNotificationButton}
-          onClick={() => setShowModal(true)}
-        >
-          Направить извещение
-        </button>
+        <span className={styles.toggleIndicator}>{isCollapsed ? 'Развернуть' : 'Свернуть'}</span>
       </div>
 
-      <div className={styles.notificationsList}>
-        {notifications.length === 0 && (
-          <div className={styles.emptyState}>Нет отправленных уведомлений</div>
-        )}
-        {notifications.map(notification => (
-          <div key={notification.id} className={styles.notificationItem}>
-            <div className={styles.notificationHeader}>
-              <span className={styles.notificationType}>
-                {notification.notification_template_form_number && 
-                  `Форма №${notification.notification_template_form_number} - `}
-                {notification.notification_type_name || 'Уведомление'}
-              </span>
-              <span className={styles.notificationDate}>
-                {formatDate(notification.sent_date)}
-              </span>
-              <button 
-                onClick={() => openDeleteModal(notification.id)}
-                className={styles.deleteNotificationButton}
-                title="Удалить"
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.notificationDetails}>
-              <span className={styles.deliveryMethod}>
-                {getDeliveryMethodLabel(notification.delivery_method)}
-              </span>
-              <span className={`${styles.statusBadge} ${styles[notification.status]}`}>
-                {getStatusLabel(notification.status)}
-              </span>
-            </div>
-            {notification.hearing_date && (
-              <div className={styles.hearingInfo}>
-                📅 Заседание: {formatDate(notification.hearing_date)}
-                {notification.hearing_room && `, зал ${notification.hearing_room}`}
-              </div>
-            )}
-            {notification.recipient_address && (
-              <div className={styles.notificationAddress}>📍 {notification.recipient_address}</div>
-            )}
-            {notification.recipient_phone && (
-              <div className={styles.notificationPhone}>📞 {notification.recipient_phone}</div>
-            )}
-            {notification.recipient_email && (
-              <div className={styles.notificationEmail}>✉️ {notification.recipient_email}</div>
-            )}
-            {notification.notes && (
-              <div className={styles.notificationNotes}>📝 {notification.notes}</div>
-            )}
+      {!isCollapsed && (
+        <>
+          <div style={{ padding: '12px 18px 0 18px' }}>
+            <button 
+              className={styles.addNotificationButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowModal(true);
+              }}
+            >
+              Направить извещение
+            </button>
           </div>
-        ))}
-      </div>
 
-      {/* Модальное окно подтверждения удаления */}
+          <div className={styles.notificationsList}>
+            {notifications.length === 0 && (
+              <div className={styles.emptyState}>Нет отправленных уведомлений</div>
+            )}
+            {notifications.map(notification => (
+              <div key={notification.id} className={styles.notificationItem}>
+                <div className={styles.notificationHeader}>
+                  <span className={styles.notificationType}>
+                    {notification.notification_template_form_number && 
+                      `Форма №${notification.notification_template_form_number} - `}
+                    {notification.notification_type_name || 'Уведомление'}
+                  </span>
+                  <span className={styles.notificationDate}>
+                    {formatDate(notification.sent_date)}
+                  </span>
+                  <button 
+                    onClick={() => openDeleteModal(notification.id)}
+                    className={styles.deleteNotificationButton}
+                    title="Удалить"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className={styles.notificationDetails}>
+                  <span className={styles.deliveryMethod}>
+                    {getDeliveryMethodLabel(notification.delivery_method)}
+                  </span>
+                  <span className={`${styles.statusBadge} ${styles[notification.status]}`}>
+                    {getStatusLabel(notification.status)}
+                  </span>
+                </div>
+                {notification.hearing_date && (
+                  <div className={styles.hearingInfo}>
+                    Заседание: {formatDate(notification.hearing_date)}
+                    {notification.hearing_room && `, зал ${notification.hearing_room}`}
+                  </div>
+                )}
+                {notification.recipient_address && (
+                  <div className={styles.notificationAddress}>{notification.recipient_address}</div>
+                )}
+                {notification.recipient_phone && (
+                  <div className={styles.notificationPhone}>{notification.recipient_phone}</div>
+                )}
+                {notification.recipient_email && (
+                  <div className={styles.notificationEmail}>{notification.recipient_email}</div>
+                )}
+                {notification.notes && (
+                  <div className={styles.notificationNotes}>{notification.notes}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         message="Вы уверены, что хотите удалить это уведомление?"
@@ -393,12 +420,11 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
         onCancel={closeDeleteModal}
       />
 
-      {/* МОДАЛЬНОЕ ОКНО для создания извещения */}
       {showModal && (
         <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>Направление извещения</h3>
+              <h3>Направление извещения для {participant.name || participant.type}</h3>
               <button className={styles.modalClose} onClick={() => setShowModal(false)}>×</button>
             </div>
             
@@ -407,7 +433,7 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
                 <h4>Основная информация</h4>
                 <div className={styles.formRow}>
                   <div className={styles.field}>
-                    <label>Тип уведомления *</label>
+                    <label>Тип уведомления</label>
                     <select
                       name="notification_type"
                       value={formData.notification_type}
@@ -429,16 +455,16 @@ const NotificationPanel = ({ criminalCaseId, participant, onNotificationCreated,
                       onChange={handleInputChange}
                       className={styles.select}
                     >
-                      <option value="post">Почта России (заказное письмо)</option>
+                      <option value="post">Почта России</option>
                       <option value="email">Электронная почта</option>
                       <option value="sms">СМС-сообщение</option>
                       <option value="phone_call">Телефонограмма</option>
                       <option value="telegram">Телеграмма</option>
-                      <option value="fax">Факсимильная связь</option>
+                      <option value="fax">Факс</option>
                       <option value="in_person">Вручено лично</option>
                       <option value="via_representative">Через представителя</option>
-                      <option value="electronic_summon">Электронная повестка (ГАС Правосудие)</option>
-                      <option value="vks">Видео-конференц-связь</option>
+                      <option value="electronic_summon">Электронная повестка</option>
+                      <option value="vks">ВКС</option>
                       <option value="detention_facility">Требование в СИЗО</option>
                     </select>
                   </div>

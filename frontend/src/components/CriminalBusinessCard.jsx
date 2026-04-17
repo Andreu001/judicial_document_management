@@ -496,36 +496,66 @@ const CriminalBusinessCard = ({ card, remove }) => {
     </div>
   );
   
-  const PetitionItem = ({ petition }) => (
-    <div className={styles.compactItem}>
-      <div className={styles.compactItemContent}>
-        <div className={styles.compactItemTitle}>
-          Ходатайство #{petition.id}
-        </div>
-        {petition.date_of_petition && (
-          <div className={styles.compactItemSubtitle}>
-            {formatDate(petition.date_of_petition)}
+    const PetitionItem = ({ petition }) => {
+      const petitionDetail = petition.petitions_incase_detail || {};
+      const petitionerInfo = petition.petitioner_info || {};
+
+      return (
+        <div className={styles.compactItem}>
+          <div className={styles.compactItemContent}>
+            <div className={styles.compactItemTitle}>
+              Ходатайство
+              {petitionDetail.date_application && (
+                <span className={styles.sideType}>
+                  {formatDate(petitionDetail.date_application)}
+                </span>
+              )}
+            </div>
+            {petitionDetail.petitions_name && petitionDetail.petitions_name.length > 0 && (
+              <div className={styles.compactItemSubtitle}>
+                Тип: {petitionDetail.petitions_name.map(p => p.name).join(', ')}
+              </div>
+            )}
+            {petitionerInfo && petitionerInfo.name && (
+              <div className={styles.compactItemSubtitle}>
+                Заявитель: {petitionerInfo.name} ({petitionerInfo.role || 'Участник'})
+              </div>
+            )}
+            {petitionDetail.date_decision && (
+              <div className={styles.compactItemSubtitle}>
+                Решение от: {formatDate(petitionDetail.date_decision)}
+              </div>
+            )}
+            {petitionDetail.decision_rendered && petitionDetail.decision_rendered.name_case && (
+              <div className={styles.compactItemSubtitle}>
+                Результат: {petitionDetail.decision_rendered.name_case}
+              </div>
+            )}
+            {petitionDetail.notation && (
+              <div className={styles.compactItemSubtitle}>
+                Примечание: {petitionDetail.notation.length > 50 ? petitionDetail.notation.slice(0, 50) + '...' : petitionDetail.notation}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      <div className={styles.compactItemActions}>
-        <button 
-          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/petitions/${petition.id}`)}
-          className={styles.actionButton}
-          title="Просмотреть"
-        >
-          →
-        </button>
-        <button 
-          onClick={() => handleDeletePetition(petition.id)}
-          className={styles.deleteButton}
-          title="Удалить"
-        >
-          ×
-        </button>
-      </div>
-    </div>
-  );
+          <div className={styles.compactItemActions}>
+            <button 
+              onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/petitions/${petition.id}`)}
+              className={styles.actionButton}
+              title="Просмотреть"
+            >
+              →
+            </button>
+            <button 
+              onClick={() => handleDeletePetition(petition.id)}
+              className={styles.deleteButton}
+              title="Удалить"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      );
+    };
   
   const MovementItem = ({ movement }) => (
     <div className={styles.compactItem}>
@@ -747,7 +777,50 @@ const CriminalBusinessCard = ({ card, remove }) => {
             <div className={styles.compactList}>
               {petitions.length > 0 ? (
                 petitions.map(petition => (
-                  <PetitionItem key={petition.id} petition={petition} />
+                  <div key={petition.id} className={styles.compactItem}>
+                    <div className={styles.compactItemContent}>
+                      <div className={styles.compactItemTitle}>
+                        Ходатайство
+                        {petition.petitions_incase_detail?.date_application && (
+                          <span className={styles.sideType}>
+                            {formatDate(petition.petitions_incase_detail.date_application)}
+                          </span>
+                        )}
+                      </div>
+                      {petition.petitions_incase_detail?.petitions_name && 
+                      petition.petitions_incase_detail.petitions_name.length > 0 && (
+                        <div className={styles.compactItemSubtitle}>
+                          Тип: {petition.petitions_incase_detail.petitions_name.map(p => p.name).join(', ')}
+                        </div>
+                      )}
+                      {petition.petitioner_info && petition.petitioner_info.name && (
+                        <div className={styles.compactItemSubtitle}>
+                          Заявитель: {petition.petitioner_info.name} ({petition.petitioner_info.role || 'Участник'})
+                        </div>
+                      )}
+                      {petition.petitions_incase_detail?.date_decision && (
+                        <div className={styles.compactItemSubtitle}>
+                          Решение от: {formatDate(petition.petitions_incase_detail.date_decision)}
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.compactItemActions}>
+                      <button 
+                        onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/petitions/${petition.id}`)}
+                        className={styles.actionButton}
+                        title="Просмотреть"
+                      >
+                        →
+                      </button>
+                      <button 
+                        onClick={() => handleDeletePetition(petition.id)}
+                        className={styles.deleteButton}
+                        title="Удалить"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
                 ))
               ) : (
                 <p className={styles.noData}>Нет данных о ходатайствах</p>
