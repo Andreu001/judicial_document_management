@@ -1,6 +1,6 @@
 [
   {
-    "model": "case_management.notificationtype",
+    "model": "case_management.notificationchannel",
     "pk": 1,
     "fields": {
       "name": "Почтовое отправление (заказное письмо)",
@@ -8,7 +8,7 @@
     }
   },
   {
-    "model": "case_management.notificationtype",
+    "model": "case_management.notificationchannel",
     "pk": 2,
     "fields": {
       "name": "СМС-уведомление",
@@ -16,7 +16,7 @@
     }
   },
   {
-    "model": "case_management.notificationtype",
+    "model": "case_management.notificationchannel",
     "pk": 3,
     "fields": {
       "name": "Телефонограмма",
@@ -24,7 +24,7 @@
     }
   },
   {
-    "model": "case_management.notificationtype",
+    "model": "case_management.notificationchannel",
     "pk": 4,
     "fields": {
       "name": "Уведомление по электронной почте",

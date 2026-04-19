@@ -9,6 +9,8 @@ import {
   ConsiderationTab,
   AdditionalInfoTab
 } from './OtherMaterialTabComponents';
+import NotificationsPanel from '../CaseManagement/NotificationsPanel';
+
 
 const OtherMaterialDetail = () => {
   const { id } = useParams();
@@ -36,6 +38,7 @@ const OtherMaterialDetail = () => {
     onConfirm: null
   });
   const [responsiblePersons, setResponsiblePersons] = useState([]);
+  const [collapsedNotifications, setCollapsedNotifications] = useState(false);
   
   const [collapsedSections, setCollapsedSections] = useState({
     sides: true,
@@ -637,6 +640,14 @@ const OtherMaterialDetail = () => {
               </div>
             )}
           </div>
+
+          <NotificationsPanel
+            caseType="other"
+            caseId={id}
+            caseNumber={materialData?.registration_number}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
         </div>
       </div>
 

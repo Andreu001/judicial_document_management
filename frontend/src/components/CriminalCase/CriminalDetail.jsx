@@ -13,6 +13,7 @@ import {
 } from './CriminalTabComponents';
 import ConfirmDialog from '../../pages/ConfirmDialog';
 import ProgressLog from '../CaseManagement/ProgressLog';
+import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 
 const CriminalDetail = () => {
   const { id } = useParams();
@@ -49,8 +50,9 @@ const CriminalDetail = () => {
   const [judges, setJudges] = useState([]);
   const [isArchived, setIsArchived] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
+  const [collapsedNotifications, setCollapsedNotifications] = useState(false);
 
-  // Состояния для сворачивания блоков в сайдбаре
+  // Состояния для сворачивания блоков в сайдбаре (все по умолчанию свернуты)
   const [collapsedSections, setCollapsedSections] = useState({
     sides: true,
     decisions: true,
@@ -68,7 +70,6 @@ const CriminalDetail = () => {
   const showPreliminaryHearingGrounds = () => {
     if (!formData.judge_decision) return false;
     
-    // Найдем опцию в judgeDecision, которая соответствует назначению предварительного слушания
     const hearingAppointmentOption = options.judgeDecision.find(option => 
       option.label && option.label.toLowerCase().includes('предварительн') ||
       option.value && option.value.toLowerCase().includes('preliminary')
@@ -78,11 +79,11 @@ const CriminalDetail = () => {
     
     return formData.judge_decision === hearingAppointmentOption.value;
   };
+
   const handleProgressRefresh = () => {
     setRefreshProgress(prev => prev + 1);
   };
 
-  // CriminalDetail.jsx - исправленная функция checkDeadlines
   const checkDeadlines = () => {
     if (!criminalData) return { caseAppointment: null, trialStart: null };
 
@@ -90,10 +91,9 @@ const CriminalDetail = () => {
     const judgeAcceptanceDate = new Date(criminalData.judge_acceptance_date);
     const firstHearingDate = new Date(criminalData.first_hearing_date);
 
-    // СРОК НАЗНАЧЕНИЯ ДЕЛА: от даты поступления до даты принятия судьей
-    let caseAppointmentDeadline = 30; // стандартный срок
+    let caseAppointmentDeadline = 30;
     if (criminalData.case_category === '1') {
-      caseAppointmentDeadline = 14; // для содержащихся под стражей
+      caseAppointmentDeadline = 14;
     }
 
     const caseAppointmentDays = judgeAcceptanceDate ? 
@@ -101,7 +101,6 @@ const CriminalDetail = () => {
     
     const caseAppointmentViolation = caseAppointmentDays > caseAppointmentDeadline;
 
-    // Срок начала разбирательства (оставляем как было)
     const trialStartDays = firstHearingDate ? 
       Math.floor((firstHearingDate - judgeAcceptanceDate) / (1000 * 60 * 60 * 24)) : null;
     
@@ -185,7 +184,6 @@ const CriminalDetail = () => {
         
         console.log('Loading criminal details for ID:', id);
 
-        // Исправляем: добавляем правильный путь
         const criminalResponse = await CriminalCaseService.getCriminalProceedingById(id);
         
         if (criminalResponse) {
@@ -194,27 +192,22 @@ const CriminalDetail = () => {
           setFormData(criminalResponse);
           setIsArchived(criminalResponse.status === 'archived');
           
-          // Загружаем подсудимых
           const defendantsResponse = await CriminalCaseService.getDefendants(criminalResponse.id);
           setDefendants(defendantsResponse);
           console.log('Defendants loaded:', defendantsResponse.length);
 
-          // Загружаем адвокатов
           const lawyersResponse = await CriminalCaseService.getLawyers(criminalResponse.id);
           setLawyers(lawyersResponse);
           console.log('Lawyers loaded:', lawyersResponse.length);
 
-          // Загружаем иные стороны
           const otherSidesResponse = await CriminalCaseService.getSides(criminalResponse.id);
           setOtherSides(otherSidesResponse);
           console.log('Other sides loaded:', otherSidesResponse.length);
 
-          // Загружаем решения
           const decisionsResponse = await CriminalCaseService.getDecisions(criminalResponse.id);
           setDecisions(decisionsResponse);
           console.log('Decisions loaded:', decisionsResponse.length);
 
-          // Загружаем исполнения
           const executionsResponse = await CriminalCaseService.getExecutions(criminalResponse.id);
           setExecutions(executionsResponse);
           console.log('Executions loaded:', executionsResponse.length);
@@ -242,7 +235,6 @@ const CriminalDetail = () => {
 
   const loadOptions = async () => {
     try {
-      // Загрузка всех опций из одного эндпоинта
       const response = await baseService.get('/criminal_proceedings/criminal-options/');
       
       setOptions({
@@ -256,7 +248,6 @@ const CriminalDetail = () => {
         caseResult: response.data.case_result || [],
         caseDurationCategory: response.data.case_duration_category || [],
         compositionCourt: response.data.composition_court || [],
-        preliminaryHearingGrounds: response.data.preliminary_hearing || [],
         preliminaryHearingGrounds: response.data.preliminary_hearing_grounds || [
           {value: '1', label: 'ходатайство стороны об исключении доказательства (ч. 3 ст. 229 УПК РФ)'},
           {value: '2', label: 'основание для возвращения дела прокурору (ст. 237 УПК РФ)'},
@@ -271,7 +262,6 @@ const CriminalDetail = () => {
       });
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
-      // Устанавливаем пустые массивы вместо ошибки
       setOptions({
         caseOrder: [],
         caseCategory: [],
@@ -289,7 +279,6 @@ const CriminalDetail = () => {
   };
   
   const handleFieldChange = useCallback((name, value) => {
-    // Для архивных дел разрешаем редактирование только определенных полей
     if (isArchived && isEditing) {
       const editableFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
       if (!editableFields.includes(name)) {
@@ -306,7 +295,6 @@ const CriminalDetail = () => {
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    // Для архивных дел разрешаем редактирование только определенных полей
     if (isArchived && isEditing) {
       const editableFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
       if (!editableFields.includes(name)) {
@@ -329,7 +317,6 @@ const CriminalDetail = () => {
       delete dataToSend.id;
       delete dataToSend.case_movement;
 
-      // Для архивных дел оставляем только разрешенные поля
       if (isArchived) {
         const allowedFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
         Object.keys(dataToSend).forEach(key => {
@@ -347,7 +334,6 @@ const CriminalDetail = () => {
       setIsEditing(false);
       setSaving(false);
       
-      // Обновляем статус архивации
       setIsArchived(updatedData.status === 'archived');
     } catch (err) {
       console.error('Ошибка сохранения:', err);
@@ -357,7 +343,6 @@ const CriminalDetail = () => {
   };
 
   const handleDateChange = useCallback((name, dateString) => {
-    // Для архивных дел разрешаем редактирование только определенных полей
     if (isArchived && isEditing) {
       const editableFields = ['archive_notes', 'special_notes', 'case_to_archive_date', 'status'];
       if (!editableFields.includes(name)) {
@@ -417,24 +402,41 @@ const CriminalDetail = () => {
       sideType: 'defendant', 
       sideTypeLabel: 'Подсудимый',
       displayName: d.full_name_criminal || d.full_name || 'Не указано',
-      statusText: d.sides_case_defendant_name || 'Подсудимый'
+      statusText: d.sides_case_defendant_name || 'Подсудимый',
+      navigatePath: `/criminal-proceedings/${id}/defendants/${d.id}`
     })),
     ...lawyers.map(l => ({ 
       ...l, 
       sideType: 'lawyer', 
       sideTypeLabel: 'Адвокат',
       displayName: l.lawyer_detail?.law_firm_name || l.sides_case_lawyer_detail?.sides_case || 'Адвокат',
-      statusText: 'Адвокат'
+      statusText: 'Адвокат',
+      navigatePath: `/criminal-proceedings/${id}/lawyers-criminal/${l.id}`
     })),
     ...otherSides.map(s => ({ 
       ...s, 
       sideType: 'other', 
       sideTypeLabel: 'Сторона',
       displayName: s.criminal_side_case_detail?.name || s.sides_case_criminal_detail?.sides_case || 'Сторона',
-      statusText: s.sides_case_criminal_detail?.sides_case || 'Сторона'
+      statusText: s.sides_case_criminal_detail?.sides_case || 'Сторона',
+      navigatePath: `/criminal-proceedings/${id}/sides-case-in-case/${s.id}`
     }))
   ];
 
+  // Функция для навигации к стороне
+  const handleNavigateToSide = (side) => {
+    navigate(side.navigatePath);
+  };
+
+  // Функция для навигации к решению
+  const handleNavigateToDecision = (decisionId) => {
+    navigate(`/criminal-proceedings/${id}/criminal-decisions/${decisionId}`);
+  };
+
+  // Функция для навигации к исполнению
+  const handleNavigateToExecution = (executionId) => {
+    navigate(`/criminal-proceedings/${id}/executions/${executionId}`);
+  };
 
   if (loading) {
     return <div className={styles.loading}>Загрузка данных...</div>;
@@ -470,14 +472,14 @@ const CriminalDetail = () => {
               onClick={handleUnarchive}
               className={styles.unarchiveButton}
             >
-              📤 Вернуть из архива
+              Вернуть из архива
             </button>
           ) : (
             <button 
               onClick={handleArchive}
               className={styles.archiveButton}
             >
-              📁 Сдать в архив
+              Сдать в архив
             </button>
           )}
           
@@ -511,7 +513,6 @@ const CriminalDetail = () => {
       </div>
 
       <div className={styles.content}>
-        {/* Основной контент с вкладками */}
         <div className={styles.mainContent}>
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
@@ -557,7 +558,7 @@ const CriminalDetail = () => {
             <div className={styles.tabContentWrapper}>
               {activeTab === 'basic' && (
                 <BasicInfoTab
-                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
                   criminalData={criminalData}
@@ -573,7 +574,7 @@ const CriminalDetail = () => {
               )}
               {activeTab === 'evidence' && (
                 <EvidenceTab
-                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   handleInputChange={handleInputChange}
                   formatBoolean={formatBoolean}
@@ -582,7 +583,7 @@ const CriminalDetail = () => {
               )}
               {activeTab === 'category' && (
                 <CaseCategoryTab
-                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
                   handleDateChange={handleDateChange}
@@ -597,7 +598,7 @@ const CriminalDetail = () => {
               )}
               {activeTab === 'result' && (
                 <ResultTab
-                  isEditing={isEditing && !isArchived} // Для архивных дел блокируем редактирование
+                  isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
                   handleInputChange={handleInputChange}
@@ -614,22 +615,197 @@ const CriminalDetail = () => {
                   criminalData={criminalData}
                   handleDateChange={handleDateChange}
                   formatDate={formatDate}
-                  isArchived={isArchived} // Передаем флаг архива
+                  isArchived={isArchived}
                 />
               )}
             </div>
           </div>
         </div>
-                {/* Сайдбар с ходом дела */}
+        
+        {/* Сайдбар с блоками */}
         <div className={styles.sidebar}>
-          <ProgressLog 
-            criminalCaseId={id} 
-            onRefresh={refreshProgress}
-          />
+          <div className={styles.sidebarSection}>
+            <ProgressLog 
+              criminalCaseId={id} 
+              onRefresh={refreshProgress}
+            />
+          </div>
+            <NotificationsPanel
+              caseType="criminal"
+              caseId={id}
+              caseNumber={criminalData?.case_number_criminal}
+              onRefresh={handleProgressRefresh}
+              collapsed={collapsedNotifications}
+              onToggle={setCollapsedNotifications}
+            />
+          {/* Блок: Стороны по делу */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('sides')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Стороны по делу
+                <span className={styles.sidebarSectionCount}>
+                  {allSides.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.sides ? 'Развернуть' : 'Свернуть'}
+              </button>
+            </div>
+            
+            {!collapsedSections.sides && (
+              <div className={styles.sidebarSectionContent}>
+                {allSides.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {allSides.slice(0, 5).map(side => (
+                      <div 
+                        key={`${side.sideType}-${side.id}`} 
+                        className={`${styles.sidebarListItem} ${styles[`sideType-${side.sideType}`]}`}
+                        onClick={() => handleNavigateToSide(side)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {side.displayName}
+                          </span>
+                          <span className={`${styles.sideType} ${styles[`sideType-${side.sideType}`]}`}>
+                            {side.sideTypeLabel}
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {allSides.length > 5 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {allSides.length - 5} участников
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных о сторонах по делу</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Блок: Решения */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('decisions')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Решения
+                <span className={styles.sidebarSectionCount}>
+                  {decisions.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.decisions ? 'Развернуть' : 'Свернуть'}
+              </button>
+            </div>
+            
+            {!collapsedSections.decisions && (
+              <div className={styles.sidebarSectionContent}>
+                {decisions.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {decisions.slice(0, 3).map(decision => (
+                      <div 
+                        key={decision.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => handleNavigateToDecision(decision.id)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {decision.court_consideration_date 
+                              ? `Решение от ${formatDate(decision.court_consideration_date)}`
+                              : `Решение №${decision.id}`
+                            }
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {decision.case_result ? getOptionLabel(options.caseResult, decision.case_result) : 'Результат не указан'}
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {decisions.length > 3 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {decisions.length - 3} решений
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных о решениях</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Блок: Исполнение */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('executions')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Исполнение
+                <span className={styles.sidebarSectionCount}>
+                  {executions.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.executions ? 'Развернуть' : 'Свернуть'}
+              </button>
+            </div>
+            
+            {!collapsedSections.executions && (
+              <div className={styles.sidebarSectionContent}>
+                {executions.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {executions.slice(0, 3).map(execution => (
+                      <div 
+                        key={execution.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => handleNavigateToExecution(execution.id)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {execution.execution_sent_date 
+                              ? `Исполнение от ${formatDate(execution.execution_sent_date)}`
+                              : `Запись об исполнении №${execution.id}`
+                            }
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {execution.execution_sent_to || 'Информация отсутствует'}
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {executions.length > 3 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {executions.length - 3} записей
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Нет данных об исполнении</p>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
 
-      {/* Модальное окно подтверждения */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}

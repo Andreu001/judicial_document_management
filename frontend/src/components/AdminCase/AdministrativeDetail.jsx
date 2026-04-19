@@ -10,6 +10,7 @@ import {
   ExecutionTab,
   AdditionalInfoTab
 } from './AdministrativeTabComponents';
+import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 
 const AdministrativeDetail = () => {
   const { id } = useParams();
@@ -43,6 +44,7 @@ const AdministrativeDetail = () => {
   });
   const [judges, setJudges] = useState([]);
   const [referringAuthorities, setReferringAuthorities] = useState([]);
+  const [collapsedNotifications, setCollapsedNotifications] = useState(false);
   
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -881,6 +883,14 @@ const AdministrativeDetail = () => {
               </div>
             )}
           </div>
+
+          <NotificationsPanel
+            caseType="coap"
+            caseId={id}
+            caseNumber={adminData?.case_number_admin}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
         </div>
       </div>
 

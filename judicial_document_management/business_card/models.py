@@ -370,12 +370,10 @@ class Lawyer(models.Model):
         verbose_name='Примечания'
     )
 
-    class Meta:
-        verbose_name = 'Адвокат'
-        verbose_name_plural = 'Адвокаты'
-
     def __str__(self):
-        return f'Адвокат: {self.sides_case_lawyer.law_firm_name}'
+        if self.law_firm_name:
+            return f'Адвокат: {self.law_firm_name}'
+        return f'Адвокат #{self.id}'
 
 
 class PetitionsInCase(models.Model):

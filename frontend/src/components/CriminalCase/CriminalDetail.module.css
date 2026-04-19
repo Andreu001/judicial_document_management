@@ -1108,3 +1108,185 @@
 .personCardButton:hover {
   background: #138496;
 }
+
+/* ========== БЛОКИ САЙДБАРА ========== */
+
+.sidebarSection {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.sidebarSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.sidebarSectionHeader:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebarSectionTitle {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebarSectionCount {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.sidebarToggleButton {
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebarToggleButton:hover {
+  background-color: #e9ecef;
+  color: #2c3e50;
+  border-color: #adb5bd;
+}
+
+.sidebarSectionContent {
+  padding: 16px 20px;
+}
+
+.sidebarList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebarListItem {
+  padding: 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebarListItem:hover {
+  background-color: #e9ecef;
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sidebarListItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.sidebarListItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+  word-break: break-word;
+}
+
+.sidebarListItemSubtitle {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.sidebarListItemHint {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: right;
+  font-style: italic;
+  transition: color 0.2s ease;
+}
+
+.sidebarListItem:hover .sidebarListItemHint {
+  color: #4a5568;
+}
+
+.sidebarListItemMore {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+.sidebarNoData {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 16px;
+  font-size: 13px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+/* Цветовые индикаторы для разных типов сторон */
+.sideType-defendant {
+  border-left-color: #c53030;
+}
+
+.sideType-lawyer {
+  border-left-color: #3182ce;
+}
+
+.sideType-other {
+  border-left-color: #38a169;
+}
+
+.sideType {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.sideType.sideType-defendant {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.sideType.sideType-lawyer {
+  background-color: #bee3f8;
+  color: #2c5282;
+}
+
+.sideType.sideType-other {
+  background-color: #c6f6d5;
+  color: #276749;
+}

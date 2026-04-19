@@ -1,0 +1,82 @@
+[
+  {
+    "model": "case_management.notificationchannel",
+    "pk": 1,
+    "fields": {
+      "name": "Почтовое отправление (заказное письмо)",
+      "code": "mail",
+      "is_active": true,
+      "requires_confirmation": true
+    }
+  },
+  {
+    "model": "case_management.notificationchannel",
+    "pk": 2,
+    "fields": {
+      "name": "СМС-уведомление",
+      "code": "sms",
+      "is_active": true,
+      "requires_confirmation": true
+    }
+  },
+  {
+    "model": "case_management.notificationchannel",
+    "pk": 3,
+    "fields": {
+      "name": "Телефонограмма",
+      "code": "phone_call",
+      "is_active": true,
+      "requires_confirmation": false
+    }
+  },
+  {
+    "model": "case_management.notificationchannel",
+    "pk": 4,
+    "fields": {
+      "name": "Уведомление по электронной почте",
+      "code": "email",
+      "is_active": true,
+      "requires_confirmation": true
+    }
+  },
+  {
+    "model": "case_management.notificationstatus",
+    "pk": 1,
+    "fields": {
+      "name": "Черновик",
+      "code": "draft",
+      "is_final": false,
+      "is_success": false
+    }
+  },
+  {
+    "model": "case_management.notificationstatus",
+    "pk": 2,
+    "fields": {
+      "name": "Отправлено",
+      "code": "sent",
+      "is_final": false,
+      "is_success": false
+    }
+  },
+  {
+    "model": "case_management.notificationstatus",
+    "pk": 3,
+    "fields": {
+      "name": "Вручено",
+      "code": "delivered",
+      "is_final": true,
+      "is_success": true
+    }
+  },
+  {
+    "model": "case_management.notificationstatus",
+    "pk": 4,
+    "fields": {
+      "name": "Не вручено",
+      "code": "undelivered",
+      "is_final": true,
+      "is_success": false
+    }
+  }
+]

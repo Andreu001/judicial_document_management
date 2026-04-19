@@ -5,7 +5,6 @@ import AdministrativeCaseService from '../../API/AdministrativeCaseService';
 import CivilCaseService from '../../API/CivilCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import KasCaseService from '../../API/KasCaseService';
-import NotificationPanel from '../../components/CaseManagement/NotificationPanel';
 import styles from './SideDetails.module.css';
 
 const SideDetail = () => {
@@ -23,12 +22,6 @@ const SideDetail = () => {
   const [personType, setPersonType] = useState('individual');
   const [sideRoles, setSideRoles] = useState([]);
   const [error, setError] = useState(null);
-  const [refreshNotifications, setRefreshNotifications] = useState(0);
-
-  // Функция для обновления уведомлений
-  const handleNotificationCreated = () => {
-    setRefreshNotifications(prev => prev + 1);
-  };
 
   // Определяем тип дела по пути URL
   const getCaseType = () => {
@@ -42,6 +35,16 @@ const SideDetail = () => {
 
   const caseType = getCaseType();
   const isCreateMode = !sideId || sideId === 'create';
+
+  const getParticipantType = () => {
+    switch (caseType) {
+      case 'criminal': return 'CriminalSidesCaseInCase';
+      case 'civil': return 'CivilSidesCaseInCase';
+      case 'admin': return 'AdministrativeSidesCaseInCase';
+      case 'kas': return 'KasSidesCaseInCase';
+      default: return 'SidesCaseInCase';
+    }
+  };
 
   // Получаем соответствующий сервис
   const getService = () => {
@@ -341,10 +344,11 @@ const SideDetail = () => {
     if (side?.sides_case_incase_detail?.name) {
       return side.sides_case_incase_detail.name;
     }
+    if (side?.criminal_side_case_detail?.name) {
+      return side.criminal_side_case_detail.name;
+    }
     return 'Сторона по делу';
   };
-
-  const showNotificationPanel = sideId && sideId !== 'create' && !isEditing && side;
 
   if (loading) {
     return (
@@ -895,22 +899,6 @@ const SideDetail = () => {
           </div>
         </div>
 
-        {/* Боковая панель с уведомлениями - для уголовных дел */}
-        {showNotificationPanel && (
-          <div className={styles.sidebar}>
-            <NotificationPanel 
-              caseId={proceedingId}
-              caseType={caseType}
-              participant={{
-                id: parseInt(sideId),
-                type: 'sidescaseincase',
-                name: getSideName()
-              }}
-              onNotificationCreated={handleNotificationCreated}
-              refreshTrigger={refreshNotifications}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

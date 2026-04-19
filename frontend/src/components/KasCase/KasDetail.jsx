@@ -9,6 +9,7 @@ import {
   DeadlinesTab,
   AdditionalInfoTab
 } from './KasTabComponents';
+import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 
 const KasDetail = () => {
   const { id } = useParams();
@@ -39,6 +40,7 @@ const KasDetail = () => {
     onConfirm: null
   });
   const [judges, setJudges] = useState([]);
+  const [collapsedNotifications, setCollapsedNotifications] = useState(false);
 
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -708,6 +710,14 @@ const KasDetail = () => {
               </div>
             )}
           </div>
+
+          <NotificationsPanel
+            caseType="kas"
+            caseId={id}
+            caseNumber={kasData?.case_number_kas}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
         </div>
       </div>
 

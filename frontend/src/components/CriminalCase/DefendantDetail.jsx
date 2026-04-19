@@ -5,7 +5,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
 import styles from './CriminalDetail.module.css';
-import NotificationPanel from '../CaseManagement/NotificationPanel';
 
 const DefendantDetail = () => {
   const { proceedingId, id } = useParams();
@@ -30,8 +29,6 @@ const DefendantDetail = () => {
   const [selectedSideId, setSelectedSideId] = useState('');
   const isCreateMode = !id || id === 'create';
   
-  // Состояние для обновления списка уведомлений
-  const [refreshNotifications, setRefreshNotifications] = useState(0);
 
   // Опции для гражданства
   const citizenshipOptions = [
@@ -272,11 +269,6 @@ const DefendantDetail = () => {
       setSelectedSideId('');
     }
     setIsEditing(true);
-  };
-
-  // Обработчик создания уведомления для обновления списка
-  const handleNotificationCreated = () => {
-    setRefreshNotifications(prev => prev + 1);
   };
 
   const formatDate = (dateString) => {
@@ -874,22 +866,6 @@ const DefendantDetail = () => {
           </div>
         </div>
 
-        {/* Панель уведомлений - только в режиме просмотра (не в режиме создания и не в режиме редактирования) */}
-        {!isCreateMode && !isEditing && criminalCase && currentDefendant && (
-          <div className={styles.sidebar}>
-            <NotificationPanel 
-              caseId={proceedingId}
-              caseType="criminal"
-                participant={{
-                  id: currentDefendant.id,
-                  type: 'defendant',
-                  name: currentDefendant.full_name_criminal || currentDefendant.name
-                }}
-              onNotificationCreated={handleNotificationCreated}
-              refreshTrigger={refreshNotifications}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

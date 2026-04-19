@@ -9,6 +9,7 @@ import {
   DeadlinesTab,
   AdditionalInfoTab
 } from './CivilTabComponents';
+import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 
 const CivilDetail = () => {
   const { id } = useParams();
@@ -45,6 +46,7 @@ const CivilDetail = () => {
     onConfirm: null
   });
   const [judges, setJudges] = useState([]);
+  const [collapsedNotifications, setCollapsedNotifications] = useState(false);
 
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -683,6 +685,13 @@ const CivilDetail = () => {
               </div>
             )}
           </div>
+          <NotificationsPanel
+            caseType="civil"
+            caseId={id}
+            caseNumber={civilData?.case_number_civil}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
        </div>
       </div>
 

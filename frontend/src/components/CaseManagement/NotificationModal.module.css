@@ -1,0 +1,250 @@
+/* components/CaseManagement/NotificationModal.module.css */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #eef2f6;
+  background: #fafcfc;
+  border-radius: 16px 16px 0 0;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a2a3a;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #8ba0ae;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: #eef2f6;
+  color: #c0392b;
+}
+
+.form {
+  padding: 24px;
+}
+
+.formRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.formRow .formSection {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.formSection {
+  margin-bottom: 16px;
+}
+
+.sectionLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a6a7f;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dce5ec;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background: white;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.hint {
+  font-size: 11px;
+  color: #8ba0ae;
+  margin-top: 4px;
+}
+
+.previewButton {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 8px 0 16px 0;
+  transition: all 0.2s;
+}
+
+.previewButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.previewButton:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.previewSection {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #eef2f6;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #eef2f6;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a6a7f;
+}
+
+.previewClose {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #8ba0ae;
+  padding: 0 4px;
+}
+
+.previewClose:hover {
+  color: #c0392b;
+}
+
+.previewContent {
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.previewText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #2c3e50;
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #eef2f6;
+}
+
+.previewNote {
+  padding: 8px 16px;
+  background: #fff8e7;
+  border-top: 1px solid #eef2f6;
+  font-size: 11px;
+  color: #c47a2e;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eef2f6;
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  background: #eef2f6;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #5a6f7e;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #e2e8ed;
+}
+
+.submitButton {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.submitButton:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}

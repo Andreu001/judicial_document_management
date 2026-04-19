@@ -1,0 +1,326 @@
+/* components/CaseManagement/NotificationsPanel.module.css */
+
+.notificationSidebar {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid #eef2f6;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #ffffff;
+  cursor: pointer;
+  border-bottom: 1px solid #eef2f6;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.header:hover {
+  background-color: #fafcfc;
+}
+
+.title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2a3a;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  background: #eef2f6;
+  color: #4a6a7f;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 30px;
+  margin-left: 8px;
+}
+
+.toggleIndicator {
+  font-size: 16px;
+  font-weight: 500;
+  color: #8ba0ae;
+}
+
+.header:hover .toggleIndicator {
+  color: #4a6a7f;
+}
+
+.addButton {
+  width: calc(100% - 36px);
+  margin: 14px 18px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #8ba0ae;
+  font-size: 12px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 28px 20px;
+  color: #8ba0ae;
+}
+
+.emptyState p {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+}
+
+.emptyButton {
+  background: none;
+  border: 1px solid #dce5ec;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: #4a6a7f;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.emptyButton:hover {
+  background: #f0f6fa;
+  border-color: #b8cfdf;
+}
+
+.notificationsList {
+  padding: 0 12px 12px 12px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  background: #fafcfc;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #eef2f6;
+  transition: all 0.2s ease;
+}
+
+.notificationItem:hover {
+  background: #ffffff;
+  border-color: #dce5ec;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.notificationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notificationParticipant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.participantName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2a3a;
+}
+
+.participantRole {
+  font-size: 10px;
+  color: #7a8f9e;
+  background: #eef2f6;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.statusBadge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.statusDraft {
+  background: #f0f4f7;
+  color: #5a6f7e;
+}
+
+.statusSent {
+  background: #fff3e0;
+  color: #c47a2e;
+}
+
+.statusDelivered {
+  background: #e6f7e6;
+  color: #2e7d32;
+}
+
+.statusUndelivered {
+  background: #fee7e7;
+  color: #c0392b;
+}
+
+.notificationDetails {
+  margin-bottom: 12px;
+}
+
+.detailRow {
+  display: flex;
+  font-size: 11px;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+
+.detailLabel {
+  color: #8ba0ae;
+  min-width: 80px;
+}
+
+.detailValue {
+  color: #3a5568;
+}
+
+.detailValueReason {
+  color: #c0392b;
+  flex: 1;
+}
+
+.notificationActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid #eef2f6;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.actionEdit, .actionSent, .actionDelivered, .actionUndelivered, .actionDelete {
+  background: none;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.actionEdit {
+  background: #eef2f6;
+  color: #5a6f7e;
+}
+
+.actionEdit:hover {
+  background: #e2e8ed;
+  color: #2c6e9e;
+}
+
+.actionSent {
+  background: #fff3e0;
+  color: #c47a2e;
+}
+
+.actionSent:hover {
+  background: #ffe8cc;
+}
+
+.actionDelivered {
+  background: #e6f7e6;
+  color: #2e7d32;
+}
+
+.actionDelivered:hover {
+  background: #d4edd4;
+}
+
+.actionUndelivered {
+  background: #fee7e7;
+  color: #c0392b;
+}
+
+.actionUndelivered:hover {
+  background: #fdd4d4;
+}
+
+.actionDelete {
+  background: #fee7e7;
+  color: #c0392b;
+}
+
+.actionDelete:hover {
+  background: #fdd4d4;
+}
+
+/* Стили для модальных окон с формами */
+.modalInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modalLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a6a7f;
+}
+
+.modalDateInput {
+  padding: 8px 12px;
+  border: 1px solid #dce5ec;
+  border-radius: 8px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modalDateInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.modalTextarea {
+  padding: 8px 12px;
+  border: 1px solid #dce5ec;
+  border-radius: 8px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.modalTextarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}

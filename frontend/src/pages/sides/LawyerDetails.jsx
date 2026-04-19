@@ -3,7 +3,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import LawyerService from '../../API/LawyerService';
 import KasCaseService from '../../API/KasCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
-import NotificationPanel from '../../components/CaseManagement/NotificationPanel';
+import CivilCaseService from '../../API/CivilCaseService';
+import AdministrativeCaseService from '../../API/AdministrativeCaseService';
 import styles from './LawyerDetails.module.css';
 
 const LawyerDetails = () => {
@@ -14,12 +15,12 @@ const LawyerDetails = () => {
   // Определяем тип дела по URL
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
                    location.pathname.includes('/kas-proceedings/') ? 'kas' :
-                   location.pathname.includes('/criminal-proceedings/') ? 'criminal' : 'civil';
+                   location.pathname.includes('/criminal-proceedings/') ? 'criminal' : 
+                   location.pathname.includes('/civil-proceedings/') ? 'civil' : 'unknown';
   
   const [lawyerData, setLawyerData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('main');
-  const [refreshNotifications, setRefreshNotifications] = useState(0);
     
   const [formData, setFormData] = useState({
     sides_case_role: '',
@@ -44,9 +45,30 @@ const LawyerDetails = () => {
   const [error, setError] = useState(null);
   const [sideRoles, setSideRoles] = useState([]);
 
-  // Функция для обновления уведомлений
-  const handleNotificationCreated = () => {
-    setRefreshNotifications(prev => prev + 1);
+  const getParticipantType = () => {
+    switch (caseType) {
+      case 'criminal': return 'LawyerCriminal';
+      case 'civil': return 'CivilLawyer';
+      case 'admin': return 'AdministrativeLawyer';
+      case 'kas': return 'KasLawyer';
+      default: return 'Lawyer';
+    }
+  };
+
+  // Получаем соответствующий сервис для загрузки данных
+  const getLoadService = () => {
+    switch (caseType) {
+      case 'kas':
+        return KasCaseService;
+      case 'criminal':
+        return CriminalCaseService;
+      case 'civil':
+        return CivilCaseService;
+      case 'admin':
+        return AdministrativeCaseService;
+      default:
+        return LawyerService;
+    }
   };
 
   useEffect(() => {
@@ -61,11 +83,16 @@ const LawyerDetails = () => {
           const numericId = parseInt(lawyerId);
           if (!isNaN(numericId)) {
             let data;
+            const service = getLoadService();
             
             if (caseType === 'kas') {
               data = await KasCaseService.getLawyerById(proceedingId, numericId);
             } else if (caseType === 'criminal') {
               data = await CriminalCaseService.getLawyerById(proceedingId, numericId);
+            } else if (caseType === 'civil') {
+              data = await CivilCaseService.getLawyerById(proceedingId, numericId);
+            } else if (caseType === 'admin') {
+              data = await AdministrativeCaseService.getLawyerById(proceedingId, numericId);
             } else {
               data = await LawyerService.getLawyerById(proceedingId, numericId, caseType);
             }
@@ -159,6 +186,10 @@ const LawyerDetails = () => {
           await KasCaseService.updateLawyer(proceedingId, lawyerId, requestData);
         } else if (caseType === 'criminal') {
           await CriminalCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+        } else if (caseType === 'civil') {
+          await CivilCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+        } else if (caseType === 'admin') {
+          await AdministrativeCaseService.updateLawyer(proceedingId, lawyerId, requestData);
         } else {
           await LawyerService.updateLawyer(proceedingId, lawyerId, requestData, caseType);
         }
@@ -167,6 +198,10 @@ const LawyerDetails = () => {
           await KasCaseService.createLawyer(proceedingId, requestData);
         } else if (caseType === 'criminal') {
           await CriminalCaseService.createLawyer(proceedingId, requestData);
+        } else if (caseType === 'civil') {
+          await CivilCaseService.createLawyer(proceedingId, requestData);
+        } else if (caseType === 'admin') {
+          await AdministrativeCaseService.createLawyer(proceedingId, requestData);
         } else {
           await LawyerService.createLawyer(proceedingId, requestData, caseType);
         }
@@ -199,8 +234,11 @@ const LawyerDetails = () => {
       case 'criminal':
         caseTypeText = 'адвоката (уголовное)';
         break;
+      case 'civil':
+        caseTypeText = 'представителя (гражданское)';
+        break;
       default:
-        caseTypeText = 'адвоката (гражданское)';
+        caseTypeText = 'представителя';
     }
     
     return `${action} ${caseTypeText}`;
@@ -214,14 +252,12 @@ const LawyerDetails = () => {
     if (formData?.law_firm_name) {
       return formData.law_firm_name;
     }
-    return 'Адвокат';
+    return 'Представитель';
   };
 
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
-
-const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing && lawyerData;
 
   return (
     <div className={styles.container}>
@@ -233,6 +269,9 @@ const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing &&
           <h1 className={styles.title}>{getTitle()}</h1>
           {caseType === 'criminal' && (
             <span className={styles.caseTypeBadge}>Уголовное дело</span>
+          )}
+          {caseType === 'civil' && (
+            <span className={styles.caseTypeBadge}>Гражданское дело</span>
           )}
           {caseType === 'admin' && (
             <span className={styles.caseTypeBadge}>Административное правонарушение</span>
@@ -310,14 +349,14 @@ const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing &&
                       <h3 className={styles.subsectionTitle}>Основная информация</h3>
                       
                       <div className={styles.field}>
-                        <label>Название адвокатского образования *</label>
+                        <label>Название организации *</label>
                         <input
                           type="text"
                           name="law_firm_name"
                           value={formData.law_firm_name || ''}
                           onChange={handleInputChange}
                           className={styles.input}
-                          placeholder="Введите название адвокатского образования"
+                          placeholder="Введите название организации"
                           required
                         />
                       </div>
@@ -360,7 +399,7 @@ const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing &&
                     </div>
 
                     <div className={styles.fieldGroup}>
-                      <h3 className={styles.subsectionTitle}>Адвокатское удостоверение</h3>
+                      <h3 className={styles.subsectionTitle}>Удостоверение</h3>
                       
                       <div className={styles.field}>
                         <label>Номер удостоверения</label>
@@ -370,7 +409,7 @@ const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing &&
                           value={formData.lawyer_certificate_number || ''}
                           onChange={handleInputChange}
                           className={styles.input}
-                          placeholder="Номер адвокатского удостоверения"
+                          placeholder="Номер удостоверения"
                         />
                       </div>
 
@@ -508,22 +547,6 @@ const showNotificationPanel = lawyerId && lawyerId !== 'create' && !isEditing &&
           </div>
         </div>
 
-        {/* Боковая панель с уведомлениями - для уголовных дел */}
-        {showNotificationPanel && (
-          <div className={styles.sidebar}>
-            <NotificationPanel 
-              caseId={proceedingId}
-              caseType={caseType}
-                participant={{
-                  id: parseInt(lawyerId),
-                  type: 'lawyercriminal',
-                  name: getLawyerName()
-                }}
-              onNotificationCreated={handleNotificationCreated}
-              refreshTrigger={refreshNotifications}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

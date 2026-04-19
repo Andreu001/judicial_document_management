@@ -1,29 +1,12 @@
-# case_management/serializers.py - ПОЛНОСТЬЮ ЗАМЕНИТЬ
+# case_management/serializers.py
 
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
-from .models import (
-    Notification, NotificationType, NotificationTemplate,
-    CaseProgressEntry, ProgressActionType
+from .models import (CaseProgressEntry, ProgressActionType,
+    NotificationChannel, NotificationStatus, 
+    NotificationTemplate, Notification
 )
-from .services import NotificationService
-
-
-class NotificationTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NotificationType
-        fields = '__all__'
-
-
-class NotificationTemplateSerializer(serializers.ModelSerializer):
-    case_category_display = serializers.CharField(source='get_case_category_display', read_only=True)
-    participant_type_display = serializers.CharField(source='get_participant_type_display', read_only=True)
-    
-    class Meta:
-        model = NotificationTemplate
-        fields = '__all__'
-
 
 class ProgressActionTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,277 +22,394 @@ class CaseProgressEntrySerializer(serializers.ModelSerializer):
         model = CaseProgressEntry
         fields = '__all__'
         read_only_fields = ('id', 'created_date', 'author', 'case_content_type', 'case_object_id')
-        extra_kwargs = {
-            'description': {'required': False, 'allow_blank': True, 'allow_null': True}
-        }
     
     def get_author_name(self, obj):
-        if obj.author:
-            return obj.author.get_full_name() or obj.author.username
-        return "Система"
+        return obj.author.get_full_name() or obj.author.username if obj.author else "Система"
+
+
+class NotificationChannelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationChannel
+        fields = '__all__'
+
+
+class NotificationStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationStatus
+        fields = '__all__'
+
+
+class NotificationTemplateSerializer(serializers.ModelSerializer):
+    case_category_display = serializers.CharField(source='get_case_category_display', read_only=True)
+    participant_type_display = serializers.CharField(source='get_participant_type_display', read_only=True)
     
-    def to_internal_value(self, data):
-        """Обработка пустого значения description"""
-        internal_value = super().to_internal_value(data)
-        # Если description не передан или пустая строка/null, устанавливаем пустую строку
-        if 'description' not in internal_value or internal_value.get('description') is None:
-            internal_value['description'] = ''
-        return internal_value
-    
-    def create(self, validated_data):
-        validated_data.pop('case', None)
-        validated_data['author'] = self.context['request'].user
-        # Убеждаемся, что description не None
-        if validated_data.get('description') is None:
-            validated_data['description'] = ''
-        return super().create(validated_data)
-    
-    def update(self, instance, validated_data):
-        # Убеждаемся, что description не None при обновлении
-        if validated_data.get('description') is None:
-            validated_data['description'] = ''
-        return super().update(instance, validated_data)
+    class Meta:
+        model = NotificationTemplate
+        fields = '__all__'
+
+
+class ParticipantInfoSerializer(serializers.Serializer):
+    """Сериализатор для информации об участнике"""
+    id = serializers.IntegerField()
+    type = serializers.CharField()
+    name = serializers.CharField()
+    role = serializers.CharField()
+    phone = serializers.CharField(allow_null=True, allow_blank=True)
+    email = serializers.CharField(allow_null=True, allow_blank=True)
+    address = serializers.CharField(allow_null=True, allow_blank=True)
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    participant_type = serializers.SlugRelatedField(
-        source='content_type',
-        slug_field='model',
-        read_only=True
-    )
-    participant_name = serializers.SerializerMethodField()
-    participant_id = serializers.IntegerField(source='object_id', read_only=True)
-    case_number = serializers.SerializerMethodField()
-    notification_type_name = serializers.CharField(source='notification_type.name', read_only=True)
-    notification_template_name = serializers.CharField(source='notification_template.name', read_only=True)
-    notification_template_form_number = serializers.CharField(source='notification_template.form_number', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    delivery_method_display = serializers.CharField(source='get_delivery_method_display', read_only=True)
+    channel_name = serializers.CharField(source='channel.name', read_only=True)
+    status_name = serializers.CharField(source='status.name', read_only=True)
+    status_code = serializers.CharField(source='status.code', read_only=True)
+    participant_info = serializers.SerializerMethodField()
+    
+    # Поля для создания/обновления
+    case_id = serializers.IntegerField(write_only=True, required=False)
+    case_type = serializers.CharField(write_only=True, required=False)
+    participant_type = serializers.CharField(write_only=True, required=False)
+    participant_id = serializers.IntegerField(write_only=True, required=False)
     
     class Meta:
         model = Notification
         fields = '__all__'
-        read_only_fields = ('id', 'sent_date', 'created_by', 'notification_text')
-    
-    def get_participant_name(self, obj):
-        if obj.participant:
-            if hasattr(obj.participant, 'full_name_criminal'):
-                return obj.participant.full_name_criminal
-            if hasattr(obj.participant, 'name'):
-                return obj.participant.name
-            if hasattr(obj.participant, 'law_firm_name'):
-                return obj.participant.law_firm_name
-            return str(obj.participant)
-        return "Участник удален"
-    
-    def get_case_number(self, obj):
-        if obj.case:
-            if hasattr(obj.case, 'case_number_criminal'):
-                return obj.case.case_number_criminal
-            if hasattr(obj.case, 'case_number_civil'):
-                return obj.case.case_number_civil
-            if hasattr(obj.case, 'case_number_admin'):
-                return obj.case.case_number_admin
-            return str(obj.case)
-        return "Дело удалено"
-    
-    def create(self, validated_data):
-        validated_data['created_by'] = self.context['request'].user
-        return super().create(validated_data)
-
-
-class NotificationCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания уведомления"""
-    
-    participant_type = serializers.CharField(write_only=True)
-    participant_id = serializers.IntegerField(write_only=True)
-    template_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
-    notification_text_edited = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    hearing_date = serializers.DateTimeField(write_only=True, required=False, allow_null=True)
-    hearing_room = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    consent_sms = serializers.BooleanField(write_only=True, required=False, default=False)
-    consent_email = serializers.BooleanField(write_only=True, required=False, default=False)
-    
-    class Meta:
-        model = Notification
-        fields = [
-            'id', 'notification_type', 'delivery_method',
-            'recipient_address', 'recipient_phone', 'recipient_email',
-            'notes', 'delivery_date', 'status',
-            'participant_type', 'participant_id',
-            'template_id', 'notification_text_edited',
-            'hearing_date', 'hearing_room', 'consent_sms', 'consent_email'
-        ]
-        read_only_fields = ['id', 'sent_date', 'status']
-
-
-    def _get_participant_model(self, participant_type):
-        # Прямое соответствие - самый простой способ
-        direct_mapping = {
-            'defendant': 'Defendant',
-            'lawyercriminal': 'LawyerCriminal', 
-            'sidescaseincase': 'SidesCaseInCase',
-            'side': 'SidesCaseInCase',
-            'civilside': 'CivilSide',
-            'adminside': 'AdministrativeSide',
-            'kasside': 'KasSide',
+        read_only_fields = ('id', 'created_at', 'updated_at', 'created_by', 'progress_entry', 
+                           'case_content_type', 'case_object_id', 'participant_content_type', 
+                           'participant_object_id')
+        extra_kwargs = {
+            'channel': {'required': False, 'allow_null': True},
+            'status': {'required': False, 'allow_null': True},
+            'template': {'required': False, 'allow_null': True},
+            'hearing_time': {'required': False, 'allow_null': True},
+            'hearing_room': {'required': False, 'allow_null': True},
+            'message_text': {'required': False, 'allow_null': True},
+            'participant_name': {'required': False, 'allow_null': True},
+            'participant_role': {'required': False, 'allow_null': True},
+            'contact_phone': {'required': False, 'allow_null': True},
+            'contact_email': {'required': False, 'allow_null': True},
+            'contact_address': {'required': False, 'allow_null': True},
         }
-        
-        participant_type_lower = participant_type.lower()
-        
-        if participant_type_lower in direct_mapping:
-            model_name = direct_mapping[participant_type_lower]
-            # Импортируем модели напрямую
-            try:
-                from criminal_proceedings.models import Defendant, LawyerCriminal, SidesCaseInCase
-                from civil_proceedings.models import CivilSide
-                from administrative_proceedings.models import AdministrativeSide
-                from kas_proceedings.models import KasSide
-                
-                models_map = {
-                    'Defendant': Defendant,
-                    'LawyerCriminal': LawyerCriminal,
-                    'SidesCaseInCase': SidesCaseInCase,
-                    'CivilSide': CivilSide,
-                    'AdministrativeSide': AdministrativeSide,
-                    'KasSide': KasSide,
-                }
-                return models_map.get(model_name)
-            except ImportError:
-                pass
-        
-        return None
+    
+    def get_participant_info(self, obj):
+        return {
+            'id': obj.participant_object_id,
+            'type': obj.participant_content_type.model if obj.participant_content_type else None,
+            'name': obj.participant_name,
+            'role': obj.participant_role,
+            'phone': obj.contact_phone,
+            'email': obj.contact_email,
+            'address': obj.contact_address,
+        }
     
     def validate(self, data):
-        print("=== Validation start ===")
-        print(f"Input data: {data}")
-        
-        participant_type = data.pop('participant_type', None)
-        participant_id = data.pop('participant_id', None)
-        
-        print(f"participant_type: {participant_type}, participant_id: {participant_id}")
-        
-        if not participant_type or not participant_id:
-            raise serializers.ValidationError({
-                'participant_type': 'Не указан тип участника',
-                'participant_id': 'Не указан ID участника'
-            })
-        
-        model = self._get_participant_model(participant_type)
-        
-        print(f"Found model: {model}")
-        
-        if not model:
-            raise serializers.ValidationError({
-                'participant_type': f'Неизвестный тип участника: {participant_type}. Доступные типы: defendant, lawyer, side, victim, witness, expert'
-            })
-        
-        try:
-            participant = model.objects.get(id=participant_id)
-            print(f"Found participant: {participant}")
-        except model.DoesNotExist:
-            raise serializers.ValidationError({
-                'participant_id': f'Участник типа {participant_type} с ID {participant_id} не найден'
-            })
-        
-        data['participant'] = participant
-        
-        # Сохраняем дополнительные поля
-        data['_template_id'] = data.pop('template_id', None)
-        data['_notification_text_edited'] = data.pop('notification_text_edited', None)
-        data['_hearing_date'] = data.pop('hearing_date', None)
-        data['_hearing_room'] = data.pop('hearing_room', None)
-        data['_consent_sms'] = data.pop('consent_sms', False)
-        data['_consent_email'] = data.pop('consent_email', False)
-        
-        print(f"Validated data after processing: {data.keys()}")
-        print("=== Validation end ===")
+        # Проверяем, что для создания переданы необходимые поля
+        if not self.instance:  # создание
+            case_type = data.get('case_type')
+            case_id = data.get('case_id')
+            participant_type = data.get('participant_type')
+            participant_id = data.get('participant_id')
+            
+            if not case_type:
+                raise serializers.ValidationError({'case_type': 'Обязательное поле при создании'})
+            if not case_id:
+                raise serializers.ValidationError({'case_id': 'Обязательное поле при создании'})
+            if not participant_type:
+                raise serializers.ValidationError({'participant_type': 'Обязательное поле при создании'})
+            if not participant_id:
+                raise serializers.ValidationError({'participant_id': 'Обязательное поле при создании'})
         
         return data
 
     def create(self, validated_data):
-        template_id = validated_data.pop('_template_id', None)
-        notification_text_edited = validated_data.pop('_notification_text_edited', None)
-        hearing_date = validated_data.pop('_hearing_date', None)
-        hearing_room = validated_data.pop('_hearing_room', None)
-        consent_sms = validated_data.pop('_consent_sms', False)
-        consent_email = validated_data.pop('_consent_email', False)
+        from django.contrib.contenttypes.models import ContentType
+        from django.utils import timezone
         
-        participant = validated_data.pop('participant')
+        # Извлекаем временные поля
+        case_type = validated_data.pop('case_type', None)
+        case_id = validated_data.pop('case_id', None)
+        participant_type = validated_data.pop('participant_type', None)
+        participant_id = validated_data.pop('participant_id', None)
         
-        # Получаем content_type для участника
-        content_type = ContentType.objects.get_for_model(participant)
-        validated_data['content_type'] = content_type
-        validated_data['object_id'] = participant.id
+        # Получаем ContentType для дела
+        if case_type and case_id:
+            app_label_map = {
+                'criminal': 'criminal_proceedings',
+                'civil': 'civil_proceedings',
+                'coap': 'administrative_code',
+                'kas': 'administrative_proceedings',
+                'other': 'other_materials',
+            }
+            model_name_map = {
+                'criminal': 'criminalproceedings',
+                'civil': 'civilproceedings',
+                'coap': 'administrativeproceedings',
+                'kas': 'kasproceedings',
+                'other': 'othermaterial',
+            }
+            app_label = app_label_map.get(case_type)
+            model_name = model_name_map.get(case_type)
+            if app_label and model_name:
+                try:
+                    case_content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+                    validated_data['case_content_type'] = case_content_type
+                    validated_data['case_object_id'] = case_id
+                except ContentType.DoesNotExist:
+                    pass
         
-        validated_data['status'] = 'sent'
-        validated_data['created_by'] = self.context['request'].user
-        validated_data['consent_sms'] = consent_sms
-        validated_data['consent_email'] = consent_email
+        # Получаем объект участника в зависимости от типа дела и типа участника
+        participant_content_type = None
+        participant_name = ''
+        participant_role = ''
+        contact_phone = ''
+        contact_email = ''
+        contact_address = ''
         
-        # Устанавливаем дату и место заседания
-        if hearing_date:
-            validated_data['hearing_date'] = hearing_date
-        if hearing_room:
-            validated_data['hearing_room'] = hearing_room
-        
-        # Если есть шаблон и текст, сохраняем его
-        if template_id:
-            try:
-                template = NotificationTemplate.objects.get(id=template_id)
-                validated_data['notification_template'] = template
+        if participant_type and participant_id:
+            print(f"Looking for participant: case_type={case_type}, participant_type={participant_type}, participant_id={participant_id}")
+            
+            # Для уголовных дел
+            if case_type == 'criminal':
+                if participant_type == 'defendant':
+                    try:
+                        from criminal_proceedings.models import Defendant
+                        defendant = Defendant.objects.get(id=participant_id)
+                        participant_content_type = ContentType.objects.get_for_model(defendant)
+                        participant_name = defendant.full_name_criminal or ''
+                        participant_role = 'Подсудимый/Обвиняемый'
+                        contact_phone = ''
+                        contact_email = ''
+                        contact_address = defendant.address or ''
+                        print(f"Found defendant: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting defendant: {e}")
                 
-                if notification_text_edited is None:
-                    case = self.context.get('case')
-                    context = NotificationService.prepare_context(
-                        case, participant, hearing_date, hearing_room
-                    )
-                    validated_data['notification_text'] = NotificationService.render_notification_text(
-                        template.content, context
-                    )
-                else:
-                    validated_data['notification_text'] = notification_text_edited
-            except NotificationTemplate.DoesNotExist:
+                elif participant_type == 'lawyer':
+                    try:
+                        from criminal_proceedings.models import LawyerCriminal
+                        lawyer = LawyerCriminal.objects.get(id=participant_id)
+                        if lawyer.lawyer:
+                            participant_content_type = ContentType.objects.get_for_model(lawyer.lawyer)
+                            participant_name = lawyer.lawyer.law_firm_name or ''
+                            participant_role = 'Адвокат/Защитник'
+                            contact_phone = lawyer.lawyer.law_firm_phone or ''
+                            contact_email = lawyer.lawyer.law_firm_email or ''
+                            contact_address = lawyer.lawyer.law_firm_address or ''
+                            print(f"Found criminal lawyer: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting criminal lawyer: {e}")
+                
+                elif participant_type == 'side':
+                    try:
+                        from criminal_proceedings.models import CriminalSidesCaseInCase
+                        side = CriminalSidesCaseInCase.objects.get(id=participant_id)
+                        if side.criminal_side_case:
+                            participant_content_type = ContentType.objects.get_for_model(side.criminal_side_case)
+                            participant_name = side.criminal_side_case.name or ''
+                            participant_role = side.sides_case_criminal.sides_case if side.sides_case_criminal else 'Сторона'
+                            contact_phone = side.criminal_side_case.phone or ''
+                            contact_email = side.criminal_side_case.email or ''
+                            contact_address = side.criminal_side_case.address or ''
+                            print(f"Found criminal side: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting criminal side: {e}")
+            
+            # Для гражданских дел
+            elif case_type == 'civil':
+                if participant_type == 'side':
+                    try:
+                        from civil_proceedings.models import CivilSidesCaseInCase
+                        side = CivilSidesCaseInCase.objects.get(id=participant_id)
+                        if side.sides_case_incase:
+                            participant_content_type = ContentType.objects.get_for_model(side.sides_case_incase)
+                            participant_name = side.sides_case_incase.name or ''
+                            participant_role = side.sides_case_role.sides_case if side.sides_case_role else 'Сторона'
+                            contact_phone = side.sides_case_incase.phone or ''
+                            contact_email = side.sides_case_incase.email or ''
+                            contact_address = side.sides_case_incase.address or ''
+                            print(f"Found civil side: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting civil side: {e}")
+                
+                elif participant_type == 'lawyer':
+                    try:
+                        from civil_proceedings.models import CivilLawyer
+                        lawyer = CivilLawyer.objects.get(id=participant_id)
+                        if lawyer.lawyer:
+                            participant_content_type = ContentType.objects.get_for_model(lawyer.lawyer)
+                            participant_name = lawyer.lawyer.law_firm_name or ''
+                            participant_role = 'Представитель'
+                            contact_phone = lawyer.lawyer.law_firm_phone or ''
+                            contact_email = lawyer.lawyer.law_firm_email or ''
+                            contact_address = lawyer.lawyer.law_firm_address or ''
+                            print(f"Found civil lawyer: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting civil lawyer: {e}")
+            
+            # Для дел об АП (КоАП)
+            elif case_type == 'coap':
+                if participant_type == 'side':
+                    try:
+                        from administrative_code.models import AdministrativeSidesCaseInCase
+                        side = AdministrativeSidesCaseInCase.objects.get(id=participant_id)
+                        if side.sides_case_incase:
+                            participant_content_type = ContentType.objects.get_for_model(side.sides_case_incase)
+                            participant_name = side.sides_case_incase.name or ''
+                            participant_role = side.sides_case_role.sides_case if side.sides_case_role else 'Сторона'
+                            contact_phone = side.sides_case_incase.phone or ''
+                            contact_email = side.sides_case_incase.email or ''
+                            contact_address = side.sides_case_incase.address or ''
+                            print(f"Found coap side: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting coap side: {e}")
+                
+                elif participant_type == 'lawyer':
+                    try:
+                        from administrative_code.models import AdministrativeLawyer
+                        lawyer = AdministrativeLawyer.objects.get(id=participant_id)
+                        if lawyer.lawyer:
+                            participant_content_type = ContentType.objects.get_for_model(lawyer.lawyer)
+                            participant_name = lawyer.lawyer.law_firm_name or ''
+                            participant_role = 'Защитник'
+                            contact_phone = lawyer.lawyer.law_firm_phone or ''
+                            contact_email = lawyer.lawyer.law_firm_email or ''
+                            contact_address = lawyer.lawyer.law_firm_address or ''
+                            print(f"Found coap lawyer: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting coap lawyer: {e}")
+            
+            # Для дел по КАС
+            elif case_type == 'kas':
+                if participant_type == 'side':
+                    try:
+                        from administrative_proceedings.models import KasSidesCaseInCase
+                        side = KasSidesCaseInCase.objects.get(id=participant_id)
+                        if side.sides_case_incase:
+                            participant_content_type = ContentType.objects.get_for_model(side.sides_case_incase)
+                            participant_name = side.sides_case_incase.name or ''
+                            participant_role = side.sides_case_role.sides_case if side.sides_case_role else 'Сторона'
+                            contact_phone = side.sides_case_incase.phone or ''
+                            contact_email = side.sides_case_incase.email or ''
+                            contact_address = side.sides_case_incase.address or ''
+                            print(f"Found kas side: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting kas side: {e}")
+                
+                elif participant_type == 'lawyer':
+                    try:
+                        from administrative_proceedings.models import KasLawyer
+                        lawyer = KasLawyer.objects.get(id=participant_id)
+                        if lawyer.lawyer:
+                            participant_content_type = ContentType.objects.get_for_model(lawyer.lawyer)
+                            participant_name = lawyer.lawyer.law_firm_name or ''
+                            participant_role = 'Представитель'
+                            contact_phone = lawyer.lawyer.law_firm_phone or ''
+                            contact_email = lawyer.lawyer.law_firm_email or ''
+                            contact_address = lawyer.lawyer.law_firm_address or ''
+                            print(f"Found kas lawyer: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting kas lawyer: {e}")
+            
+            # Для иных материалов
+            elif case_type == 'other':
+                if participant_type == 'side':
+                    try:
+                        from other_materials.models import OtherMaterialSidesCaseInCase
+                        side = OtherMaterialSidesCaseInCase.objects.get(id=participant_id)
+                        if side.sides_case_incase:
+                            participant_content_type = ContentType.objects.get_for_model(side.sides_case_incase)
+                            participant_name = side.sides_case_incase.name or ''
+                            participant_role = side.sides_case_role.sides_case if side.sides_case_role else 'Сторона'
+                            contact_phone = side.sides_case_incase.phone or ''
+                            contact_email = side.sides_case_incase.email or ''
+                            contact_address = side.sides_case_incase.address or ''
+                            print(f"Found other side: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting other side: {e}")
+                
+                elif participant_type == 'lawyer':
+                    try:
+                        from other_materials.models import OtherMaterialLawyer
+                        lawyer = OtherMaterialLawyer.objects.get(id=participant_id)
+                        if lawyer.lawyer:
+                            participant_content_type = ContentType.objects.get_for_model(lawyer.lawyer)
+                            participant_name = lawyer.lawyer.law_firm_name or ''
+                            participant_role = 'Представитель'
+                            contact_phone = lawyer.lawyer.law_firm_phone or ''
+                            contact_email = lawyer.lawyer.law_firm_email or ''
+                            contact_address = lawyer.lawyer.law_firm_address or ''
+                            print(f"Found other lawyer: {participant_name}")
+                    except Exception as e:
+                        print(f"Error getting other lawyer: {e}")
+        
+        # Устанавливаем поля участника
+        validated_data['participant_content_type'] = participant_content_type
+        validated_data['participant_object_id'] = participant_id
+        validated_data['participant_name'] = participant_name
+        validated_data['participant_role'] = participant_role
+        validated_data['contact_phone'] = contact_phone
+        validated_data['contact_email'] = contact_email
+        validated_data['contact_address'] = contact_address
+        
+        # Проверяем, что participant_content_type найден
+        if not participant_content_type:
+            print(f"WARNING: participant_content_type is None for case_type={case_type}, participant_type={participant_type}, participant_id={participant_id}")
+            # Временно создаем фейковый ContentType для SidesCaseInCase, чтобы избежать ошибки
+            try:
+                from business_card.models import SidesCaseInCase
+                participant_content_type = ContentType.objects.get_for_model(SidesCaseInCase)
+                validated_data['participant_content_type'] = participant_content_type
+                validated_data['participant_name'] = f"Участник #{participant_id}"
+            except:
                 pass
-        elif notification_text_edited:
-            validated_data['notification_text'] = notification_text_edited
         
-        # Удаляем все поля, которые начинаются с '_' (они не нужны для создания)
-        keys_to_remove = [key for key in validated_data.keys() if key.startswith('_')]
-        for key in keys_to_remove:
-            validated_data.pop(key, None)
+        # Устанавливаем статус по умолчанию, если не передан
+        if 'status' not in validated_data or not validated_data.get('status'):
+            from .models import NotificationStatus
+            try:
+                validated_data['status'] = NotificationStatus.objects.get(code='draft')
+            except NotificationStatus.DoesNotExist:
+                pass
         
-        notification = super().create(validated_data)
+        # Устанавливаем канал по умолчанию, если не передан
+        if 'channel' not in validated_data or not validated_data.get('channel'):
+            from .models import NotificationChannel
+            try:
+                validated_data['channel'] = NotificationChannel.objects.filter(is_active=True).first()
+            except:
+                pass
         
-        # Создаем запись в справочном листе
-        from .models import CaseProgressEntry, ProgressActionType
+        # Добавляем создателя
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['created_by'] = request.user
         
-        case = self.context.get('case')
-        if case:
-            action_type, created = ProgressActionType.objects.get_or_create(
-                code='send_notification',
-                defaults={
-                    'name': 'Направление извещения'
-                }
-            )
-            
-            case_content_type = ContentType.objects.get_for_model(case)
-            
-            participant_name = str(participant)
-            description = f"Направлено извещение ({notification.get_delivery_method_display()}) для {participant_name}"
-            if validated_data.get('recipient_address'):
-                description += f" по адресу: {validated_data['recipient_address']}"
-            if validated_data.get('recipient_phone'):
-                description += f" (тел.: {validated_data['recipient_phone']})"
-            
-            CaseProgressEntry.objects.create(
-                case_content_type=case_content_type,
-                case_object_id=case.id,
-                action_type=action_type,
-                description=description,
-                action_date=timezone.now().date(),
-                author=notification.created_by,
-                related_notification=notification
-            )
-        
-        return notification
+        return super().create(validated_data)
+
+
+class NotificationMarkSentSerializer(serializers.Serializer):
+    """Сериализатор для отметки об отправке"""
+    sent_date = serializers.DateTimeField(required=False)
+    
+    def validate_sent_date(self, value):
+        if not value:
+            from django.utils import timezone
+            return timezone.now()
+        return value
+
+
+class NotificationMarkDeliveredSerializer(serializers.Serializer):
+    """Сериализатор для отметки о вручении"""
+    delivery_date = serializers.DateTimeField(required=False)
+
+
+class NotificationMarkUndeliveredSerializer(serializers.Serializer):
+    """Сериализатор для отметки о не вручении"""
+    return_reason = serializers.CharField(required=True)
+    return_date = serializers.DateField(required=False)
+    
+    def validate_return_date(self, value):
+        if not value:
+            from django.utils import timezone
+            return timezone.now().date()
+        return value

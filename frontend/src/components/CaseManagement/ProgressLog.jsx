@@ -1,5 +1,4 @@
-// ProgressLog.jsx - исправленная версия с возможностью сохранять пустой комментарий
-
+// ProgressLog.jsx - исправленная версия с ConfirmModal
 import React, { useState, useEffect } from 'react';
 import CaseManagementService from '../../API/CaseManagementService';
 import CriminalCaseService from '../../API/CriminalCaseService';
@@ -30,11 +29,11 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     if (!criminalCaseId) return;
     try {
       setLoading(true);
-      const [entries, types, caseData] = await Promise.all([
-        CaseManagementService.getProgressEntries(criminalCaseId),
-        CaseManagementService.getProgressActionTypes(),
-        CriminalCaseService.getCriminalProceedingById(criminalCaseId)
-      ]);
+      
+      const entries = await CaseManagementService.getProgressEntries('criminal', criminalCaseId);
+      const types = await CaseManagementService.getProgressActionTypes();
+      const caseData = await CriminalCaseService.getCriminalProceedingById(criminalCaseId);
+      
       setProgressEntries(entries);
       setActionTypes(types);
       calculateDeadlines(caseData);
@@ -95,17 +94,16 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     }
 
     try {
-      // Исправление: отправляем description как пустую строку, если поле пустое
       const dataToSend = {
         action_type: formData.action_type,
         action_date: formData.action_date,
-        description: formData.description || ''  // Пустая строка вместо null/undefined
+        description: formData.description || ''
       };
       
       if (editingEntry) {
-        await CaseManagementService.updateProgressEntry(criminalCaseId, editingEntry.id, dataToSend);
+        await CaseManagementService.updateProgressEntry('criminal', criminalCaseId, editingEntry.id, dataToSend);
       } else {
-        await CaseManagementService.createProgressEntry(criminalCaseId, dataToSend);
+        await CaseManagementService.createProgressEntry('criminal', criminalCaseId, dataToSend);
       }
       setShowAddForm(false);
       setEditingEntry(null);
@@ -142,7 +140,7 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
   const confirmDelete = async () => {
     if (deleteModal.entryId) {
       try {
-        await CaseManagementService.deleteProgressEntry(criminalCaseId, deleteModal.entryId);
+        await CaseManagementService.deleteProgressEntry('criminal', criminalCaseId, deleteModal.entryId);
         await loadData();
       } catch (error) {
         console.error('Error deleting progress entry:', error);

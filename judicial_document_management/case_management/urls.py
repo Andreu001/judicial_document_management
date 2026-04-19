@@ -1,15 +1,14 @@
-# case_management/urls.py
-
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from . import views
 
 router = DefaultRouter()
-router.register(r'notification-types', views.NotificationTypeViewSet)
-router.register(r'notification-templates', views.NotificationTemplateViewSet)
 router.register(r'progress-action-types', views.ProgressActionTypeViewSet)
-# Явно указываем basename для ViewSet без queryset
-router.register(r'notifications', views.NotificationViewSet, basename='notification')
+router.register(r'notification-channels', views.NotificationChannelViewSet)
+router.register(r'notification-statuses', views.NotificationStatusViewSet)
+router.register(r'notification-templates', views.NotificationTemplateViewSet)
+router.register(r'notifications', views.NotificationViewSet)
+router.register(r'case-participants', views.CaseParticipantsViewSet, basename='case-participants')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -22,8 +21,11 @@ urlpatterns = [
          views.CriminalCaseProgressViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), 
          name='criminal-progress-detail'),
     
-    # Эндпоинт для предпросмотра шаблона
-    path('notification-templates/<int:pk>/preview/', 
-         views.NotificationTemplateViewSet.as_view({'post': 'preview'}), 
-         name='notification-template-preview'),
+    # Универсальные маршруты для progress entries по любому типу дела
+    path('<str:case_type>/<int:case_id>/progress-entries/',
+         views.GenericCaseProgressViewSet.as_view({'get': 'list', 'post': 'create'}),
+         name='generic-progress-list'),
+    path('<str:case_type>/<int:case_id>/progress-entries/<int:pk>/',
+         views.GenericCaseProgressViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
+         name='generic-progress-detail'),
 ]
