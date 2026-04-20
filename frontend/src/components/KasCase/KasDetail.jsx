@@ -10,6 +10,7 @@ import {
   AdditionalInfoTab
 } from './KasTabComponents';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
+import ProgressLog from '../CaseManagement/ProgressLog';
 
 const KasDetail = () => {
   const { id } = useParams();
@@ -41,6 +42,7 @@ const KasDetail = () => {
   });
   const [judges, setJudges] = useState([]);
   const [collapsedNotifications, setCollapsedNotifications] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState(0);
 
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -496,6 +498,20 @@ const KasDetail = () => {
 
         {/* Правая колонка - обновленный сайдбар в стиле уголовных дел */}
         <div className={styles.sidebar}>
+
+            <ProgressLog 
+              caseType="kas"
+              caseId={id}
+              onRefresh={refreshProgress}
+            />
+
+          <NotificationsPanel
+            caseType="kas"
+            caseId={id}
+            caseNumber={kasData?.case_number_kas}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
           {/* Стороны по делу */}
           <div className={styles.section}>
             <div 
@@ -505,7 +521,7 @@ const KasDetail = () => {
               <h2 className={styles.sectionTitle}>
                 <span>Стороны по делу</span>
                 <span className={styles.expandIcon}>
-                  {collapsedSections.sides ? '▶' : '▼'}
+                  {collapsedSections.sides ? 'Развернуть' : 'Свернуть'}
                 </span>
               </h2>
             </div>
@@ -579,7 +595,7 @@ const KasDetail = () => {
               <h2 className={styles.sectionTitle}>
                 <span>Решения по делу</span>
                 <span className={styles.expandIcon}>
-                  {collapsedSections.decisions ? '▶' : '▼'}
+                  {collapsedSections.decisions ? 'Развернуть' : 'Свернуть'}
                 </span>
               </h2>
             </div>
@@ -648,7 +664,7 @@ const KasDetail = () => {
               <h2 className={styles.sectionTitle}>
                 <span>Ходатайства</span>
                 <span className={styles.expandIcon}>
-                  {collapsedSections.petitions ? '▶' : '▼'}
+                  {collapsedSections.petitions ? 'Развернуть' : 'Свернуть'}
                 </span>
               </h2>
             </div>
@@ -710,14 +726,6 @@ const KasDetail = () => {
               </div>
             )}
           </div>
-
-          <NotificationsPanel
-            caseType="kas"
-            caseId={id}
-            caseNumber={kasData?.case_number_kas}
-            collapsed={collapsedNotifications}
-            onToggle={setCollapsedNotifications}
-          />
         </div>
       </div>
 

@@ -53,7 +53,6 @@ class CaseManagementService {
         return [];
       }
       
-      // Используем универсальный эндпоинт
       const response = await baseService.get(`${BASE_URL}${mappedType}/${caseId}/progress-entries/`);
       return response.data;
     } catch (error) {

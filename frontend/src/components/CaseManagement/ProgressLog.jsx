@@ -1,11 +1,10 @@
-// ProgressLog.jsx - исправленная версия с ConfirmModal
+// ProgressLog.jsx - универсальная версия для всех типов дел
 import React, { useState, useEffect } from 'react';
 import CaseManagementService from '../../API/CaseManagementService';
-import CriminalCaseService from '../../API/CriminalCaseService';
-import ConfirmModal from '../UI/Modal/ConfirmModal';
 import styles from './ProgressLog.module.css';
+import ConfirmModal from '../UI/Modal/ConfirmModal';
 
-const ProgressLog = ({ criminalCaseId, onRefresh }) => {
+const ProgressLog = ({ caseType, caseId, onRefresh }) => {
   const [progressEntries, setProgressEntries] = useState([]);
   const [actionTypes, setActionTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,26 +16,40 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     description: '',
     action_date: new Date().toISOString().split('T')[0]
   });
-  const [deadlines, setDeadlines] = useState({
-    daysInProduction: null,
-    appointmentDeadline: null,
-    appointmentViolation: false
-  });
-  
+  const [deadlines, setDeadlines] = useState({});
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, entryId: null });
 
+  // Маппинг типов дел для API
+  const getCaseTypePath = () => {
+    const typeMap = {
+      'criminal': 'criminal',
+      'civil': 'civil',
+      'coap': 'coap',
+      'kas': 'kas',
+      'other': 'other'
+    };
+    return typeMap[caseType] || caseType;
+  };
+
   const loadData = async () => {
-    if (!criminalCaseId) return;
+    if (!caseId) return;
     try {
       setLoading(true);
       
-      const entries = await CaseManagementService.getProgressEntries('criminal', criminalCaseId);
+      const pathType = getCaseTypePath();
+      const entries = await CaseManagementService.getProgressEntries(pathType, caseId);
       const types = await CaseManagementService.getProgressActionTypes();
-      const caseData = await CriminalCaseService.getCriminalProceedingById(criminalCaseId);
+      
+      // Фильтруем типы действий по категории дела
+      const filteredTypes = types.filter(t => 
+        !t.case_category || t.case_category === 'common' || t.case_category === caseType
+      );
       
       setProgressEntries(entries);
-      setActionTypes(types);
-      calculateDeadlines(caseData);
+      setActionTypes(filteredTypes);
+      
+      // Загружаем данные для расчета сроков в зависимости от типа дела
+      await loadCaseDataForDeadlines();
     } catch (error) {
       console.error('Error loading progress log data:', error);
     } finally {
@@ -44,11 +57,51 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     }
   };
 
-  const calculateDeadlines = (caseData) => {
+  const loadCaseDataForDeadlines = async () => {
+    try {
+      let caseData = null;
+      
+      switch (caseType) {
+        case 'criminal':
+          const CriminalCaseService = (await import('../../API/CriminalCaseService')).default;
+          caseData = await CriminalCaseService.getCriminalProceedingById(caseId);
+          calculateCriminalDeadlines(caseData);
+          break;
+        case 'civil':
+          const CivilCaseService = (await import('../../API/CivilCaseService')).default;
+          caseData = await CivilCaseService.getCivilProceedingById(caseId);
+          calculateCivilDeadlines(caseData);
+          break;
+        case 'kas':
+          const KasCaseService = (await import('../../API/KasCaseService')).default;
+          caseData = await KasCaseService.getKasProceedingById(caseId);
+          calculateKasDeadlines(caseData);
+          break;
+        case 'coap':
+          const AdministrativeCaseService = (await import('../../API/AdministrativeCaseService')).default;
+          caseData = await AdministrativeCaseService.getAdministrativeProceedingById(caseId);
+          calculateCoapDeadlines(caseData);
+          break;
+        case 'other':
+          const OtherMaterialService = (await import('../../API/OtherMaterialService')).default;
+          caseData = await OtherMaterialService.getOtherMaterialById(caseId);
+          calculateOtherDeadlines(caseData);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error('Error loading case data for deadlines:', error);
+    }
+  };
+
+  // Расчет сроков для уголовных дел
+  const calculateCriminalDeadlines = (caseData) => {
     if (!caseData) return;
 
     const incomingDate = caseData.incoming_date ? new Date(caseData.incoming_date) : null;
     const judgeAcceptanceDate = caseData.judge_acceptance_date ? new Date(caseData.judge_acceptance_date) : null;
+    const firstHearingDate = caseData.first_hearing_date ? new Date(caseData.first_hearing_date) : null;
     const today = new Date();
 
     let daysInProduction = null;
@@ -70,16 +123,166 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
       appointmentViolation = daysSinceIncoming > maxDays;
     }
 
+    let trialStartDeadline = 14;
+    let trialStartViolation = false;
+    if (judgeAcceptanceDate && firstHearingDate) {
+      const daysToTrial = Math.floor((firstHearingDate - judgeAcceptanceDate) / (1000 * 60 * 60 * 24));
+      trialStartViolation = daysToTrial > trialStartDeadline;
+    } else if (judgeAcceptanceDate && !firstHearingDate) {
+      const daysSinceAcceptance = Math.floor((today - judgeAcceptanceDate) / (1000 * 60 * 60 * 24));
+      trialStartViolation = daysSinceAcceptance > trialStartDeadline;
+    }
+
     setDeadlines({
       daysInProduction,
       appointmentDeadline,
-      appointmentViolation
+      appointmentViolation,
+      trialStartDeadline,
+      trialStartViolation
+    });
+  };
+
+  // Расчет сроков для гражданских дел
+  const calculateCivilDeadlines = (caseData) => {
+    if (!caseData) return;
+
+    const incomingDate = caseData.incoming_date ? new Date(caseData.incoming_date) : null;
+    const judgeAcceptanceDate = caseData.judge_acceptance_date ? new Date(caseData.judge_acceptance_date) : null;
+    const hearingDate = caseData.hearing_date ? new Date(caseData.hearing_date) : null;
+    const today = new Date();
+
+    let daysInProduction = null;
+    if (incomingDate) {
+      daysInProduction = Math.floor((today - incomingDate) / (1000 * 60 * 60 * 24));
+    }
+
+    let preparationDeadline = 30;
+    let preparationViolation = false;
+    if (incomingDate && judgeAcceptanceDate) {
+      const daysToAcceptance = Math.floor((judgeAcceptanceDate - incomingDate) / (1000 * 60 * 60 * 24));
+      preparationViolation = daysToAcceptance > preparationDeadline;
+    }
+
+    let considerationDeadline = 60;
+    let considerationViolation = false;
+    if (incomingDate && hearingDate) {
+      const daysToHearing = Math.floor((hearingDate - incomingDate) / (1000 * 60 * 60 * 24));
+      considerationViolation = daysToHearing > considerationDeadline;
+    }
+
+    setDeadlines({
+      daysInProduction,
+      preparationDeadline,
+      preparationViolation,
+      considerationDeadline,
+      considerationViolation
+    });
+  };
+
+  // Расчет сроков для КАС дел
+  const calculateKasDeadlines = (caseData) => {
+    if (!caseData) return;
+
+    const incomingDate = caseData.incoming_date ? new Date(caseData.incoming_date) : null;
+    const acceptanceDate = caseData.acceptance_date ? new Date(caseData.acceptance_date) : null;
+    const hearingDate = caseData.hearing_date ? new Date(caseData.hearing_date) : null;
+    const today = new Date();
+
+    let daysInProduction = null;
+    if (incomingDate) {
+      daysInProduction = Math.floor((today - incomingDate) / (1000 * 60 * 60 * 24));
+    }
+
+    let acceptanceDeadline = 15;
+    let acceptanceViolation = false;
+    if (incomingDate && acceptanceDate) {
+      const daysToAcceptance = Math.floor((acceptanceDate - incomingDate) / (1000 * 60 * 60 * 24));
+      acceptanceViolation = daysToAcceptance > acceptanceDeadline;
+    }
+
+    let considerationDeadline = 30;
+    let considerationViolation = false;
+    if (acceptanceDate && hearingDate) {
+      const daysToHearing = Math.floor((hearingDate - acceptanceDate) / (1000 * 60 * 60 * 24));
+      considerationViolation = daysToHearing > considerationDeadline;
+    }
+
+    setDeadlines({
+      daysInProduction,
+      acceptanceDeadline,
+      acceptanceViolation,
+      considerationDeadline,
+      considerationViolation
+    });
+  };
+
+  // Расчет сроков для КоАП дел
+  const calculateCoapDeadlines = (caseData) => {
+    if (!caseData) return;
+
+    const incomingDate = caseData.incoming_date ? new Date(caseData.incoming_date) : null;
+    const judgeAcceptanceDate = caseData.judge_acceptance_date ? new Date(caseData.judge_acceptance_date) : null;
+    const hearingDate = caseData.hearing_date ? new Date(caseData.hearing_date) : null;
+    const today = new Date();
+
+    let daysInProduction = null;
+    if (incomingDate) {
+      daysInProduction = Math.floor((today - incomingDate) / (1000 * 60 * 60 * 24));
+    }
+
+    let acceptanceDeadline = 15;
+    let acceptanceViolation = false;
+    if (incomingDate && judgeAcceptanceDate) {
+      const daysToAcceptance = Math.floor((judgeAcceptanceDate - incomingDate) / (1000 * 60 * 60 * 24));
+      acceptanceViolation = daysToAcceptance > acceptanceDeadline;
+    }
+
+    let considerationDeadline = 15;
+    let considerationViolation = false;
+    if (judgeAcceptanceDate && hearingDate) {
+      const daysToHearing = Math.floor((hearingDate - judgeAcceptanceDate) / (1000 * 60 * 60 * 24));
+      considerationViolation = daysToHearing > considerationDeadline;
+    }
+
+    setDeadlines({
+      daysInProduction,
+      acceptanceDeadline,
+      acceptanceViolation,
+      considerationDeadline,
+      considerationViolation
+    });
+  };
+
+  // Расчет сроков для иных материалов
+  const calculateOtherDeadlines = (caseData) => {
+    if (!caseData) return;
+
+    const registrationDate = caseData.registration_date ? new Date(caseData.registration_date) : null;
+    const considerationDate = caseData.consideration_date ? new Date(caseData.consideration_date) : null;
+    const today = new Date();
+
+    let daysInProduction = null;
+    if (registrationDate) {
+      daysInProduction = Math.floor((today - registrationDate) / (1000 * 60 * 60 * 24));
+    }
+
+    let considerationDeadline = 30;
+    let considerationViolation = false;
+    if (registrationDate && !considerationDate) {
+      const daysSinceRegistration = Math.floor((today - registrationDate) / (1000 * 60 * 60 * 24));
+      considerationViolation = daysSinceRegistration > considerationDeadline;
+    }
+
+    setDeadlines({
+      daysInProduction,
+      considerationDeadline,
+      considerationViolation
     });
   };
 
   useEffect(() => {
     loadData();
-  }, [criminalCaseId, onRefresh]);
+  }, [caseId, onRefresh, caseType]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -100,10 +303,12 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
         description: formData.description || ''
       };
       
+      const pathType = getCaseTypePath();
+      
       if (editingEntry) {
-        await CaseManagementService.updateProgressEntry('criminal', criminalCaseId, editingEntry.id, dataToSend);
+        await CaseManagementService.updateProgressEntry(pathType, caseId, editingEntry.id, dataToSend);
       } else {
-        await CaseManagementService.createProgressEntry('criminal', criminalCaseId, dataToSend);
+        await CaseManagementService.createProgressEntry(pathType, caseId, dataToSend);
       }
       setShowAddForm(false);
       setEditingEntry(null);
@@ -140,7 +345,8 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
   const confirmDelete = async () => {
     if (deleteModal.entryId) {
       try {
-        await CaseManagementService.deleteProgressEntry('criminal', criminalCaseId, deleteModal.entryId);
+        const pathType = getCaseTypePath();
+        await CaseManagementService.deleteProgressEntry(pathType, caseId, deleteModal.entryId);
         await loadData();
       } catch (error) {
         console.error('Error deleting progress entry:', error);
@@ -163,6 +369,39 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
     return new Date(dateString).toLocaleDateString('ru-RU');
   };
 
+  // Получение названий сроков в зависимости от типа дела
+  const getDeadlineLabels = () => {
+    const labels = {
+      criminal: {
+        daysInProduction: 'В производстве',
+        appointmentDeadline: 'Срок назначения',
+        trialStartDeadline: 'Срок начала разбирательства'
+      },
+      civil: {
+        daysInProduction: 'В производстве',
+        preparationDeadline: 'Срок подготовки',
+        considerationDeadline: 'Срок рассмотрения'
+      },
+      kas: {
+        daysInProduction: 'В производстве',
+        acceptanceDeadline: 'Срок принятия',
+        considerationDeadline: 'Срок рассмотрения'
+      },
+      coap: {
+        daysInProduction: 'В производстве',
+        acceptanceDeadline: 'Срок принятия',
+        considerationDeadline: 'Срок рассмотрения'
+      },
+      other: {
+        daysInProduction: 'В производстве',
+        considerationDeadline: 'Срок рассмотрения'
+      }
+    };
+    return labels[caseType] || labels.criminal;
+  };
+
+  const deadlineLabels = getDeadlineLabels();
+
   if (loading && progressEntries.length === 0) {
     return <div className={styles.loading}>Загрузка хода дела...</div>;
   }
@@ -180,19 +419,64 @@ const ProgressLog = ({ criminalCaseId, onRefresh }) => {
       {!isCollapsed && (
         <>
           <div className={styles.deadlinesBlock}>
-            <div className={styles.deadlineItem}>
-              <span className={styles.deadlineLabel}>В производстве:</span>
-              <span className={`${styles.deadlineValue} ${deadlines.daysInProduction > 30 ? styles.warning : ''}`}>
-                {deadlines.daysInProduction !== null ? `${deadlines.daysInProduction} дн.` : '—'}
-              </span>
-            </div>
-            <div className={styles.deadlineItem}>
-              <span className={styles.deadlineLabel}>Срок назначения:</span>
-              <span className={`${styles.deadlineValue} ${deadlines.appointmentViolation ? styles.violation : ''}`}>
-                {deadlines.appointmentDeadline ? `${deadlines.appointmentDeadline} дн.` : '—'}
-                {deadlines.appointmentViolation && <span className={styles.violationBadge}>Нарушен</span>}
-              </span>
-            </div>
+            {deadlines.daysInProduction !== undefined && (
+              <div className={styles.deadlineItem}>
+                <span className={styles.deadlineLabel}>{deadlineLabels.daysInProduction}:</span>
+                <span className={`${styles.deadlineValue} ${deadlines.daysInProduction > 30 ? styles.warning : ''}`}>
+                  {deadlines.daysInProduction !== null ? `${deadlines.daysInProduction} дн.` : '—'}
+                </span>
+              </div>
+            )}
+            
+            {deadlines.appointmentDeadline !== undefined && (
+              <div className={styles.deadlineItem}>
+                <span className={styles.deadlineLabel}>{deadlineLabels.appointmentDeadline}:</span>
+                <span className={`${styles.deadlineValue} ${deadlines.appointmentViolation ? styles.violation : ''}`}>
+                  {deadlines.appointmentDeadline ? `${deadlines.appointmentDeadline} дн.` : '—'}
+                  {deadlines.appointmentViolation && <span className={styles.violationBadge}>Нарушен</span>}
+                </span>
+              </div>
+            )}
+            
+            {deadlines.trialStartDeadline !== undefined && (
+              <div className={styles.deadlineItem}>
+                <span className={styles.deadlineLabel}>{deadlineLabels.trialStartDeadline}:</span>
+                <span className={`${styles.deadlineValue} ${deadlines.trialStartViolation ? styles.violation : ''}`}>
+                  {deadlines.trialStartDeadline ? `${deadlines.trialStartDeadline} дн.` : '—'}
+                  {deadlines.trialStartViolation && <span className={styles.violationBadge}>Нарушен</span>}
+                </span>
+              </div>
+            )}
+            
+            {deadlines.preparationDeadline !== undefined && (
+              <div className={styles.deadlineItem}>
+                <span className={styles.deadlineLabel}>{deadlineLabels.preparationDeadline}:</span>
+                <span className={`${styles.deadlineValue} ${deadlines.preparationViolation ? styles.violation : ''}`}>
+                  {deadlines.preparationDeadline ? `${deadlines.preparationDeadline} дн.` : '—'}
+                  {deadlines.preparationViolation && <span className={styles.violationBadge}>Нарушен</span>}
+                </span>
+              </div>
+            )}
+            
+            {deadlines.considerationDeadline !== undefined && (
+              <div className={styles.deadlineItem}>
+                <span className={styles.deadlineLabel}>{deadlineLabels.considerationDeadline}:</span>
+                <span className={`${styles.deadlineValue} ${deadlines.considerationViolation ? styles.violation : ''}`}>
+                  {deadlines.considerationDeadline ? `${deadlines.considerationDeadline} дн.` : '—'}
+                  {deadlines.considerationViolation && <span className={styles.violationBadge}>Нарушен</span>}
+                </span>
+              </div>
+            )}
+            
+            {deadlines.acceptanceDeadline !== undefined && (
+              <div className={styles.deadlineItem}>
+                <span className={styles.deadlineLabel}>{deadlineLabels.acceptanceDeadline}:</span>
+                <span className={`${styles.deadlineValue} ${deadlines.acceptanceViolation ? styles.violation : ''}`}>
+                  {deadlines.acceptanceDeadline ? `${deadlines.acceptanceDeadline} дн.` : '—'}
+                  {deadlines.acceptanceViolation && <span className={styles.violationBadge}>Нарушен</span>}
+                </span>
+              </div>
+            )}
           </div>
 
           <button 

@@ -7,10 +7,25 @@ from business_card.models import (
 )
 from .models import (
     OtherMaterial, OtherMaterialSidesCaseInCase, OtherMaterialLawyer,
-    OtherMaterialMovement, OtherMaterialPetition
+    OtherMaterialMovement, OtherMaterialPetition,
+    OtherMaterialDecision, OtherMaterialExecution
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
+
+
+class OtherMaterialDecisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OtherMaterialDecision
+        fields = '__all__'
+        read_only_fields = ('other_material',)
+
+
+class OtherMaterialExecutionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OtherMaterialExecution
+        fields = '__all__'
+        read_only_fields = ('other_material',)
 
 
 class OtherMaterialSerializer(serializers.ModelSerializer):
@@ -18,6 +33,8 @@ class OtherMaterialSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     registered_case_info = serializers.SerializerMethodField()
     documents_count = serializers.SerializerMethodField()
+    other_decisions = OtherMaterialDecisionSerializer(many=True, read_only=True)
+    other_executions = OtherMaterialExecutionSerializer(many=True, read_only=True)
 
     class Meta:
         model = OtherMaterial

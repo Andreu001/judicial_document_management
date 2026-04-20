@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DocumentService from '../../API/DocumentService';
 import DocumentList from '../../components/Documents/DocumentList';
-import styles from './Documents.module.css';
+import styles from '../../components/Documents/Documents.module.css';
 
 const DocumentsPage = ({ caseType }) => {
   const navigate = useNavigate();
-  const { proceedingId } = useParams();
+  const { proceedingId, materialId } = useParams();
+  // Для совместимости: если есть proceedingId, используем его, иначе materialId
+  const objectId = proceedingId || materialId;
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,6 +24,8 @@ const DocumentsPage = ({ caseType }) => {
         return DocumentService.getAdminDocuments(proceedingId);
       case 'kas':
         return DocumentService.getKasDocuments(proceedingId);
+      case 'other':
+        return DocumentService.getOtherMaterialDocuments(materialId);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -37,6 +41,8 @@ const DocumentsPage = ({ caseType }) => {
         return DocumentService.deleteAdminDocument(proceedingId, documentId);
       case 'kas':
         return DocumentService.deleteKasDocument(proceedingId, documentId);
+      case 'other':
+        return DocumentService.deleteOtherMaterialDocument(materialId, documentId);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -52,6 +58,8 @@ const DocumentsPage = ({ caseType }) => {
         return DocumentService.signAdminDocument(proceedingId, documentId);
       case 'kas':
         return DocumentService.signKasDocument(proceedingId, documentId);
+      case 'other':
+        return DocumentService.signOtherMaterialDocument(materialId, documentId);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -59,7 +67,7 @@ const DocumentsPage = ({ caseType }) => {
 
   useEffect(() => {
     loadDocuments();
-  }, [proceedingId, caseType]);
+  }, [proceedingId, materialId, caseType]);
 
   const loadDocuments = async () => {
     setLoading(true);
@@ -98,11 +106,19 @@ const DocumentsPage = ({ caseType }) => {
   };
 
   const handleCreate = () => {
-    navigate(`/${caseType}-proceedings/${proceedingId}/documents/create`);
+    if (caseType === 'other') {
+      navigate(`/other-materials/${materialId}/documents/create`);
+    } else {
+      navigate(`/${caseType}-proceedings/${proceedingId}/documents/create`);
+    }
   };
 
   const handleBack = () => {
-    navigate('/cards');
+    if (caseType === 'other') {
+      navigate(`/other-materials/${materialId}`);
+    } else {
+      navigate('/cards');
+    }
   };
 
   const getCaseTitle = () => {
@@ -111,6 +127,7 @@ const DocumentsPage = ({ caseType }) => {
       case 'civil': return 'гражданского';
       case 'admin': return 'об административном правонарушении';
       case 'kas': return 'административного (КАС)';
+      case 'other': return 'иного материала';
       default: return '';
     }
   };
@@ -123,7 +140,7 @@ const DocumentsPage = ({ caseType }) => {
     <div className={styles.container}>
       <div className={styles.header}>
         <button onClick={handleBack} className={styles.backButton}>
-          ← На главную
+          ← Назад
         </button>
         <h1>Документы {getCaseTitle()} дела</h1>
         <button onClick={handleCreate} className={styles.addButton}>
@@ -137,7 +154,7 @@ const DocumentsPage = ({ caseType }) => {
         documents={documents}
         onDelete={handleDelete}
         onSign={handleSign}
-        proceedingId={proceedingId}
+        proceedingId={objectId}
         caseType={caseType}
       />
     </div>

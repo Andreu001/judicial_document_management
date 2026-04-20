@@ -11,6 +11,7 @@ import {
   AdditionalInfoTab
 } from './AdministrativeTabComponents';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
+import ProgressLog from '../CaseManagement/ProgressLog';
 
 const AdministrativeDetail = () => {
   const { id } = useParams();
@@ -45,6 +46,7 @@ const AdministrativeDetail = () => {
   const [judges, setJudges] = useState([]);
   const [referringAuthorities, setReferringAuthorities] = useState([]);
   const [collapsedNotifications, setCollapsedNotifications] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState(0);
   
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -661,6 +663,20 @@ const AdministrativeDetail = () => {
 
         {/* Правая колонка - обновленные блоки в стиле уголовных дел */}
         <div className={styles.sidebar}>
+          {/* Блок "Ход дела (справочный лист)" */}
+          <ProgressLog 
+            caseType="coap"
+            caseId={id}
+            onRefresh={refreshProgress}
+          />
+          <NotificationsPanel
+            caseType="coap"
+            caseId={id}
+            caseNumber={adminData?.case_number_admin}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
+
           {/* Блок "Стороны по делу" */}
           <div className={styles.sidebarSection}>
             <div 
@@ -674,7 +690,7 @@ const AdministrativeDetail = () => {
                 </span>
               </h2>
               <button className={styles.sidebarToggleButton}>
-                {collapsedSections.sides ? '▶' : '▼'}
+                {collapsedSections.sides ? 'Развернуть' : 'Свернуть'}
               </button>
             </div>
             
@@ -744,7 +760,7 @@ const AdministrativeDetail = () => {
                 </span>
               </h2>
               <button className={styles.sidebarToggleButton}>
-                {collapsedSections.decisions ? '▶' : '▼'}
+                {collapsedSections.decisions ? 'Развернуть' : 'Свернуть'}
               </button>
             </div>
             
@@ -821,7 +837,7 @@ const AdministrativeDetail = () => {
                 </span>
               </h2>
               <button className={styles.sidebarToggleButton}>
-                {collapsedSections.executions ? '▶' : '▼'}
+                {collapsedSections.executions ? 'Развернуть' : 'Свернуть'}
               </button>
             </div>
             
@@ -883,14 +899,6 @@ const AdministrativeDetail = () => {
               </div>
             )}
           </div>
-
-          <NotificationsPanel
-            caseType="coap"
-            caseId={id}
-            caseNumber={adminData?.case_number_admin}
-            collapsed={collapsedNotifications}
-            onToggle={setCollapsedNotifications}
-          />
         </div>
       </div>
 

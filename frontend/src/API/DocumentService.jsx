@@ -504,6 +504,92 @@ class DocumentService {
       throw error;
     }
   }
+  // === Для иных материалов (Other Materials) ===
+  
+  static async getOtherMaterialDocuments(materialId) {
+    try {
+      const response = await baseService.get(
+        `/other-materials/other-materials/${materialId}/documents/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching other material documents:', error);
+      return [];
+    }
+  }
+
+  static async createOtherMaterialDocument(materialId, documentData) {
+    try {
+      const { content_type, object_id, ...cleanedData } = this.cleanData(documentData);
+      const response = await baseService.post(
+        `/other-materials/other-materials/${materialId}/documents/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating other material document:', error);
+      throw error;
+    }
+  }
+
+  static async getOtherMaterialDocument(materialId, documentId) {
+    try {
+      const response = await baseService.get(
+        `/other-materials/other-materials/${materialId}/documents/${documentId}/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching other material document:', error);
+      throw error;
+    }
+  }
+
+  static async updateOtherMaterialDocument(materialId, documentId, documentData) {
+    try {
+      const cleanedData = this.cleanData(documentData);
+      const response = await baseService.patch(
+        `/other-materials/other-materials/${materialId}/documents/${documentId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating other material document:', error);
+      throw error;
+    }
+  }
+
+  static async deleteOtherMaterialDocument(materialId, documentId) {
+    try {
+      await baseService.delete(`${BASE_URL}documents/${documentId}/`);
+    } catch (error) {
+      console.error('Error deleting other material document:', error);
+      throw error;
+    }
+  }
+
+  static async signOtherMaterialDocument(materialId, documentId) {
+    try {
+      const response = await baseService.post(
+        `/other-materials/other-materials/${materialId}/documents/${documentId}/sign/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error signing other material document:', error);
+      throw error;
+    }
+  }
+
+  static async getOtherMaterialDocumentTemplates(materialId) {
+    try {
+      const response = await baseService.get(
+        `/other-materials/other-materials/${materialId}/document-templates/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching other material document templates:', error);
+      return [];
+    }
+  }
 }
 
 export default DocumentService;

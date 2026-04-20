@@ -1,0 +1,200 @@
+[
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 1,
+    "fields": {
+      "name": "Поступление дела в суд",
+      "code": "case_received",
+      "case_category": "common",
+      "order": 10,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 2,
+    "fields": {
+      "name": "Принятие дела судьей",
+      "code": "judge_acceptance",
+      "case_category": "common",
+      "order": 20,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 3,
+    "fields": {
+      "name": "Назначение судебного заседания",
+      "code": "hearing_scheduled",
+      "case_category": "common",
+      "order": 30,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 4,
+    "fields": {
+      "name": "Проведение судебного заседания",
+      "code": "hearing_held",
+      "case_category": "common",
+      "order": 40,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 5,
+    "fields": {
+      "name": "Отложение судебного заседания",
+      "code": "hearing_postponed",
+      "case_category": "common",
+      "order": 45,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 6,
+    "fields": {
+      "name": "Приостановление производства",
+      "code": "case_suspended",
+      "case_category": "common",
+      "order": 50,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 7,
+    "fields": {
+      "name": "Возобновление производства",
+      "code": "case_resumed",
+      "case_category": "common",
+      "order": 55,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 8,
+    "fields": {
+      "name": "Вынесение решения",
+      "code": "decision_made",
+      "case_category": "common",
+      "order": 60,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 9,
+    "fields": {
+      "name": "Направление уведомления",
+      "code": "send_notification",
+      "case_category": "common",
+      "order": 70,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 10,
+    "fields": {
+      "name": "Поступление апелляционной жалобы",
+      "code": "appeal_received",
+      "case_category": "common",
+      "order": 80,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 11,
+    "fields": {
+      "name": "Сдача дела в архив",
+      "code": "case_archived",
+      "case_category": "common",
+      "order": 90,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 12,
+    "fields": {
+      "name": "Назначение предварительного слушания",
+      "code": "preliminary_hearing_scheduled",
+      "case_category": "criminal",
+      "order": 25,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 13,
+    "fields": {
+      "name": "Проведение предварительного слушания",
+      "code": "preliminary_hearing_held",
+      "case_category": "criminal",
+      "order": 35,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 14,
+    "fields": {
+      "name": "Назначение экспертизы",
+      "code": "expertise_ordered",
+      "case_category": "criminal",
+      "order": 42,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 15,
+    "fields": {
+      "name": "Подготовка дела к судебному разбирательству",
+      "code": "case_preparation",
+      "case_category": "civil",
+      "order": 25,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 16,
+    "fields": {
+      "name": "Предварительное судебное заседание",
+      "code": "preliminary_hearing",
+      "case_category": "civil",
+      "order": 35,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 17,
+    "fields": {
+      "name": "Принятие дела к производству",
+      "code": "kas_acceptance",
+      "case_category": "kas",
+      "order": 15,
+      "is_active": true
+    }
+  },
+  {
+    "model": "case_management.progressactiontype",
+    "pk": 18,
+    "fields": {
+      "name": "Составление протокола об АП",
+      "code": "protocol_made",
+      "case_category": "coap",
+      "order": 5,
+      "is_active": true
+    }
+  }
+]

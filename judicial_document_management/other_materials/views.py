@@ -6,13 +6,15 @@ from django.utils import timezone
 from users.models import User
 from .models import (
     OtherMaterial, OtherMaterialSidesCaseInCase, OtherMaterialLawyer,
-    OtherMaterialMovement, OtherMaterialPetition
+    OtherMaterialMovement, OtherMaterialPetition,
+    OtherMaterialDecision, OtherMaterialExecution
 )
 from .serializers import (
     OtherMaterialSerializer, ArchivedOtherMaterialSerializer,
     OtherMaterialSidesCaseInCaseSerializer, OtherMaterialLawyerSerializer,
     OtherMaterialMovementSerializer, OtherMaterialPetitionSerializer,
-    OtherMaterialOptionsSerializer
+    OtherMaterialOptionsSerializer, OtherMaterialDecisionSerializer,
+    OtherMaterialExecutionSerializer
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -292,6 +294,48 @@ class OtherMaterialPetitionViewSet(viewsets.ModelViewSet):
         if other_material_id:
             context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
         return context
+
+
+class OtherMaterialDecisionViewSet(viewsets.ModelViewSet):
+    serializer_class = OtherMaterialDecisionSerializer
+
+    def get_queryset(self):
+        other_material_id = self.kwargs.get('other_material')
+        if other_material_id:
+            return OtherMaterialDecision.objects.filter(other_material_id=other_material_id)
+        return OtherMaterialDecision.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        other_material_id = self.kwargs.get('other_material')
+        if other_material_id:
+            context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
+        return context
+
+    def perform_create(self, serializer):
+        other_material = self.get_serializer_context().get('other_material')
+        serializer.save(other_material=other_material)
+
+
+class OtherMaterialExecutionViewSet(viewsets.ModelViewSet):
+    serializer_class = OtherMaterialExecutionSerializer
+
+    def get_queryset(self):
+        other_material_id = self.kwargs.get('other_material')
+        if other_material_id:
+            return OtherMaterialExecution.objects.filter(other_material_id=other_material_id)
+        return OtherMaterialExecution.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        other_material_id = self.kwargs.get('other_material')
+        if other_material_id:
+            context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
+        return context
+
+    def perform_create(self, serializer):
+        other_material = self.get_serializer_context().get('other_material')
+        serializer.save(other_material=other_material)
 
 
 @api_view(['GET'])

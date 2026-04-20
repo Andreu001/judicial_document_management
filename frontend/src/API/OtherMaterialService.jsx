@@ -1,4 +1,5 @@
-// API/OtherMaterialService.js
+// API/OtherMaterialService.js - ПОЛНОСТЬЮ ЗАМЕНИТЕ ФАЙЛ
+
 import baseService from './baseService';
 
 const BASE_URL = '/other-materials/';
@@ -424,6 +425,7 @@ class OtherMaterialService {
       return [];
     }
   }
+
   static async getPetitionTypes() {
     try {
       const response = await baseService.get('/business_card/petitions/');
@@ -431,6 +433,152 @@ class OtherMaterialService {
     } catch (error) {
       console.error('Error fetching petition types:', error);
       return [];
+    }
+  }
+
+  static async getDecisions() {
+    try {
+      const response = await baseService.get('/business_card/decisions/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching decisions:', error);
+      return [];
+    }
+  }
+  
+  // === Решения (OtherMaterialDecision) ===
+  
+  static async getDecisions(materialId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}other-materials/${materialId}/decisions/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching decisions:', error);
+      return [];
+    }
+  }
+
+  static async getDecisionById(materialId, decisionId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}other-materials/${materialId}/decisions/${decisionId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Решение не найдено');
+      }
+      console.error('Error fetching decision:', error);
+      throw error;
+    }
+  }
+
+  static async createDecision(materialId, decisionData) {
+    try {
+      const cleanedData = this.cleanData(decisionData);
+      const response = await baseService.post(
+        `${BASE_URL}other-materials/${materialId}/decisions/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating decision:', error);
+      throw error;
+    }
+  }
+
+  static async updateDecision(materialId, decisionId, decisionData) {
+    try {
+      const cleanedData = this.cleanData(decisionData);
+      const response = await baseService.patch(
+        `${BASE_URL}other-materials/${materialId}/decisions/${decisionId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating decision:', error);
+      throw error;
+    }
+  }
+
+  static async deleteDecision(materialId, decisionId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}other-materials/${materialId}/decisions/${decisionId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting decision:', error);
+      throw error;
+    }
+  }
+
+  // === Исполнения (OtherMaterialExecution) ===
+  
+  static async getExecutions(materialId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}other-materials/${materialId}/executions/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching executions:', error);
+      return [];
+    }
+  }
+
+  static async getExecutionById(materialId, executionId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}other-materials/${materialId}/executions/${executionId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Исполнение не найдено');
+      }
+      console.error('Error fetching execution:', error);
+      throw error;
+    }
+  }
+
+  static async createExecution(materialId, executionData) {
+    try {
+      const cleanedData = this.cleanData(executionData);
+      const response = await baseService.post(
+        `${BASE_URL}other-materials/${materialId}/executions/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating execution:', error);
+      throw error;
+    }
+  }
+
+  static async updateExecution(materialId, executionId, executionData) {
+    try {
+      const cleanedData = this.cleanData(executionData);
+      const response = await baseService.patch(
+        `${BASE_URL}other-materials/${materialId}/executions/${executionId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating execution:', error);
+      throw error;
+    }
+  }
+
+  static async deleteExecution(materialId, executionId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}other-materials/${materialId}/executions/${executionId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting execution:', error);
+      throw error;
     }
   }
 }

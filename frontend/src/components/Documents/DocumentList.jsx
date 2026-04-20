@@ -30,11 +30,27 @@ const DocumentList = ({ documents, onDelete, onSign, proceedingId, caseType }) =
   };
 
   const handleView = (documentId) => {
-    navigate(`/${caseType}-proceedings/${proceedingId}/documents/${documentId}`);
+    if (caseType === 'other') {
+      navigate(`/other-materials/${proceedingId}/documents/${documentId}`);
+    } else {
+      navigate(`/${caseType}-proceedings/${proceedingId}/documents/${documentId}`);
+    }
   };
 
   const handleEdit = (documentId) => {
-    navigate(`/${caseType}-proceedings/${proceedingId}/documents/${documentId}/edit`);
+    if (caseType === 'other') {
+      navigate(`/other-materials/${proceedingId}/documents/${documentId}/edit`);
+    } else {
+      navigate(`/${caseType}-proceedings/${proceedingId}/documents/${documentId}/edit`);
+    }
+  };
+
+  const handleCreate = () => {
+    if (caseType === 'other') {
+      navigate(`/other-materials/${proceedingId}/documents/create`);
+    } else {
+      navigate(`/${caseType}-proceedings/${proceedingId}/documents/create`);
+    }
   };
 
   if (documents.length === 0) {
@@ -42,7 +58,7 @@ const DocumentList = ({ documents, onDelete, onSign, proceedingId, caseType }) =
       <div className={styles.emptyState}>
         <p>Документы не добавлены</p>
         <button 
-          onClick={() => navigate(`/${caseType}-proceedings/${proceedingId}/documents/create`)}
+          onClick={handleCreate}
           className={styles.addButton}
         >
           Создать первый документ

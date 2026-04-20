@@ -15,13 +15,99 @@ class ProgressActionType(models.Model):
     """Справочник действий для справочного листа"""
     name = models.CharField(max_length=200, verbose_name="Название действия")
     code = models.CharField(max_length=50, unique=True, verbose_name="Код")
+    case_category = models.CharField(
+        max_length=20, 
+        blank=True, 
+        null=True,
+        choices=[
+            ('criminal', 'Уголовное дело'),
+            ('civil', 'Гражданское дело'),
+            ('coap', 'Дело об АП (КоАП)'),
+            ('kas', 'Административное дело (КАС)'),
+            ('other', 'Иной материал'),
+            ('common', 'Общее для всех'),
+        ],
+        verbose_name="Категория дела"
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок отображения")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
     
     class Meta:
         verbose_name = "Тип действия"
         verbose_name_plural = "Типы действий"
+        ordering = ['case_category', 'order', 'name']
     
     def __str__(self):
+        if self.case_category:
+            return f"{self.name} ({self.get_case_category_display()})"
         return self.name
+
+
+class CaseDeadlineSettings(models.Model):
+    """Настройки сроков для разных категорий дел"""
+    CASE_CATEGORIES = [
+        ('criminal', 'Уголовное дело'),
+        ('civil', 'Гражданское дело'),
+        ('coap', 'Дело об АП (КоАП)'),
+        ('kas', 'Административное дело (КАС)'),
+        ('other', 'Иной материал'),
+    ]
+    
+    category = models.CharField(max_length=20, choices=CASE_CATEGORIES, unique=True, verbose_name="Категория дела")
+    
+    # Сроки для уголовных дел
+    appointment_deadline_simple = models.PositiveIntegerField(default=14, verbose_name="Срок назначения (простые дела, дней)")
+    appointment_deadline_complex = models.PositiveIntegerField(default=30, verbose_name="Срок назначения (сложные дела, дней)")
+    trial_start_deadline = models.PositiveIntegerField(default=14, verbose_name="Срок начала судебного разбирательства (дней)")
+    
+    # Сроки для гражданских дел
+    civil_preparation_deadline = models.PositiveIntegerField(default=30, verbose_name="Срок подготовки дела (дней)")
+    civil_consideration_deadline = models.PositiveIntegerField(default=60, verbose_name="Срок рассмотрения дела (дней)")
+    
+    # Сроки для КАС дел
+    kas_consideration_deadline = models.PositiveIntegerField(default=30, verbose_name="Срок рассмотрения дела (дней)")
+    kas_appeal_deadline = models.PositiveIntegerField(default=30, verbose_name="Срок обжалования (дней)")
+    
+    # Сроки для КоАП дел
+    coap_consideration_deadline = models.PositiveIntegerField(default=15, verbose_name="Срок рассмотрения дела (дней)")
+    coap_appeal_deadline = models.PositiveIntegerField(default=10, verbose_name="Срок обжалования (дней)")
+    
+    # Сроки для иных материалов
+    other_consideration_deadline = models.PositiveIntegerField(default=30, verbose_name="Срок рассмотрения (дней)")
+    
+    # Общие настройки
+    enable_deadline_tracking = models.BooleanField(default=True, verbose_name="Включить отслеживание сроков")
+    enable_violation_alerts = models.BooleanField(default=True, verbose_name="Включить оповещения о нарушениях")
+    
+    class Meta:
+        verbose_name = "Настройка сроков"
+        verbose_name_plural = "Настройки сроков"
+    
+    def __str__(self):
+        return f"Настройки сроков: {self.get_category_display()}"
+
+
+class DeadlineViolation(models.Model):
+    """Записи о нарушениях сроков"""
+    case_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    case_object_id = models.PositiveIntegerField()
+    case = GenericForeignKey('case_content_type', 'case_object_id')
+    
+    deadline_type = models.CharField(max_length=100, verbose_name="Тип срока")
+    deadline_days = models.PositiveIntegerField(verbose_name="Установленный срок (дней)")
+    actual_days = models.PositiveIntegerField(verbose_name="Фактическое количество дней")
+    violation_date = models.DateField(auto_now_add=True, verbose_name="Дата фиксации нарушения")
+    resolved = models.BooleanField(default=False, verbose_name="Нарушение устранено")
+    resolved_date = models.DateField(null=True, blank=True, verbose_name="Дата устранения")
+    notes = models.TextField(blank=True, verbose_name="Примечания")
+    
+    class Meta:
+        verbose_name = "Нарушение срока"
+        verbose_name_plural = "Нарушения сроков"
+        ordering = ['-violation_date']
+    
+    def __str__(self):
+        return f"Нарушение срока {self.deadline_type} по делу {self.case}"
 
 
 class CaseProgressEntry(models.Model):

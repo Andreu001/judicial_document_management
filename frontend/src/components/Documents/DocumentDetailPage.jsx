@@ -7,7 +7,9 @@ import styles from '../../components/Documents/Documents.module.css';
 
 const DocumentDetailPage = ({ caseType }) => {
   const navigate = useNavigate();
-  const { proceedingId, documentId } = useParams();
+  const { proceedingId, materialId, documentId } = useParams();
+  // Для совместимости: если есть proceedingId, используем его, иначе materialId
+  const objectId = proceedingId || materialId;
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,6 +24,8 @@ const DocumentDetailPage = ({ caseType }) => {
         return DocumentService.getAdminDocument(proceedingId, documentId);
       case 'kas':
         return DocumentService.getKasDocument(proceedingId, documentId);
+      case 'other':
+        return DocumentService.getOtherMaterialDocument(materialId, documentId);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -37,6 +41,8 @@ const DocumentDetailPage = ({ caseType }) => {
         return DocumentService.signAdminDocument(proceedingId, id);
       case 'kas':
         return DocumentService.signKasDocument(proceedingId, id);
+      case 'other':
+        return DocumentService.signOtherMaterialDocument(materialId, id);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -52,6 +58,8 @@ const DocumentDetailPage = ({ caseType }) => {
         return DocumentService.deleteAdminDocument(proceedingId, id);
       case 'kas':
         return DocumentService.deleteKasDocument(proceedingId, id);
+      case 'other':
+        return DocumentService.deleteOtherMaterialDocument(materialId, id);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -59,7 +67,7 @@ const DocumentDetailPage = ({ caseType }) => {
 
   useEffect(() => {
     loadDocument();
-  }, [proceedingId, documentId, caseType]);
+  }, [objectId, documentId, caseType]);
 
   const loadDocument = async () => {
     setLoading(true);
@@ -86,13 +94,21 @@ const DocumentDetailPage = ({ caseType }) => {
   };
 
   const handleEdit = (id) => {
-    navigate(`/${caseType}-proceedings/${proceedingId}/documents/${id}/edit`);
+    if (caseType === 'other') {
+      navigate(`/other-materials/${materialId}/documents/${id}/edit`);
+    } else {
+      navigate(`/${caseType}-proceedings/${objectId}/documents/${id}/edit`);
+    }
   };
 
   const handleDelete = async (id) => {
     try {
       await deleteDocumentMethod(id);
-      navigate(`/${caseType}-proceedings/${proceedingId}/documents`);
+      if (caseType === 'other') {
+        navigate(`/other-materials/${materialId}/documents`);
+      } else {
+        navigate(`/${caseType}-proceedings/${objectId}/documents`);
+      }
     } catch (err) {
       console.error('Error deleting document:', err);
       alert('Не удалось удалить документ');
@@ -108,7 +124,13 @@ const DocumentDetailPage = ({ caseType }) => {
       <div className={styles.container}>
         <div className={styles.error}>{error || 'Документ не найден'}</div>
         <button 
-          onClick={() => navigate(`/${caseType}-proceedings/${proceedingId}/documents`)} 
+          onClick={() => {
+            if (caseType === 'other') {
+              navigate(`/other-materials/${materialId}/documents`);
+            } else {
+              navigate(`/${caseType}-proceedings/${objectId}/documents`);
+            }
+          }} 
           className={styles.backButton}
         >
           Вернуться к списку
@@ -124,7 +146,7 @@ const DocumentDetailPage = ({ caseType }) => {
         onSign={handleSign}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        proceedingId={proceedingId}
+        proceedingId={objectId}
         caseType={caseType}
       />
     </div>

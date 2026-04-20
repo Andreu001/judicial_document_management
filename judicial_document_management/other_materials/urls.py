@@ -4,7 +4,8 @@ from .views import (
     OtherMaterialViewSet, OtherMaterialSidesCaseInCaseViewSet,
     OtherMaterialLawyerViewSet, OtherMaterialMovementViewSet,
     OtherMaterialPetitionViewSet, other_material_options,
-    responsible_persons_list
+    responsible_persons_list, OtherMaterialDecisionViewSet,
+    OtherMaterialExecutionViewSet
 )
 
 router = routers.DefaultRouter()
@@ -25,6 +26,14 @@ router.register(
 router.register(
     r'other-materials/(?P<other_material>\d+)/petitions',
     OtherMaterialPetitionViewSet, basename='other-material-petitions'
+)
+router.register(
+    r'other-materials/(?P<other_material>\d+)/decisions',
+    OtherMaterialDecisionViewSet, basename='other-material-decisions'
+)
+router.register(
+    r'other-materials/(?P<other_material>\d+)/executions',
+    OtherMaterialExecutionViewSet, basename='other-material-executions'
 )
 
 urlpatterns = [

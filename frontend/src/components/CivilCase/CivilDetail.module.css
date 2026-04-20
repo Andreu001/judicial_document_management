@@ -455,16 +455,19 @@
 
 .sidebarToggleButton {
   background: none;
-  border: none;
-  font-size: 14px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
   color: #6c757d;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebarToggleButton:hover {
+  background-color: #e9ecef;
   color: #2c3e50;
+  border-color: #adb5bd;
 }
 
 .sidebarSectionContent {

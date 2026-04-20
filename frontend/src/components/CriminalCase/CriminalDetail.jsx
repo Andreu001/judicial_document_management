@@ -626,7 +626,8 @@ const CriminalDetail = () => {
         <div className={styles.sidebar}>
           <div className={styles.sidebarSection}>
             <ProgressLog 
-              criminalCaseId={id} 
+              caseType="criminal"
+              caseId={id}
               onRefresh={refreshProgress}
             />
           </div>

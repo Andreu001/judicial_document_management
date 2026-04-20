@@ -1,19 +1,24 @@
-// MovementDetail.jsx
+// MovementDetail.jsx - ПОЛНОСТЬЮ ЗАМЕНИТЕ ФАЙЛ
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import MovementService from '../../API/MovementService';
 import KasCaseService from '../../API/KasCaseService';
+import OtherMaterialService from '../../API/OtherMaterialService';
 import styles from './MovementDetail.module.css';
 
 const MovementDetail = () => {
-  const { proceedingId, movementId } = useParams();
+  const { proceedingId, movementId, materialId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
   // Определяем тип дела по URL
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
-                   location.pathname.includes('/kas-proceedings/') ? 'kas' : 'civil';
+                   location.pathname.includes('/kas-proceedings/') ? 'kas' :
+                   location.pathname.includes('/other-materials/') ? 'other' : 'civil';
   
+  // Для other-materials используем materialId вместо proceedingId
+  const effectiveProceedingId = caseType === 'other' ? materialId : proceedingId;
   const isEditMode = movementId && movementId !== 'create';
   
   const [movementData, setMovementData] = useState(null);
@@ -33,40 +38,36 @@ const MovementDetail = () => {
   const [decisions, setDecisions] = useState([]);
   const [selectedDecisions, setSelectedDecisions] = useState([]);
 
-  // Загрузка списка решений при монтировании
   useEffect(() => {
     loadDecisions();
   }, []);
 
-  // Загрузка данных движения если это режим редактирования
   useEffect(() => {
-    if (isEditMode) {
+    if (isEditMode && effectiveProceedingId) {
       fetchMovementDetails();
     }
-  }, [proceedingId, movementId, isEditMode, caseType]);
+  }, [effectiveProceedingId, movementId, isEditMode, caseType]);
 
   const fetchMovementDetails = async () => {
     try {
       setLoading(true);
       
-      let response;
+      let movement;
       
       if (caseType === 'kas') {
-        // Для дел КАС используем отдельный сервис
-        response = await KasCaseService.getMovementById(proceedingId, movementId);
+        movement = await KasCaseService.getMovementById(effectiveProceedingId, movementId);
+      } else if (caseType === 'other') {
+        movement = await OtherMaterialService.getMovementById(effectiveProceedingId, movementId);
       } else {
-        // Получаем движение по делу с учетом типа дела
-        response = await MovementService.getMovement(proceedingId, movementId, caseType);
+        const response = await MovementService.getMovement(effectiveProceedingId, movementId, caseType);
+        movement = response.data || response;
       }
       
-      const movement = response.data || response;
       setMovementData(movement);
       
-      // Извлекаем данные из business_movement_detail
       if (movement.business_movement_detail) {
         const details = movement.business_movement_detail;
         
-        // Получаем ID решений из деталей
         let decisionIds = [];
         if (details.decision_case && Array.isArray(details.decision_case)) {
           decisionIds = details.decision_case.map(d => d.id);
@@ -94,7 +95,6 @@ const MovementDetail = () => {
 
   const loadDecisions = async () => {
     try {
-      // Используем существующий метод для получения решений
       const response = await MovementService.getDecisionCases();
       setDecisions(response.data || []);
     } catch (error) {
@@ -120,7 +120,6 @@ const MovementDetail = () => {
     }
     setSelectedDecisions(selectedValues);
     
-    // Обновляем formData
     setFormData(prev => ({
       ...prev,
       decision_case: selectedValues
@@ -148,7 +147,6 @@ const MovementDetail = () => {
       setSaving(true);
       setError(null);
       
-      // Подготавливаем данные для отправки
       const movementData = {
         date_meeting: formData.date_meeting,
         meeting_time: formData.meeting_time,
@@ -160,53 +158,31 @@ const MovementDetail = () => {
 
       console.log('Данные для движения:', movementData);
       console.log('Тип дела:', caseType);
+      console.log('Proceeding ID:', effectiveProceedingId);
 
-      let response;
-      
       if (isEditMode) {
-        // Обновляем существующее движение
         if (caseType === 'kas') {
-          response = await KasCaseService.updateMovement(proceedingId, movementId, movementData);
+          await KasCaseService.updateMovement(effectiveProceedingId, movementId, movementData);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.updateMovement(effectiveProceedingId, movementId, movementData);
         } else {
-          response = await MovementService.updateMovement(
-            proceedingId, 
-            movementId, 
-            movementData,
-            caseType
-          );
+          await MovementService.updateMovement(effectiveProceedingId, movementId, movementData, caseType);
         }
       } else {
-        // Создаем новое движение
         if (caseType === 'kas') {
-          response = await KasCaseService.createMovement(proceedingId, movementData);
+          await KasCaseService.createMovement(effectiveProceedingId, movementData);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.createMovement(effectiveProceedingId, movementData);
         } else {
-          response = await MovementService.createMovement(
-            proceedingId, 
-            movementData,
-            caseType
-          );
+          await MovementService.createMovement(effectiveProceedingId, movementData, caseType);
         }
       }
       
-      const responseData = response.data || response;
-      
-      if (responseData) {
-        console.log('Движение сохранено:', responseData);
-        
-        if (!isEditMode && responseData.id) {
-          // Перенаправляем на страницу созданного движения в зависимости от типа дела
-          if (caseType === 'admin') {
-            navigate(-1);
-          } else if (caseType === 'kas') {
-            navigate(-1);
-          } else {
-            navigate(-1);
-          }
-        } else {
-          // Обновляем данные на странице
-          await fetchMovementDetails();
-          setIsEditing(false);
-        }
+      if (!isEditMode) {
+        navigate(-1);
+      } else {
+        await fetchMovementDetails();
+        setIsEditing(false);
       }
       
       setSaving(false);
@@ -245,19 +221,11 @@ const MovementDetail = () => {
   const handleCancel = () => {
     if (isEditMode) {
       if (movementData) {
-        // Восстанавливаем данные из formData (они уже должны быть загружены)
         setIsEditing(false);
         setError(null);
       }
     } else {
-      // Возвращаемся к соответствующему делу в зависимости от типа
-      if (caseType === 'admin') {
-        navigate(-1);
-      } else if (caseType === 'kas') {
-        navigate(-1);
-      } else {
-        navigate(-1);
-      }
+      navigate(-1);
     }
   };
 
@@ -282,7 +250,6 @@ const MovementDetail = () => {
     }).join(', ');
   };
 
-  // Определяем заголовок в зависимости от типа дела
   const getTitle = () => {
     const action = isEditMode ? 'Движение по делу' : 'Новое движение по делу';
     
@@ -293,6 +260,9 @@ const MovementDetail = () => {
         break;
       case 'kas':
         caseTypeText = '(административное дело, КАС РФ)';
+        break;
+      case 'other':
+        caseTypeText = '(иные материалы)';
         break;
       default:
         caseTypeText = '(гражданское)';
@@ -338,6 +308,9 @@ const MovementDetail = () => {
           )}
           {caseType === 'kas' && (
             <span className={styles.caseTypeBadge}>Административное дело (КАС РФ)</span>
+          )}
+          {caseType === 'other' && (
+            <span className={styles.caseTypeBadge}>Иные материалы</span>
           )}
         </div>
         
@@ -386,7 +359,6 @@ const MovementDetail = () => {
             </div>
 
             <div className={styles.tabContentWrapper}>
-              {/* Вкладка: Основная информация */}
               {activeTab === 'main' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -456,7 +428,6 @@ const MovementDetail = () => {
                 </div>
               )}
 
-              {/* Вкладка: Состав и результаты */}
               {activeTab === 'composition' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -520,7 +491,6 @@ const MovementDetail = () => {
                 </div>
               )}
 
-              {/* Вкладка: Служебная информация */}
               {activeTab === 'info' && isEditMode && movementData && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -533,14 +503,15 @@ const MovementDetail = () => {
 
                     <div className={styles.field}>
                       <label>ID дела</label>
-                      <span className={styles.valueReadonly}>{proceedingId}</span>
+                      <span className={styles.valueReadonly}>{effectiveProceedingId}</span>
                     </div>
 
                     <div className={styles.field}>
                       <label>Тип дела</label>
                       <span className={styles.valueReadonly}>
                         {caseType === 'admin' ? 'Административное правонарушение' :
-                         caseType === 'kas' ? 'Административное дело (КАС РФ)' : 'Гражданское'}
+                         caseType === 'kas' ? 'Административное дело (КАС РФ)' :
+                         caseType === 'other' ? 'Иные материалы' : 'Гражданское'}
                       </span>
                     </div>
                   </div>

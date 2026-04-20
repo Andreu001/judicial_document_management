@@ -1,17 +1,20 @@
-# case_management/views.py - исправленный
+# case_management/views.py - исправленная полная версия
 
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
 from django.apps import apps
 from django.http import Http404
-from .models import (CaseProgressEntry, ProgressActionType,
+from .models import (
+    CaseProgressEntry, ProgressActionType,
     NotificationChannel, NotificationStatus, 
-    NotificationTemplate, Notification
+    NotificationTemplate, Notification,
+    CaseDeadlineSettings, DeadlineViolation
 )
-from .serializers import (CaseProgressEntrySerializer, ProgressActionTypeSerializer,
+from .serializers import (
+    CaseProgressEntrySerializer, ProgressActionTypeSerializer,
     NotificationChannelSerializer, NotificationStatusSerializer,
     NotificationTemplateSerializer, NotificationSerializer,
     NotificationMarkSentSerializer, NotificationMarkDeliveredSerializer,
@@ -20,7 +23,7 @@ from .serializers import (CaseProgressEntrySerializer, ProgressActionTypeSeriali
 
 
 class ProgressActionTypeViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ProgressActionType.objects.all()
+    queryset = ProgressActionType.objects.filter(is_active=True)
     serializer_class = ProgressActionTypeSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -53,6 +56,150 @@ class CriminalCaseProgressViewSet(viewsets.ModelViewSet):
             serializer.save(
                 case_content_type=content_type,
                 case_object_id=criminal_case.id,
+                author=self.request.user,
+                description=self.request.data.get('description', '')
+            )
+        except ImportError:
+            pass
+
+
+class CivilCaseProgressViewSet(viewsets.ModelViewSet):
+    """ViewSet для записей справочного листа гражданских дел"""
+    serializer_class = CaseProgressEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        case_id = self.kwargs.get('case_id')
+        if not case_id:
+            return CaseProgressEntry.objects.none()
+        try:
+            from civil_proceedings.models import CivilProceedings
+            civil_case = get_object_or_404(CivilProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(civil_case)
+            return CaseProgressEntry.objects.filter(
+                case_content_type=content_type,
+                case_object_id=civil_case.id
+            ).order_by('-action_date', '-created_date')
+        except ImportError:
+            return CaseProgressEntry.objects.none()
+
+    def perform_create(self, serializer):
+        case_id = self.kwargs.get('case_id')
+        try:
+            from civil_proceedings.models import CivilProceedings
+            civil_case = get_object_or_404(CivilProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(civil_case)
+            serializer.save(
+                case_content_type=content_type,
+                case_object_id=civil_case.id,
+                author=self.request.user,
+                description=self.request.data.get('description', '')
+            )
+        except ImportError:
+            pass
+
+
+class KasCaseProgressViewSet(viewsets.ModelViewSet):
+    """ViewSet для записей справочного листа дел КАС"""
+    serializer_class = CaseProgressEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        case_id = self.kwargs.get('case_id')
+        if not case_id:
+            return CaseProgressEntry.objects.none()
+        try:
+            from administrative_proceedings.models import KasProceedings
+            kas_case = get_object_or_404(KasProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(kas_case)
+            return CaseProgressEntry.objects.filter(
+                case_content_type=content_type,
+                case_object_id=kas_case.id
+            ).order_by('-action_date', '-created_date')
+        except ImportError:
+            return CaseProgressEntry.objects.none()
+
+    def perform_create(self, serializer):
+        case_id = self.kwargs.get('case_id')
+        try:
+            from administrative_proceedings.models import KasProceedings
+            kas_case = get_object_or_404(KasProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(kas_case)
+            serializer.save(
+                case_content_type=content_type,
+                case_object_id=kas_case.id,
+                author=self.request.user,
+                description=self.request.data.get('description', '')
+            )
+        except ImportError:
+            pass
+
+
+class CoapCaseProgressViewSet(viewsets.ModelViewSet):
+    """ViewSet для записей справочного листа дел об АП (КоАП)"""
+    serializer_class = CaseProgressEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        case_id = self.kwargs.get('case_id')
+        if not case_id:
+            return CaseProgressEntry.objects.none()
+        try:
+            from administrative_code.models import AdministrativeProceedings
+            coap_case = get_object_or_404(AdministrativeProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(coap_case)
+            return CaseProgressEntry.objects.filter(
+                case_content_type=content_type,
+                case_object_id=coap_case.id
+            ).order_by('-action_date', '-created_date')
+        except ImportError:
+            return CaseProgressEntry.objects.none()
+
+    def perform_create(self, serializer):
+        case_id = self.kwargs.get('case_id')
+        try:
+            from administrative_code.models import AdministrativeProceedings
+            coap_case = get_object_or_404(AdministrativeProceedings, pk=case_id)
+            content_type = ContentType.objects.get_for_model(coap_case)
+            serializer.save(
+                case_content_type=content_type,
+                case_object_id=coap_case.id,
+                author=self.request.user,
+                description=self.request.data.get('description', '')
+            )
+        except ImportError:
+            pass
+
+
+class OtherMaterialProgressViewSet(viewsets.ModelViewSet):
+    """ViewSet для записей справочного листа иных материалов"""
+    serializer_class = CaseProgressEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        case_id = self.kwargs.get('case_id')
+        if not case_id:
+            return CaseProgressEntry.objects.none()
+        try:
+            from other_materials.models import OtherMaterial
+            other_material = get_object_or_404(OtherMaterial, pk=case_id)
+            content_type = ContentType.objects.get_for_model(other_material)
+            return CaseProgressEntry.objects.filter(
+                case_content_type=content_type,
+                case_object_id=other_material.id
+            ).order_by('-action_date', '-created_date')
+        except ImportError:
+            return CaseProgressEntry.objects.none()
+
+    def perform_create(self, serializer):
+        case_id = self.kwargs.get('case_id')
+        try:
+            from other_materials.models import OtherMaterial
+            other_material = get_object_or_404(OtherMaterial, pk=case_id)
+            content_type = ContentType.objects.get_for_model(other_material)
+            serializer.save(
+                case_content_type=content_type,
+                case_object_id=other_material.id,
                 author=self.request.user,
                 description=self.request.data.get('description', '')
             )
@@ -106,23 +253,24 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 'criminal': 'criminal_proceedings',
                 'civil': 'civil_proceedings',
                 'coap': 'administrative_code',
-                'kas': 'administrative_proceedings'
+                'kas': 'administrative_proceedings',
+                'other': 'other_materials',
+            }
+            model_name_map = {
+                'criminal': 'criminalproceedings',
+                'civil': 'civilproceedings',
+                'coap': 'administrativeproceedings',
+                'kas': 'kasproceedings',
+                'other': 'othermaterial',
             }
             app_label = app_label_map.get(case_type)
-            if app_label:
-                model_name_map = {
-                    'criminal': 'criminalproceedings',
-                    'civil': 'civilproceedings',
-                    'coap': 'administrativeproceedings',
-                    'kas': 'kasproceedings',
-                }
-                model_name = model_name_map.get(case_type)
-                if model_name:
-                    try:
-                        ct = ContentType.objects.get(app_label=app_label, model=model_name)
-                        queryset = queryset.filter(case_content_type=ct, case_object_id=case_id)
-                    except ContentType.DoesNotExist:
-                        pass
+            model_name = model_name_map.get(case_type)
+            if app_label and model_name:
+                try:
+                    ct = ContentType.objects.get(app_label=app_label, model=model_name)
+                    queryset = queryset.filter(case_content_type=ct, case_object_id=case_id)
+                except ContentType.DoesNotExist:
+                    pass
         
         status_code = self.request.query_params.get('status')
         if status_code:
@@ -211,8 +359,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
         hearing_time = request.data.get('hearing_time')
         hearing_room = request.data.get('hearing_room', '')
         
-        print(f"generate_preview: template_id={template_id}, case_type={case_type}, case_id={case_id}, participant_type={participant_type}, participant_id={participant_id}")
-        
         if not template_id:
             return Response({'error': 'Не указан template_id'}, status=status.HTTP_400_BAD_REQUEST)
         if not case_type:
@@ -224,20 +370,16 @@ class NotificationViewSet(viewsets.ModelViewSet):
         if not participant_id:
             return Response({'error': 'Не указан participant_id'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Получаем шаблон
         try:
             template = NotificationTemplate.objects.get(id=template_id, is_active=True)
         except NotificationTemplate.DoesNotExist:
             return Response({'error': 'Шаблон не найден'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Получаем данные участника с учетом типа дела
         participant_data = self._get_participant_data_by_case_type(case_type, participant_type, participant_id)
         if not participant_data:
-            return Response({'error': f'Участник не найден: case_type={case_type}, participant_type={participant_type}, id={participant_id}'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': f'Участник не найден'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Получаем номер дела
         case_number = self._get_case_number(case_type, case_id)
-        
         court_name = self._get_court_name()
         
         context = {
@@ -262,7 +404,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
         })
 
     def _get_participant_data_by_case_type(self, case_type, participant_type, participant_id):
-        """Получение данных участника в зависимости от типа дела"""
         try:
             participant_id = int(participant_id)
         except (ValueError, TypeError):
@@ -281,8 +422,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                         'email': '',
                         'address': defendant.address or '',
                     }
-                except Exception as e:
-                    print(f"Error getting defendant: {e}")
+                except Exception:
                     return None
             
             elif participant_type == 'lawyer':
@@ -298,8 +438,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': lawyer.lawyer.law_firm_address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting criminal lawyer: {e}")
+                except Exception:
                     return None
             
             elif participant_type == 'side':
@@ -315,8 +454,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': side.criminal_side_case.address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting criminal side: {e}")
+                except Exception:
                     return None
         
         # Для гражданских дел
@@ -334,8 +472,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': side.sides_case_incase.address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting civil side: {e}")
+                except Exception:
                     return None
             
             elif participant_type == 'lawyer':
@@ -351,11 +488,10 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': lawyer.lawyer.law_firm_address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting civil lawyer: {e}")
+                except Exception:
                     return None
         
-        # Для дел об АП (КоАП) - case_type 'coap' соответствует administrative_code
+        # Для дел об АП (КоАП)
         elif case_type == 'coap':
             if participant_type == 'side':
                 try:
@@ -370,8 +506,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': side.sides_case_incase.address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting coap side: {e}")
+                except Exception:
                     return None
             
             elif participant_type == 'lawyer':
@@ -387,11 +522,10 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': lawyer.lawyer.law_firm_address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting coap lawyer: {e}")
+                except Exception:
                     return None
         
-        # Для дел по КАС - case_type 'kas' соответствует administrative_proceedings
+        # Для дел по КАС
         elif case_type == 'kas':
             if participant_type == 'side':
                 try:
@@ -406,8 +540,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': side.sides_case_incase.address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting kas side: {e}")
+                except Exception:
                     return None
             
             elif participant_type == 'lawyer':
@@ -423,8 +556,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': lawyer.lawyer.law_firm_address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting kas lawyer: {e}")
+                except Exception:
                     return None
         
         # Для иных материалов
@@ -442,8 +574,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': side.sides_case_incase.address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting other side: {e}")
+                except Exception:
                     return None
             
             elif participant_type == 'lawyer':
@@ -459,14 +590,12 @@ class NotificationViewSet(viewsets.ModelViewSet):
                             'address': lawyer.lawyer.law_firm_address or '',
                         }
                     return None
-                except Exception as e:
-                    print(f"Error getting other lawyer: {e}")
+                except Exception:
                     return None
         
         return None
     
     def _get_case_number(self, case_type, case_id):
-        """Получение номера дела"""
         try:
             if case_type == 'criminal':
                 from criminal_proceedings.models import CriminalProceedings
@@ -490,8 +619,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 return case.registration_number or f"№{case_id}"
             else:
                 return f"№{case_id}"
-        except Exception as e:
-            print(f"Error getting case number: {e}")
+        except Exception:
             return f"№{case_id}"
     
     def _get_court_name(self):
@@ -520,7 +648,6 @@ class CaseParticipantsViewSet(viewsets.GenericViewSet):
         
         participants = []
         
-        # Получаем стороны
         sides = self._get_case_sides(case_type, case_id)
         for side in sides:
             participants.append({
@@ -534,7 +661,6 @@ class CaseParticipantsViewSet(viewsets.GenericViewSet):
                 'address': side['address'],
             })
         
-        # Получаем адвокатов/представителей
         lawyers = self._get_case_lawyers(case_type, case_id)
         for lawyer in lawyers:
             participants.append({
@@ -548,7 +674,6 @@ class CaseParticipantsViewSet(viewsets.GenericViewSet):
                 'address': lawyer['address'],
             })
         
-        # Для уголовных дел добавляем подсудимых
         if case_type == 'criminal':
             defendants = self._get_case_defendants(case_id)
             for defendant in defendants:
@@ -691,58 +816,79 @@ class CaseParticipantsViewSet(viewsets.GenericViewSet):
         return result
 
 
-class GenericCaseProgressViewSet(viewsets.ModelViewSet):
-    serializer_class = CaseProgressEntrySerializer
-    permission_classes = [permissions.IsAuthenticated]
+@api_view(['GET'])
+def deadline_settings_list(request):
+    """Получение списка настроек сроков"""
+    from .models import CaseDeadlineSettings
+    settings = CaseDeadlineSettings.objects.all()
+    data = []
+    for setting in settings:
+        data.append({
+            'category': setting.category,
+            'category_display': setting.get_category_display(),
+            'appointment_deadline_simple': setting.appointment_deadline_simple,
+            'appointment_deadline_complex': setting.appointment_deadline_complex,
+            'trial_start_deadline': setting.trial_start_deadline,
+            'civil_preparation_deadline': setting.civil_preparation_deadline,
+            'civil_consideration_deadline': setting.civil_consideration_deadline,
+            'kas_consideration_deadline': setting.kas_consideration_deadline,
+            'kas_appeal_deadline': setting.kas_appeal_deadline,
+            'coap_consideration_deadline': setting.coap_consideration_deadline,
+            'coap_appeal_deadline': setting.coap_appeal_deadline,
+            'other_consideration_deadline': setting.other_consideration_deadline,
+            'enable_deadline_tracking': setting.enable_deadline_tracking,
+            'enable_violation_alerts': setting.enable_violation_alerts,
+        })
+    return Response(data)
+
+
+@api_view(['GET', 'PUT'])
+def deadline_settings_detail(request, category):
+    """Получение или обновление настроек сроков для конкретной категории"""
+    from .models import CaseDeadlineSettings
+    try:
+        setting = CaseDeadlineSettings.objects.get(category=category)
+    except CaseDeadlineSettings.DoesNotExist:
+        return Response({'error': 'Настройки не найдены'}, status=404)
     
-    def get_case_model(self, case_type, case_id):
-        models_map = {
-            'criminal': ('criminal_proceedings', 'CriminalProceedings'),
-            'civil': ('civil_proceedings', 'CivilProceedings'),
-            'coap': ('administrative_code', 'AdministrativeProceedings'),
-            'kas': ('administrative_proceedings', 'KasProceedings'),
-        }
-        
-        if case_type not in models_map:
-            return None
-        
-        app_label, model_name = models_map[case_type]
-        try:
-            app = apps.get_app_config(app_label)
-            model = app.get_model(model_name)
-            return model.objects.get(pk=case_id)
-        except Exception:
-            return None
+    if request.method == 'GET':
+        return Response({
+            'category': setting.category,
+            'category_display': setting.get_category_display(),
+            'appointment_deadline_simple': setting.appointment_deadline_simple,
+            'appointment_deadline_complex': setting.appointment_deadline_complex,
+            'trial_start_deadline': setting.trial_start_deadline,
+            'civil_preparation_deadline': setting.civil_preparation_deadline,
+            'civil_consideration_deadline': setting.civil_consideration_deadline,
+            'kas_consideration_deadline': setting.kas_consideration_deadline,
+            'kas_appeal_deadline': setting.kas_appeal_deadline,
+            'coap_consideration_deadline': setting.coap_consideration_deadline,
+            'coap_appeal_deadline': setting.coap_appeal_deadline,
+            'other_consideration_deadline': setting.other_consideration_deadline,
+            'enable_deadline_tracking': setting.enable_deadline_tracking,
+            'enable_violation_alerts': setting.enable_violation_alerts,
+        })
     
-    def get_queryset(self):
-        case_type = self.kwargs.get('case_type')
-        case_id = self.kwargs.get('case_id')
+    elif request.method == 'PUT':
+        # Простой сериализатор для обновления
+        for key, value in request.data.items():
+            if hasattr(setting, key):
+                setattr(setting, key, value)
+        setting.save()
         
-        if not case_type or not case_id:
-            return CaseProgressEntry.objects.none()
-        
-        case = self.get_case_model(case_type, case_id)
-        if not case:
-            return CaseProgressEntry.objects.none()
-        
-        content_type = ContentType.objects.get_for_model(case)
-        return CaseProgressEntry.objects.filter(
-            case_content_type=content_type,
-            case_object_id=case.id
-        ).order_by('-action_date', '-created_date')
-    
-    def perform_create(self, serializer):
-        case_type = self.kwargs.get('case_type')
-        case_id = self.kwargs.get('case_id')
-        
-        case = self.get_case_model(case_type, case_id)
-        if not case:
-            raise Http404("Дело не найдено")
-        
-        content_type = ContentType.objects.get_for_model(case)
-        serializer.save(
-            case_content_type=content_type,
-            case_object_id=case.id,
-            author=self.request.user,
-            description=self.request.data.get('description', '')
-        )
+        return Response({
+            'category': setting.category,
+            'category_display': setting.get_category_display(),
+            'appointment_deadline_simple': setting.appointment_deadline_simple,
+            'appointment_deadline_complex': setting.appointment_deadline_complex,
+            'trial_start_deadline': setting.trial_start_deadline,
+            'civil_preparation_deadline': setting.civil_preparation_deadline,
+            'civil_consideration_deadline': setting.civil_consideration_deadline,
+            'kas_consideration_deadline': setting.kas_consideration_deadline,
+            'kas_appeal_deadline': setting.kas_appeal_deadline,
+            'coap_consideration_deadline': setting.coap_consideration_deadline,
+            'coap_appeal_deadline': setting.coap_appeal_deadline,
+            'other_consideration_deadline': setting.other_consideration_deadline,
+            'enable_deadline_tracking': setting.enable_deadline_tracking,
+            'enable_violation_alerts': setting.enable_violation_alerts,
+        })

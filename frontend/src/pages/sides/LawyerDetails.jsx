@@ -5,10 +5,11 @@ import KasCaseService from '../../API/KasCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import CivilCaseService from '../../API/CivilCaseService';
 import AdministrativeCaseService from '../../API/AdministrativeCaseService';
+import OtherMaterialService from '../../API/OtherMaterialService';
 import styles from './LawyerDetails.module.css';
 
 const LawyerDetails = () => {
-  const { proceedingId, lawyerId } = useParams();
+  const { proceedingId, lawyerId, materialId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -16,7 +17,11 @@ const LawyerDetails = () => {
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
                    location.pathname.includes('/kas-proceedings/') ? 'kas' :
                    location.pathname.includes('/criminal-proceedings/') ? 'criminal' : 
-                   location.pathname.includes('/civil-proceedings/') ? 'civil' : 'unknown';
+                   location.pathname.includes('/civil-proceedings/') ? 'civil' :
+                   location.pathname.includes('/other-materials/') ? 'other' : 'unknown';
+  
+  // Для other-materials используем materialId вместо proceedingId
+  const effectiveProceedingId = caseType === 'other' ? materialId : proceedingId;
   
   const [lawyerData, setLawyerData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -51,6 +56,7 @@ const LawyerDetails = () => {
       case 'civil': return 'CivilLawyer';
       case 'admin': return 'AdministrativeLawyer';
       case 'kas': return 'KasLawyer';
+      case 'other': return 'OtherMaterialLawyer';
       default: return 'Lawyer';
     }
   };
@@ -66,6 +72,8 @@ const LawyerDetails = () => {
         return CivilCaseService;
       case 'admin':
         return AdministrativeCaseService;
+      case 'other':
+        return OtherMaterialService;
       default:
         return LawyerService;
     }
@@ -86,15 +94,17 @@ const LawyerDetails = () => {
             const service = getLoadService();
             
             if (caseType === 'kas') {
-              data = await KasCaseService.getLawyerById(proceedingId, numericId);
+              data = await KasCaseService.getLawyerById(effectiveProceedingId, numericId);
             } else if (caseType === 'criminal') {
-              data = await CriminalCaseService.getLawyerById(proceedingId, numericId);
+              data = await CriminalCaseService.getLawyerById(effectiveProceedingId, numericId);
             } else if (caseType === 'civil') {
-              data = await CivilCaseService.getLawyerById(proceedingId, numericId);
+              data = await CivilCaseService.getLawyerById(effectiveProceedingId, numericId);
             } else if (caseType === 'admin') {
-              data = await AdministrativeCaseService.getLawyerById(proceedingId, numericId);
+              data = await AdministrativeCaseService.getLawyerById(effectiveProceedingId, numericId);
+            } else if (caseType === 'other') {
+              data = await OtherMaterialService.getLawyerById(effectiveProceedingId, numericId);
             } else {
-              data = await LawyerService.getLawyerById(proceedingId, numericId, caseType);
+              data = await LawyerService.getLawyerById(effectiveProceedingId, numericId, caseType);
             }
             
             console.log('Received lawyer data:', data);
@@ -134,7 +144,7 @@ const LawyerDetails = () => {
     };
 
     fetchData();
-  }, [proceedingId, lawyerId, caseType]);
+  }, [effectiveProceedingId, lawyerId, caseType]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -180,30 +190,35 @@ const LawyerDetails = () => {
 
       console.log('Sending request data:', requestData);
       console.log('Case type:', caseType);
+      console.log('Proceeding ID:', effectiveProceedingId);
 
       if (lawyerId && lawyerId !== 'create' && lawyerId !== 'undefined' && lawyerId !== 'null') {
         if (caseType === 'kas') {
-          await KasCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+          await KasCaseService.updateLawyer(effectiveProceedingId, lawyerId, requestData);
         } else if (caseType === 'criminal') {
-          await CriminalCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+          await CriminalCaseService.updateLawyer(effectiveProceedingId, lawyerId, requestData);
         } else if (caseType === 'civil') {
-          await CivilCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+          await CivilCaseService.updateLawyer(effectiveProceedingId, lawyerId, requestData);
         } else if (caseType === 'admin') {
-          await AdministrativeCaseService.updateLawyer(proceedingId, lawyerId, requestData);
+          await AdministrativeCaseService.updateLawyer(effectiveProceedingId, lawyerId, requestData);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.updateLawyer(effectiveProceedingId, lawyerId, requestData);
         } else {
-          await LawyerService.updateLawyer(proceedingId, lawyerId, requestData, caseType);
+          await LawyerService.updateLawyer(effectiveProceedingId, lawyerId, requestData, caseType);
         }
       } else {
         if (caseType === 'kas') {
-          await KasCaseService.createLawyer(proceedingId, requestData);
+          await KasCaseService.createLawyer(effectiveProceedingId, requestData);
         } else if (caseType === 'criminal') {
-          await CriminalCaseService.createLawyer(proceedingId, requestData);
+          await CriminalCaseService.createLawyer(effectiveProceedingId, requestData);
         } else if (caseType === 'civil') {
-          await CivilCaseService.createLawyer(proceedingId, requestData);
+          await CivilCaseService.createLawyer(effectiveProceedingId, requestData);
         } else if (caseType === 'admin') {
-          await AdministrativeCaseService.createLawyer(proceedingId, requestData);
+          await AdministrativeCaseService.createLawyer(effectiveProceedingId, requestData);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.createLawyer(effectiveProceedingId, requestData);
         } else {
-          await LawyerService.createLawyer(proceedingId, requestData, caseType);
+          await LawyerService.createLawyer(effectiveProceedingId, requestData, caseType);
         }
       }
       
@@ -237,22 +252,14 @@ const LawyerDetails = () => {
       case 'civil':
         caseTypeText = 'представителя (гражданское)';
         break;
+      case 'other':
+        caseTypeText = 'представителя (иные материалы)';
+        break;
       default:
         caseTypeText = 'представителя';
     }
     
     return `${action} ${caseTypeText}`;
-  };
-
-  // Получаем имя адвоката для отображения
-  const getLawyerName = () => {
-    if (lawyerData?.lawyer_detail?.law_firm_name) {
-      return lawyerData.lawyer_detail.law_firm_name;
-    }
-    if (formData?.law_firm_name) {
-      return formData.law_firm_name;
-    }
-    return 'Представитель';
   };
 
   if (loading) {
@@ -278,6 +285,9 @@ const LawyerDetails = () => {
           )}
           {caseType === 'kas' && (
             <span className={styles.caseTypeBadge}>Административное дело (КАС РФ)</span>
+          )}
+          {caseType === 'other' && (
+            <span className={styles.caseTypeBadge}>Иные материалы</span>
           )}
         </div>
         <div className={styles.headerRight}>

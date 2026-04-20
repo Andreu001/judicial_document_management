@@ -5,16 +5,21 @@ import PetitionService from '../../API/PetitionService';
 import KasCaseService from '../../API/KasCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import CivilCaseService from '../../API/CivilCaseService';
+import OtherMaterialService from '../../API/OtherMaterialService';
 
 const PetitionDetail = () => {
-  const { proceedingId, petitionId } = useParams();
+  const { proceedingId, petitionId, materialId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Определяем тип дела по URL - ДОБАВЛЯЕМ УГОЛОВНЫЕ ДЕЛА
+  // Определяем тип дела по URL
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
                    location.pathname.includes('/kas-proceedings/') ? 'kas' :
-                   location.pathname.includes('/criminal-proceedings/') ? 'criminal' : 'civil';
+                   location.pathname.includes('/criminal-proceedings/') ? 'criminal' :
+                   location.pathname.includes('/other-materials/') ? 'other' : 'civil';
+  
+  // Для other-materials используем materialId вместо proceedingId
+  const effectiveProceedingId = caseType === 'other' ? materialId : proceedingId;
   
   const [petitionData, setPetitionData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -37,35 +42,38 @@ const PetitionDetail = () => {
       try {
         setLoading(true);
         
-        if (!proceedingId) {
+        if (!effectiveProceedingId) {
           console.error('proceedingId отсутствует');
           setError('ID дела не указан');
           setLoading(false);
           return;
         }
         
-        console.log('Загрузка данных для дела:', proceedingId, 'Тип дела:', caseType);
+        console.log('Загрузка данных для дела:', effectiveProceedingId, 'Тип дела:', caseType);
         
         let petitionTypesData, decisionsData, sidesData, lawyersData;
         
         if (caseType === 'kas') {
           petitionTypesData = await PetitionService.getPetitionTypes();
           decisionsData = await PetitionService.getDecisions();
-          sidesData = await KasCaseService.getSides(proceedingId);
-          lawyersData = await KasCaseService.getLawyers(proceedingId);
+          sidesData = await KasCaseService.getSides(effectiveProceedingId);
+          lawyersData = await KasCaseService.getLawyers(effectiveProceedingId);
         } else if (caseType === 'criminal') {
-          // Для уголовных дел
           petitionTypesData = await PetitionService.getPetitionTypes();
           decisionsData = await PetitionService.getDecisions();
-          sidesData = await CriminalCaseService.getSides(proceedingId);
-          lawyersData = await CriminalCaseService.getLawyers(proceedingId);
+          sidesData = await CriminalCaseService.getSides(effectiveProceedingId);
+          lawyersData = await CriminalCaseService.getLawyers(effectiveProceedingId);
+        } else if (caseType === 'other') {
+          petitionTypesData = await OtherMaterialService.getPetitionTypes();
+          decisionsData = await OtherMaterialService.getDecisions();
+          sidesData = await OtherMaterialService.getSides(effectiveProceedingId);
+          lawyersData = await OtherMaterialService.getLawyers(effectiveProceedingId);
         } else {
-          // Для гражданских и административных дел
           [petitionTypesData, decisionsData, sidesData, lawyersData] = await Promise.all([
             PetitionService.getPetitionTypes(),
             PetitionService.getDecisions(),
-            PetitionService.getSides(proceedingId, caseType),
-            PetitionService.getLawyers(proceedingId, caseType)
+            PetitionService.getSides(effectiveProceedingId, caseType),
+            PetitionService.getLawyers(effectiveProceedingId, caseType)
           ]);
         }
         
@@ -81,7 +89,6 @@ const PetitionDetail = () => {
         setSides(sidesData || []);
         setLawyers(lawyersData || []);
         
-        // Формируем список заявителей в зависимости от типа дела
         const allPetitioners = [];
         
         sidesData.forEach(side => {
@@ -105,7 +112,8 @@ const PetitionDetail = () => {
             role: role,
             type: caseType === 'criminal' ? 'criminal_side' :
                   caseType === 'admin' ? 'admin_sides' : 
-                  caseType === 'kas' ? 'kas_sides' : 'civil_sides',
+                  caseType === 'kas' ? 'kas_sides' :
+                  caseType === 'other' ? 'other_sides' : 'civil_sides',
             typeLabel: 'Сторона',
             detail: sideDetail
           });
@@ -125,6 +133,9 @@ const PetitionDetail = () => {
             case 'kas':
               roleLabel = 'Представитель';
               break;
+            case 'other':
+              roleLabel = 'Представитель';
+              break;
             default:
               roleLabel = 'Адвокат';
           }
@@ -135,7 +146,8 @@ const PetitionDetail = () => {
             role: lawyer.sides_case_role_detail?.name || roleLabel,
             type: caseType === 'criminal' ? 'criminal_lawyer' :
                   caseType === 'admin' ? 'admin_lawyer' : 
-                  caseType === 'kas' ? 'kas_lawyer' : 'civil_lawyer',
+                  caseType === 'kas' ? 'kas_lawyer' :
+                  caseType === 'other' ? 'other_lawyer' : 'civil_lawyer',
             typeLabel: roleLabel,
             detail: lawyerDetail
           });
@@ -143,16 +155,17 @@ const PetitionDetail = () => {
         
         setPetitioners(allPetitioners);
         
-        // Загружаем данные ходатайства
         if (!isCreateMode && petitionId && petitionId !== 'create') {
           try {
             let petition;
             if (caseType === 'kas') {
-              petition = await KasCaseService.getPetitionById(proceedingId, petitionId);
+              petition = await KasCaseService.getPetitionById(effectiveProceedingId, petitionId);
             } else if (caseType === 'criminal') {
-              petition = await CriminalCaseService.getPetitionById(proceedingId, petitionId);
+              petition = await CriminalCaseService.getPetitionById(effectiveProceedingId, petitionId);
+            } else if (caseType === 'other') {
+              petition = await OtherMaterialService.getPetitionById(effectiveProceedingId, petitionId);
             } else {
-              petition = await PetitionService.getPetition(proceedingId, petitionId, caseType);
+              petition = await PetitionService.getPetition(effectiveProceedingId, petitionId, caseType);
             }
             
             console.log('Загружено ходатайство:', petition);
@@ -196,7 +209,7 @@ const PetitionDetail = () => {
     };
 
     fetchData();
-  }, [proceedingId, petitionId, isCreateMode, caseType]);
+  }, [effectiveProceedingId, petitionId, isCreateMode, caseType]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -260,23 +273,28 @@ const PetitionDetail = () => {
       
       console.log('Отправляемые данные:', dataToSend);
       console.log('Тип дела:', caseType);
+      console.log('Proceeding ID:', effectiveProceedingId);
       
       if (isCreateMode) {
         if (caseType === 'kas') {
-          await KasCaseService.createPetition(proceedingId, dataToSend);
+          await KasCaseService.createPetition(effectiveProceedingId, dataToSend);
         } else if (caseType === 'criminal') {
-          await CriminalCaseService.createPetition(proceedingId, dataToSend);
+          await CriminalCaseService.createPetition(effectiveProceedingId, dataToSend);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.createPetition(effectiveProceedingId, dataToSend);
         } else {
-          await PetitionService.createPetition(proceedingId, dataToSend, caseType);
+          await PetitionService.createPetition(effectiveProceedingId, dataToSend, caseType);
         }
         navigate(-1);
       } else {
         if (caseType === 'kas') {
-          await KasCaseService.updatePetition(proceedingId, petitionId, dataToSend);
+          await KasCaseService.updatePetition(effectiveProceedingId, petitionId, dataToSend);
         } else if (caseType === 'criminal') {
-          await CriminalCaseService.updatePetition(proceedingId, petitionId, dataToSend);
+          await CriminalCaseService.updatePetition(effectiveProceedingId, petitionId, dataToSend);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.updatePetition(effectiveProceedingId, petitionId, dataToSend);
         } else {
-          await PetitionService.updatePetition(proceedingId, petitionId, dataToSend, caseType);
+          await PetitionService.updatePetition(effectiveProceedingId, petitionId, dataToSend, caseType);
         }
         navigate(-1);
       }
@@ -337,11 +355,13 @@ const PetitionDetail = () => {
     if (window.confirm('Вы уверены, что хотите удалить ходатайство?')) {
       try {
         if (caseType === 'kas') {
-          await KasCaseService.deletePetition(proceedingId, petitionId);
+          await KasCaseService.deletePetition(effectiveProceedingId, petitionId);
         } else if (caseType === 'criminal') {
-          await CriminalCaseService.deletePetition(proceedingId, petitionId);
+          await CriminalCaseService.deletePetition(effectiveProceedingId, petitionId);
+        } else if (caseType === 'other') {
+          await OtherMaterialService.deletePetition(effectiveProceedingId, petitionId);
         } else {
-          await PetitionService.deletePetition(proceedingId, petitionId, caseType);
+          await PetitionService.deletePetition(effectiveProceedingId, petitionId, caseType);
         }
         navigate(-1);
       } catch (err) {
@@ -391,6 +411,9 @@ const PetitionDetail = () => {
       case 'kas':
         caseTypeText = '(административное дело, КАС РФ)';
         break;
+      case 'other':
+        caseTypeText = '(иные материалы)';
+        break;
       default:
         caseTypeText = '(гражданское)';
     }
@@ -403,11 +426,12 @@ const PetitionDetail = () => {
       <div className={styles.container}>
         <div className={styles.loading}>
           <p>Загрузка данных ходатайства...</p>
-          <p>ID дела: {proceedingId}</p>
+          <p>ID дела: {effectiveProceedingId}</p>
           <p>ID ходатайства: {petitionId}</p>
           <p>Тип дела: {caseType === 'criminal' ? 'Уголовное' :
                         caseType === 'admin' ? 'Административное правонарушение' :
-                        caseType === 'kas' ? 'Административное дело (КАС РФ)' : 'Гражданное'}</p>
+                        caseType === 'kas' ? 'Административное дело (КАС РФ)' :
+                        caseType === 'other' ? 'Иные материалы' : 'Гражданное'}</p>
         </div>
       </div>
     );
@@ -440,6 +464,9 @@ const PetitionDetail = () => {
           )}
           {caseType === 'kas' && (
             <span className={styles.caseTypeBadge}>Административное дело (КАС РФ)</span>
+          )}
+          {caseType === 'other' && (
+            <span className={styles.caseTypeBadge}>Иные материалы</span>
           )}
         </div>
         
@@ -539,17 +566,18 @@ const PetitionDetail = () => {
                           >
                             <option value="">Выберите заявителя</option>
                             
-                            {/* Стороны */}
                             {petitioners.filter(p => 
                               p.type === (caseType === 'criminal' ? 'criminal_side' :
                                         caseType === 'admin' ? 'admin_sides' : 
-                                        caseType === 'kas' ? 'kas_sides' : 'civil_sides')
+                                        caseType === 'kas' ? 'kas_sides' :
+                                        caseType === 'other' ? 'other_sides' : 'civil_sides')
                             ).length > 0 && (
                               <optgroup label="Стороны">
                                 {petitioners
                                   .filter(p => p.type === (caseType === 'criminal' ? 'criminal_side' :
                                                           caseType === 'admin' ? 'admin_sides' : 
-                                                          caseType === 'kas' ? 'kas_sides' : 'civil_sides'))
+                                                          caseType === 'kas' ? 'kas_sides' :
+                                                          caseType === 'other' ? 'other_sides' : 'civil_sides'))
                                   .map(p => (
                                     <option key={`side-${p.id}`} value={`${p.type}:${p.id}`}>
                                       {p.name} ({p.role})
@@ -558,21 +586,23 @@ const PetitionDetail = () => {
                               </optgroup>
                             )}
                             
-                            {/* Представители/Защитники/Адвокаты */}
                             {petitioners.filter(p => 
                               p.type === (caseType === 'criminal' ? 'criminal_lawyer' :
                                         caseType === 'admin' ? 'admin_lawyer' : 
-                                        caseType === 'kas' ? 'kas_lawyer' : 'civil_lawyer')
+                                        caseType === 'kas' ? 'kas_lawyer' :
+                                        caseType === 'other' ? 'other_lawyer' : 'civil_lawyer')
                             ).length > 0 && (
                               <optgroup label={
                                 caseType === 'criminal' ? 'Адвокаты' :
                                 caseType === 'admin' ? 'Защитники' :
-                                caseType === 'kas' ? 'Представители' : 'Адвокаты'
+                                caseType === 'kas' ? 'Представители' :
+                                caseType === 'other' ? 'Представители' : 'Адвокаты'
                               }>
                                 {petitioners
                                   .filter(p => p.type === (caseType === 'criminal' ? 'criminal_lawyer' :
                                                           caseType === 'admin' ? 'admin_lawyer' : 
-                                                          caseType === 'kas' ? 'kas_lawyer' : 'civil_lawyer'))
+                                                          caseType === 'kas' ? 'kas_lawyer' :
+                                                          caseType === 'other' ? 'other_lawyer' : 'civil_lawyer'))
                                   .map(p => (
                                     <option key={`lawyer-${p.id}`} value={`${p.type}:${p.id}`}>
                                       {p.name} ({p.role})
@@ -696,7 +726,8 @@ const PetitionDetail = () => {
                   <label>Тип дела</label>
                   <span>{caseType === 'criminal' ? 'Уголовное' :
                         caseType === 'admin' ? 'Административное правонарушение' :
-                        caseType === 'kas' ? 'Административное дело (КАС РФ)' : 'Гражданское'}</span>
+                        caseType === 'kas' ? 'Административное дело (КАС РФ)' :
+                        caseType === 'other' ? 'Иные материалы' : 'Гражданское'}</span>
                 </div>
                 <div className={styles.infoItem}>
                   <label>Дата создания</label>

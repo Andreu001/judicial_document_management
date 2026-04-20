@@ -5,24 +5,14 @@ import AdministrativeCaseService from '../../API/AdministrativeCaseService';
 import CivilCaseService from '../../API/CivilCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import KasCaseService from '../../API/KasCaseService';
+import OtherMaterialService from '../../API/OtherMaterialService';
 import styles from './SideDetails.module.css';
 
 const SideDetail = () => {
-  const { proceedingId, sideId } = useParams();
+  const { proceedingId, sideId, materialId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [side, setSide] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
-  const [activeTab, setActiveTab] = useState('main');
-  const [personType, setPersonType] = useState('individual');
-  const [sideRoles, setSideRoles] = useState([]);
-  const [error, setError] = useState(null);
-
   // Определяем тип дела по пути URL
   const getCaseType = () => {
     if (location.pathname.includes('/criminal-proceedings/')) return 'criminal';
@@ -34,17 +24,20 @@ const SideDetail = () => {
   };
 
   const caseType = getCaseType();
+  // Для other-materials используем materialId вместо proceedingId
+  const effectiveProceedingId = caseType === 'other' ? materialId : proceedingId;
   const isCreateMode = !sideId || sideId === 'create';
 
-  const getParticipantType = () => {
-    switch (caseType) {
-      case 'criminal': return 'CriminalSidesCaseInCase';
-      case 'civil': return 'CivilSidesCaseInCase';
-      case 'admin': return 'AdministrativeSidesCaseInCase';
-      case 'kas': return 'KasSidesCaseInCase';
-      default: return 'SidesCaseInCase';
-    }
-  };
+  const [side, setSide] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [sidesCaseOptions, setSidesCaseOptions] = useState([]);
+  const [activeTab, setActiveTab] = useState('main');
+  const [personType, setPersonType] = useState('individual');
+  const [sideRoles, setSideRoles] = useState([]);
+  const [error, setError] = useState(null);
 
   // Получаем соответствующий сервис
   const getService = () => {
@@ -53,6 +46,7 @@ const SideDetail = () => {
       case 'civil': return CivilCaseService;
       case 'admin': return AdministrativeCaseService;
       case 'kas': return KasCaseService;
+      case 'other': return OtherMaterialService;
       default: return null;
     }
   };
@@ -60,7 +54,7 @@ const SideDetail = () => {
   const service = getService();
 
   useEffect(() => {
-    if (proceedingId) {
+    if (effectiveProceedingId) {
       loadSideRoles();
       if (isCreateMode) {
         setLoading(false);
@@ -71,7 +65,7 @@ const SideDetail = () => {
         loadSideDetails();
       }
     }
-  }, [proceedingId, sideId, caseType]);
+  }, [effectiveProceedingId, sideId, caseType]);
 
   const getEmptyFormData = () => ({
     sides_case_role: '',
@@ -123,16 +117,19 @@ const SideDetail = () => {
       
       switch (caseType) {
         case 'criminal':
-          data = await CriminalCaseService.getSideById(proceedingId, sideId);
+          data = await CriminalCaseService.getSideById(effectiveProceedingId, sideId);
           break;
         case 'civil':
-          data = await CivilCaseService.getSideById(proceedingId, sideId);
+          data = await CivilCaseService.getSideById(effectiveProceedingId, sideId);
           break;
         case 'admin':
-          data = await AdministrativeCaseService.getSideById(proceedingId, sideId);
+          data = await AdministrativeCaseService.getSideById(effectiveProceedingId, sideId);
           break;
         case 'kas':
-          data = await KasCaseService.getSideById(proceedingId, sideId);
+          data = await KasCaseService.getSideById(effectiveProceedingId, sideId);
+          break;
+        case 'other':
+          data = await OtherMaterialService.getSideById(effectiveProceedingId, sideId);
           break;
         default:
           throw new Error('Unknown case type');
@@ -141,7 +138,6 @@ const SideDetail = () => {
       console.log('Side data received:', data);
       setSide(data);
 
-      // Извлекаем данные в зависимости от структуры
       const sideInCaseDetail = data.sides_case_incase_detail || data.criminal_side_case_detail || {};
       const roleDetail = data.sides_case_role_detail || {};
 
@@ -178,15 +174,6 @@ const SideDetail = () => {
     }
   };
 
-  const loadSidesCaseOptions = async () => {
-    try {
-      const response = await baseService.get('/business_card/sides/');
-      setSidesCaseOptions(response.data || []);
-    } catch (error) {
-      console.error('Ошибка загрузки опций сторон:', error);
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -219,7 +206,6 @@ const SideDetail = () => {
       setSaving(true);
       setError(null);
 
-      // Создаем вложенную структуру для отправки
       const sidesCaseInCaseData = {
         name: formData.name,
         status: formData.status,
@@ -243,7 +229,6 @@ const SideDetail = () => {
         citizenship: formData.citizenship || null
       };
 
-      // Удаляем пустые значения
       Object.keys(sidesCaseInCaseData).forEach(key => {
         if (sidesCaseInCaseData[key] === '' || sidesCaseInCaseData[key] === null || sidesCaseInCaseData[key] === undefined) {
           delete sidesCaseInCaseData[key];
@@ -252,7 +237,6 @@ const SideDetail = () => {
 
       let sideData;
       
-      // Формируем данные в зависимости от типа дела
       if (caseType === 'criminal') {
         sideData = {
           sides_case_criminal: formData.sides_case_role ? parseInt(formData.sides_case_role, 10) : null,
@@ -266,39 +250,45 @@ const SideDetail = () => {
       }
 
       console.log('Sending data:', sideData);
+      console.log('Case type:', caseType);
+      console.log('Proceeding ID:', effectiveProceedingId);
 
       if (!isCreateMode) {
-        // Обновление существующей стороны
         switch (caseType) {
           case 'criminal':
-            await CriminalCaseService.updateSide(proceedingId, sideId, sideData);
+            await CriminalCaseService.updateSide(effectiveProceedingId, sideId, sideData);
             break;
           case 'civil':
-            await CivilCaseService.updateSide(proceedingId, sideId, sideData);
+            await CivilCaseService.updateSide(effectiveProceedingId, sideId, sideData);
             break;
           case 'admin':
-            await AdministrativeCaseService.updateSide(proceedingId, sideId, sideData);
+            await AdministrativeCaseService.updateSide(effectiveProceedingId, sideId, sideData);
             break;
           case 'kas':
-            await KasCaseService.updateSide(proceedingId, sideId, sideData);
+            await KasCaseService.updateSide(effectiveProceedingId, sideId, sideData);
+            break;
+          case 'other':
+            await OtherMaterialService.updateSide(effectiveProceedingId, sideId, sideData);
             break;
         }
         setIsEditing(false);
         await loadSideDetails();
       } else {
-        // Создание новой стороны
         switch (caseType) {
           case 'criminal':
-            await CriminalCaseService.createSide(proceedingId, sideData);
+            await CriminalCaseService.createSide(effectiveProceedingId, sideData);
             break;
           case 'civil':
-            await CivilCaseService.createSide(proceedingId, sideData);
+            await CivilCaseService.createSide(effectiveProceedingId, sideData);
             break;
           case 'admin':
-            await AdministrativeCaseService.createSide(proceedingId, sideData);
+            await AdministrativeCaseService.createSide(effectiveProceedingId, sideData);
             break;
           case 'kas':
-            await KasCaseService.createSide(proceedingId, sideData);
+            await KasCaseService.createSide(effectiveProceedingId, sideData);
+            break;
+          case 'other':
+            await OtherMaterialService.createSide(effectiveProceedingId, sideData);
             break;
         }
         navigate(-1);
@@ -334,20 +324,6 @@ const SideDetail = () => {
     if (!roleId) return 'Не указан';
     const role = sideRoles.find(option => option.id == roleId);
     return role ? role.sides_case : `ID: ${roleId}`;
-  };
-
-  // Получаем имя стороны для отображения
-  const getSideName = () => {
-    if (formData?.name) {
-      return formData.name;
-    }
-    if (side?.sides_case_incase_detail?.name) {
-      return side.sides_case_incase_detail.name;
-    }
-    if (side?.criminal_side_case_detail?.name) {
-      return side.criminal_side_case_detail.name;
-    }
-    return 'Сторона по делу';
   };
 
   if (loading) {
@@ -456,10 +432,8 @@ const SideDetail = () => {
 
             <div className={styles.tabContentWrapper}>
               <div className={styles.tabContent}>
-                {/* Вкладка: Основная информация */}
                 {activeTab === 'main' && (
                   <>
-                    {/* Выбор роли */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Роль в деле</h3>
                       <div className={styles.field}>
@@ -490,7 +464,6 @@ const SideDetail = () => {
                       </div>
                     </div>
 
-                    {/* Основная информация */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Основная информация</h3>
                       <div className={styles.tabGrid}>
@@ -569,7 +542,6 @@ const SideDetail = () => {
                       </div>
                     </div>
 
-                    {/* Юридическое лицо */}
                     {(personType === 'legal') && (
                       <div className={styles.fieldGroup}>
                         <h3 className={styles.subsectionTitle}>Данные юридического лица</h3>
@@ -652,7 +624,6 @@ const SideDetail = () => {
                       </div>
                     )}
 
-                    {/* Орган власти / Иное */}
                     {(personType === 'government' || personType === 'other') && (
                       <div className={styles.fieldGroup}>
                         <h3 className={styles.subsectionTitle}>
@@ -678,7 +649,6 @@ const SideDetail = () => {
                   </>
                 )}
 
-                {/* Вкладка: Данные физического лица */}
                 {activeTab === 'physical' && personType === 'individual' && (
                   <div className={styles.fieldGroup}>
                     <h3 className={styles.subsectionTitle}>Данные физического лица</h3>
@@ -799,7 +769,6 @@ const SideDetail = () => {
                   </div>
                 )}
 
-                {/* Вкладка: Контактная информация */}
                 {activeTab === 'contacts' && (
                   <div className={styles.fieldGroup}>
                     <h3 className={styles.subsectionTitle}>Контактная информация</h3>
@@ -873,7 +842,6 @@ const SideDetail = () => {
                   </div>
                 )}
 
-                {/* Вкладка: Дополнительно */}
                 {activeTab === 'additional' && (
                   <div className={styles.fieldGroup}>
                     <h3 className={styles.subsectionTitle}>Дополнительная информация</h3>
@@ -898,7 +866,6 @@ const SideDetail = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -301,3 +301,236 @@ export const AdditionalInfoTab = ({
     </div>
   </div>
 );
+
+export const DecisionTab = ({ 
+  isEditing, 
+  formData, 
+  options, 
+  materialData, 
+  handleDateChange, 
+  handleInputChange, 
+  getOptionLabel, 
+  formatDate, 
+  isArchived 
+}) => (
+  <div className={styles.tabContent}>
+    <div className={styles.tabGrid}>
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Результат рассмотрения</h3>
+        
+        <div className={styles.field}>
+          <label>Результат рассмотрения</label>
+          {isEditing ? (
+            <select
+              name="outcome"
+              value={formData.outcome || ''}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              <option value="">Выберите результат</option>
+              {options.outcome?.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>{getOptionLabel(options.outcome, materialData?.outcome)}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Дата вынесения решения</label>
+          {isEditing ? (
+            <input
+              type="date"
+              name="decision_date"
+              value={formData.decision_date || ''}
+              onChange={(e) => handleDateChange('decision_date', e.target.value)}
+              className={styles.input}
+            />
+          ) : (
+            <span>{formatDate(materialData?.decision_date)}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Дата вступления в силу</label>
+          {isEditing ? (
+            <input
+              type="date"
+              name="decision_effective_date"
+              value={formData.decision_effective_date || ''}
+              onChange={(e) => handleDateChange('decision_effective_date', e.target.value)}
+              className={styles.input}
+            />
+          ) : (
+            <span>{formatDate(materialData?.decision_effective_date)}</span>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>
+          <input
+            type="checkbox"
+            name="complaint_filed"
+            checked={formData.complaint_filed || false}
+            onChange={handleInputChange}
+            disabled={!isEditing}
+            style={{ marginRight: '8px' }}
+          />
+          Обжалование
+        </h3>
+
+        {formData.complaint_filed && (
+          <>
+            <div className={styles.field}>
+              <label>Результат обжалования</label>
+              {isEditing ? (
+                <select
+                  name="complaint_result"
+                  value={formData.complaint_result || ''}
+                  onChange={handleInputChange}
+                  className={styles.select}
+                >
+                  <option value="">Выберите результат</option>
+                  <option value="1">Оставлено без изменения</option>
+                  <option value="2">Отменено</option>
+                  <option value="3">Изменено</option>
+                </select>
+              ) : (
+                <span>
+                  {materialData?.complaint_result === '1' && 'Оставлено без изменения'}
+                  {materialData?.complaint_result === '2' && 'Отменено'}
+                  {materialData?.complaint_result === '3' && 'Изменено'}
+                  {!materialData?.complaint_result && 'Не указано'}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+export const ExecutionTab = ({ 
+  isEditing, 
+  formData, 
+  options, 
+  materialData, 
+  handleDateChange, 
+  handleInputChange, 
+  getOptionLabel, 
+  formatDate, 
+  isArchived 
+}) => (
+  <div className={styles.tabContent}>
+    <div className={styles.tabGrid}>
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Исполнительный документ</h3>
+        
+        <div className={styles.field}>
+          <label>Дата исполнительного документа</label>
+          {isEditing ? (
+            <input
+              type="date"
+              name="execution_document_date"
+              value={formData.execution_document_date || ''}
+              onChange={(e) => handleDateChange('execution_document_date', e.target.value)}
+              className={styles.input}
+            />
+          ) : (
+            <span>{formatDate(materialData?.execution_document_date)}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Номер исполнительного документа</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="execution_document_number"
+              value={formData.execution_document_number || ''}
+              onChange={handleInputChange}
+              className={styles.input}
+            />
+          ) : (
+            <span>{materialData?.execution_document_number || 'Не указано'}</span>
+          )}
+        </div>
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Исполнение</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              name="executed"
+              checked={formData.executed || false}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+            />
+            Исполнено
+          </label>
+        </div>
+
+        {formData.executed && (
+          <div className={styles.field}>
+            <label>Дата фактического исполнения</label>
+            {isEditing ? (
+              <input
+                type="date"
+                name="execution_date"
+                value={formData.execution_date || ''}
+                onChange={(e) => handleDateChange('execution_date', e.target.value)}
+                className={styles.input}
+              />
+            ) : (
+              <span>{formatDate(materialData?.execution_date)}</span>
+            )}
+          </div>
+        )}
+
+        <div className={styles.field}>
+          <label>Результат исполнения</label>
+          {isEditing ? (
+            <select
+              name="execution_result"
+              value={formData.execution_result || ''}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              <option value="">Выберите результат</option>
+              {options.executionResult?.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>{getOptionLabel(options.executionResult, materialData?.execution_result)}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Примечания по исполнению</label>
+          {isEditing ? (
+            <textarea
+              name="notes"
+              value={formData.notes || ''}
+              onChange={handleInputChange}
+              className={styles.textarea}
+              rows={3}
+            />
+          ) : (
+            <span>{materialData?.notes || 'Нет'}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+);

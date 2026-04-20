@@ -10,6 +10,7 @@ import {
   AdditionalInfoTab
 } from './CivilTabComponents';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
+import ProgressLog from '../CaseManagement/ProgressLog';
 
 const CivilDetail = () => {
   const { id } = useParams();
@@ -47,6 +48,7 @@ const CivilDetail = () => {
   });
   const [judges, setJudges] = useState([]);
   const [collapsedNotifications, setCollapsedNotifications] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState(0);
 
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -123,6 +125,9 @@ const CivilDetail = () => {
     }
   };
 
+  const handleProgressRefresh = () => {
+    setRefreshProgress(prev => prev + 1);
+  };
   const loadOptions = async () => {
     try {
       const response = await CivilCaseService.getCivilOptions();
@@ -511,7 +516,21 @@ const CivilDetail = () => {
 
         {/* Правая колонка - сайдбар */}
         <div className={styles.sidebar}>
-          {/* Стороны по делу */}
+          {/* Блок "Ход дела (справочный лист)" */}
+          <ProgressLog 
+            caseType="civil"
+            caseId={id}
+            onRefresh={refreshProgress}
+          />
+          <NotificationsPanel
+            caseType="civil"
+            caseId={id}
+            caseNumber={civilData?.case_number_civil}
+            collapsed={collapsedNotifications}
+            onToggle={setCollapsedNotifications}
+          />
+
+          {/* Блок "Стороны по делу" */}
           <div className={styles.sidebarSection}>
             <div 
               className={styles.sidebarSectionHeader}
@@ -524,7 +543,7 @@ const CivilDetail = () => {
                 </span>
               </h2>
               <button className={styles.sidebarToggleButton}>
-                {collapsedSections.sides ? '▶' : '▼'}
+                {collapsedSections.sides ? 'Развернуть' : 'Свернуть'}
               </button>
             </div>
             
@@ -569,7 +588,7 @@ const CivilDetail = () => {
             )}
           </div>
 
-          {/* Решения */}
+          {/* Блок "Решения" */}
           <div className={styles.sidebarSection}>
             <div 
               className={styles.sidebarSectionHeader}
@@ -582,7 +601,7 @@ const CivilDetail = () => {
                 </span>
               </h2>
               <button className={styles.sidebarToggleButton}>
-                {collapsedSections.decisions ? '▶' : '▼'}
+                {collapsedSections.decisions ? 'Развернуть' : 'Свернуть'}
               </button>
             </div>
             
@@ -625,7 +644,7 @@ const CivilDetail = () => {
             )}
           </div>
 
-          {/* Исполнение */}
+          {/* Блок "Исполнение" */}
           <div className={styles.sidebarSection}>
             <div 
               className={styles.sidebarSectionHeader}
@@ -638,7 +657,7 @@ const CivilDetail = () => {
                 </span>
               </h2>
               <button className={styles.sidebarToggleButton}>
-                {collapsedSections.executions ? '▶' : '▼'}
+                {collapsedSections.executions ? 'Развернуть' : 'Свернуть'}
               </button>
             </div>
             
@@ -685,14 +704,7 @@ const CivilDetail = () => {
               </div>
             )}
           </div>
-          <NotificationsPanel
-            caseType="civil"
-            caseId={id}
-            caseNumber={civilData?.case_number_civil}
-            collapsed={collapsedNotifications}
-            onToggle={setCollapsedNotifications}
-          />
-       </div>
+        </div>
       </div>
 
       <ConfirmDialog

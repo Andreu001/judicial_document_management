@@ -7,7 +7,9 @@ import styles from '../../components/Documents/Documents.module.css';
 
 const DocumentFormPage = ({ caseType, isEdit = false }) => {
   const navigate = useNavigate();
-  const { proceedingId, documentId } = useParams();
+  const { proceedingId, materialId, documentId } = useParams();
+  // Для совместимости: если есть proceedingId, используем его, иначе materialId
+  const objectId = proceedingId || materialId;
   const [document, setDocument] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,8 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
         return DocumentService.getAdminDocumentTemplates(proceedingId);
       case 'kas':
         return DocumentService.getKasDocumentTemplates(proceedingId);
+      case 'other':
+        return DocumentService.getOtherMaterialDocumentTemplates(materialId);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -38,6 +42,8 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
         return DocumentService.getAdminDocument(proceedingId, documentId);
       case 'kas':
         return DocumentService.getKasDocument(proceedingId, documentId);
+      case 'other':
+        return DocumentService.getOtherMaterialDocument(materialId, documentId);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -53,6 +59,8 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
         return DocumentService.createAdminDocument(proceedingId, data);
       case 'kas':
         return DocumentService.createKasDocument(proceedingId, data);
+      case 'other':
+        return DocumentService.createOtherMaterialDocument(materialId, data);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -68,6 +76,8 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
         return DocumentService.updateAdminDocument(proceedingId, documentId, data);
       case 'kas':
         return DocumentService.updateKasDocument(proceedingId, documentId, data);
+      case 'other':
+        return DocumentService.updateOtherMaterialDocument(materialId, documentId, data);
       default:
         throw new Error(`Unknown case type: ${caseType}`);
     }
@@ -75,7 +85,7 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
 
   useEffect(() => {
     loadData();
-  }, [proceedingId, documentId, caseType]);
+  }, [objectId, documentId, caseType]);
 
   const loadData = async () => {
     setLoading(true);
@@ -105,7 +115,11 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
       } else {
         await createDocumentMethod(formData);
       }
-      navigate(`/${caseType}-proceedings/${proceedingId}/documents`);
+      if (caseType === 'other') {
+        navigate(`/other-materials/${materialId}/documents`);
+      } else {
+        navigate(`/${caseType}-proceedings/${objectId}/documents`);
+      }
     } catch (err) {
       console.error('Error saving document:', err);
       alert('Не удалось сохранить документ');
@@ -113,7 +127,11 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
   };
 
   const handleCancel = () => {
-    navigate(`/${caseType}-proceedings/${proceedingId}/documents`);
+    if (caseType === 'other') {
+      navigate(`/other-materials/${materialId}/documents`);
+    } else {
+      navigate(`/${caseType}-proceedings/${objectId}/documents`);
+    }
   };
 
   if (loading) {
@@ -138,7 +156,7 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
         templates={templates}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
-        proceedingId={proceedingId}
+        proceedingId={objectId}
         caseType={caseType}
         isEdit={isEdit}
       />

@@ -324,3 +324,117 @@ def delete_related_petitions_incase(sender, instance, **kwargs):
             logger.info(f"Deleted related PetitionsInCase {petitions_incase_id} for OtherMaterialPetition {instance.id}")
         except Exception as e:
             logger.error(f"Error deleting PetitionsInCase: {e}")
+
+
+class OtherMaterialDecision(models.Model):
+    """
+    Решения по иному материалу (упрощенная версия по аналогии с КоАП).
+    """
+    other_material = models.ForeignKey(
+        OtherMaterial,
+        on_delete=models.CASCADE,
+        related_name='other_decisions',
+        verbose_name="Иной материал"
+    )
+
+    # ------------------- Результаты рассмотрения -------------------
+    outcome = models.CharField(
+        max_length=255,
+        verbose_name="Результат рассмотрения",
+        choices=[
+            ('1', 'Удовлетворено'),
+            ('2', 'Отказано в удовлетворении'),
+            ('3', 'Прекращено производство'),
+            ('4', 'Оставлено без рассмотрения'),
+            ('5', 'Передано по подведомственности'),
+        ],
+        null=True, blank=True
+    )
+    
+    decision_date = models.DateField(
+        verbose_name="Дата вынесения решения",
+        null=True, blank=True
+    )
+    decision_effective_date = models.DateField(
+        verbose_name="Дата вступления в силу",
+        null=True, blank=True
+    )
+    
+    # ------------------- Обжалование (упрощенно) -------------------
+    complaint_filed = models.BooleanField(
+        verbose_name="Подана жалоба",
+        default=False, null=True, blank=True
+    )
+    complaint_result = models.CharField(
+        max_length=255,
+        verbose_name="Результат обжалования",
+        choices=[
+            ('1', 'Оставлено без изменения'),
+            ('2', 'Отменено'),
+            ('3', 'Изменено'),
+        ],
+        null=True, blank=True
+    )
+    
+    class Meta:
+        verbose_name = "Решение по иному материалу"
+        verbose_name_plural = "Решения по иным материалам"
+        ordering = ['-decision_date']
+
+    def __str__(self):
+        return f"Решение по материалу {self.other_material.registration_number} от {self.decision_date}"
+
+
+class OtherMaterialExecution(models.Model):
+    """
+    Исполнение решения по иному материалу (упрощенная версия).
+    """
+    other_material = models.ForeignKey(
+        OtherMaterial,
+        on_delete=models.CASCADE,
+        related_name='other_executions',
+        verbose_name="Иной материал"
+    )
+
+    execution_document_date = models.DateField(
+        verbose_name="Дата исполнительного документа",
+        null=True, blank=True
+    )
+    execution_document_number = models.CharField(
+        max_length=100,
+        verbose_name="Номер исполнительного документа",
+        null=True, blank=True
+    )
+    
+    executed = models.BooleanField(
+        verbose_name="Исполнено",
+        default=False, null=True, blank=True
+    )
+    execution_date = models.DateField(
+        verbose_name="Дата фактического исполнения",
+        null=True, blank=True
+    )
+    
+    execution_result = models.CharField(
+        max_length=255,
+        verbose_name="Результат исполнения",
+        choices=[
+            ('1', 'Исполнено полностью'),
+            ('2', 'Не исполнено'),
+            ('3', 'Частично исполнено'),
+        ],
+        null=True, blank=True
+    )
+    
+    notes = models.TextField(
+        verbose_name="Примечания по исполнению",
+        null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Исполнение по иному материалу"
+        verbose_name_plural = "Исполнения по иным материалам"
+        ordering = ['-execution_document_date']
+
+    def __str__(self):
+        return f"Исполнение по материалу {self.other_material.registration_number}"
