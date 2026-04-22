@@ -7,11 +7,26 @@ from django.utils import timezone
 from users.models import User
 from business_card.models import (
     SidesCase, SidesCaseInCase, Lawyer,
-    PetitionsInCase, BusinessMovement
+    PetitionsInCase, BusinessMovement, Decisions
 )
 import logging
+from .choices import *
 
 logger = logging.getLogger(__name__)
+
+
+class CivilProceedingsType(models.Model):
+    """Справочник видов производств (исковое, приказное, особое, упрощенное)"""
+    code = models.CharField(max_length=10, unique=True, verbose_name="Код")
+    label = models.CharField(max_length=255, verbose_name="Наименование")
+
+    class Meta:
+        verbose_name = "Вид производства"
+        verbose_name_plural = "Виды производств"
+        ordering = ['code']
+
+    def __str__(self):
+        return self.label
 
 
 class ReferringAuthorityCivil(models.Model):
@@ -30,7 +45,7 @@ class ReferringAuthorityCivil(models.Model):
 
 class CivilProceedings(models.Model):
     """
-    Учетно-статистическая карточка гражданского дела.
+    Учетно-статистическая карточка гражданского дела (полная версия по Инструкции).
     """
     STATUS_CHOICES = [
         ('active', 'Активное'),
@@ -81,51 +96,148 @@ class CivilProceedings(models.Model):
         verbose_name="Категория дела",
         null=True, blank=True
     )
-    case_type = models.CharField(
-        max_length=255,
-        verbose_name="Вид производства",
-        choices=[
-            ('1', 'Исковое производство'),
-            ('2', 'Приказное производство'),
-            ('3', 'Особое производство'),
-            ('4', 'Упрощенное производство'),
-        ],
-        null=True, blank=True
+    case_type = models.ForeignKey(
+        CivilProceedingsType,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Вид производства"
     )
 
-    # ------------------- Раздел 2. Исковые требования -------------------
-    claim_amount = models.DecimalField(
+    # ------------------- Раздел 1. Досудебная подготовка (дополнительные поля) -------------------
+    is_collective_claim = models.BooleanField(
+        verbose_name="Коллективное исковое заявление",
+        default=False, null=True, blank=True
+    )
+    number_of_plaintiffs = models.PositiveIntegerField(
+        verbose_name="Количество истцов",
+        null=True, blank=True
+    )
+    admission_order = models.CharField(
+        max_length=5,
+        choices=ADMISSION_ORDER_CHOICES,
+        verbose_name="Порядок поступления",
+        null=True, blank=True
+    )
+    related_case_number = models.CharField(
+        max_length=100,
+        verbose_name="№ связанного/первичного дела",
+        null=True, blank=True
+    )
+    previous_court_code = models.CharField(
+        max_length=50,
+        verbose_name="Код суда (для повторных/из др. суда)",
+        null=True, blank=True
+    )
+    state_duty_amount = models.DecimalField(
         max_digits=12, decimal_places=2,
-        verbose_name="Цена иска (руб.)",
+        verbose_name="Сумма госпошлины (руб.)",
         null=True, blank=True
     )
-    claim_subject = models.TextField(
-        verbose_name="Предмет иска",
-        null=True, blank=True
-    )
-    claim_basis = models.TextField(
-        verbose_name="Основание иска",
-        null=True, blank=True
-    )
-    claim_date = models.DateField(
-        verbose_name="Дата предъявления иска",
-        null=True, blank=True
-    )
-    state_duty = models.DecimalField(
-        max_digits=12, decimal_places=2,
-        verbose_name="Государственная пошлина (руб.)",
+    state_duty_payer = models.CharField(
+        max_length=255,
+        verbose_name="Кем уплачена госпошлина",
         null=True, blank=True
     )
     state_duty_paid = models.BooleanField(
         verbose_name="Госпошлина уплачена",
         default=False, null=True, blank=True
     )
-
-    # ------------------- Раздел 3. Рассмотрение дела -------------------
-    preliminary_hearing_date = models.DateField(
-        verbose_name="Дата предварительного судебного заседания",
+    
+    # Определения на стадии подготовки
+    ruling_preparation = models.BooleanField(
+        verbose_name="Определение о подготовке дела",
+        default=False, null=True, blank=True
+    )
+    ruling_preparation_date = models.DateField(
+        verbose_name="Дата определения о подготовке",
         null=True, blank=True
     )
+    is_simplified_procedure = models.BooleanField(
+        verbose_name="Рассмотрение в упрощенном производстве",
+        default=False, null=True, blank=True
+    )
+    control_date = models.DateField(
+        verbose_name="Контрольный срок",
+        null=True, blank=True
+    )
+    ruling_preliminary_hearing = models.BooleanField(
+        verbose_name="Определение о назначении предварительного заседания",
+        default=False, null=True, blank=True
+    )
+    preliminary_hearing_date = models.DateField(
+        verbose_name="Дата предварительного заседания",
+        null=True, blank=True
+    )
+    ruling_closed_hearing = models.BooleanField(
+        verbose_name="Определение о назначении закрытого заседания",
+        default=False, null=True, blank=True
+    )
+    ruling_court_order = models.BooleanField(
+        verbose_name="Определение о направлении судебного поручения",
+        default=False, null=True, blank=True
+    )
+    court_order_sent_date = models.DateField(
+        verbose_name="Дата направления суд. поручения",
+        null=True, blank=True
+    )
+    court_order_received_date = models.DateField(
+        verbose_name="Дата поступления исполненного поручения",
+        null=True, blank=True
+    )
+    ruling_expertise = models.BooleanField(
+        verbose_name="Определение о назначении экспертизы",
+        default=False, null=True, blank=True
+    )
+    expertise_sent_date = models.DateField(
+        verbose_name="Дата направления на экспертизу",
+        null=True, blank=True
+    )
+    expertise_received_date = models.DateField(
+        verbose_name="Дата возвращения с экспертизы",
+        null=True, blank=True
+    )
+    expertise_institution = models.CharField(
+        max_length=255,
+        verbose_name="Экспертное учреждение",
+        null=True, blank=True
+    )
+    expertise_type = models.CharField(
+        max_length=255,
+        verbose_name="Вид экспертизы",
+        null=True, blank=True
+    )
+    preliminary_protection = models.CharField(
+        max_length=2,
+        choices=PRELIMINARY_PROTECTION_CHOICES,
+        verbose_name="Меры предварительной защиты",
+        null=True, blank=True
+    )
+    preliminary_protection_date = models.DateField(
+        verbose_name="Дата назначения мер предварительной защиты",
+        null=True, blank=True
+    )
+    ruling_transition_to_general = models.BooleanField(
+        verbose_name="Определение о переходе к общему порядку",
+        default=False, null=True, blank=True
+    )
+    ruling_transition_date = models.DateField(
+        verbose_name="Дата перехода к общему порядку",
+        null=True, blank=True
+    )
+    ruling_scheduled_trial = models.BooleanField(
+        verbose_name="Определение о назначении дела к судебному разбирательству",
+        default=False, null=True, blank=True
+    )
+    scheduled_trial_date = models.DateField(
+        verbose_name="Дата назначения дела к разбирательству",
+        null=True, blank=True
+    )
+    is_state_secret = models.BooleanField(
+        verbose_name="Связано с государственной тайной",
+        default=False, null=True, blank=True
+    )
+
+    # ------------------- Раздел 2. Рассмотрение дела -------------------
     preliminary_hearing_result = models.CharField(
         max_length=255,
         verbose_name="Результат предварительного заседания",
@@ -146,46 +258,80 @@ class CivilProceedings(models.Model):
         verbose_name="Дата рассмотрения (последнего заседания)",
         null=True, blank=True
     )
+    is_vcs_used = models.BooleanField(
+        verbose_name="С использованием ВКС",
+        default=False, null=True, blank=True
+    )
+    is_audio_recorded = models.BooleanField(
+        verbose_name="Аудиозапись",
+        default=False, null=True, blank=True
+    )
+    is_video_recorded = models.BooleanField(
+        verbose_name="Видеозапись",
+        default=False, null=True, blank=True
+    )
     hearing_compliance = models.CharField(
-        max_length=1,
+        max_length=100,
         verbose_name="Соблюдение сроков рассмотрения",
-        choices=[
-            ('1', 'С соблюдением сроков, установленных ГПК РФ'),
-            ('2', 'С нарушением сроков'),
-        ],
+        choices=TERM_COMPLIANCE_CHOICES,
         null=True, blank=True
     )
     hearing_postponed = models.BooleanField(
         verbose_name="Дело откладывалось",
         default=False, null=True, blank=True
     )
-    postponement_reason = models.TextField(
-        verbose_name="Причины отложения",
+    postponement_count = models.PositiveIntegerField(
+        verbose_name="Количество отложений",
+        default=0, null=True, blank=True
+    )
+    postponement_reason_code = models.CharField(
+        max_length=10,
+        choices=POSTPONEMENT_REASON_CHOICES,
+        verbose_name="Код причины отложения",
+        null=True, blank=True
+    )
+    postponement_reason_text = models.TextField(
+        verbose_name="Иная причина отложения (текстом)",
         null=True, blank=True
     )
     case_suspended = models.BooleanField(
         verbose_name="Производство по делу приостанавливалось",
         default=False, null=True, blank=True
     )
-    suspension_reason = models.CharField(
-        max_length=255,
-        verbose_name="Основание приостановления",
-        choices=[
-            ('1', 'Смерть гражданина, реорганизация юрлица'),
-            ('2', 'Признание стороны недееспособной'),
-            ('3', 'Пребывание стороны в лечебном учреждении'),
-            ('4', 'Розыск ответчика'),
-            ('5', 'Назначение экспертизы'),
-            ('6', 'Иное'),
-        ],
-        null=True, blank=True
-    )
     suspension_date = models.DateField(
         verbose_name="Дата приостановления",
         null=True, blank=True
     )
+    suspension_reason_code = models.CharField(
+        max_length=10,
+        choices=SUSPENSION_REASON_CHOICES,
+        verbose_name="Код причины приостановления",
+        null=True, blank=True
+    )
+    suspension_reason_text = models.TextField(
+        verbose_name="Текст причины приостановления (при выборе 'иное')",
+        null=True, blank=True
+    )
+    suspension_clause = models.CharField(
+        max_length=10,
+        verbose_name="Пункт, часть, статья",
+        null=True, blank=True
+    )
+    suspension_article = models.CharField(
+        max_length=50,
+        verbose_name="Статья",
+        null=True, blank=True
+    )
     resumption_date = models.DateField(
         verbose_name="Дата возобновления производства",
+        null=True, blank=True
+    )
+    suspension_duration_days = models.PositiveIntegerField(
+        verbose_name="Продолжительность приостановления (дней)",
+        null=True, blank=True
+    )
+    reconciliation_deadline_date = models.DateField(
+        verbose_name="Срок для примирения до",
         null=True, blank=True
     )
 
@@ -227,13 +373,12 @@ class CivilProceedings(models.Model):
         ordering = ['-incoming_date']
 
     def __str__(self):
-        return f"Гражданское дело № {self.case_number}"
+        return f"Гражданское дело № {self.case_number_civil}"
 
 
 class CivilDecision(models.Model):
     """
-    Решения по гражданскому делу (раздел 4 + обжалование).
-    Одно дело может иметь несколько решений (первая инстанция, апелляция, кассация).
+    Решения по гражданскому делу (расширенная версия по Инструкции).
     """
     civil_proceedings = models.ForeignKey(
         CivilProceedings,
@@ -242,70 +387,336 @@ class CivilDecision(models.Model):
         verbose_name="Гражданское производство"
     )
 
-    # ------------------- Раздел 4. Результаты рассмотрения -------------------
-    outcome = models.CharField(
-        max_length=255,
-        verbose_name="Результат рассмотрения дела",
-        choices=[
-            ('1', 'Иск удовлетворён полностью'),
-            ('2', 'Иск удовлетворён частично'),
-            ('3', 'В иске отказано'),
-            ('4', 'Производство прекращено'),
-            ('5', 'Заявление оставлено без рассмотрения'),
-            ('6', 'Передано по подсудности'),
-            ('7', 'Вынесено судебное решение (не иск)'),
-            ('8', 'Судебный приказ'),
-        ],
-        null=True, blank=True
-    )
+    # ------------------- Раздел 3. Результаты рассмотрения -------------------
     decision_date = models.DateField(
-        verbose_name="Дата вынесения решения",
+        verbose_name="Дата рассмотрения дела",
         null=True, blank=True
     )
-    decision_motivated_date = models.DateField(
+    motivated_decision_date = models.DateField(
         verbose_name="Дата составления мотивированного решения",
         null=True, blank=True
     )
-    decision_effective_date = models.DateField(
-        verbose_name="Дата вступления решения в законную силу",
+    is_simplified_procedure = models.BooleanField(
+        verbose_name="Рассмотрено в упрощенном производстве",
+        default=False, null=True, blank=True
+    )
+    is_default_judgment = models.BooleanField(
+        verbose_name="Рассмотрено без участия ответчика (заочное)",
+        default=False, null=True, blank=True
+    )
+    outcome = models.CharField(
+        max_length=5,
+        choices=OUTCOME_CHOICES,
+        verbose_name="Результат рассмотрения (основное требование)",
+        null=True, blank=True
+    )
+    outcome_clause = models.CharField(
+        max_length=10,
+        verbose_name="Пункт, часть, статья прекращения/оставления",
+        null=True, blank=True
+    )
+    outcome_article = models.CharField(
+        max_length=50,
+        verbose_name="Статья (194, 196 ГПК РФ, 194 КАС РФ)",
+        null=True, blank=True
+    )
+    transferred_to_court = models.CharField(
+        max_length=255,
+        verbose_name="Суд, в который передано дело",
         null=True, blank=True
     )
 
-    # ------------------- Апелляция -------------------
-    appeal_filed = models.BooleanField(
-        verbose_name="Подана апелляционная жалоба",
+    # Примирительные процедуры
+    conciliation_procedure = models.BooleanField(
+        verbose_name="Примирительные процедуры",
         default=False, null=True, blank=True
     )
+    conciliation_type = models.CharField(
+        max_length=2,
+        choices=[('1', 'Медиация'), ('2', 'Судебное примирение'), ('3', 'Переговоры')],
+        verbose_name="Вид примирительной процедуры",
+        null=True, blank=True
+    )
+    conciliation_result = models.CharField(
+        max_length=5,
+        choices=CONCILIATION_RESULT_CHOICES,
+        verbose_name="Результат примирения",
+        null=True, blank=True
+    )
+
+    # Дополнительные определения
+    ruling_refusal_of_claim = models.BooleanField(
+        verbose_name="Определение о непринятии отказа истца от иска",
+        default=False, null=True, blank=True
+    )
+    ruling_refusal_of_recognition = models.BooleanField(
+        verbose_name="Определение о непринятии признания иска ответчиком",
+        default=False, null=True, blank=True
+    )
+    ruling_refusal_of_settlement = models.BooleanField(
+        verbose_name="Определение об отказе в утверждении мирового соглашения",
+        default=False, null=True, blank=True
+    )
+
+    # Присужденные суммы
+    awarded_amount_main = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        verbose_name="Присуждено к взысканию по осн. треб. (руб.)",
+        null=True, blank=True
+    )
+    awarded_amount_additional = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        verbose_name="Присуждено к взысканию по доп. треб. (руб.)",
+        null=True, blank=True
+    )
+    state_duty_to_state = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        verbose_name="Госпошлина в доход государства (руб.)",
+        null=True, blank=True
+    )
+    legal_costs = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        verbose_name="Судебные издержки (руб.)",
+        null=True, blank=True
+    )
+
+    # Частные определения
+    special_rulings_count = models.PositiveIntegerField(
+        verbose_name="Количество вынесенных частных определений",
+        default=0, null=True, blank=True
+    )
+    special_rulings_reports_received = models.PositiveIntegerField(
+        verbose_name="Поступило сообщений по частным определениям",
+        default=0, null=True, blank=True
+    )
+
+    # Состав суда
+    court_composition = models.CharField(
+        max_length=2,
+        choices=[('1', 'Единолично судьей'), ('2', 'Коллегиально')],
+        verbose_name="Состав суда, вынесший решение",
+        null=True, blank=True
+    )
+    judges_list = models.TextField(
+        verbose_name="Судьи (Ф.И.О.) при коллегиальном рассмотрении",
+        null=True, blank=True
+    )
+
+    # Другие участники
+    participant_prosecutor_state = models.BooleanField(
+        verbose_name="Прокурор как представитель государства",
+        default=False, null=True, blank=True
+    )
+    participant_prosecutor_plaintiff = models.BooleanField(
+        verbose_name="Прокурор в интересах истца",
+        default=False, null=True, blank=True
+    )
+    participant_gov_agency = models.BooleanField(
+        verbose_name="Представитель гос. органов, организаций",
+        default=False, null=True, blank=True
+    )
+    participant_public_org = models.BooleanField(
+        verbose_name="Общественные организации",
+        default=False, null=True, blank=True
+    )
+    participant_mass_media = models.BooleanField(
+        verbose_name="СМИ",
+        default=False, null=True, blank=True
+    )
+    participant_expert = models.BooleanField(
+        verbose_name="Эксперт",
+        default=False, null=True, blank=True
+    )
+    participant_specialist = models.BooleanField(
+        verbose_name="Специалист",
+        default=False, null=True, blank=True
+    )
+    participant_translator = models.BooleanField(
+        verbose_name="Переводчик",
+        default=False, null=True, blank=True
+    )
+    participant_minor = models.BooleanField(
+        verbose_name="Несовершеннолетний",
+        default=False, null=True, blank=True
+    )
+
+    # Продолжительность
+    consideration_duration_months = models.PositiveIntegerField(
+        verbose_name="Продолжительность рассмотрения (мес.)",
+        null=True, blank=True
+    )
+    consideration_duration_days = models.PositiveIntegerField(
+        verbose_name="Продолжительность рассмотрения (дни)",
+        null=True, blank=True
+    )
+    total_duration_months = models.PositiveIntegerField(
+        verbose_name="Общая продолжительность (мес.)",
+        null=True, blank=True
+    )
+    total_duration_days = models.PositiveIntegerField(
+        verbose_name="Общая продолжительность (дни)",
+        null=True, blank=True
+    )
+    term_compliance = models.CharField(
+        max_length=5,
+        choices=TERM_COMPLIANCE_CHOICES,
+        verbose_name="Дело рассмотрено в сроки",
+        null=True, blank=True
+    )
+    deadline_start_date = models.DateField(
+        verbose_name="Дата начала исчисления процесс. срока",
+        null=True, blank=True
+    )
+    is_complex_case = models.BooleanField(
+        verbose_name="Дело сложное",
+        default=False, null=True, blank=True
+    )
+
+    # Сдача в отдел и отправка копий
+    submitted_to_department_date = models.DateField(
+        verbose_name="Дата сдачи дела в отдел делопроизводства",
+        null=True, blank=True
+    )
+    copies_sent_to_absentees_date = models.DateField(
+        verbose_name="Копии направлены не явившимся лицам",
+        null=True, blank=True
+    )
+
+    # Замечания на протокол
+    protocol_objections_filed = models.BooleanField(
+        verbose_name="Принесены замечания на протокол",
+        default=False, null=True, blank=True
+    )
+    protocol_objections_filed_date = models.DateField(
+        verbose_name="Дата принесения замечаний",
+        null=True, blank=True
+    )
+    protocol_objections_extended_deadline = models.BooleanField(
+        verbose_name="Продлено по сложным делам",
+        default=False, null=True, blank=True
+    )
+    protocol_objections_reviewed_date = models.DateField(
+        verbose_name="Дата рассмотрения замечаний",
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел 4. Обжалование (Апелляция) -------------------
+    is_appealed = models.BooleanField(
+        verbose_name="Обжаловано",
+        default=False, null=True, blank=True
+    )
+    appealed_by = models.TextField(
+        verbose_name="Кем обжаловано",
+        null=True, blank=True
+    )
     appeal_date = models.DateField(
-        verbose_name="Дата поступления апелляционной жалобы",
+        verbose_name="Дата подачи жалобы/представления",
+        null=True, blank=True
+    )
+    appeal_type = models.CharField(
+        max_length=2,
+        choices=[('1', 'Жалоба'), ('2', 'Представление прокурора')],
+        verbose_name="Тип обжалования",
+        null=True, blank=True
+    )
+    appeal_deadline_for_corrections = models.DateField(
+        verbose_name="Срок для устранения недостатков до",
+        null=True, blank=True
+    )
+    appeal_scheduled_date = models.DateField(
+        verbose_name="Дело назначено к рассмотрению апел. инстанции на",
+        null=True, blank=True
+    )
+    appeal_scheduled_date_repeated = models.DateField(
+        verbose_name="Повторно назначено на",
+        null=True, blank=True
+    )
+    appeal_sent_to_higher_court_date = models.DateField(
+        verbose_name="Дата направления в вышестоящий суд",
+        null=True, blank=True
+    )
+    appeal_sent_to_higher_court_repeated = models.DateField(
+        verbose_name="Дата повторного направления",
+        null=True, blank=True
+    )
+    appeal_returned_without_review_date = models.DateField(
+        verbose_name="Дата возврата без рассмотрения",
+        null=True, blank=True
+    )
+    appeal_return_reason = models.TextField(
+        verbose_name="Причина возврата",
+        null=True, blank=True
+    )
+    appeal_review_date = models.DateField(
+        verbose_name="Дата рассмотрения во II инстанции",
         null=True, blank=True
     )
     appeal_result = models.CharField(
-        max_length=255,
+        max_length=2,
+        choices=APPEAL_CASSATION_RESULT_CHOICES,
         verbose_name="Результат апелляционного рассмотрения",
-        choices=[
-            ('1', 'Оставлено без изменения'),
-            ('2', 'Изменено'),
-            ('3', 'Отменено с вынесением нового решения'),
-            ('4', 'Отменено с прекращением производства'),
-            ('5', 'Отменено с оставлением заявления без рассмотрения'),
-            ('6', 'Возвращено на новое рассмотрение'),
-        ],
-        null=True, blank=True
-    )
-    appeal_decision_date = models.DateField(
-        verbose_name="Дата апелляционного определения",
         null=True, blank=True
     )
 
-    # ------------------- Кассация -------------------
-    cassation_filed = models.BooleanField(
+    # ------------------- Раздел 4. Обжалование (Кассация) -------------------
+    is_cassation_filed = models.BooleanField(
         verbose_name="Подана кассационная жалоба",
         default=False, null=True, blank=True
     )
+    cassation_filed_by = models.TextField(
+        verbose_name="Кем подана кассационная жалоба",
+        null=True, blank=True
+    )
+    cassation_date = models.DateField(
+        verbose_name="Дата подачи кассационной жалобы",
+        null=True, blank=True
+    )
+    cassation_review_date = models.DateField(
+        verbose_name="Дата рассмотрения в кассационной инстанции",
+        null=True, blank=True
+    )
     cassation_result = models.CharField(
-        max_length=255,
+        max_length=2,
+        choices=APPEAL_CASSATION_RESULT_CHOICES,
         verbose_name="Результат кассационного рассмотрения",
+        null=True, blank=True
+    )
+
+    # ------------------- Раздел 6. Другие судебные постановления -------------------
+    additional_decision_date = models.DateField(
+        verbose_name="Дата дополнительного решения",
+        null=True, blank=True
+    )
+    clarification_ruling_date = models.DateField(
+        verbose_name="Дата определения о разъяснении решения",
+        null=True, blank=True
+    )
+    execution_order_change_date = models.DateField(
+        verbose_name="Дата определения об изменении порядка исполнения",
+        null=True, blank=True
+    )
+    other_execution_ruling_date = models.DateField(
+        verbose_name="Дата другого определения в порядке исполнения",
+        null=True, blank=True
+    )
+    court_fines_imposed = models.BooleanField(
+        verbose_name="Наложены судебные штрафы",
+        default=False, null=True, blank=True
+    )
+    court_fines_details = models.TextField(
+        verbose_name="Детали штрафов (определение от, №, сумма и т.д.)",
+        null=True, blank=True
+    )
+    procedural_costs_details = models.TextField(
+        verbose_name="Процессуальные издержки (кому, дата, сумма, дни)",
+        null=True, blank=True
+    )
+    review_ruling_date = models.DateField(
+        verbose_name="Дата определения о пересмотре по вновь открывшимся обстоятельствам",
+        null=True, blank=True
+    )
+    cassation_ruling_date = models.DateField(
+        verbose_name="Дата кассационного постановления",
         null=True, blank=True
     )
 
@@ -315,13 +726,12 @@ class CivilDecision(models.Model):
         ordering = ['-decision_date']
 
     def __str__(self):
-        return f"Решение по делу {self.civil_proceedings.case_number} от {self.decision_date}"
+        return f"Решение по делу {self.civil_proceedings.case_number_civil} от {self.decision_date}"
 
 
 class CivilExecution(models.Model):
     """
-    Исполнение решения по гражданскому делу (разделы 5 и 6).
-    Одно дело может иметь несколько записей об исполнении (например, несколько исполнительных листов).
+    Исполнение решения по гражданскому делу (расширенная версия).
     """
     civil_proceedings = models.ForeignKey(
         CivilProceedings,
@@ -331,44 +741,58 @@ class CivilExecution(models.Model):
     )
 
     # ------------------- Раздел 5. Исполнение решения -------------------
-    writ_execution_date = models.DateField(
-        verbose_name="Дата выдачи исполнительного листа",
+    decision_effective_date = models.DateField(
+        verbose_name="Дата вступления решения в законную силу",
         null=True, blank=True
     )
-    writ_received_by = models.CharField(
-        max_length=255,
-        verbose_name="Кому выдан исполнительный лист",
+    writ_sent_to_bailiff_date = models.DateField(
+        verbose_name="Дата направления исп. листа суд. приставу",
         null=True, blank=True
     )
-    execution_deadline = models.DateField(
-        verbose_name="Срок предъявления к исполнению",
+    writ_issued_to_claimant_date = models.DateField(
+        verbose_name="Дата выдачи исп. листа взыскателю",
         null=True, blank=True
     )
-    execution_result = models.CharField(
-        max_length=255,
-        verbose_name="Результат исполнения",
-        choices=[
-            ('1', 'Исполнено'),
-            ('2', 'Не исполнено'),
-            ('3', 'Возвращён без исполнения'),
-            ('4', 'Частично исполнено'),
-        ],
+    writ_sent_by_department_date = models.DateField(
+        verbose_name="Дата направления отделом делопроизводства для исполнения",
         null=True, blank=True
     )
     execution_date = models.DateField(
-        verbose_name="Дата фактического исполнения",
+        verbose_name="Дата исполнения",
         null=True, blank=True
     )
-
-    # ------------------- Раздел 6. Судебные издержки -------------------
-    legal_costs = models.DecimalField(
-        max_digits=12, decimal_places=2,
-        verbose_name="Судебные издержки (руб.)",
+    execution_type = models.CharField(
+        max_length=255,
+        verbose_name="Вид взыскания",
         null=True, blank=True
     )
-    legal_costs_awarded = models.DecimalField(
+    execution_amount = models.DecimalField(
         max_digits=12, decimal_places=2,
-        verbose_name="Присуждённые издержки (руб.)",
+        verbose_name="Сумма взыскания (руб.)",
+        null=True, blank=True
+    )
+    returned_from_bailiff_date = models.DateField(
+        verbose_name="Дата возврата из подразделения ССП",
+        null=True, blank=True
+    )
+    returned_type = models.CharField(
+        max_length=255,
+        verbose_name="Вид взыскания (при возврате)",
+        null=True, blank=True
+    )
+    returned_amount = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        verbose_name="Сумма (при возврате)",
+        null=True, blank=True
+    )
+    not_collected_reason = models.TextField(
+        verbose_name="Основание не взыскания",
+        null=True, blank=True
+    )
+    execution_result = models.CharField(
+        max_length=2,
+        choices=EXECUTION_RESULT_CHOICES,
+        verbose_name="Результат исполнения",
         null=True, blank=True
     )
     notes = models.TextField(
@@ -379,10 +803,10 @@ class CivilExecution(models.Model):
     class Meta:
         verbose_name = "Исполнение по гражданскому делу"
         verbose_name_plural = "Исполнения по гражданским делам"
-        ordering = ['-writ_execution_date']
+        ordering = ['-execution_date']
 
     def __str__(self):
-        return f"Исполнение по делу {self.civil_proceedings.case_number} от {self.writ_execution_date}"
+        return f"Исполнение по делу {self.civil_proceedings.case_number_civil}"
 
 
 # ----- Связки с business_card (без изменений, только уточнены related_name) -----
@@ -467,13 +891,12 @@ class CivilCaseMovement(models.Model):
         ordering = ['-business_movement__date_meeting', '-business_movement__meeting_time']
 
     def __str__(self):
-        return f"Движение по делу {self.civil_proceedings.case_number} от {self.business_movement.date_meeting}"
+        return f"Движение по делу {self.civil_proceedings.case_number_civil} от {self.business_movement.date_meeting}"
 
 
 class CivilPetition(models.Model):
     """Ходатайства (готовые записи из PetitionsInCase) + заявитель (сторона или адвокат)"""
     
-    # Типы заявителей
     PETITIONER_TYPES = [
         ('civil_sides', 'Сторона по делу'),
         ('civil_lawyer', 'Адвокат'),
@@ -492,7 +915,6 @@ class CivilPetition(models.Model):
         verbose_name="Ходатайство"
     )
     
-    # Поля для хранения информации о заявителе
     petitioner_type = models.CharField(
         max_length=20,
         choices=PETITIONER_TYPES,
@@ -505,9 +927,6 @@ class CivilPetition(models.Model):
         null=True,
         blank=True
     )
-    
-    # Для GenericForeignKey или можно использовать прямые связи
-    # Но для простоты будем хранить type и id, а получать данные через свойства
 
     class Meta:
         verbose_name = "Ходатайство в гражданском деле"

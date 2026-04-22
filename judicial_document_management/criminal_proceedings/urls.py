@@ -1,15 +1,18 @@
 from rest_framework import routers
 from django.urls import path, include
 from .views import (CriminalProceedingsViewSet, DefendantViewSet,
-                    CriminalDecisionViewSet, ArchivedCriminalProceedingsViewSet,
-                    criminal_options, defendant_options,
-                    criminal_decision_options,
-                    CriminalRulingViewSet, CriminalCaseMovementViewSet,
-                    criminal_case_movement_options, LawyerCriminalViewSet,
-                    referring_authorities_list, judges_list,
-                    lawyer_criminal_options, SidesCaseInCaseViewSet,
-                    PetitionCriminalViewSet, petition_criminal_options,
-                    CriminalExecutionViewSet)
+    CriminalDecisionViewSet, ArchivedCriminalProceedingsViewSet,
+    criminal_options, defendant_options,
+    criminal_decision_options,
+    CriminalRulingViewSet, CriminalCaseMovementViewSet,
+    criminal_case_movement_options, LawyerCriminalViewSet,
+    referring_authorities_list, judges_list,
+    lawyer_criminal_options, SidesCaseInCaseViewSet,
+    PetitionCriminalViewSet, petition_criminal_options,
+    CriminalExecutionViewSet, CriminalAppealInstanceViewSet,
+    CriminalCassationInstanceViewSet,
+    CriminalCivilClaimViewSet, CriminalAppealApplicantStatusViewSet,
+    CriminalCassationResultViewSet, CriminalSupervisoryResultViewSet)
 from .views_person_card import (
     CriminalPersonCardViewSet, PreviousConvictionViewSet,
     CrimeCompositionViewSet, SentencedPunishmentViewSet
@@ -82,6 +85,38 @@ router.register(
     r"person-cards/(?P<person_card_id>\d+)/sentences",
     SentencedPunishmentViewSet,
     basename="sentences"
+)
+router.register(
+    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/appeal-instances",
+    CriminalAppealInstanceViewSet,
+    basename="criminal-appeal-instances"
+)
+router.register(
+    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/cassation-instances",
+    CriminalCassationInstanceViewSet,
+    basename="criminal-cassation-instances"
+)
+router.register(
+    r"criminal-proceedings/(?P<criminal_proceedings>\d+)/civil-claims",
+    CriminalCivilClaimViewSet,
+    basename="criminal-civil-claims"
+)
+
+# Справочники (read-only)
+router.register(
+    r"appeal-applicant-statuses",
+    CriminalAppealApplicantStatusViewSet,
+    basename="appeal-applicant-statuses"
+)
+router.register(
+    r"cassation-results",
+    CriminalCassationResultViewSet,
+    basename="cassation-results"
+)
+router.register(
+    r"supervisory-results",
+    CriminalSupervisoryResultViewSet,
+    basename="supervisory-results"
 )
 
 urlpatterns = [

@@ -7,7 +7,7 @@ from django.utils import timezone
 from users.models import User
 from .models import (
     CivilProceedings, CivilDecision, CivilExecution,
-    CivilSidesCaseInCase, CivilLawyer,
+    CivilSidesCaseInCase, CivilLawyer, CivilProceedingsType,
     CivilCaseMovement, CivilPetition, ReferringAuthorityCivil
 )
 from .serializers import (
@@ -15,7 +15,8 @@ from .serializers import (
     CivilDecisionSerializer, CivilExecutionSerializer,
     CivilSidesCaseInCaseSerializer, CivilLawyerSerializer,
     CivilCaseMovementSerializer, CivilPetitionSerializer,
-    ReferringAuthorityCivilSerializer, CivilDecisionOptionsSerializer
+    ReferringAuthorityCivilSerializer, CivilDecisionOptionsSerializer,
+    CivilProceedingsTypeSerializer
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -401,6 +402,11 @@ class CivilPetitionViewSet(viewsets.ModelViewSet):
 class ReferringAuthorityCivilViewSet(viewsets.ModelViewSet):
     queryset = ReferringAuthorityCivil.objects.all()
     serializer_class = ReferringAuthorityCivilSerializer
+
+
+class CivilProceedingsTypeViewSet(viewsets.ModelViewSet):
+    queryset = CivilProceedingsType.objects.all()
+    serializer_class = CivilProceedingsTypeSerializer
 
 
 @api_view(['GET'])

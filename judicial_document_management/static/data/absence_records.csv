@@ -1,0 +1,6 @@
+name,code,color,block_before_days,block_after_days,is_active
+Отпуск,annual_leave,#3498db,30,5,True
+Больничный,sick_leave,#e74c3c,0,3,True
+Командировка,business_trip,#2ecc71,7,2,True
+Обучение / повышение квалификации,training,#f39c12,14,2,True
+Прочие причины, other_reasons,#95a5a6,7,1,True

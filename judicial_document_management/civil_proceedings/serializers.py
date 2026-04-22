@@ -9,10 +9,17 @@ from business_card.models import (SidesCase,
 from .models import (
     CivilProceedings, CivilDecision, CivilExecution,
     CivilSidesCaseInCase, CivilLawyer,
-    CivilCaseMovement, CivilPetition, ReferringAuthorityCivil
+    CivilCaseMovement, CivilPetition, ReferringAuthorityCivil,
+    CivilProceedingsType
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
+
+
+class CivilProceedingsTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CivilProceedingsType
+        fields = '__all__'
 
 
 class ReferringAuthorityCivilSerializer(serializers.ModelSerializer):
@@ -27,37 +34,6 @@ class CivilDecisionSerializer(serializers.ModelSerializer):
         model = CivilDecision
         fields = '__all__'
         read_only_fields = ('civil_proceedings',)
-
-
-class CivilDecisionOptionsSerializer(serializers.Serializer):
-    """Сериализатор для получения опций из choices полей модели CivilDecision"""
-    
-    @staticmethod
-    def get_choices_from_model():
-        """Получает все choices опции из модели CivilDecision"""
-        model_fields = CivilDecision._meta.get_fields()
-        choices_data = {}
-        
-        for field in model_fields:
-            if hasattr(field, 'choices') and field.choices:
-                field_name = field.name
-                choices_data[field_name] = [
-                    {'value': choice[0], 'label': choice[1]}
-                    for choice in field.choices
-                ]
-        
-        # Добавляем специальные опции, которые могут понадобиться
-        # (например, для результатов апелляции/кассации)
-        if 'second_instance_result' not in choices_data:
-            choices_data['second_instance_result'] = [
-                {'value': '1', 'label': 'Оставлено без изменения'},
-                {'value': '2', 'label': 'Изменено'},
-                {'value': '3', 'label': 'Отменено с вынесением нового решения'},
-                {'value': '4', 'label': 'Отменено с прекращением производства'},
-                {'value': '5', 'label': 'Возвращено на новое рассмотрение'},
-            ]
-        
-        return choices_data
 
 
 class CivilExecutionSerializer(serializers.ModelSerializer):
@@ -98,17 +74,12 @@ class NestedSidesCaseInCaseSerializer(serializers.ModelSerializer):
 class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
     """Сериализатор для сторон гражданского дела с возможностью создания новой стороны"""
     
-    # Для отображения детальной информации
     sides_case_incase_detail = serializers.SerializerMethodField()
     sides_case_role_detail = serializers.SerializerMethodField()
-    
-    # Поле для создания новой стороны
     sides_case_incase_data = NestedSidesCaseInCaseSerializer(
         write_only=True,
         required=False
     )
-    
-    # ID существующей стороны (если нужно привязать существующую)
     existing_sides_case_incase_id = serializers.IntegerField(
         write_only=True,
         required=False,
@@ -160,12 +131,10 @@ class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, data):
-        """Проверяем, что указан либо существующий ID, либо данные для создания новой стороны"""
         existing_id = data.get('existing_sides_case_incase_id')
         new_data = data.get('sides_case_incase_data')
         
         if not existing_id and not new_data and not self.instance:
-            # Только для создания, не для обновления
             raise serializers.ValidationError(
                 "Необходимо указать либо existing_sides_case_incase_id для существующей стороны, "
                 "либо sides_case_incase_data для создания новой стороны"
@@ -176,7 +145,6 @@ class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
                 "Нельзя указать одновременно existing_sides_case_incase_id и sides_case_incase_data"
             )
         
-        # Проверяем существование стороны по ID
         if existing_id:
             try:
                 SidesCaseInCase.objects.get(id=existing_id)
@@ -194,20 +162,15 @@ class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
                 {'civil_proceedings': 'Не указано гражданское производство'}
             )
         
-        # Извлекаем данные
         existing_id = validated_data.pop('existing_sides_case_incase_id', None)
         new_side_data = validated_data.pop('sides_case_incase_data', None)
         sides_case_role = validated_data.pop('sides_case_role')
         
-        # Создаем или получаем сторону
         if new_side_data:
-            # Создаем новую сторону
             sides_case_incase = NestedSidesCaseInCaseSerializer().create(new_side_data)
         else:
-            # Используем существующую сторону
             sides_case_incase = SidesCaseInCase.objects.get(id=existing_id)
         
-        # Создаем связь
         civil_side = CivilSidesCaseInCase.objects.create(
             civil_proceedings=civil_proceedings,
             sides_case_incase=sides_case_incase,
@@ -217,21 +180,17 @@ class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
         return civil_side
 
     def update(self, instance, validated_data):
-        # Обновляем роль, если она передана
         if 'sides_case_role' in validated_data:
             instance.sides_case_role = validated_data['sides_case_role']
         
-        # Обновляем данные стороны, если они переданы в sides_case_incase_data
         if 'sides_case_incase_data' in validated_data:
             side_data = validated_data.pop('sides_case_incase_data')
             if side_data and instance.sides_case_incase:
-                # Обновляем поля существующей стороны
                 for attr, value in side_data.items():
-                    if value is not None:  # Обновляем только непустые значения
+                    if value is not None:
                         setattr(instance.sides_case_incase, attr, value)
                 instance.sides_case_incase.save()
         
-        # Убираем поля, которые не относятся к CivilSidesCaseInCase
         validated_data.pop('existing_sides_case_incase_id', None)
         validated_data.pop('sides_case_incase_data', None)
         
@@ -240,8 +199,6 @@ class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
 
 
 class NestedLawyerSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания Lawyer внутри CivilLawyer"""
-    
     class Meta:
         model = Lawyer
         fields = [
@@ -253,24 +210,10 @@ class NestedLawyerSerializer(serializers.ModelSerializer):
 
 
 class CivilLawyerSerializer(serializers.ModelSerializer):
-    """Сериализатор для адвокатов в гражданском деле с возможностью создания нового адвоката"""
-    
-    # Для отображения детальной информации
     lawyer_detail = serializers.SerializerMethodField()
     sides_case_role_detail = serializers.SerializerMethodField()
-    
-    # Поле для создания нового адвоката
-    lawyer_data = NestedLawyerSerializer(
-        write_only=True,
-        required=False
-    )
-    
-    # ID существующего адвоката (если нужно привязать существующего)
-    existing_lawyer_id = serializers.IntegerField(
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
+    lawyer_data = NestedLawyerSerializer(write_only=True, required=False)
+    existing_lawyer_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = CivilLawyer
@@ -311,12 +254,10 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, data):
-        """Проверяем, что указан либо существующий ID, либо данные для создания нового адвоката"""
         existing_id = data.get('existing_lawyer_id')
         new_data = data.get('lawyer_data')
         
         if not existing_id and not new_data and not self.instance:
-            # Только для создания, не для обновления
             raise serializers.ValidationError(
                 "Необходимо указать либо existing_lawyer_id для существующего адвоката, "
                 "либо lawyer_data для создания нового адвоката"
@@ -327,7 +268,6 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
                 "Нельзя указать одновременно existing_lawyer_id и lawyer_data"
             )
         
-        # Проверяем существование адвоката по ID
         if existing_id:
             try:
                 Lawyer.objects.get(id=existing_id)
@@ -345,20 +285,15 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
                 {'civil_proceedings': 'Не указано гражданское производство'}
             )
         
-        # Извлекаем данные
         existing_id = validated_data.pop('existing_lawyer_id', None)
         new_lawyer_data = validated_data.pop('lawyer_data', None)
         sides_case_role = validated_data.pop('sides_case_role')
         
-        # Создаем или получаем адвоката
         if new_lawyer_data:
-            # Создаем нового адвоката
             lawyer = NestedLawyerSerializer().create(new_lawyer_data)
         else:
-            # Используем существующего адвоката
             lawyer = Lawyer.objects.get(id=existing_id)
         
-        # Создаем связь
         civil_lawyer = CivilLawyer.objects.create(
             civil_proceedings=civil_proceedings,
             lawyer=lawyer,
@@ -368,21 +303,17 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
         return civil_lawyer
 
     def update(self, instance, validated_data):
-        # Обновляем роль, если она передана
         if 'sides_case_role' in validated_data:
             instance.sides_case_role = validated_data['sides_case_role']
         
-        # Обновляем данные адвоката, если они переданы в lawyer_data
         if 'lawyer_data' in validated_data:
             lawyer_data = validated_data.pop('lawyer_data')
             if lawyer_data and instance.lawyer:
-                # Обновляем поля существующего адвоката
                 for attr, value in lawyer_data.items():
-                    if value is not None:  # Обновляем только непустые значения
+                    if value is not None:
                         setattr(instance.lawyer, attr, value)
                 instance.lawyer.save()
         
-        # Убираем поля, которые не относятся к CivilLawyer
         validated_data.pop('existing_lawyer_id', None)
         validated_data.pop('lawyer_data', None)
         
@@ -393,7 +324,6 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
 class CivilCaseMovementSerializer(serializers.ModelSerializer):
     business_movement_detail = serializers.SerializerMethodField(read_only=True)
     
-    # Поля для создания/обновления BusinessMovement
     date_meeting = serializers.DateField(required=True, write_only=True)
     meeting_time = serializers.TimeField(required=True, write_only=True)
     decision_case = serializers.PrimaryKeyRelatedField(
@@ -445,12 +375,8 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, data):
-        """
-        Проверяем наличие обязательных полей для создания BusinessMovement
-        """
         request_method = self.context.get('request').method if self.context.get('request') else None
         
-        # Для создания (POST) проверяем обязательные поля
         if request_method == 'POST':
             if not data.get('date_meeting'):
                 raise serializers.ValidationError({'date_meeting': 'Обязательное поле.'})
@@ -466,7 +392,6 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
                 {'civil_proceedings': 'Не указано гражданское производство'}
             )
 
-        # Извлекаем данные для BusinessMovement
         date_meeting = validated_data.pop('date_meeting')
         meeting_time = validated_data.pop('meeting_time')
         decision_case_ids = validated_data.pop('decision_case', [])
@@ -474,7 +399,6 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
         result_court_session = validated_data.pop('result_court_session', '')
         reason_deposition = validated_data.pop('reason_deposition', '')
 
-        # Создаем BusinessMovement
         business_movement = BusinessMovement.objects.create(
             date_meeting=date_meeting,
             meeting_time=meeting_time,
@@ -483,11 +407,9 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
             reason_deposition=reason_deposition
         )
 
-        # Добавляем решения, если они есть
         if decision_case_ids:
             business_movement.decision_case.set(decision_case_ids)
 
-        # Создаем CivilCaseMovement
         civil_movement = CivilCaseMovement.objects.create(
             civil_proceedings=civil_proceedings,
             business_movement=business_movement
@@ -496,7 +418,6 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
         return civil_movement
 
     def update(self, instance, validated_data):
-        # Извлекаем данные для BusinessMovement
         date_meeting = validated_data.pop('date_meeting', None)
         meeting_time = validated_data.pop('meeting_time', None)
         decision_case_ids = validated_data.pop('decision_case', None)
@@ -504,7 +425,6 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
         result_court_session = validated_data.pop('result_court_session', None)
         reason_deposition = validated_data.pop('reason_deposition', None)
 
-        # Обновляем BusinessMovement, если он существует
         if instance.business_movement:
             business_movement = instance.business_movement
             
@@ -521,11 +441,9 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
             
             business_movement.save()
 
-            # Обновляем решения, если они переданы
             if decision_case_ids is not None:
                 business_movement.decision_case.set(decision_case_ids)
 
-        # Обновляем остальные поля CivilCaseMovement
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
@@ -549,7 +467,6 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
-    # Поля для создания PetitionsInCase
     petitions_name = serializers.PrimaryKeyRelatedField(
         queryset=Petitions.objects.all(),
         many=True,
@@ -591,10 +508,8 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
         read_only_fields = ('civil_proceedings', 'petitions_incase')
 
     def get_petitions_incase_detail(self, obj):
-        """Получение детальной информации о ходатайстве"""
         if obj.petitions_incase:
             petitions_incase = obj.petitions_incase
-            # Получаем данные о решении (ForeignKey)
             decision_data = None
             if petitions_incase.decision_rendered:
                 decision = petitions_incase.decision_rendered
@@ -617,15 +532,11 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
         return None
 
     def get_petitioner_info(self, obj):
-        """Получение информации о заявителе"""
-        # Используем свойство модели для получения информации
         return obj.petitioner_info
 
     def validate(self, data):
-        """Проверяем наличие обязательных полей для создания PetitionsInCase"""
         request_method = self.context.get('request').method if self.context.get('request') else None
         
-        # Для создания (POST) проверяем обязательные поля
         if request_method == 'POST':
             if not data.get('petitions_name'):
                 raise serializers.ValidationError({'petitions_name': 'Обязательное поле.'})
@@ -641,29 +552,23 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
                 {'civil_proceedings': 'Не указано гражданское производство'}
             )
 
-        # Извлекаем данные для PetitionsInCase
         petitions_name_ids = validated_data.pop('petitions_name', [])
         date_application = validated_data.pop('date_application')
         decision_rendered_id = validated_data.pop('decision_rendered', None)
         date_decision = validated_data.pop('date_decision', None)
         notation = validated_data.pop('notation', '')
-
-        # Извлекаем данные заявителя
         petitioner_type = validated_data.pop('petitioner_type', None)
         petitioner_id = validated_data.pop('petitioner_id', None)
 
-        # Создаем PetitionsInCase
         petitions_incase = PetitionsInCase.objects.create(
             date_application=date_application,
             date_decision=date_decision,
             notation=notation
         )
 
-        # Добавляем типы ходатайств
         if petitions_name_ids:
             petitions_incase.petitions_name.set(petitions_name_ids)
 
-        # Добавляем решение, если оно есть
         if decision_rendered_id:
             try:
                 decision = Decisions.objects.get(id=decision_rendered_id)
@@ -672,7 +577,6 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
             except Decisions.DoesNotExist:
                 pass
 
-        # Создаем CivilPetition с данными заявителя
         civil_petition = CivilPetition.objects.create(
             civil_proceedings=civil_proceedings,
             petitions_incase=petitions_incase,
@@ -683,18 +587,14 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
         return civil_petition
 
     def update(self, instance, validated_data):
-        # Извлекаем данные для PetitionsInCase
         petitions_name_ids = validated_data.pop('petitions_name', None)
         date_application = validated_data.pop('date_application', None)
         decision_rendered_id = validated_data.pop('decision_rendered', None)
         date_decision = validated_data.pop('date_decision', None)
         notation = validated_data.pop('notation', None)
-
-        # Извлекаем данные заявителя
         petitioner_type = validated_data.pop('petitioner_type', None)
         petitioner_id = validated_data.pop('petitioner_id', None)
 
-        # Обновляем PetitionsInCase, если он существует
         if instance.petitions_incase:
             petitions_incase = instance.petitions_incase
             
@@ -705,7 +605,6 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
             if notation is not None:
                 petitions_incase.notation = notation
             
-            # Обновляем решение (ForeignKey)
             if decision_rendered_id is not None:
                 if decision_rendered_id:
                     try:
@@ -718,17 +617,14 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
             
             petitions_incase.save()
 
-            # Обновляем связи ManyToMany для petitions_name
             if petitions_name_ids is not None:
                 petitions_incase.petitions_name.set(petitions_name_ids)
 
-        # Обновляем данные заявителя в CivilPetition
         if petitioner_type is not None:
             instance.petitioner_type = petitioner_type
         if petitioner_id is not None:
             instance.petitioner_id = petitioner_id
 
-        # Обновляем остальные поля CivilPetition
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
@@ -742,6 +638,8 @@ class CivilProceedingsSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     referring_authority_detail = ReferringAuthorityCivilSerializer(source='referring_authority', read_only=True)
     registered_case_info = serializers.SerializerMethodField()
+    case_type_detail = CivilProceedingsTypeSerializer(source='case_type', read_only=True)
+    
     # Вложенные связанные объекты
     civil_decisions = CivilDecisionSerializer(many=True, read_only=True)
     civil_executions = CivilExecutionSerializer(many=True, read_only=True)
@@ -799,20 +697,6 @@ class CivilProceedingsSerializer(serializers.ModelSerializer):
         ).count()
 
 
-class ArchivedCivilProceedingsSerializer(CivilProceedingsSerializer):
-    """Сериализатор только для чтения архивных дел"""
-    class Meta(CivilProceedingsSerializer.Meta):
-        read_only_fields = CivilProceedingsSerializer.Meta.read_only_fields + (
-            'case_number_civil', 'incoming_date', 'judge_acceptance_date',
-            'presiding_judge', 'claim_amount',
-            # все поля, кроме архивных, помечаются как read_only
-        )
-
-    def validate_case_number_civil(self, value):
-        # Не проверяем уникальность для архивных дел
-        return value
-
-
 class CivilDecisionOptionsSerializer(serializers.Serializer):
     """Сериализатор для получения опций из choices полей модели CivilDecision и CivilExecution"""
     
@@ -843,23 +727,37 @@ class CivilDecisionOptionsSerializer(serializers.Serializer):
                     for choice in field.choices
                 ]
         
-        # Добавляем опции для апелляции/кассации, если их нет
-        if 'second_instance_result' not in choices_data:
-            choices_data['second_instance_result'] = [
+        # Добавляем явно важные опции, если их нет
+        if 'appeal_result' not in choices_data:
+            choices_data['appeal_result'] = [
                 {'value': '1', 'label': 'Оставлено без изменения'},
-                {'value': '2', 'label': 'Изменено'},
-                {'value': '3', 'label': 'Отменено с вынесением нового решения'},
-                {'value': '4', 'label': 'Отменено с прекращением производства'},
-                {'value': '5', 'label': 'Возвращено на новое рассмотрение'},
+                {'value': '2', 'label': 'Отменено с возвращением на новое рассмотрение'},
+                {'value': '3', 'label': 'Производство по делу прекращено'},
+                {'value': '4', 'label': 'Заявление оставлено без рассмотрения'},
+                {'value': '5', 'label': 'Вынесено новое решение'},
+                {'value': '6', 'label': 'Изменено'},
+                {'value': '7', 'label': 'Другое судебное постановление с удовлетворением жалобы'},
             ]
         
-        # Явно добавляем опции для execution_result, если их нет
         if 'execution_result' not in choices_data:
             choices_data['execution_result'] = [
                 {'value': '1', 'label': 'Исполнено'},
                 {'value': '2', 'label': 'Не исполнено'},
-                {'value': '3', 'label': 'Возвращён без исполнения'},
+                {'value': '3', 'label': 'Возвращено без исполнения'},
                 {'value': '4', 'label': 'Частично исполнено'},
             ]
         
         return choices_data
+
+class ArchivedCivilProceedingsSerializer(CivilProceedingsSerializer):
+    """Сериализатор только для чтения архивных дел"""
+    class Meta(CivilProceedingsSerializer.Meta):
+        read_only_fields = CivilProceedingsSerializer.Meta.read_only_fields + (
+            'case_number_civil', 'incoming_date', 'judge_acceptance_date',
+            'presiding_judge', 'claim_amount',
+            # все поля, кроме архивных, помечаются как read_only
+        )
+
+    def validate_case_number_civil(self, value):
+        # Не проверяем уникальность для архивных дел
+        return value

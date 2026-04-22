@@ -7,14 +7,19 @@ from users.models import User
 from .models import (
     AdministrativeProceedings, AdministrativeDecision, AdministrativeExecution,
     AdministrativeSidesCaseInCase, AdministrativeLawyer,
-    AdministrativeCaseMovement, AdministrativePetition, ReferringAuthorityAdmin
+    AdministrativeCaseMovement, AdministrativePetition, ReferringAuthorityAdmin,
+    AdministrativeAppeal, AdministrativeCassation, PostponementReasonAdmin,
+    SuspensionReasonAdmin, AdministrativeSubject
 )
 from .serializers import (
     AdministrativeProceedingsSerializer, ArchivedAdministrativeProceedingsSerializer,
     AdministrativeDecisionSerializer, AdministrativeExecutionSerializer,
     AdministrativeSidesCaseInCaseSerializer, AdministrativeLawyerSerializer,
     AdministrativeCaseMovementSerializer, AdministrativePetitionSerializer,
-    ReferringAuthorityAdminSerializer, AdministrativeDecisionOptionsSerializer
+    ReferringAuthorityAdminSerializer, AdministrativeDecisionOptionsSerializer,
+    AdministrativeAppealSerializer, AdministrativeCassationSerializer,
+    PostponementReasonAdminSerializer, SuspensionReasonAdminSerializer,
+    AdministrativeSubjectSerializer
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -446,3 +451,76 @@ def admin_options(request):
         ],
     }
     return Response(options)
+
+
+class PostponementReasonAdminViewSet(viewsets.ModelViewSet):
+    queryset = PostponementReasonAdmin.objects.all()
+    serializer_class = PostponementReasonAdminSerializer
+
+
+class SuspensionReasonAdminViewSet(viewsets.ModelViewSet):
+    queryset = SuspensionReasonAdmin.objects.all()
+    serializer_class = SuspensionReasonAdminSerializer
+
+
+class AdministrativeAppealViewSet(viewsets.ModelViewSet):
+    serializer_class = AdministrativeAppealSerializer
+
+    def get_queryset(self):
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            return AdministrativeAppeal.objects.filter(administrative_proceedings_id=admin_proceedings_id)
+        return AdministrativeAppeal.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            context['administrative_proceedings'] = get_object_or_404(AdministrativeProceedings, pk=admin_proceedings_id)
+        return context
+
+    def perform_create(self, serializer):
+        administrative_proceedings = self.get_serializer_context().get('administrative_proceedings')
+        serializer.save(administrative_proceedings=administrative_proceedings)
+
+
+class AdministrativeCassationViewSet(viewsets.ModelViewSet):
+    serializer_class = AdministrativeCassationSerializer
+
+    def get_queryset(self):
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            return AdministrativeCassation.objects.filter(administrative_proceedings_id=admin_proceedings_id)
+        return AdministrativeCassation.objects.none()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            context['administrative_proceedings'] = get_object_or_404(AdministrativeProceedings, pk=admin_proceedings_id)
+        return context
+
+    def perform_create(self, serializer):
+        administrative_proceedings = self.get_serializer_context().get('administrative_proceedings')
+        serializer.save(administrative_proceedings=administrative_proceedings)
+
+
+class AdministrativeSubjectViewSet(viewsets.ModelViewSet):
+    serializer_class = AdministrativeSubjectSerializer
+    
+    def get_queryset(self):
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            return AdministrativeSubject.objects.filter(administrative_proceedings_id=admin_proceedings_id)
+        return AdministrativeSubject.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            context['administrative_proceedings'] = get_object_or_404(AdministrativeProceedings, pk=admin_proceedings_id)
+        return context
+    
+    def perform_create(self, serializer):
+        administrative_proceedings = self.get_serializer_context().get('administrative_proceedings')
+        serializer.save(administrative_proceedings=administrative_proceedings)

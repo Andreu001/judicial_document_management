@@ -5,7 +5,7 @@ from .views import (
     CivilSidesCaseInCaseViewSet, CivilLawyerViewSet,
     CivilCaseMovementViewSet, CivilPetitionViewSet,
     ReferringAuthorityCivilViewSet, judges_list,
-    civil_decision_options, civil_options
+    civil_decision_options, civil_options, CivilProceedingsTypeViewSet
 )
 
 router = routers.DefaultRouter()
@@ -37,6 +37,7 @@ router.register(
     r'civil-proceedings/(?P<civil_proceedings>\d+)/petitions',
     CivilPetitionViewSet, basename='civil-petitions'
 )
+router.register(r'civil-proceeding-types', CivilProceedingsTypeViewSet) 
 
 urlpatterns = [
     path('', include(router.urls)),

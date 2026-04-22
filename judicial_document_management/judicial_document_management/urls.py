@@ -23,6 +23,7 @@ urlpatterns = [
     path('case-documents/', include('case_documents.urls')),
     path('other-materials/', include('other_materials.urls')),
     path('case-management/', include('case_management.urls')),
+    path('api/', include('statistics_app.api.urls')),
 ]
 
 # Добавьте для обслуживания медиа-файлов в режиме разработки

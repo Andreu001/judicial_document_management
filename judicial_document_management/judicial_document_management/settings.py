@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'case_documents',
     'other_materials',
     'case_management',
+    'statistics_app',
 ]
 
 MIDDLEWARE = [

@@ -14,7 +14,7 @@ from .serializers import (
     KasDecisionSerializer, KasExecutionSerializer,
     KasSidesCaseInCaseSerializer, KasLawyerSerializer,
     KasCaseMovementSerializer, KasPetitionSerializer,
-    ReferringAuthorityKasSerializer, KasDecisionOptionsSerializer
+    ReferringAuthorityKasSerializer
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -450,6 +450,53 @@ def kas_options(request):
             {'value': '5', 'label': 'Вынесено новое решение'},
             {'value': '6', 'label': 'Изменено'},
             {'value': '7', 'label': 'Другое судебное постановление с удовлетворением жалобы'},
+        ],
+    }
+    return Response(options)
+
+
+@api_view(['GET'])
+def kas_all_options(request):
+    """
+    Возвращает ВСЕ справочные данные для фронтенда одним запросом.
+    Это оптимизирует загрузку страницы - не нужно делать 10 отдельных запросов.
+    """
+    from django.apps import apps
+    
+    # Получаем модели справочников
+    AdmissionOrder = apps.get_model('administrative_code', 'AdmissionOrder')
+    PostponementReason = apps.get_model('administrative_code', 'PostponementReason')
+    SuspensionReason = apps.get_model('administrative_code', 'SuspensionReason')
+    PreliminaryProtection = apps.get_model('administrative_code', 'PreliminaryProtection')
+    ExpertiseType = apps.get_model('administrative_code', 'ExpertiseType')
+    AppealResult = apps.get_model('administrative_code', 'AppealResult')
+    CassationResult = apps.get_model('administrative_code', 'CassationResult')
+    TermCompliance = apps.get_model('administrative_code', 'TermCompliance')
+    Outcome = apps.get_model('administrative_code', 'Outcome')
+    
+    options = {
+        'admissionOrder': [{'value': obj.code, 'label': obj.label} for obj in AdmissionOrder.objects.all().order_by('id')],
+        'postponementReason': [{'value': obj.code, 'label': obj.label} for obj in PostponementReason.objects.all().order_by('id')],
+        'suspensionReason': [{'value': obj.code, 'label': obj.label} for obj in SuspensionReason.objects.all().order_by('id')],
+        'preliminaryProtection': [{'value': obj.code, 'label': obj.label} for obj in PreliminaryProtection.objects.all().order_by('id')],
+        'expertiseTypes': [{'value': obj.code, 'label': obj.label} for obj in ExpertiseType.objects.all().order_by('id')],
+        'appealResults': [{'value': obj.code, 'label': obj.label} for obj in AppealResult.objects.all().order_by('id')],
+        'cassationResults': [{'value': obj.code, 'label': obj.label} for obj in CassationResult.objects.all().order_by('id')],
+        'termCompliance': [{'value': obj.code, 'label': obj.label} for obj in TermCompliance.objects.all().order_by('id')],
+        'outcomes': [{'value': obj.code, 'label': obj.label} for obj in Outcome.objects.all().order_by('id')],
+        'statuses': [
+            {'value': 'active', 'label': 'Активное'},
+            {'value': 'completed', 'label': 'Рассмотрено'},
+            {'value': 'execution', 'label': 'На исполнении'},
+            {'value': 'archived', 'label': 'В архиве'},
+        ],
+        'appealTypes': [
+            {'value': '1', 'label': 'Жалоба'},
+            {'value': '2', 'label': 'Представление прокурора'},
+        ],
+        'cassationTypes': [
+            {'value': '1', 'label': 'Жалоба'},
+            {'value': '2', 'label': 'Представление прокурора'},
         ],
     }
     return Response(options)

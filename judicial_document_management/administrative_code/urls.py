@@ -4,8 +4,9 @@ from .views import (
     AdministrativeProceedingsViewSet, AdministrativeDecisionViewSet, AdministrativeExecutionViewSet,
     AdministrativeSidesCaseInCaseViewSet, AdministrativeLawyerViewSet,
     AdministrativeCaseMovementViewSet, AdministrativePetitionViewSet,
-    ReferringAuthorityAdminViewSet, judges_list,
-    admin_decision_options, admin_options
+    ReferringAuthorityAdminViewSet, judges_list, PostponementReasonAdminViewSet,
+    admin_decision_options, admin_options, SuspensionReasonAdminViewSet,
+    AdministrativeAppealViewSet, AdministrativeCassationViewSet, AdministrativeSubjectViewSet
 )
 
 router = routers.DefaultRouter()
@@ -35,6 +36,21 @@ router.register(
 router.register(
     r'administrative-proceedings/(?P<administrative_proceedings>\d+)/petitions',
     AdministrativePetitionViewSet, basename='administrative-petitions'
+)
+router.register(r'postponement-reasons-admin', PostponementReasonAdminViewSet)
+router.register(r'suspension-reasons-admin', SuspensionReasonAdminViewSet)
+
+router.register(
+    r'administrative-proceedings/(?P<administrative_proceedings>\d+)/appeal',
+    AdministrativeAppealViewSet, basename='administrative-appeal'
+)
+router.register(
+    r'administrative-proceedings/(?P<administrative_proceedings>\d+)/cassation',
+    AdministrativeCassationViewSet, basename='administrative-cassation'
+)
+router.register(
+    r'administrative-proceedings/(?P<administrative_proceedings>\d+)/subjects',
+    AdministrativeSubjectViewSet, basename='administrative-subjects'
 )
 
 urlpatterns = [

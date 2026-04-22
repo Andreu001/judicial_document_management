@@ -13,23 +13,20 @@ from .models import (CriminalProceedings, Defendant,
                      CriminalDecision, CriminalRuling,
                      CriminalCaseMovement, ReferringAuthority,
                      CriminalSidesCaseInCase, LawyerCriminal,
-                     PetitionCriminal, CriminalExecution)
+                     PetitionCriminal, CriminalExecution, CriminalCivilClaim)
 from .serializers import (CriminalProceedingsSerializer,
-                          DefendantSerializer,
-                          CriminalDecisionSerializer,
-                          CriminalOptionsSerializer,
-                          DefendantOptionsSerializer,
-                          CriminalDecisionOptionsSerializer,
-                          CriminalRulingSerializer,
-                          CriminalCaseMovementSerializer,
-                          ReferringAuthorityListSerializer,
-                          UserSerializer,
-                          LawyerCriminalSerializer,
-                          SidesCaseInCaseSerializer,
-                          PetitionCriminalSerializer,
-                          PetitionCriminalOptionsSerializer,
-                          ArchivedCriminalProceedingsSerializer,
-                          CriminalExecutionSerializer)
+    DefendantSerializer, CriminalDecisionSerializer, CriminalOptionsSerializer,  DefendantOptionsSerializer,
+    CriminalDecisionOptionsSerializer, CriminalRulingSerializer, CriminalCaseMovementSerializer,
+    ReferringAuthorityListSerializer, UserSerializer, LawyerCriminalSerializer,
+    SidesCaseInCaseSerializer, PetitionCriminalSerializer, PetitionCriminalOptionsSerializer,
+    ArchivedCriminalProceedingsSerializer, CriminalExecutionSerializer,
+    CriminalAppealInstanceSerializer, CriminalCassationInstanceSerializer,
+    CriminalAppealApplicantStatusSerializer, CriminalCassationResultSerializer,
+    CriminalSupervisoryResultSerializer, CriminalCivilClaimSerializer)
+from .models_appeal_cassation import (
+    CriminalAppealInstance, CriminalCassationInstance,
+    CriminalAppealApplicantStatus, CriminalCassationResult, CriminalSupervisoryResult
+)
 import logging
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -609,6 +606,109 @@ class CriminalExecutionViewSet(viewsets.ModelViewSet):
         # Не передаем criminal_proceedings здесь, так как сериализатор 
         # уже получит его из контекста в методе create
         serializer.save()
+
+
+class CriminalAppealInstanceViewSet(viewsets.ModelViewSet):
+    """ViewSet для апелляционного рассмотрения"""
+    serializer_class = CriminalAppealInstanceSerializer
+    
+    def get_queryset(self):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            return CriminalAppealInstance.objects.filter(
+                criminal_proceedings_id=criminal_proceedings_id
+            )
+        return CriminalAppealInstance.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            context['criminal_proceedings'] = get_object_or_404(
+                CriminalProceedings, pk=criminal_proceedings_id
+            )
+        return context
+    
+    def perform_create(self, serializer):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            proceedings = get_object_or_404(CriminalProceedings, pk=criminal_proceedings_id)
+            serializer.save(criminal_proceedings=proceedings)
+
+
+class CriminalCassationInstanceViewSet(viewsets.ModelViewSet):
+    """ViewSet для кассационного рассмотрения"""
+    serializer_class = CriminalCassationInstanceSerializer
+    
+    def get_queryset(self):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            return CriminalCassationInstance.objects.filter(
+                criminal_proceedings_id=criminal_proceedings_id
+            )
+        return CriminalCassationInstance.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            context['criminal_proceedings'] = get_object_or_404(
+                CriminalProceedings, pk=criminal_proceedings_id
+            )
+        return context
+    
+    def perform_create(self, serializer):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            proceedings = get_object_or_404(CriminalProceedings, pk=criminal_proceedings_id)
+            serializer.save(criminal_proceedings=proceedings)
+
+
+class CriminalCivilClaimViewSet(viewsets.ModelViewSet):
+    """ViewSet для гражданских исков в уголовных делах"""
+    serializer_class = CriminalCivilClaimSerializer
+    
+    def get_queryset(self):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            return CriminalCivilClaim.objects.filter(
+                criminal_proceedings_id=criminal_proceedings_id
+            )
+        return CriminalCivilClaim.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            context['criminal_proceedings'] = get_object_or_404(
+                CriminalProceedings, pk=criminal_proceedings_id
+            )
+        return context
+    
+    def perform_create(self, serializer):
+        criminal_proceedings_id = self.kwargs.get('criminal_proceedings')
+        if criminal_proceedings_id:
+            proceedings = get_object_or_404(CriminalProceedings, pk=criminal_proceedings_id)
+            serializer.save(criminal_proceedings=proceedings)
+
+
+class CriminalAppealApplicantStatusViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для справочника статусов заявителей апелляции"""
+    serializer_class = CriminalAppealApplicantStatusSerializer
+    queryset = CriminalAppealApplicantStatus.objects.all()
+
+
+class CriminalCassationResultViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для справочника результатов кассации"""
+    serializer_class = CriminalCassationResultSerializer
+    queryset = CriminalCassationResult.objects.all()
+
+
+class CriminalSupervisoryResultViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для справочника результатов надзора"""
+    serializer_class = CriminalSupervisoryResultSerializer
+    queryset = CriminalSupervisoryResult.objects.all()
+
 
 
 @api_view(['GET'])

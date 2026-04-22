@@ -778,7 +778,7 @@ class CriminalPersonCard(models.Model):
     appeal_date = models.DateField(verbose_name="Дата апелляционного рассмотрения", null=True, blank=True)
     
     # 8.3 Результат апелляционного рассмотрения
-    appeal_result = models.CharField(max_length=10, choices=APPEAL_RESULT_CHOICES, verbose_name="Результат апелляции", null=True, blank=True)
+    appeal_result = models.CharField(max_length=10, choices=APPEAL_RESULT_DETAIL_CHOICES, verbose_name="Результат апелляции", null=True, blank=True)
     
     # ==================== Раздел 9. Сведения о преступлениях военнослужащих ====================
     
@@ -833,6 +833,285 @@ class CriminalPersonCard(models.Model):
     
     # Статус заполнения
     is_completed = models.BooleanField(default=False, verbose_name="Карточка заполнена полностью")
+
+    # ==================== ДОПОЛНЕНИЕ РАЗДЕЛА 1. Сведения о подсудимом ====================
+    
+    sex_in_card = models.CharField(
+        max_length=10,
+        choices=[('1', 'мужской'), ('2', 'женский')],
+        verbose_name="Пол (по карточке)",
+        null=True, blank=True
+    )
+    
+    # 1.3 Гражданство (добавим детализацию)
+    citizenship_detailed = models.CharField(
+        max_length=10,
+        choices=[
+            ('1', 'гражданин РФ'),
+            ('2', 'гражданин государства СНГ'),
+            ('3', 'гражданин иного государства'),
+            ('4', 'лицо без гражданства'),
+        ],
+        verbose_name="Гражданство (детально)",
+        null=True, blank=True
+    )
+    
+    # 1.6 Отношение к труду (дополнение к occupation)
+    employment_status = models.CharField(
+        max_length=10,
+        choices=[
+            ('1', 'работающий'),
+            ('2', 'неработающий (нетрудоспособный)'),
+            ('3', 'безработный (трудоспособный)'),
+            ('4', 'учащийся'),
+            ('5', 'пенсионер'),
+        ],
+        verbose_name="Статус занятости",
+        null=True, blank=True
+    )
+    
+    # ==================== РАЗДЕЛ 3. Мера пресечения ====================
+    
+    # 3.1 Мера пресечения (из Defendant, но продублируем для статистики)
+    restraint_measure_in_card = models.CharField(
+        max_length=20,
+        choices=RESTRAINT_MEASURE_CHOICES,
+        verbose_name="Мера пресечения (по карточке)",
+        null=True, blank=True
+    )
+    
+    # 3.2 Дата избрания меры пресечения
+    restraint_measure_date = models.DateField(
+        verbose_name="Дата избрания меры пресечения",
+        null=True, blank=True
+    )
+    
+    # 3.3 Мера пресечения применена
+    restraint_measure_applied = models.CharField(
+        max_length=2,
+        choices=RESTRAINT_APPLICATION_CHOICES,
+        verbose_name="Мера пресечения применена",
+        null=True, blank=True
+    )
+    
+    # 3.4 Изменение меры пресечения
+    restraint_measure_changed = models.CharField(
+        max_length=2,
+        choices=RESTRAINT_CHANGE_CHOICES,
+        verbose_name="Изменение меры пресечения",
+        null=True, blank=True
+    )
+    
+    restraint_measure_changed_date = models.DateField(
+        verbose_name="Дата изменения меры пресечения",
+        null=True, blank=True
+    )
+    
+    restraint_measure_changed_to = models.CharField(
+        max_length=100,
+        verbose_name="На какую меру изменена",
+        null=True, blank=True
+    )
+    
+    # ==================== РАЗДЕЛ 6. Основное наказание ====================
+    
+    # 6.1 Вид основного наказания
+    main_punishment_type = models.CharField(
+        max_length=3,
+        choices=MAIN_PUNISHMENT_TYPE_CHOICES,
+        verbose_name="Вид основного наказания",
+        null=True, blank=True
+    )
+    
+    # 6.2 Размер основного наказания
+    main_punishment_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Размер основного наказания",
+        null=True, blank=True
+    )
+    
+    main_punishment_unit = models.CharField(
+        max_length=20,
+        verbose_name="Единицы измерения (лет, месяцев, часов, руб.)",
+        null=True, blank=True
+    )
+    
+    # 6.3 Тип штрафа (если основное наказание - штраф)
+    main_fine_type = models.CharField(
+        max_length=2,
+        choices=FINE_TYPE_CHOICES,
+        verbose_name="Тип штрафа (основное наказание)",
+        null=True, blank=True
+    )
+    
+    # 6.4 Кратность штрафа (если указан кратный)
+    fine_multiplier = models.PositiveIntegerField(
+        verbose_name="Кратность штрафа",
+        null=True, blank=True
+    )
+    
+    # 6.5 Особенности назначения основного наказания
+    main_punishment_features = models.CharField(
+        max_length=10,
+        choices=SENTENCING_FEATURE_CHOICES,
+        verbose_name="Особенности назначения основного наказания",
+        null=True, blank=True
+    )
+    
+    # 6.6 Основания освобождения от основного наказания
+    main_punishment_release_basis = models.CharField(
+        max_length=10,
+        choices=[
+            ('0', 'не освобождался'),
+            ('1', 'амнистия'),
+            ('2', 'изменение обстановки'),
+            ('3', 'болезнь'),
+            ('4', 'помещение в спец. учебно-воспитательное учреждение'),
+            ('5', 'принудительные меры воспитательного воздействия'),
+            ('6', 'истечение срока давности'),
+        ],
+        verbose_name="Основания освобождения от основного наказания",
+        null=True, blank=True
+    )
+    
+    # ==================== РАЗДЕЛ 7. Дополнительное наказание ====================
+    
+    # 7.1 Вид дополнительного наказания
+    additional_punishment_type = models.CharField(
+        max_length=2,
+        choices=ADDITIONAL_PUNISHMENT_TYPE_CHOICES,
+        verbose_name="Вид дополнительного наказания",
+        null=True, blank=True
+    )
+    
+    # 7.2 Размер дополнительного наказания
+    additional_punishment_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Размер дополнительного наказания",
+        null=True, blank=True
+    )
+    
+    additional_punishment_unit = models.CharField(
+        max_length=20,
+        verbose_name="Единицы измерения дополнительного наказания",
+        null=True, blank=True
+    )
+    
+    # 7.3 Тип штрафа (если дополнительное наказание - штраф)
+    additional_fine_type = models.CharField(
+        max_length=2,
+        choices=FINE_TYPE_CHOICES,
+        verbose_name="Тип штрафа (дополнительное наказание)",
+        null=True, blank=True
+    )
+    
+    # 7.4 Особенности назначения дополнительного наказания
+    additional_punishment_features = models.CharField(
+        max_length=10,
+        choices=SENTENCING_FEATURE_CHOICES,
+        verbose_name="Особенности назначения дополнительного наказания",
+        null=True, blank=True
+    )
+    
+    # 7.5 Основания освобождения от дополнительного наказания
+    additional_punishment_release_basis = models.CharField(
+        max_length=10,
+        choices=[
+            ('0', 'не освобождался'),
+            ('1', 'амнистия'),
+            ('2', 'изменение обстановки'),
+            ('3', 'болезнь'),
+            ('4', 'истечение срока давности'),
+        ],
+        verbose_name="Основания освобождения от дополнительного наказания",
+        null=True, blank=True
+    )
+    
+    # ==================== РАЗДЕЛ 9. Сведения о преступлениях военнослужащих ====================
+    
+    # 9.5 Форма собственности воинской части
+    military_property_form = models.CharField(
+        max_length=50,
+        verbose_name="Форма собственности воинской части",
+        null=True, blank=True
+    )
+    
+    # 9.8 Характер преступления военнослужащего
+    military_crime_nature = models.CharField(
+        max_length=10,
+        choices=[
+            ('1', 'против военной службы'),
+            ('2', 'общеуголовное'),
+        ],
+        verbose_name="Характер преступления военнослужащего",
+        null=True, blank=True
+    )
+    
+    # ==================== РАЗДЕЛ 10. Дополнительные сведения ====================
+    
+    # 10.3 Срок содержания под стражей в днях (детализация)
+    detention_days_after_sentence = models.PositiveIntegerField(
+        verbose_name="После вынесения приговора до вступления в законную силу (дней)",
+        null=True, blank=True
+    )
+    
+    # 10.4 Период содержания под стражей
+    detention_period_category = models.CharField(
+        max_length=2,
+        choices=DETENTION_PERIOD_CHOICES,
+        verbose_name="Период содержания под стражей",
+        null=True, blank=True
+    )
+    
+    # 10.5 Дата освобождения из-под стражи
+    release_from_custody_date = models.DateField(
+        verbose_name="Дата освобождения из-под стражи",
+        null=True, blank=True
+    )
+    
+    release_from_custody_reason = models.CharField(
+        max_length=500,
+        verbose_name="Основание освобождения из-под стражи",
+        null=True, blank=True
+    )
+    
+    # ==================== ДОПОЛНИТЕЛЬНЫЕ СВЕДЕНИЯ ====================
+    
+    # Признак особого порядка
+    special_procedure_applied = models.BooleanField(
+        default=False,
+        verbose_name="Дело рассмотрено в особом порядке"
+    )
+    
+    # Признак досудебного соглашения
+    pretrial_agreement_applied = models.BooleanField(
+        default=False,
+        verbose_name="Заключено досудебное соглашение о сотрудничестве"
+    )
+    
+    # Смягчающие обстоятельства (детальные)
+    mitigating_circumstances_detailed = models.CharField(
+        max_length=10,
+        choices=MITIGATING_CIRCUMSTANCES_CHOICES,
+        verbose_name="Смягчающие обстоятельства (детально)",
+        null=True, blank=True
+    )
+    
+    # Отягчающие обстоятельства (детальные)
+    aggravating_circumstances_detailed = models.CharField(
+        max_length=10,
+        choices=AGGRAVATING_CIRCUMSTANCES_CHOICES,
+        verbose_name="Отягчающие обстоятельства (детально)",
+        null=True, blank=True
+    )
+    
+    # Примечания по карточке
+    card_notes = models.TextField(
+        verbose_name="Примечания по статистической карточке",
+        null=True, blank=True
+    )
     
     class Meta:
         verbose_name = "Статистическая карточка на подсудимого"

@@ -8,10 +8,38 @@ from business_card.models import (SidesCase,
 from .models import (
     AdministrativeProceedings, AdministrativeDecision, AdministrativeExecution,
     AdministrativeSidesCaseInCase, AdministrativeLawyer,
-    AdministrativeCaseMovement, AdministrativePetition, ReferringAuthorityAdmin
+    AdministrativeCaseMovement, AdministrativePetition, ReferringAuthorityAdmin,
+    AdministrativeAppeal, AdministrativeCassation, PostponementReasonAdmin,
+    SuspensionReasonAdmin, AdministrativeSubject
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
+
+
+class PostponementReasonAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostponementReasonAdmin
+        fields = '__all__'
+
+
+class SuspensionReasonAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuspensionReasonAdmin
+        fields = '__all__'
+
+
+class AdministrativeAppealSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdministrativeAppeal
+        fields = '__all__'
+        read_only_fields = ('administrative_proceedings',)
+
+
+class AdministrativeCassationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdministrativeCassation
+        fields = '__all__'
+        read_only_fields = ('administrative_proceedings',)
 
 
 class ReferringAuthorityAdminSerializer(serializers.ModelSerializer):
@@ -668,6 +696,11 @@ class AdministrativeProceedingsSerializer(serializers.ModelSerializer):
     admin_executions = AdministrativeExecutionSerializer(many=True, read_only=True)
     documents_count = serializers.SerializerMethodField()
 
+    appeal = AdministrativeAppealSerializer(read_only=True)
+    cassation = AdministrativeCassationSerializer(read_only=True)
+    postponement_reason_detail = PostponementReasonAdminSerializer(source='postponement_reason', read_only=True)
+    suspension_reason_detail = SuspensionReasonAdminSerializer(source='suspension_reason', read_only=True)
+
     class Meta:
         model = AdministrativeProceedings
         fields = '__all__'
@@ -730,3 +763,28 @@ class ArchivedAdministrativeProceedingsSerializer(AdministrativeProceedingsSeria
 
     def validate_case_number_admin(self, value):
         return value
+
+
+class AdministrativeSubjectSerializer(serializers.ModelSerializer):
+    subject_type_label = serializers.SerializerMethodField()
+    sides_case_incase_detail = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AdministrativeSubject
+        fields = '__all__'
+        read_only_fields = ('administrative_proceedings',)
+    
+    def get_subject_type_label(self, obj):
+        return obj.get_subject_type_display()
+    
+    def get_sides_case_incase_detail(self, obj):
+        if obj.sides_case_incase:
+            return {
+                'id': obj.sides_case_incase.id,
+                'name': obj.sides_case_incase.name,
+                'status': obj.sides_case_incase.get_status_display(),
+                'address': obj.sides_case_incase.address,
+                'phone': obj.sides_case_incase.phone,
+                'email': obj.sides_case_incase.email,
+            }
+        return None

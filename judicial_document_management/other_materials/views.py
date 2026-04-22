@@ -6,15 +6,12 @@ from django.utils import timezone
 from users.models import User
 from .models import (
     OtherMaterial, OtherMaterialSidesCaseInCase, OtherMaterialLawyer,
-    OtherMaterialMovement, OtherMaterialPetition,
-    OtherMaterialDecision, OtherMaterialExecution
+    OtherMaterialDecision
 )
 from .serializers import (
     OtherMaterialSerializer, ArchivedOtherMaterialSerializer,
     OtherMaterialSidesCaseInCaseSerializer, OtherMaterialLawyerSerializer,
-    OtherMaterialMovementSerializer, OtherMaterialPetitionSerializer,
-    OtherMaterialOptionsSerializer, OtherMaterialDecisionSerializer,
-    OtherMaterialExecutionSerializer
+    OtherMaterialDecisionSerializer, OtherMaterialOptionsSerializer
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -36,7 +33,7 @@ class OtherMaterialViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(status='archived')
             else:
                 queryset = queryset.exclude(status='archived')
-            return queryset
+            return queryset.select_related('material_type', 'responsible_person')
         return OtherMaterial.objects.all()
 
     def get_serializer_class(self):
@@ -67,9 +64,6 @@ class OtherMaterialViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='document-templates')
     def document_templates(self, request, pk=None):
-        """
-        Возвращает список шаблонов документов, доступных для иных материалов.
-        """
         case_category = 'other_material'
         templates = DocumentTemplate.objects.filter(
             case_category__in=[case_category, 'common'],
@@ -80,9 +74,6 @@ class OtherMaterialViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get', 'post'], url_path='documents')
     def documents(self, request, pk=None):
-        """
-        Работа со списком документов иного материала.
-        """
         other_material = self.get_object()
         content_type = ContentType.objects.get_for_model(other_material)
 
@@ -200,28 +191,6 @@ class OtherMaterialSidesCaseInCaseViewSet(viewsets.ModelViewSet):
             context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
         return context
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        sides_case_incase = instance.sides_case_incase
-        
-        other_usages = OtherMaterialSidesCaseInCase.objects.filter(
-            sides_case_incase=sides_case_incase
-        ).exclude(id=instance.id).count()
-        
-        if other_usages == 0:
-            instance.delete()
-            sides_case_incase.delete()
-            return Response(
-                {'message': 'Сторона полностью удалена из системы'},
-                status=status.HTTP_204_NO_CONTENT
-            )
-        else:
-            instance.delete()
-            return Response(
-                {'message': 'Связь с материалом удалена, но сторона сохранена (используется в других материалах)'},
-                status=status.HTTP_204_NO_CONTENT
-            )
-
 
 class OtherMaterialLawyerViewSet(viewsets.ModelViewSet):
     serializer_class = OtherMaterialLawyerSerializer
@@ -231,62 +200,6 @@ class OtherMaterialLawyerViewSet(viewsets.ModelViewSet):
         if other_material_id:
             return OtherMaterialLawyer.objects.filter(other_material_id=other_material_id)
         return OtherMaterialLawyer.objects.none()
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        other_material_id = self.kwargs.get('other_material')
-        if other_material_id:
-            context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
-        return context
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        lawyer = instance.lawyer
-        
-        other_usages = OtherMaterialLawyer.objects.filter(
-            lawyer=lawyer
-        ).exclude(id=instance.id).count()
-        
-        if other_usages == 0:
-            instance.delete()
-            lawyer.delete()
-            return Response(
-                {'message': 'Представитель полностью удален из системы'},
-                status=status.HTTP_204_NO_CONTENT
-            )
-        else:
-            instance.delete()
-            return Response(
-                {'message': 'Связь с материалом удалена, но представитель сохранен (используется в других материалах)'},
-                status=status.HTTP_204_NO_CONTENT
-            )
-
-
-class OtherMaterialMovementViewSet(viewsets.ModelViewSet):
-    serializer_class = OtherMaterialMovementSerializer
-
-    def get_queryset(self):
-        other_material_id = self.kwargs.get('other_material')
-        if other_material_id:
-            return OtherMaterialMovement.objects.filter(other_material_id=other_material_id)
-        return OtherMaterialMovement.objects.none()
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        other_material_id = self.kwargs.get('other_material')
-        if other_material_id:
-            context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
-        return context
-
-
-class OtherMaterialPetitionViewSet(viewsets.ModelViewSet):
-    serializer_class = OtherMaterialPetitionSerializer
-
-    def get_queryset(self):
-        other_material_id = self.kwargs.get('other_material')
-        if other_material_id:
-            return OtherMaterialPetition.objects.filter(other_material_id=other_material_id)
-        return OtherMaterialPetition.objects.none()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -317,27 +230,6 @@ class OtherMaterialDecisionViewSet(viewsets.ModelViewSet):
         serializer.save(other_material=other_material)
 
 
-class OtherMaterialExecutionViewSet(viewsets.ModelViewSet):
-    serializer_class = OtherMaterialExecutionSerializer
-
-    def get_queryset(self):
-        other_material_id = self.kwargs.get('other_material')
-        if other_material_id:
-            return OtherMaterialExecution.objects.filter(other_material_id=other_material_id)
-        return OtherMaterialExecution.objects.none()
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        other_material_id = self.kwargs.get('other_material')
-        if other_material_id:
-            context['other_material'] = get_object_or_404(OtherMaterial, pk=other_material_id)
-        return context
-
-    def perform_create(self, serializer):
-        other_material = self.get_serializer_context().get('other_material')
-        serializer.save(other_material=other_material)
-
-
 @api_view(['GET'])
 def other_material_options(request):
     options = OtherMaterialOptionsSerializer.get_options()
@@ -346,7 +238,6 @@ def other_material_options(request):
 
 @api_view(['GET'])
 def responsible_persons_list(request):
-    """Список ответственных лиц (судьи, секретари, помощники)"""
     persons = User.objects.filter(
         role__in=['judge', 'secretary', 'assistant'],
         is_active=True

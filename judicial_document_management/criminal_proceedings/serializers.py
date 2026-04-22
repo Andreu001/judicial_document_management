@@ -11,7 +11,11 @@ from .models import (CriminalProceedings,
                      CriminalAppeal,
                      ReferringAuthority, LawyerCriminal,
                      CriminalSidesCaseInCase, PetitionCriminal,
-                     CriminalExecution)
+                     CriminalExecution, CriminalCivilClaim)
+from .models_appeal_cassation import (
+    CriminalAppealInstance, CriminalCassationInstance,
+    CriminalAppealApplicantStatus, CriminalCassationResult, CriminalSupervisoryResult
+)
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
 
@@ -777,6 +781,51 @@ class CriminalExecutionSerializer(serializers.ModelSerializer):
         return instance
 
 
+class CriminalAppealApplicantStatusSerializer(serializers.ModelSerializer):
+    """Сериализатор для статуса заявителя апелляции"""
+    class Meta:
+        model = CriminalAppealApplicantStatus
+        fields = '__all__'
+
+
+class CriminalAppealInstanceSerializer(serializers.ModelSerializer):
+    """Сериализатор для апелляционного рассмотрения"""
+    
+    appeal_result_display = serializers.CharField(source='get_appeal_result_display', read_only=True)
+    appeal_type_display = serializers.CharField(source='get_appeal_type_display', read_only=True)
+    court_composition_display = serializers.CharField(source='get_court_composition_display', read_only=True)
+    appeal_applicant_status_detail = CriminalAppealApplicantStatusSerializer(source='appeal_applicant_status', read_only=True)
+    
+    class Meta:
+        model = CriminalAppealInstance
+        fields = '__all__'
+        read_only_fields = ('criminal_proceedings',)
+
+
+class CriminalCassationInstanceSerializer(serializers.ModelSerializer):
+    """Сериализатор для кассационного рассмотрения"""
+    
+    cassation_result_display = serializers.CharField(source='get_cassation_result_display', read_only=True)
+    instance_type_display = serializers.CharField(source='get_instance_type_display', read_only=True)
+    cassation_type_display = serializers.CharField(source='get_cassation_type_display', read_only=True)
+    
+    class Meta:
+        model = CriminalCassationInstance
+        fields = '__all__'
+        read_only_fields = ('criminal_proceedings',)
+
+
+class CriminalCivilClaimSerializer(serializers.ModelSerializer):
+    """Сериализатор для гражданского иска в уголовном деле"""
+    
+    result_display = serializers.CharField(source='get_result_display', read_only=True)
+    
+    class Meta:
+        model = CriminalCivilClaim
+        fields = '__all__'
+        read_only_fields = ('criminal_proceedings',)
+
+
 class CriminalProceedingsSerializer(serializers.ModelSerializer):
     defendants = DefendantSerializer(many=True, read_only=True)
     criminal_decisions = CriminalDecisionSerializer(many=True, read_only=True)
@@ -784,6 +833,9 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
     referring_authority = ReferringAuthoritySerializer(read_only=True)
     registered_case_info = serializers.SerializerMethodField()
     criminal_executions = CriminalExecutionSerializer(many=True, read_only=True)
+    appeal_instances = CriminalAppealInstanceSerializer(many=True, read_only=True)
+    cassation_instances = CriminalCassationInstanceSerializer(many=True, read_only=True)
+    civil_claims = CriminalCivilClaimSerializer(many=True, read_only=True)
 
     # Добавляем поля для отображения ФИО судьи
     presiding_judge_full_name = serializers.SerializerMethodField()
@@ -1097,3 +1149,17 @@ class LawyerCriminalOptionsSerializer(serializers.Serializer):
                 ]
         
         return choices_data
+
+
+class CriminalCassationResultSerializer(serializers.ModelSerializer):
+    """Сериализатор для результатов кассации"""
+    class Meta:
+        model = CriminalCassationResult
+        fields = '__all__'
+
+
+class CriminalSupervisoryResultSerializer(serializers.ModelSerializer):
+    """Сериализатор для результатов надзора"""
+    class Meta:
+        model = CriminalSupervisoryResult
+        fields = '__all__'

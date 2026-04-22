@@ -1,3 +1,5 @@
+# administrative_proceedings/models.py (ПОЛНЫЙ ФАЙЛ)
+
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -9,6 +11,46 @@ from business_card.models import (
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class CaseOrderAdmin(models.Model):
+    """Порядок поступления дела об административном правонарушении"""
+    code = models.CharField(max_length=10, unique=True, verbose_name="Код")
+    label = models.CharField(max_length=255, verbose_name="Наименование")
+
+    class Meta:
+        verbose_name = "Порядок поступления дела (КоАП)"
+        verbose_name_plural = "Порядок поступления дел (КоАП)"
+
+    def __str__(self):
+        return self.label
+
+
+class AdministrativeCategory(models.Model):
+    """Категория дела об административном правонарушении"""
+    code = models.CharField(max_length=10, unique=True, verbose_name="Код")
+    label = models.CharField(max_length=255, verbose_name="Наименование")
+
+    class Meta:
+        verbose_name = "Категория дела (КоАП)"
+        verbose_name_plural = "Категории дел (КоАП)"
+
+    def __str__(self):
+        return self.label
+
+
+class ExecutionStageAdmin(models.Model):
+    """Стадии исполнения постановления по делу об АП"""
+    code = models.CharField(max_length=10, unique=True, verbose_name="Код")
+    label = models.CharField(max_length=255, verbose_name="Наименование")
+
+    class Meta:
+        verbose_name = "Стадия исполнения (КоАП)"
+        verbose_name_plural = "Стадии исполнения (КоАП)"
+        ordering = ['code']
+
+    def __str__(self):
+        return self.label
 
 
 class ReferringAuthorityAdmin(models.Model):
@@ -25,9 +67,38 @@ class ReferringAuthorityAdmin(models.Model):
         return self.name
 
 
+class PostponementReasonAdmin(models.Model):
+    """Причины отложения рассмотрения дела (КоАП)"""
+    code = models.CharField(max_length=10, unique=True, verbose_name="Код")
+    label = models.CharField(max_length=255, verbose_name="Наименование")
+
+    class Meta:
+        verbose_name = "Причина отложения (КоАП)"
+        verbose_name_plural = "Причины отложения (КоАП)"
+        ordering = ['code']
+
+    def __str__(self):
+        return self.label
+
+
+class SuspensionReasonAdmin(models.Model):
+    """Причины приостановления производства по делу (КоАП)"""
+    code = models.CharField(max_length=10, unique=True, verbose_name="Код")
+    label = models.CharField(max_length=255, verbose_name="Наименование")
+
+    class Meta:
+        verbose_name = "Причина приостановления (КоАП)"
+        verbose_name_plural = "Причины приостановления (КоАП)"
+        ordering = ['code']
+
+    def __str__(self):
+        return self.label
+
+
 class AdministrativeProceedings(models.Model):
     """
     Карточка дела об административном правонарушении.
+    ПОЛНАЯ версия по Инструкции.
     """
     STATUS_CHOICES = [
         ('active', 'Активное'),
@@ -65,6 +136,18 @@ class AdministrativeProceedings(models.Model):
     protocol_date = models.DateField(
         verbose_name="Дата составления протокола",
         null=True, blank=True
+    )
+    case_order = models.ForeignKey(
+        CaseOrderAdmin,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Порядок поступления дела"
+    )
+    case_category = models.ForeignKey(
+        AdministrativeCategory,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Категория дела"
     )
     judge_acceptance_date = models.DateField(
         verbose_name="Дата принятия дела судьёй",
@@ -133,8 +216,14 @@ class AdministrativeProceedings(models.Model):
         verbose_name="Рассмотрение откладывалось",
         default=False, null=True, blank=True
     )
-    postponement_reason = models.TextField(
-        verbose_name="Причины отложения",
+    postponement_reason = models.ForeignKey(
+        PostponementReasonAdmin,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Причина отложения"
+    )
+    postponement_reason_text = models.TextField(
+        verbose_name="Иная причина отложения (текстом)",
         null=True, blank=True
     )
     postponement_count = models.IntegerField(
@@ -145,15 +234,14 @@ class AdministrativeProceedings(models.Model):
         verbose_name="Производство по делу приостанавливалось",
         default=False, null=True, blank=True
     )
-    suspension_reason = models.CharField(
-        max_length=255,
-        verbose_name="Основание приостановления",
-        choices=[
-            ('1', 'Розыск лица, в отношении которого ведётся производство'),
-            ('2', 'Назначение экспертизы'),
-            ('3', 'Направление запроса в Конституционный Суд РФ'),
-            ('4', 'Иное'),
-        ],
+    suspension_reason = models.ForeignKey(
+        SuspensionReasonAdmin,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Основание приостановления"
+    )
+    suspension_reason_text = models.TextField(
+        verbose_name="Иное основание приостановления (текстом)",
         null=True, blank=True
     )
     suspension_date = models.DateField(
@@ -164,7 +252,16 @@ class AdministrativeProceedings(models.Model):
         verbose_name="Дата возобновления производства",
         null=True, blank=True
     )
-
+    # Соблюдение сроков (новое поле)
+    term_compliance = models.CharField(
+        max_length=10,
+        choices=[
+            ('1', 'С соблюдением'),
+            ('2', 'С нарушением'),
+        ],
+        verbose_name="Соблюдение сроков рассмотрения",
+        null=True, blank=True
+    )
     # ------------------- Раздел 7. Особые отметки и архив -------------------
     special_notes = models.TextField(
         verbose_name="Особые отметки",
@@ -206,6 +303,212 @@ class AdministrativeProceedings(models.Model):
         return f"Дело об АП № {self.case_number_admin}"
 
 
+class AdministrativeSubject(models.Model):
+    """
+    Субъект административного правонарушения (для статистики по Разделу 2.2 Инструкции)
+    """
+    SUBJECT_TYPES = [
+        ('legal_entity', 'Юридическое лицо'),
+        ('official', 'Должностное лицо'),
+        ('entrepreneur', 'Лицо, осуществляющее предпринимательскую деятельность'),
+        ('military', 'Военнослужащий'),
+        ('foreign', 'Иностранный гражданин/лицо без гражданства'),
+        ('federal_civil_servant', 'Федеральный государственный гражданский служащий'),
+        ('regional_civil_servant', 'Государственный гражданский служащий субъекта РФ'),
+        ('municipal_servant', 'Служащий органа местного самоуправления'),
+        ('other_physical', 'Иное физическое лицо'),
+    ]
+    
+    administrative_proceedings = models.ForeignKey(
+        AdministrativeProceedings,
+        on_delete=models.CASCADE,
+        related_name='subjects',
+        verbose_name="Дело об АП"
+    )
+    subject_type = models.CharField(
+        max_length=50,
+        choices=SUBJECT_TYPES,
+        verbose_name="Тип субъекта"
+    )
+    # Ссылка на сторону из business_card (опционально, если нужно связать с конкретной стороной)
+    sides_case_incase = models.ForeignKey(
+        'business_card.SidesCaseInCase',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Сторона (из business_card)"
+    )
+    
+    class Meta:
+        verbose_name = "Субъект административного правонарушения"
+        verbose_name_plural = "Субъекты административных правонарушений"
+        unique_together = ('administrative_proceedings', 'subject_type')
+    
+    def __str__(self):
+        return f"{self.get_subject_type_display()} по делу {self.administrative_proceedings.case_number_admin}"
+
+
+class AdministrativeAppeal(models.Model):
+    """
+    Апелляционное обжалование по делу об административном правонарушении.
+    Раздел 4 Инструкции.
+    """
+    administrative_proceedings = models.OneToOneField(
+        AdministrativeProceedings,
+        on_delete=models.CASCADE,
+        related_name='appeal',
+        verbose_name="Дело об АП"
+    )
+
+    # 4.1. Поступление жалобы (протеста)
+    complaint_filed = models.BooleanField(
+        verbose_name="Подана жалоба (протест)",
+        default=False
+    )
+    complaint_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('complaint', 'Жалоба'),
+            ('protest', 'Протест прокурора'),
+        ],
+        verbose_name="Тип обжалования",
+        null=True, blank=True
+    )
+    complaint_filed_by = models.CharField(
+        max_length=255,
+        verbose_name="Кем подана жалоба (протест)",
+        null=True, blank=True
+    )
+    complaint_filed_date = models.DateField(
+        verbose_name="Дата подачи жалобы (протеста)",
+        null=True, blank=True
+    )
+    complaint_received_date = models.DateField(
+        verbose_name="Дата поступления в суд",
+        null=True, blank=True
+    )
+
+    # 4.2. Направление дела в вышестоящий суд
+    case_sent_to_higher_court_date = models.DateField(
+        verbose_name="Дата направления дела в вышестоящий суд",
+        null=True, blank=True
+    )
+    higher_court_case_number = models.CharField(
+        max_length=100,
+        verbose_name="Номер дела в вышестоящем суде",
+        null=True, blank=True
+    )
+
+    # 4.3. Результат рассмотрения
+    review_date = models.DateField(
+        verbose_name="Дата рассмотрения",
+        null=True, blank=True
+    )
+    review_result = models.CharField(
+        max_length=10,
+        choices=[
+            ('1', 'Оставлено без изменения'),
+            ('2', 'Отменено'),
+            ('3', 'Изменено'),
+            ('4', 'Производство прекращено'),
+            ('5', 'Вынесено новое решение'),
+        ],
+        verbose_name="Результат рассмотрения жалобы (протеста)",
+        null=True, blank=True
+    )
+    result_description = models.TextField(
+        verbose_name="Описание результата (суть изменений)",
+        null=True, blank=True
+    )
+    decision_date = models.DateField(
+        verbose_name="Дата вынесения апелляционного определения",
+        null=True, blank=True
+    )
+    decision_effective_date = models.DateField(
+        verbose_name="Дата вступления в силу",
+        null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Апелляционное обжалование (КоАП)"
+        verbose_name_plural = "Апелляционные обжалования (КоАП)"
+
+    def __str__(self):
+        return f"Апелляция по делу {self.administrative_proceedings.case_number_admin}"
+
+
+class AdministrativeCassation(models.Model):
+    """
+    Кассационное обжалование по делу об административном правонарушении.
+    Раздел 5 Инструкции.
+    """
+    administrative_proceedings = models.OneToOneField(
+        AdministrativeProceedings,
+        on_delete=models.CASCADE,
+        related_name='cassation',
+        verbose_name="Дело об АП"
+    )
+
+    # 5.1. Поступление кассационной жалобы (протеста)
+    cassation_filed = models.BooleanField(
+        verbose_name="Подана кассационная жалоба (протест)",
+        default=False
+    )
+    cassation_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('complaint', 'Жалоба'),
+            ('protest', 'Протест прокурора'),
+        ],
+        verbose_name="Тип кассационного обжалования",
+        null=True, blank=True
+    )
+    cassation_filed_by = models.CharField(
+        max_length=255,
+        verbose_name="Кем подана кассационная жалоба (протест)",
+        null=True, blank=True
+    )
+    cassation_filed_date = models.DateField(
+        verbose_name="Дата подачи кассационной жалобы (протеста)",
+        null=True, blank=True
+    )
+    cassation_received_date = models.DateField(
+        verbose_name="Дата поступления в суд",
+        null=True, blank=True
+    )
+
+    # 5.2. Результат рассмотрения
+    cassation_review_date = models.DateField(
+        verbose_name="Дата рассмотрения",
+        null=True, blank=True
+    )
+    cassation_result = models.CharField(
+        max_length=10,
+        choices=[
+            ('1', 'Оставлено без изменения'),
+            ('2', 'Отменено'),
+            ('3', 'Изменено'),
+            ('4', 'Производство прекращено'),
+        ],
+        verbose_name="Результат рассмотрения кассационной жалобы (протеста)",
+        null=True, blank=True
+    )
+    cassation_result_description = models.TextField(
+        verbose_name="Описание результата (суть изменений)",
+        null=True, blank=True
+    )
+    cassation_decision_date = models.DateField(
+        verbose_name="Дата вынесения кассационного определения",
+        null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Кассационное обжалование (КоАП)"
+        verbose_name_plural = "Кассационные обжалования (КоАП)"
+
+    def __str__(self):
+        return f"Кассация по делу {self.administrative_proceedings.case_number_admin}"
+
+
 class AdministrativeDecision(models.Model):
     """
     Решения по делу об административном правонарушении.
@@ -217,7 +520,6 @@ class AdministrativeDecision(models.Model):
         verbose_name="Дело об АП"
     )
 
-    # ------------------- Результаты рассмотрения -------------------
     outcome = models.CharField(
         max_length=255,
         verbose_name="Результат рассмотрения дела",
@@ -278,31 +580,26 @@ class AdministrativeDecision(models.Model):
         verbose_name="Дата вступления постановления в законную силу",
         null=True, blank=True
     )
-
-    # ------------------- Обжалование -------------------
-    complaint_filed = models.BooleanField(
-        verbose_name="Подана жалоба",
-        default=False, null=True, blank=True
+    immediate_execution = models.BooleanField(
+        verbose_name="Постановление обращено к немедленному исполнению",
+        default=False
     )
-    complaint_date = models.DateField(
-        verbose_name="Дата поступления жалобы",
-        null=True, blank=True
+    is_below_lowest_limit = models.BooleanField(
+        default=False,
+        verbose_name="Наказание назначено ниже низшего предела (ст. 4.1 КоАП РФ)"
     )
-    complaint_result = models.CharField(
-        max_length=255,
-        verbose_name="Результат рассмотрения жалобы",
-        choices=[
-            ('1', 'Постановление оставлено без изменения'),
-            ('2', 'Постановление изменено'),
-            ('3', 'Постановление отменено, дело прекращено'),
-            ('4', 'Постановление отменено, дело возвращено на новое рассмотрение'),
-            ('5', 'Постановление отменено, дело направлено по подведомственности'),
-        ],
-        null=True, blank=True
+    is_auto_fixed_5000 = models.BooleanField(
+        default=False,
+        verbose_name="Штраф 5000 руб. при автофиксации (ч. 3.1 ст. 4.1 КоАП РФ)"
     )
-    complaint_decision_date = models.DateField(
-        verbose_name="Дата решения по жалобе",
-        null=True, blank=True
+    disqualification_period = models.CharField(
+        max_length=100,
+        blank=True, null=True,
+        verbose_name="Срок дисквалификации"
+    )
+    mandatory_work_hours = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Обязательные работы (часов)"
     )
 
     class Meta:
@@ -317,6 +614,7 @@ class AdministrativeDecision(models.Model):
 class AdministrativeExecution(models.Model):
     """
     Исполнение постановления по делу об административном правонарушении.
+    Расширено по Инструкции.
     """
     administrative_proceedings = models.ForeignKey(
         AdministrativeProceedings,
@@ -325,7 +623,6 @@ class AdministrativeExecution(models.Model):
         verbose_name="Дело об АП"
     )
 
-    # ------------------- Исполнение постановления -------------------
     execution_document_date = models.DateField(
         verbose_name="Дата выдачи исполнительного документа",
         null=True, blank=True
@@ -402,6 +699,7 @@ class AdministrativeExecution(models.Model):
             ('2', 'Не исполнено'),
             ('3', 'Возвращено без исполнения'),
             ('4', 'Частично исполнено'),
+            ('5', 'Направлено по принадлежности'),
         ],
         null=True, blank=True
     )
@@ -424,6 +722,12 @@ class AdministrativeExecution(models.Model):
         verbose_name="Номер исполнительного производства",
         null=True, blank=True
     )
+    current_stage = models.ForeignKey(
+        ExecutionStageAdmin,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Стадия исполнения"
+    )
 
     class Meta:
         verbose_name = "Исполнение по делу об АП"
@@ -434,7 +738,7 @@ class AdministrativeExecution(models.Model):
         return f"Исполнение по делу {self.administrative_proceedings.case_number_admin}"
 
 
-# ----- Связки с business_card -----
+# ----- Связки с business_card (без изменений, они корректны) -----
 
 class AdministrativeSidesCaseInCase(models.Model):
     """Стороны по делу (лицо, привлекаемое к ответственности, потерпевшие и т.д.)"""
@@ -642,3 +946,66 @@ def delete_related_petitions_incase(sender, instance, **kwargs):
             logger.info(f"Deleted related PetitionsInCase {petitions_incase_id} for AdministrativePetition {instance.id}")
         except Exception as e:
             logger.error(f"Error deleting PetitionsInCase: {e}")
+
+
+class AdministrativeSecurityMeasure(models.Model):
+    """Меры обеспечения производства по делу об административном правонарушении (Раздел 2.8 Инструкции)"""
+    
+    MEASURE_TYPES = [
+        ('delivery', 'Доставление'),
+        ('detention', 'Административное задержание'),
+        ('drive', 'Привод'),
+        ('personal_search', 'Личный досмотр'),
+        ('search_of_items', 'Досмотр вещей'),
+        ('vehicle_search', 'Досмотр транспортного средства'),
+        ('examination', 'Осмотр помещений'),
+        ('removal_from_driving', 'Отстранение от управления ТС'),
+        ('alcohol_examination', 'Освидетельствование на состояние алкогольного опьянения'),
+        ('medical_examination', 'Медицинское освидетельствование на состояние опьянения'),
+        ('seizure_of_items', 'Изъятие вещей и документов'),
+        ('detention_of_vehicle', 'Задержание транспортного средства'),
+        ('arrest_of_goods', 'Арест товаров, транспортных средств и иных вещей'),
+        ('pledge_for_vessel', 'Залог за арестованное судно'),
+        ('temporary_ban', 'Временный запрет деятельности'),
+        ('arrest_of_property', 'Арест имущества (ст. 19.28 КоАП РФ)'),
+        ('placement_in_special_institution', 'Помещение в специальное учреждение (иностранных граждан)'),
+    ]
+    
+    administrative_proceedings = models.ForeignKey(
+        AdministrativeProceedings,
+        on_delete=models.CASCADE,
+        related_name='security_measures',
+        verbose_name="Дело об АП"
+    )
+    measure_type = models.CharField(
+        max_length=50,
+        choices=MEASURE_TYPES,
+        verbose_name="Вид меры обеспечения"
+    )
+    applied_date = models.DateField(
+        verbose_name="Дата применения",
+        null=True, blank=True
+    )
+    # Для некоторых мер (например, залог) нужна сумма
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        null=True, blank=True,
+        verbose_name="Сумма (для залога, ареста имущества и т.д.)"
+    )
+    # Для помещения в спецучреждение - срок
+    period = models.CharField(
+        max_length=100,
+        blank=True, null=True,
+        verbose_name="Срок (для помещения в спецучреждение)"
+    )
+    notes = models.TextField(
+        blank=True, null=True,
+        verbose_name="Примечания"
+    )
+    
+    class Meta:
+        verbose_name = "Мера обеспечения производства (КоАП)"
+        verbose_name_plural = "Меры обеспечения производства (КоАП)"
+    
+    def __str__(self):
+        return f"{self.get_measure_type_display()} по делу {self.administrative_proceedings.case_number_admin} от {self.applied_date}"

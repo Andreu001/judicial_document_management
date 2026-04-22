@@ -1,19 +1,40 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from users.models import User
 from business_card.models import (
-    SidesCase, SidesCaseInCase, Lawyer,
-    PetitionsInCase, BusinessMovement
+    SidesCase, SidesCaseInCase, Lawyer
 )
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+class OtherMaterialType(models.Model):
+    """
+    Справочник видов иных материалов (выгрузить в CSV)
+    В соответствии с п. 3.10.7 Инструкции
+    """
+    code = models.CharField(max_length=30, unique=True, verbose_name="Код")
+    name = models.CharField(max_length=255, verbose_name="Наименование вида иного материала")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
+
+    class Meta:
+        verbose_name = "Вид иного материала"
+        verbose_name_plural = "Виды иных материалов"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class OtherMaterial(models.Model):
     """
-    Карточка иных материалов (индекс 15 по инструкции по делопроизводству).
+    Карточка иных материалов (в строгом соответствии с Инструкцией, п. 3.10.7)
+    Индекс 15 по инструкции по делопроизводству.
     """
     STATUS_CHOICES = [
         ('active', 'Активное'),
@@ -21,7 +42,15 @@ class OtherMaterial(models.Model):
         ('archived', 'В архиве'),
     ]
 
-    # ------------------- Общие сведения -------------------
+    OUTCOME_CHOICES = [
+        ('satisfied', 'Удовлетворено'),
+        ('rejected', 'Отказано в удовлетворении'),
+        ('dismissed', 'Прекращено производство'),
+        ('left_without', 'Оставлено без рассмотрения'),
+        ('transferred', 'Передано по подсудности/подведомственности'),
+    ]
+
+    # ------------------- Регистрационные сведения -------------------
     registration_number = models.CharField(
         max_length=100,
         unique=True,
@@ -31,12 +60,20 @@ class OtherMaterial(models.Model):
         verbose_name="Дата регистрации",
         null=True, blank=True
     )
+    
+    # ------------------- Вид материала -------------------
+    material_type = models.ForeignKey(
+        OtherMaterialType,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Вид иного материала"
+    )
     title = models.CharField(
         max_length=500,
         verbose_name="Наименование материала"
     )
     description = models.TextField(
-        verbose_name="Описание/содержание",
+        verbose_name="Содержание материала",
         null=True, blank=True
     )
     
@@ -51,9 +88,48 @@ class OtherMaterial(models.Model):
         null=True, blank=True
     )
     sender = models.CharField(
-        max_length=255,
+        max_length=500,
         verbose_name="Отправитель",
+        null=True, blank=True,
+        help_text="Наименование организации или ФИО отправителя"
+    )
+    
+    # ------------------- Связь с основным делом (опционально) -------------------
+    # Используем GenericForeignKey для связи с любым типом дела
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        limit_choices_to={
+            'app_label__in': [
+                'civil_proceedings', 'criminal_proceedings', 
+                'administrative_proceedings', 'kas_proceedings'
+            ],
+            'model__in': ['civilproceedings', 'criminalproceedings', 
+                         'administrativeproceedings', 'kasproceedings']
+        },
+        verbose_name="Тип связанного дела"
+    )
+    object_id = models.PositiveIntegerField(
+        verbose_name="ID связанного дела",
         null=True, blank=True
+    )
+    related_case = GenericForeignKey('content_type', 'object_id')
+    
+    # Денормализованное поле для быстрого отображения
+    related_case_number = models.CharField(
+        max_length=100,
+        verbose_name="Номер связанного дела",
+        null=True, blank=True
+    )
+    
+    # Для обратной совместимости (можно удалить после миграции)
+    registered_case = models.OneToOneField(
+        'case_registry.RegisteredCase',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='other_material_link_old',
+        verbose_name="Зарегистрированное дело (устаревшее)"
     )
     
     # ------------------- Сведения о рассмотрении -------------------
@@ -68,19 +144,16 @@ class OtherMaterial(models.Model):
         verbose_name="Дата рассмотрения",
         null=True, blank=True
     )
-    consideration_result = models.TextField(
+    outcome = models.CharField(
+        max_length=20,
+        choices=OUTCOME_CHOICES,
         verbose_name="Результат рассмотрения",
         null=True, blank=True
     )
-    
-    # ------------------- Связи -------------------
-    registered_case = models.OneToOneField(
-        'case_registry.RegisteredCase',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='other_material_link',
-        verbose_name="Зарегистрированное дело"
+    outcome_details = models.TextField(
+        verbose_name="Детали результата",
+        null=True, blank=True,
+        help_text="Подробное описание результата рассмотрения"
     )
     
     # ------------------- Статус и архив -------------------
@@ -111,15 +184,24 @@ class OtherMaterial(models.Model):
         verbose_name = "Иной материал"
         verbose_name_plural = "Иные материалы"
         ordering = ['-registration_date', '-created_at']
+        indexes = [
+            models.Index(fields=['registration_number']),
+            models.Index(fields=['status']),
+            models.Index(fields=['content_type', 'object_id']),
+            models.Index(fields=['material_type']),
+            models.Index(fields=['outcome']),
+        ]
 
     def __str__(self):
         return f"{self.registration_number} - {self.title[:50]}"
 
 
-# ----- Связки с business_card -----
+# ----- Связки с business_card (оставлены для совместимости) -----
 
 class OtherMaterialSidesCaseInCase(models.Model):
-    """Стороны по иному материалу"""
+    """
+    Стороны по иному материалу (оставлено для совместимости с существующими данными)
+    """
     other_material = models.ForeignKey(
         OtherMaterial,
         on_delete=models.CASCADE,
@@ -149,7 +231,9 @@ class OtherMaterialSidesCaseInCase(models.Model):
 
 
 class OtherMaterialLawyer(models.Model):
-    """Представители/защитники"""
+    """
+    Представители/защитники (оставлено для совместимости с существующими данными)
+    """
     other_material = models.ForeignKey(
         OtherMaterial,
         on_delete=models.CASCADE,
@@ -177,158 +261,9 @@ class OtherMaterialLawyer(models.Model):
         return f"{self.sides_case_role} - {self.lawyer}"
 
 
-class OtherMaterialMovement(models.Model):
-    """Движение материала (готовые записи из BusinessMovement)"""
-    other_material = models.ForeignKey(
-        OtherMaterial,
-        on_delete=models.CASCADE,
-        related_name='other_movements',
-        verbose_name="Иной материал"
-    )
-    business_movement = models.ForeignKey(
-        BusinessMovement,
-        on_delete=models.CASCADE,
-        related_name='other_material_movements',
-        verbose_name="Движение (из business_card)"
-    )
-
-    class Meta:
-        verbose_name = "Движение иного материала"
-        verbose_name_plural = "Движения иных материалов"
-        ordering = ['-business_movement__date_meeting', '-business_movement__meeting_time']
-
-    def __str__(self):
-        return f"Движение по материалу {self.other_material.registration_number} от {self.business_movement.date_meeting}"
-
-
-class OtherMaterialPetition(models.Model):
-    """Ходатайства/заявления"""
-    
-    PETITIONER_TYPES = [
-        ('other_sides', 'Сторона'),
-        ('other_lawyer', 'Представитель'),
-    ]
-    
-    other_material = models.ForeignKey(
-        OtherMaterial,
-        on_delete=models.CASCADE,
-        related_name='other_petitions',
-        verbose_name="Иной материал"
-    )
-    petitions_incase = models.ForeignKey(
-        PetitionsInCase,
-        on_delete=models.CASCADE,
-        related_name='other_material_petitions',
-        verbose_name="Ходатайство/заявление"
-    )
-    
-    petitioner_type = models.CharField(
-        max_length=20,
-        choices=PETITIONER_TYPES,
-        verbose_name="Тип заявителя",
-        null=True,
-        blank=True
-    )
-    petitioner_id = models.PositiveIntegerField(
-        verbose_name="ID заявителя",
-        null=True,
-        blank=True
-    )
-
-    class Meta:
-        verbose_name = "Ходатайство/заявление в ином материале"
-        verbose_name_plural = "Ходатайства/заявления в иных материалах"
-        indexes = [
-            models.Index(fields=['petitioner_type', 'petitioner_id']),
-        ]
-
-    def __str__(self):
-        return f"Ходатайство по материалу {self.other_material.registration_number}"
-    
-    @property
-    def petitioner(self):
-        """Получение объекта заявителя"""
-        if not self.petitioner_type or not self.petitioner_id:
-            return None
-        
-        if self.petitioner_type == 'other_sides':
-            try:
-                return OtherMaterialSidesCaseInCase.objects.get(id=self.petitioner_id)
-            except OtherMaterialSidesCaseInCase.DoesNotExist:
-                return None
-        elif self.petitioner_type == 'other_lawyer':
-            try:
-                return OtherMaterialLawyer.objects.get(id=self.petitioner_id)
-            except OtherMaterialLawyer.DoesNotExist:
-                return None
-        return None
-    
-    @property
-    def petitioner_info(self):
-        """Получение информации о заявителе для отображения"""
-        petitioner = self.petitioner
-        if not petitioner:
-            return None
-        
-        if self.petitioner_type == 'other_sides':
-            side_detail = petitioner.sides_case_incase
-            role_detail = petitioner.sides_case_role
-            return {
-                'id': petitioner.id,
-                'type': 'other_sides',
-                'type_label': 'Сторона',
-                'name': side_detail.name if side_detail else 'Неизвестно',
-                'role': role_detail.sides_case if role_detail else 'Сторона',
-                'detail': {
-                    'name': side_detail.name if side_detail else None,
-                    'phone': side_detail.phone if side_detail else None,
-                    'address': side_detail.address if side_detail else None,
-                }
-            }
-        elif self.petitioner_type == 'other_lawyer':
-            lawyer_detail = petitioner.lawyer
-            role_detail = petitioner.sides_case_role
-            return {
-                'id': petitioner.id,
-                'type': 'other_lawyer',
-                'type_label': 'Представитель',
-                'name': lawyer_detail.law_firm_name if lawyer_detail else 'Неизвестно',
-                'role': role_detail.sides_case if role_detail else 'Представитель',
-                'detail': {
-                    'law_firm_name': lawyer_detail.law_firm_name if lawyer_detail else None,
-                    'phone': lawyer_detail.law_firm_phone if lawyer_detail else None,
-                }
-            }
-        return None
-
-
-@receiver(post_delete, sender=OtherMaterialMovement)
-def delete_related_business_movement(sender, instance, **kwargs):
-    """Удалить связанный BusinessMovement при удалении OtherMaterialMovement"""
-    if hasattr(instance, 'business_movement') and instance.business_movement:
-        try:
-            business_movement_id = instance.business_movement.id
-            instance.business_movement.delete()
-            logger.info(f"Deleted related BusinessMovement {business_movement_id} for OtherMaterialMovement {instance.id}")
-        except Exception as e:
-            logger.error(f"Error deleting BusinessMovement: {e}")
-
-
-@receiver(post_delete, sender=OtherMaterialPetition)
-def delete_related_petitions_incase(sender, instance, **kwargs):
-    """Удалить связанный PetitionsInCase при удалении OtherMaterialPetition"""
-    if hasattr(instance, 'petitions_incase') and instance.petitions_incase:
-        try:
-            petitions_incase_id = instance.petitions_incase.id
-            instance.petitions_incase.delete()
-            logger.info(f"Deleted related PetitionsInCase {petitions_incase_id} for OtherMaterialPetition {instance.id}")
-        except Exception as e:
-            logger.error(f"Error deleting PetitionsInCase: {e}")
-
-
 class OtherMaterialDecision(models.Model):
     """
-    Решения по иному материалу (упрощенная версия по аналогии с КоАП).
+    Решения по иному материалу (оставлено, но упрощено)
     """
     other_material = models.ForeignKey(
         OtherMaterial,
@@ -383,58 +318,3 @@ class OtherMaterialDecision(models.Model):
 
     def __str__(self):
         return f"Решение по материалу {self.other_material.registration_number} от {self.decision_date}"
-
-
-class OtherMaterialExecution(models.Model):
-    """
-    Исполнение решения по иному материалу (упрощенная версия).
-    """
-    other_material = models.ForeignKey(
-        OtherMaterial,
-        on_delete=models.CASCADE,
-        related_name='other_executions',
-        verbose_name="Иной материал"
-    )
-
-    execution_document_date = models.DateField(
-        verbose_name="Дата исполнительного документа",
-        null=True, blank=True
-    )
-    execution_document_number = models.CharField(
-        max_length=100,
-        verbose_name="Номер исполнительного документа",
-        null=True, blank=True
-    )
-    
-    executed = models.BooleanField(
-        verbose_name="Исполнено",
-        default=False, null=True, blank=True
-    )
-    execution_date = models.DateField(
-        verbose_name="Дата фактического исполнения",
-        null=True, blank=True
-    )
-    
-    execution_result = models.CharField(
-        max_length=255,
-        verbose_name="Результат исполнения",
-        choices=[
-            ('1', 'Исполнено полностью'),
-            ('2', 'Не исполнено'),
-            ('3', 'Частично исполнено'),
-        ],
-        null=True, blank=True
-    )
-    
-    notes = models.TextField(
-        verbose_name="Примечания по исполнению",
-        null=True, blank=True
-    )
-
-    class Meta:
-        verbose_name = "Исполнение по иному материалу"
-        verbose_name_plural = "Исполнения по иным материалам"
-        ordering = ['-execution_document_date']
-
-    def __str__(self):
-        return f"Исполнение по материалу {self.other_material.registration_number}"

@@ -1,10 +1,11 @@
+# administrative_code/serializers.py
 from rest_framework import serializers
 from users.models import User
-from business_card.models import (SidesCase,
-            SidesCaseInCase, Lawyer,
-            BusinessMovement, PetitionsInCase, Decisions,
-            Petitions
-        )
+from business_card.models import (
+    SidesCase, SidesCaseInCase, Lawyer,
+    BusinessMovement, PetitionsInCase, Decisions,
+    Petitions
+)
 from .models import (
     KasProceedings, KasDecision, KasExecution,
     KasSidesCaseInCase, KasLawyer,
@@ -12,39 +13,32 @@ from .models import (
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
+from case_documents.serializers import CaseDocumentListSerializer
 
 
 class ReferringAuthorityKasSerializer(serializers.ModelSerializer):
+    """Сериализатор для органов КАС"""
     class Meta:
         model = ReferringAuthorityKas
         fields = '__all__'
 
 
 class KasDecisionSerializer(serializers.ModelSerializer):
+    """Сериализатор для решений КАС с display-полями"""
+    outcome_display = serializers.CharField(source='get_outcome_display', read_only=True)
+    term_compliance_display = serializers.CharField(source='get_term_compliance_display', read_only=True)
+    court_composition_display = serializers.CharField(source='get_court_composition_display', read_only=True)
+    decision_appeal_result_display = serializers.CharField(source='get_decision_appeal_result_display', read_only=True)
+    decision_cassation_result_display = serializers.CharField(source='get_decision_cassation_result_display', read_only=True)
+    
     class Meta:
         model = KasDecision
         fields = '__all__'
         read_only_fields = ('kas_proceedings',)
 
 
-class KasDecisionOptionsSerializer(serializers.Serializer):
-    @staticmethod
-    def get_choices_from_model():
-        model_fields = KasDecision._meta.get_fields()
-        choices_data = {}
-
-        for field in model_fields:
-            if hasattr(field, 'choices') and field.choices:
-                field_name = field.name
-                choices_data[field_name] = [
-                    {'value': choice[0], 'label': choice[1]}
-                    for choice in field.choices
-                ]
-
-        return choices_data
-
-
 class KasExecutionSerializer(serializers.ModelSerializer):
+    """Сериализатор для исполнения КАС"""
     class Meta:
         model = KasExecution
         fields = '__all__'
@@ -52,11 +46,9 @@ class KasExecutionSerializer(serializers.ModelSerializer):
 
 
 class NestedSidesCaseInCaseSerializer(serializers.ModelSerializer):
+    """Вложенный сериализатор для создания стороны"""
     sides_case = serializers.PrimaryKeyRelatedField(
-        queryset=SidesCase.objects.all(),
-        many=True,
-        required=False,
-        allow_empty=True
+        queryset=SidesCase.objects.all(), many=True, required=False, allow_empty=True
     )
 
     class Meta:
@@ -78,19 +70,11 @@ class NestedSidesCaseInCaseSerializer(serializers.ModelSerializer):
 
 
 class KasSidesCaseInCaseSerializer(serializers.ModelSerializer):
+    """Сериализатор для сторон КАС с подробными данными"""
     sides_case_incase_detail = serializers.SerializerMethodField()
     sides_case_role_detail = serializers.SerializerMethodField()
-
-    sides_case_incase_data = NestedSidesCaseInCaseSerializer(
-        write_only=True,
-        required=False
-    )
-
-    existing_sides_case_incase_id = serializers.IntegerField(
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
+    sides_case_incase_data = NestedSidesCaseInCaseSerializer(write_only=True, required=False)
+    existing_sides_case_incase_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = KasSidesCaseInCase
@@ -102,6 +86,7 @@ class KasSidesCaseInCaseSerializer(serializers.ModelSerializer):
         read_only_fields = ('kas_proceedings', 'sides_case_incase')
 
     def get_sides_case_incase_detail(self, obj):
+        """Получение детальной информации о стороне для фронтенда"""
         if obj.sides_case_incase:
             return {
                 'id': obj.sides_case_incase.id,
@@ -111,6 +96,7 @@ class KasSidesCaseInCaseSerializer(serializers.ModelSerializer):
                 'date_sending_agenda': obj.sides_case_incase.date_sending_agenda,
                 'birth_date': obj.sides_case_incase.birth_date,
                 'gender': obj.sides_case_incase.gender,
+                'gender_display': obj.sides_case_incase.get_gender_display(),
                 'document_type': obj.sides_case_incase.document_type,
                 'document_number': obj.sides_case_incase.document_number,
                 'document_series': obj.sides_case_incase.document_series,
@@ -129,6 +115,7 @@ class KasSidesCaseInCaseSerializer(serializers.ModelSerializer):
         return None
 
     def get_sides_case_role_detail(self, obj):
+        """Получение информации о роли стороны"""
         if obj.sides_case_role:
             return {
                 'id': obj.sides_case_role.id,
@@ -139,18 +126,15 @@ class KasSidesCaseInCaseSerializer(serializers.ModelSerializer):
     def validate(self, data):
         existing_id = data.get('existing_sides_case_incase_id')
         new_data = data.get('sides_case_incase_data')
-
         if not existing_id and not new_data and not self.instance:
             raise serializers.ValidationError(
                 "Необходимо указать либо existing_sides_case_incase_id для существующей стороны, "
                 "либо sides_case_incase_data для создания новой стороны"
             )
-
         if existing_id and new_data:
             raise serializers.ValidationError(
                 "Нельзя указать одновременно existing_sides_case_incase_id и sides_case_incase_data"
             )
-
         if existing_id:
             try:
                 SidesCaseInCase.objects.get(id=existing_id)
@@ -158,53 +142,44 @@ class KasSidesCaseInCaseSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'existing_sides_case_incase_id': f'Сторона с ID {existing_id} не существует'}
                 )
-
         return data
 
     def create(self, validated_data):
         kas_proceedings = self.context.get('kas_proceedings')
         if not kas_proceedings:
-            raise serializers.ValidationError(
-                {'kas_proceedings': 'Не указано производство КАС'}
-            )
-
+            raise serializers.ValidationError({'kas_proceedings': 'Не указано производство КАС'})
         existing_id = validated_data.pop('existing_sides_case_incase_id', None)
         new_side_data = validated_data.pop('sides_case_incase_data', None)
         sides_case_role = validated_data.pop('sides_case_role')
-
         if new_side_data:
             sides_case_incase = NestedSidesCaseInCaseSerializer().create(new_side_data)
         else:
             sides_case_incase = SidesCaseInCase.objects.get(id=existing_id)
-
         kas_side = KasSidesCaseInCase.objects.create(
             kas_proceedings=kas_proceedings,
             sides_case_incase=sides_case_incase,
             sides_case_role=sides_case_role
         )
-
         return kas_side
 
     def update(self, instance, validated_data):
         if 'sides_case_role' in validated_data:
             instance.sides_case_role = validated_data['sides_case_role']
-
         if 'sides_case_incase_data' in validated_data:
             side_data = validated_data.pop('sides_case_incase_data')
             if side_data and instance.sides_case_incase:
                 for attr, value in side_data.items():
-                    if value is not None:
+                    if value is not None and attr != 'sides_case':
                         setattr(instance.sides_case_incase, attr, value)
                 instance.sides_case_incase.save()
-
         validated_data.pop('existing_sides_case_incase_id', None)
         validated_data.pop('sides_case_incase_data', None)
-
         instance.save()
         return instance
 
 
 class NestedLawyerSerializer(serializers.ModelSerializer):
+    """Вложенный сериализатор для создания представителя"""
     class Meta:
         model = Lawyer
         fields = [
@@ -216,19 +191,11 @@ class NestedLawyerSerializer(serializers.ModelSerializer):
 
 
 class KasLawyerSerializer(serializers.ModelSerializer):
+    """Сериализатор для представителей КАС"""
     lawyer_detail = serializers.SerializerMethodField()
     sides_case_role_detail = serializers.SerializerMethodField()
-
-    lawyer_data = NestedLawyerSerializer(
-        write_only=True,
-        required=False
-    )
-
-    existing_lawyer_id = serializers.IntegerField(
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
+    lawyer_data = NestedLawyerSerializer(write_only=True, required=False)
+    existing_lawyer_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = KasLawyer
@@ -262,65 +229,47 @@ class KasLawyerSerializer(serializers.ModelSerializer):
 
     def get_sides_case_role_detail(self, obj):
         if obj.sides_case_role:
-            return {
-                'id': obj.sides_case_role.id,
-                'name': obj.sides_case_role.sides_case,
-            }
+            return {'id': obj.sides_case_role.id, 'name': obj.sides_case_role.sides_case}
         return None
 
     def validate(self, data):
         existing_id = data.get('existing_lawyer_id')
         new_data = data.get('lawyer_data')
-
         if not existing_id and not new_data and not self.instance:
             raise serializers.ValidationError(
                 "Необходимо указать либо existing_lawyer_id для существующего представителя, "
                 "либо lawyer_data для создания нового представителя"
             )
-
         if existing_id and new_data:
-            raise serializers.ValidationError(
-                "Нельзя указать одновременно existing_lawyer_id и lawyer_data"
-            )
-
+            raise serializers.ValidationError("Нельзя указать одновременно existing_lawyer_id и lawyer_data")
         if existing_id:
             try:
                 Lawyer.objects.get(id=existing_id)
             except Lawyer.DoesNotExist:
-                raise serializers.ValidationError(
-                    {'existing_lawyer_id': f'Представитель с ID {existing_id} не существует'}
-                )
-
+                raise serializers.ValidationError({'existing_lawyer_id': f'Представитель с ID {existing_id} не существует'})
         return data
 
     def create(self, validated_data):
         kas_proceedings = self.context.get('kas_proceedings')
         if not kas_proceedings:
-            raise serializers.ValidationError(
-                {'kas_proceedings': 'Не указано производство КАС'}
-            )
-
+            raise serializers.ValidationError({'kas_proceedings': 'Не указано производство КАС'})
         existing_id = validated_data.pop('existing_lawyer_id', None)
         new_lawyer_data = validated_data.pop('lawyer_data', None)
         sides_case_role = validated_data.pop('sides_case_role')
-
         if new_lawyer_data:
             lawyer = NestedLawyerSerializer().create(new_lawyer_data)
         else:
             lawyer = Lawyer.objects.get(id=existing_id)
-
         kas_lawyer = KasLawyer.objects.create(
             kas_proceedings=kas_proceedings,
             lawyer=lawyer,
             sides_case_role=sides_case_role
         )
-
         return kas_lawyer
 
     def update(self, instance, validated_data):
         if 'sides_case_role' in validated_data:
             instance.sides_case_role = validated_data['sides_case_role']
-
         if 'lawyer_data' in validated_data:
             lawyer_data = validated_data.pop('lawyer_data')
             if lawyer_data and instance.lawyer:
@@ -328,48 +277,30 @@ class KasLawyerSerializer(serializers.ModelSerializer):
                     if value is not None:
                         setattr(instance.lawyer, attr, value)
                 instance.lawyer.save()
-
         validated_data.pop('existing_lawyer_id', None)
         validated_data.pop('lawyer_data', None)
-
         instance.save()
         return instance
 
 
 class KasCaseMovementSerializer(serializers.ModelSerializer):
+    """Сериализатор для движения дела КАС"""
     business_movement_detail = serializers.SerializerMethodField(read_only=True)
-
     date_meeting = serializers.DateField(required=True, write_only=True)
     meeting_time = serializers.TimeField(required=True, write_only=True)
     decision_case = serializers.PrimaryKeyRelatedField(
-        queryset=Decisions.objects.all(),
-        many=True,
-        required=False,
-        write_only=True
+        queryset=Decisions.objects.all(), many=True, required=False, write_only=True
     )
-    composition_colleges = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        write_only=True
-    )
-    result_court_session = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        write_only=True
-    )
-    reason_deposition = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        write_only=True
-    )
+    composition_colleges = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    result_court_session = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    reason_deposition = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = KasCaseMovement
         fields = [
             'id', 'kas_proceedings', 'business_movement',
             'business_movement_detail', 'date_meeting', 'meeting_time',
-            'decision_case', 'composition_colleges', 'result_court_session',
-            'reason_deposition'
+            'decision_case', 'composition_colleges', 'result_court_session', 'reason_deposition'
         ]
         read_only_fields = ('kas_proceedings', 'business_movement')
 
@@ -379,137 +310,48 @@ class KasCaseMovementSerializer(serializers.ModelSerializer):
                 'id': obj.business_movement.id,
                 'date_meeting': obj.business_movement.date_meeting,
                 'meeting_time': obj.business_movement.meeting_time,
-                'decision_case': [
-                    {'id': d.id, 'name_case': d.name_case}
-                    for d in obj.business_movement.decision_case.all()
-                ],
+                'decision_case': [{'id': d.id, 'name_case': d.name_case} for d in obj.business_movement.decision_case.all()],
                 'composition_colleges': obj.business_movement.composition_colleges,
                 'result_court_session': obj.business_movement.result_court_session,
                 'reason_deposition': obj.business_movement.reason_deposition,
             }
         return None
 
-    def validate(self, data):
-        request_method = self.context.get('request').method if self.context.get('request') else None
-
-        if request_method == 'POST':
-            if not data.get('date_meeting'):
-                raise serializers.ValidationError({'date_meeting': 'Обязательное поле.'})
-            if not data.get('meeting_time'):
-                raise serializers.ValidationError({'meeting_time': 'Обязательное поле.'})
-
-        return data
-
     def create(self, validated_data):
         kas_proceedings = self.context.get('kas_proceedings')
         if not kas_proceedings:
-            raise serializers.ValidationError(
-                {'kas_proceedings': 'Не указано производство КАС'}
-            )
-
+            raise serializers.ValidationError({'kas_proceedings': 'Не указано производство КАС'})
         date_meeting = validated_data.pop('date_meeting')
         meeting_time = validated_data.pop('meeting_time')
         decision_case_ids = validated_data.pop('decision_case', [])
         composition_colleges = validated_data.pop('composition_colleges', '')
         result_court_session = validated_data.pop('result_court_session', '')
         reason_deposition = validated_data.pop('reason_deposition', '')
-
         business_movement = BusinessMovement.objects.create(
-            date_meeting=date_meeting,
-            meeting_time=meeting_time,
+            date_meeting=date_meeting, meeting_time=meeting_time,
             composition_colleges=composition_colleges,
             result_court_session=result_court_session,
             reason_deposition=reason_deposition
         )
-
         if decision_case_ids:
             business_movement.decision_case.set(decision_case_ids)
-
-        kas_movement = KasCaseMovement.objects.create(
+        return KasCaseMovement.objects.create(
             kas_proceedings=kas_proceedings,
             business_movement=business_movement
         )
 
-        return kas_movement
-
-    def update(self, instance, validated_data):
-        date_meeting = validated_data.pop('date_meeting', None)
-        meeting_time = validated_data.pop('meeting_time', None)
-        decision_case_ids = validated_data.pop('decision_case', None)
-        composition_colleges = validated_data.pop('composition_colleges', None)
-        result_court_session = validated_data.pop('result_court_session', None)
-        reason_deposition = validated_data.pop('reason_deposition', None)
-
-        if instance.business_movement:
-            business_movement = instance.business_movement
-
-            if date_meeting is not None:
-                business_movement.date_meeting = date_meeting
-            if meeting_time is not None:
-                business_movement.meeting_time = meeting_time
-            if composition_colleges is not None:
-                business_movement.composition_colleges = composition_colleges
-            if result_court_session is not None:
-                business_movement.result_court_session = result_court_session
-            if reason_deposition is not None:
-                business_movement.reason_deposition = reason_deposition
-
-            business_movement.save()
-
-            if decision_case_ids is not None:
-                business_movement.decision_case.set(decision_case_ids)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-        return instance
-
 
 class KasPetitionSerializer(serializers.ModelSerializer):
+    """Сериализатор для ходатайств КАС"""
     petitions_incase_detail = serializers.SerializerMethodField()
     petitioner_info = serializers.SerializerMethodField()
-
-    petitioner_type = serializers.ChoiceField(
-        choices=['kas_sides', 'kas_lawyer'],
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-    petitioner_id = serializers.IntegerField(
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-
-    petitions_name = serializers.PrimaryKeyRelatedField(
-        queryset=Petitions.objects.all(),
-        many=True,
-        required=True,
-        write_only=True
-    )
-    date_application = serializers.DateField(
-        required=True,
-        write_only=True
-    )
-    decision_rendered = serializers.PrimaryKeyRelatedField(
-        queryset=Decisions.objects.all(),
-        many=False,
-        required=False,
-        write_only=True,
-        allow_null=True
-    )
-    date_decision = serializers.DateField(
-        required=False,
-        allow_null=True,
-        write_only=True
-    )
-    notation = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
-        write_only=True
-    )
+    petitioner_type = serializers.ChoiceField(choices=['kas_sides', 'kas_lawyer'], write_only=True, required=False, allow_null=True)
+    petitioner_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    petitions_name = serializers.PrimaryKeyRelatedField(queryset=Petitions.objects.all(), many=True, required=True, write_only=True)
+    date_application = serializers.DateField(required=True, write_only=True)
+    decision_rendered = serializers.PrimaryKeyRelatedField(queryset=Decisions.objects.all(), required=False, write_only=True, allow_null=True)
+    date_decision = serializers.DateField(required=False, allow_null=True, write_only=True)
+    notation = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
 
     class Meta:
         model = KasPetition
@@ -528,17 +370,10 @@ class KasPetitionSerializer(serializers.ModelSerializer):
             decision_data = None
             if petitions_incase.decision_rendered:
                 decision = petitions_incase.decision_rendered
-                decision_data = {
-                    'id': decision.id,
-                    'name_case': decision.name_case
-                }
-
+                decision_data = {'id': decision.id, 'name_case': decision.name_case}
             return {
                 'id': petitions_incase.id,
-                'petitions_name': [
-                    {'id': p.id, 'name': p.petitions}
-                    for p in petitions_incase.petitions_name.all()
-                ],
+                'petitions_name': [{'id': p.id, 'name': p.petitions} for p in petitions_incase.petitions_name.all()],
                 'date_application': petitions_incase.date_application,
                 'decision_rendered': decision_data,
                 'date_decision': petitions_incase.date_decision,
@@ -549,42 +384,24 @@ class KasPetitionSerializer(serializers.ModelSerializer):
     def get_petitioner_info(self, obj):
         return obj.petitioner_info
 
-    def validate(self, data):
-        request_method = self.context.get('request').method if self.context.get('request') else None
-
-        if request_method == 'POST':
-            if not data.get('petitions_name'):
-                raise serializers.ValidationError({'petitions_name': 'Обязательное поле.'})
-            if not data.get('date_application'):
-                raise serializers.ValidationError({'date_application': 'Обязательное поле.'})
-
-        return data
-
     def create(self, validated_data):
         kas_proceedings = self.context.get('kas_proceedings')
         if not kas_proceedings:
-            raise serializers.ValidationError(
-                {'kas_proceedings': 'Не указано производство КАС'}
-            )
-
+            raise serializers.ValidationError({'kas_proceedings': 'Не указано производство КАС'})
         petitions_name_ids = validated_data.pop('petitions_name', [])
         date_application = validated_data.pop('date_application')
         decision_rendered_id = validated_data.pop('decision_rendered', None)
         date_decision = validated_data.pop('date_decision', None)
         notation = validated_data.pop('notation', '')
-
         petitioner_type = validated_data.pop('petitioner_type', None)
         petitioner_id = validated_data.pop('petitioner_id', None)
-
         petitions_incase = PetitionsInCase.objects.create(
             date_application=date_application,
             date_decision=date_decision,
             notation=notation
         )
-
         if petitions_name_ids:
             petitions_incase.petitions_name.set(petitions_name_ids)
-
         if decision_rendered_id:
             try:
                 decision = Decisions.objects.get(id=decision_rendered_id)
@@ -592,87 +409,160 @@ class KasPetitionSerializer(serializers.ModelSerializer):
                 petitions_incase.save()
             except Decisions.DoesNotExist:
                 pass
-
-        kas_petition = KasPetition.objects.create(
+        return KasPetition.objects.create(
             kas_proceedings=kas_proceedings,
             petitions_incase=petitions_incase,
             petitioner_type=petitioner_type,
             petitioner_id=petitioner_id
         )
 
-        return kas_petition
-
-    def update(self, instance, validated_data):
-        petitions_name_ids = validated_data.pop('petitions_name', None)
-        date_application = validated_data.pop('date_application', None)
-        decision_rendered_id = validated_data.pop('decision_rendered', None)
-        date_decision = validated_data.pop('date_decision', None)
-        notation = validated_data.pop('notation', None)
-
-        petitioner_type = validated_data.pop('petitioner_type', None)
-        petitioner_id = validated_data.pop('petitioner_id', None)
-
-        if instance.petitions_incase:
-            petitions_incase = instance.petitions_incase
-
-            if date_application is not None:
-                petitions_incase.date_application = date_application
-            if date_decision is not None:
-                petitions_incase.date_decision = date_decision
-            if notation is not None:
-                petitions_incase.notation = notation
-
-            if decision_rendered_id is not None:
-                if decision_rendered_id:
-                    try:
-                        decision = Decisions.objects.get(id=decision_rendered_id)
-                        petitions_incase.decision_rendered = decision
-                    except Decisions.DoesNotExist:
-                        petitions_incase.decision_rendered = None
-                else:
-                    petitions_incase.decision_rendered = None
-
-            petitions_incase.save()
-
-            if petitions_name_ids is not None:
-                petitions_incase.petitions_name.set(petitions_name_ids)
-
-        if petitioner_type is not None:
-            instance.petitioner_type = petitioner_type
-        if petitioner_id is not None:
-            instance.petitioner_id = petitioner_id
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-        return instance
-
 
 class KasProceedingsSerializer(serializers.ModelSerializer):
-    presiding_judge_full_name = serializers.SerializerMethodField()
+    """Основной сериализатор для дел КАС - для фронтенда"""
+    # Display-поля для статусов
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    admission_order_display = serializers.SerializerMethodField()
+    postponement_reason_display = serializers.SerializerMethodField()
+    suspension_reason_display = serializers.SerializerMethodField()
+    preliminary_protection_display = serializers.SerializerMethodField()
+    expertise_type_display = serializers.SerializerMethodField()
+    
+    # Display-поля для обжалования
+    appeal_type_display = serializers.SerializerMethodField()
+    appeal_result_display = serializers.SerializerMethodField()
+    cassation_type_display = serializers.SerializerMethodField()
+    cassation_result_display = serializers.SerializerMethodField()
+    
+    # Детальные поля
+    presiding_judge_full_name = serializers.SerializerMethodField()
     referring_authority_detail = ReferringAuthorityKasSerializer(source='referring_authority', read_only=True)
     registered_case_info = serializers.SerializerMethodField()
-
+    
+    # Связанные данные
     kas_decisions = KasDecisionSerializer(many=True, read_only=True)
     kas_executions = KasExecutionSerializer(many=True, read_only=True)
     documents_count = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = KasProceedings
         fields = '__all__'
         read_only_fields = ('id', 'created_at', 'updated_at')
 
+    def get_admission_order_display(self, obj):
+        """Получение отображаемого значения порядка поступления"""
+        if obj.admission_order:
+            from django.apps import apps
+            AdmissionOrder = apps.get_model('administrative_code', 'AdmissionOrder')
+            try:
+                order = AdmissionOrder.objects.get(code=obj.admission_order)
+                return order.label
+            except:
+                return obj.admission_order
+        return None
+
+    def get_postponement_reason_display(self, obj):
+        """Получение отображаемого значения причины отложения"""
+        if obj.postponement_reason:
+            from django.apps import apps
+            PostponementReason = apps.get_model('administrative_code', 'PostponementReason')
+            try:
+                reason = PostponementReason.objects.get(code=obj.postponement_reason)
+                return reason.label
+            except:
+                return obj.postponement_reason
+        return None
+
+    def get_suspension_reason_display(self, obj):
+        """Получение отображаемого значения причины приостановления"""
+        if obj.suspension_reason:
+            from django.apps import apps
+            SuspensionReason = apps.get_model('administrative_code', 'SuspensionReason')
+            try:
+                reason = SuspensionReason.objects.get(code=obj.suspension_reason)
+                return reason.label
+            except:
+                return obj.suspension_reason
+        return None
+
+    def get_preliminary_protection_display(self, obj):
+        """Получение отображаемого значения мер предварительной защиты"""
+        if obj.preliminary_protection:
+            from django.apps import apps
+            PreliminaryProtection = apps.get_model('administrative_code', 'PreliminaryProtection')
+            try:
+                protection = PreliminaryProtection.objects.get(code=obj.preliminary_protection)
+                return protection.label
+            except:
+                return obj.preliminary_protection
+        return None
+
+    def get_expertise_type_display(self, obj):
+        """Получение отображаемого значения вида экспертизы"""
+        if obj.expertise_type:
+            from django.apps import apps
+            ExpertiseType = apps.get_model('administrative_code', 'ExpertiseType')
+            try:
+                exp_type = ExpertiseType.objects.get(code=obj.expertise_type)
+                return exp_type.label
+            except:
+                return obj.expertise_type
+        return None
+
+    def get_appeal_type_display(self, obj):
+        """Отображаемое значение типа апелляции"""
+        if obj.appeal_type:
+            return dict(KasProceedings._meta.get_field('appeal_type').choices).get(obj.appeal_type)
+        return None
+
+    def get_appeal_result_display(self, obj):
+        """Отображаемое значение результата апелляции"""
+        if obj.appeal_result:
+            from django.apps import apps
+            AppealResult = apps.get_model('administrative_code', 'AppealResult')
+            try:
+                result = AppealResult.objects.get(code=obj.appeal_result)
+                return result.label
+            except:
+                return obj.appeal_result
+        return None
+
+    def get_cassation_type_display(self, obj):
+        """Отображаемое значение типа кассации"""
+        if obj.cassation_type:
+            return dict(KasProceedings._meta.get_field('cassation_type').choices).get(obj.cassation_type)
+        return None
+
+    def get_cassation_result_display(self, obj):
+        """Отображаемое значение результата кассации"""
+        if obj.cassation_result:
+            from django.apps import apps
+            CassationResult = apps.get_model('administrative_code', 'CassationResult')
+            try:
+                result = CassationResult.objects.get(code=obj.cassation_result)
+                return result.label
+            except:
+                return obj.cassation_result
+        return None
+
     def get_presiding_judge_full_name(self, obj):
         if obj.presiding_judge:
-            parts = filter(None, [
-                obj.presiding_judge.last_name,
-                obj.presiding_judge.first_name,
-                obj.presiding_judge.middle_name
-            ])
+            parts = filter(None, [obj.presiding_judge.last_name, obj.presiding_judge.first_name, obj.presiding_judge.middle_name])
             return ' '.join(parts).strip() or str(obj.presiding_judge)
         return None
+
+    def get_registered_case_info(self, obj):
+        if obj.registered_case:
+            return {
+                'id': obj.registered_case.id,
+                'full_number': obj.registered_case.full_number,
+                'registration_date': obj.registered_case.registration_date,
+                'status': obj.registered_case.get_status_display()
+            }
+        return None
+
+    def get_documents_count(self, obj):
+        content_type = ContentType.objects.get_for_model(obj)
+        return CaseDocument.objects.filter(content_type=content_type, object_id=obj.id).count()
 
     def validate_case_number_kas(self, value):
         instance = self.instance
@@ -688,30 +578,12 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
             editable_fields = ['archive_notes', 'status', 'archived_date', 'special_notes']
             for field in data.keys():
                 if field not in editable_fields:
-                    raise serializers.ValidationError(
-                        f"Поле '{field}' нельзя редактировать в архивном деле"
-                    )
+                    raise serializers.ValidationError(f"Поле '{field}' нельзя редактировать в архивном деле")
         return data
-
-    def get_registered_case_info(self, obj):
-        if obj.registered_case:
-            return {
-                'id': obj.registered_case.id,
-                'full_number': obj.registered_case.full_number,
-                'registration_date': obj.registered_case.registration_date,
-                'status': obj.registered_case.get_status_display()
-            }
-        return None
-
-    def get_documents_count(self, obj):
-        content_type = ContentType.objects.get_for_model(obj)
-        return CaseDocument.objects.filter(
-            content_type=content_type,
-            object_id=obj.id
-        ).count()
 
 
 class ArchivedKasProceedingsSerializer(KasProceedingsSerializer):
+    """Сериализатор для архивных дел КАС (ограниченные права на редактирование)"""
     class Meta(KasProceedingsSerializer.Meta):
         read_only_fields = KasProceedingsSerializer.Meta.read_only_fields + (
             'case_number_kas', 'incoming_date', 'acceptance_date',
@@ -720,3 +592,19 @@ class ArchivedKasProceedingsSerializer(KasProceedingsSerializer):
 
     def validate_case_number_kas(self, value):
         return value
+
+
+class KasOptionsSerializer(serializers.Serializer):
+    """Сериализатор для опций справочников - для фронтенда"""
+    admission_order = serializers.ListField()
+    postponement_reason = serializers.ListField()
+    suspension_reason = serializers.ListField()
+    preliminary_protection = serializers.ListField()
+    expertise_types = serializers.ListField()
+    appeal_results = serializers.ListField()
+    cassation_results = serializers.ListField()
+    term_compliance = serializers.ListField()
+    outcomes = serializers.ListField()
+    statuses = serializers.ListField()
+    appeal_types = serializers.ListField()
+    cassation_types = serializers.ListField()
