@@ -238,6 +238,48 @@ export const BasicInfoTab = ({
       </div>
 
       <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Связанные дела</h3>
+        
+        <div className={styles.field}>
+          <label>Номер связанного/первичного дела</label>
+          {isEditing ? (
+            <input type="text" name="related_case_number" value={formData.related_case_number || ''}
+              onChange={handleInputChange} className={styles.input} />
+          ) : <span>{kasData.related_case_number || 'Не указано'}</span>}
+        </div>
+
+        <div className={styles.field}>
+          <label>Код суда (для повторных/из другого суда)</label>
+          {isEditing ? (
+            <input type="text" name="previous_court_code" value={formData.previous_court_code || ''}
+              onChange={handleInputChange} className={styles.input} />
+          ) : <span>{kasData.previous_court_code || 'Не указано'}</span>}
+        </div>
+      </div>
+
+      {/* Блок: Избирательные дела */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Избирательные дела</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="is_election_period" checked={formData.is_election_period || false}
+              onChange={handleInputChange} disabled={!isEditing} /> В период избирательной кампании
+          </label>
+        </div>
+
+        {formData.is_election_period && (
+          <div className={styles.field}>
+            <label>Срок для дополнительной проверки по избирательным делам (дней)</label>
+            {isEditing ? (
+              <input type="number" name="election_case_deadline_days" value={formData.election_case_deadline_days || ''}
+                onChange={handleInputChange} className={styles.input} />
+            ) : <span>{kasData.election_case_deadline_days || 'Не указано'}</span>}
+          </div>
+        )}
+      </div>
+
+      <div className={styles.fieldGroup}>
         <h3 className={styles.subsectionTitle}>Меры предварительной защиты</h3>
         
         <div className={styles.field}>
@@ -510,6 +552,94 @@ export const MovementTab = ({
             Видеозапись
           </label>
         </div>
+      </div>
+
+      {/* Блок: Закрытое заседание */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Закрытое заседание</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="ruling_closed_hearing" checked={formData.ruling_closed_hearing || false}
+              onChange={handleInputChange} disabled={!isEditing} /> Определение о назначении закрытого заседания (ст. 11 КАС РФ)
+          </label>
+        </div>
+      </div>
+
+      {/* Блок: Судебное поручение */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Судебное поручение</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="ruling_court_order" checked={formData.ruling_court_order || false}
+              onChange={handleInputChange} disabled={!isEditing} /> Определение о направлении судебного поручения
+          </label>
+        </div>
+
+        {formData.ruling_court_order && (
+          <>
+            <div className={styles.field}>
+              <label>Дата направления судебного поручения</label>
+              {isEditing ? (
+                <input type="date" name="court_order_sent_date" value={formData.court_order_sent_date || ''}
+                  onChange={(e) => handleDateChange('court_order_sent_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.court_order_sent_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата поступления исполненного поручения</label>
+              {isEditing ? (
+                <input type="date" name="court_order_received_date" value={formData.court_order_received_date || ''}
+                  onChange={(e) => handleDateChange('court_order_received_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.court_order_received_date)}</span>}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Блок: Переход к общему порядку */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Переход к общему порядку</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="ruling_transition_to_general" checked={formData.ruling_transition_to_general || false}
+              onChange={handleInputChange} disabled={!isEditing} /> Определение о переходе к общему порядку
+          </label>
+        </div>
+
+        {formData.ruling_transition_to_general && (
+          <div className={styles.field}>
+            <label>Дата перехода к общему порядку</label>
+            {isEditing ? (
+              <input type="date" name="ruling_transition_date" value={formData.ruling_transition_date || ''}
+                onChange={(e) => handleDateChange('ruling_transition_date', e.target.value)} className={styles.input} />
+            ) : <span>{formatDate(kasData.ruling_transition_date)}</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Блок: Назначение дела к разбирательству */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Назначение дела к разбирательству</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="ruling_scheduled_trial" checked={formData.ruling_scheduled_trial || false}
+              onChange={handleInputChange} disabled={!isEditing} /> Определение о назначении дела к судебному разбирательству
+          </label>
+        </div>
+
+        {formData.ruling_scheduled_trial && (
+          <div className={styles.field}>
+            <label>Дата назначения дела к разбирательству</label>
+            {isEditing ? (
+              <input type="date" name="scheduled_trial_date" value={formData.scheduled_trial_date || ''}
+                onChange={(e) => handleDateChange('scheduled_trial_date', e.target.value)} className={styles.input} />
+            ) : <span>{formatDate(kasData.scheduled_trial_date)}</span>}
+          </div>
+        )}
       </div>
 
       <div className={styles.fieldGroup}>
@@ -825,11 +955,13 @@ export const DeadlinesTab = ({
 export const AdditionalInfoTab = ({
   isEditing,
   formData,
+  options,
   kasData,
   handleDateChange,
   handleInputChange,
   formatDate,
-  isArchived
+  isArchived,
+  getOptionLabel
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -903,6 +1035,224 @@ export const AdditionalInfoTab = ({
             <span>{kasData.archive_notes || 'Нет'}</span>
           )}
         </div>
+      </div>
+
+      {/* Блок: Обжалование дела (апелляция) */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Апелляционное обжалование дела</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="is_appealed" checked={formData.is_appealed || false}
+              onChange={handleInputChange} disabled={!isEditing} /> Обжаловано (апелляция)
+          </label>
+        </div>
+
+        {formData.is_appealed && (
+          <>
+            <div className={styles.field}>
+              <label>Кем обжаловано (апелляция)</label>
+              {isEditing ? (
+                <textarea name="appealed_by" value={formData.appealed_by || ''} onChange={handleInputChange}
+                  className={styles.textarea} rows={2} />
+              ) : <span>{kasData.appealed_by || 'Не указано'}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата подачи апелляционной жалобы/представления</label>
+              {isEditing ? (
+                <input type="date" name="appeal_date" value={formData.appeal_date || ''}
+                  onChange={(e) => handleDateChange('appeal_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Тип обжалования (апелляция)</label>
+              {isEditing ? (
+                <select name="appeal_type" value={formData.appeal_type || ''} onChange={handleInputChange} className={styles.select}>
+                  <option value="">Выберите</option>
+                  <option value="1">Жалоба</option>
+                  <option value="2">Представление прокурора</option>
+                </select>
+              ) : <span>{formData.appeal_type === '1' ? 'Жалоба' : formData.appeal_type === '2' ? 'Представление прокурора' : 'Не указано'}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Срок для устранения недостатков апелляционной жалобы до</label>
+              {isEditing ? (
+                <input type="date" name="appeal_deadline_for_corrections" value={formData.appeal_deadline_for_corrections || ''}
+                  onChange={(e) => handleDateChange('appeal_deadline_for_corrections', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_deadline_for_corrections)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дело назначено к рассмотрению в апелляции на</label>
+              {isEditing ? (
+                <input type="date" name="appeal_scheduled_date" value={formData.appeal_scheduled_date || ''}
+                  onChange={(e) => handleDateChange('appeal_scheduled_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_scheduled_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Повторно назначено в апелляции на</label>
+              {isEditing ? (
+                <input type="date" name="appeal_scheduled_date_repeated" value={formData.appeal_scheduled_date_repeated || ''}
+                  onChange={(e) => handleDateChange('appeal_scheduled_date_repeated', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_scheduled_date_repeated)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата направления дела в апелляционный суд</label>
+              {isEditing ? (
+                <input type="date" name="appeal_sent_to_higher_court_date" value={formData.appeal_sent_to_higher_court_date || ''}
+                  onChange={(e) => handleDateChange('appeal_sent_to_higher_court_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_sent_to_higher_court_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата повторного направления в апелляционный суд</label>
+              {isEditing ? (
+                <input type="date" name="appeal_sent_to_higher_court_repeated" value={formData.appeal_sent_to_higher_court_repeated || ''}
+                  onChange={(e) => handleDateChange('appeal_sent_to_higher_court_repeated', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_sent_to_higher_court_repeated)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата возврата апелляционной жалобы без рассмотрения</label>
+              {isEditing ? (
+                <input type="date" name="appeal_returned_without_review_date" value={formData.appeal_returned_without_review_date || ''}
+                  onChange={(e) => handleDateChange('appeal_returned_without_review_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_returned_without_review_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Причина возврата апелляционной жалобы</label>
+              {isEditing ? (
+                <textarea name="appeal_return_reason" value={formData.appeal_return_reason || ''} onChange={handleInputChange}
+                  className={styles.textarea} rows={2} />
+              ) : <span>{kasData.appeal_return_reason || 'Не указано'}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата рассмотрения дела в апелляционной инстанции</label>
+              {isEditing ? (
+                <input type="date" name="appeal_review_date" value={formData.appeal_review_date || ''}
+                  onChange={(e) => handleDateChange('appeal_review_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.appeal_review_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Результат апелляционного рассмотрения</label>
+              {isEditing ? (
+                <select name="appeal_result" value={formData.appeal_result || ''} onChange={handleInputChange} className={styles.select}>
+                  <option value="">Выберите</option>
+                  {options?.appeal_result?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+              ) : <span>{getOptionLabel(options?.appeal_result, kasData.appeal_result)}</span>}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Блок: Кассационное обжалование дела */}
+      <div className={styles.fieldGroup}>
+        <h3 className={styles.subsectionTitle}>Кассационное обжалование дела</h3>
+        
+        <div className={styles.checkboxGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" name="is_cassation_filed" checked={formData.is_cassation_filed || false}
+              onChange={handleInputChange} disabled={!isEditing} /> Подана кассационная жалоба/представление
+          </label>
+        </div>
+
+        {formData.is_cassation_filed && (
+          <>
+            <div className={styles.field}>
+              <label>Кем подана кассационная жалоба/представление</label>
+              {isEditing ? (
+                <textarea name="cassation_filed_by" value={formData.cassation_filed_by || ''} onChange={handleInputChange}
+                  className={styles.textarea} rows={2} />
+              ) : <span>{kasData.cassation_filed_by || 'Не указано'}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата подачи кассационной жалобы/представления</label>
+              {isEditing ? (
+                <input type="date" name="cassation_date" value={formData.cassation_date || ''}
+                  onChange={(e) => handleDateChange('cassation_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.cassation_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Тип обжалования (кассация)</label>
+              {isEditing ? (
+                <select name="cassation_type" value={formData.cassation_type || ''} onChange={handleInputChange} className={styles.select}>
+                  <option value="">Выберите</option>
+                  <option value="1">Жалоба</option>
+                  <option value="2">Представление прокурора</option>
+                </select>
+              ) : <span>{formData.cassation_type === '1' ? 'Жалоба' : formData.cassation_type === '2' ? 'Представление прокурора' : 'Не указано'}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Срок для устранения недостатков кассационной жалобы до</label>
+              {isEditing ? (
+                <input type="date" name="cassation_deadline_for_corrections" value={formData.cassation_deadline_for_corrections || ''}
+                  onChange={(e) => handleDateChange('cassation_deadline_for_corrections', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.cassation_deadline_for_corrections)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дело назначено к рассмотрению в кассации на</label>
+              {isEditing ? (
+                <input type="date" name="cassation_scheduled_date" value={formData.cassation_scheduled_date || ''}
+                  onChange={(e) => handleDateChange('cassation_scheduled_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.cassation_scheduled_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата направления дела в кассационный суд</label>
+              {isEditing ? (
+                <input type="date" name="cassation_sent_to_higher_court_date" value={formData.cassation_sent_to_higher_court_date || ''}
+                  onChange={(e) => handleDateChange('cassation_sent_to_higher_court_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.cassation_sent_to_higher_court_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата возврата кассационной жалобы без рассмотрения</label>
+              {isEditing ? (
+                <input type="date" name="cassation_returned_without_review_date" value={formData.cassation_returned_without_review_date || ''}
+                  onChange={(e) => handleDateChange('cassation_returned_without_review_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.cassation_returned_without_review_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Причина возврата кассационной жалобы</label>
+              {isEditing ? (
+                <textarea name="cassation_return_reason" value={formData.cassation_return_reason || ''} onChange={handleInputChange}
+                  className={styles.textarea} rows={2} />
+              ) : <span>{kasData.cassation_return_reason || 'Не указано'}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Дата рассмотрения дела в кассационной инстанции</label>
+              {isEditing ? (
+                <input type="date" name="cassation_review_date" value={formData.cassation_review_date || ''}
+                  onChange={(e) => handleDateChange('cassation_review_date', e.target.value)} className={styles.input} />
+              ) : <span>{formatDate(kasData.cassation_review_date)}</span>}
+            </div>
+
+            <div className={styles.field}>
+              <label>Результат кассационного рассмотрения</label>
+              {isEditing ? (
+                <select name="cassation_result" value={formData.cassation_result || ''} onChange={handleInputChange} className={styles.select}>
+                  <option value="">Выберите</option>
+                  {options?.cassation_result?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+              ) : <span>{getOptionLabel(options?.cassation_result, kasData.cassation_result)}</span>}
+            </div>
+          </>
+        )}
       </div>
 
       <div className={styles.fieldGroup}>

@@ -598,6 +598,64 @@ class KasCaseService {
       return [];
     }
   }
+  
+  static async getAllOptions() {
+    try {
+      // Новый эндпоинт, который возвращает ВСЕ справочники одним запросом
+      const response = await baseService.get('/administrative_proceedings/kas-all-options/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all options:', error);
+      // Возвращаем структуру с пустыми массивами, чтобы избежать ошибок
+      return {
+        admissionOrder: [],
+        postponementReason: [],
+        suspensionReason: [],
+        preliminaryProtection: [],
+        expertiseTypes: [],
+        appealResults: [],
+        cassationResults: [],
+        termCompliance: [],
+        outcomes: [],
+        statuses: [],
+        appealTypes: [],
+        cassationTypes: []
+      };
+    }
+  }
+
+  // === Получение списка решений суда (Decisions) для движения дела ===
+  static async getCourtDecisions() {
+    try {
+      const response = await baseService.get('/business_card/decisions/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching court decisions:', error);
+      return [];
+    }
+  }
+
+  // === Получение списка ходатайств (Petitions) ===
+  static async getPetitionTypes() {
+    try {
+      const response = await baseService.get('/business_card/petitions/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching petition types:', error);
+      return [];
+    }
+  }
+
+  // === Получение списка сторон (SidesCase) для ролей ===
+  static async getSidesCaseRoles() {
+    try {
+      const response = await baseService.get('/business_card/sides/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching side roles:', error);
+      return [];
+    }
+  }
 }
 
 export default KasCaseService;

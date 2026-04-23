@@ -350,21 +350,149 @@
 }
 
 .calendarButton {
-  background: linear-gradient(135deg, #4299e1, #3182ce);
+  background: linear-gradient(135deg, #4299e1, #3182ce) !important;
   color: white !important;
-  font-weight: 500;
+  font-weight: 600 !important;
   padding: 6px 16px !important;
-  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+  border-radius: 6px !important;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3) !important;
   transition: all 0.2s ease;
   margin-left: 8px;
+  font-size: 13px !important;
 }
 
 .calendarButton:hover {
-  background: linear-gradient(135deg, #3182ce, #2c5282);
+  background: linear-gradient(135deg, #3182ce, #2c5282) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4) !important;
 }
 
 .calendarButton:active {
   transform: translateY(0);
+}
+
+.authModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.authContent {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 350px;
+  position: relative;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.authForm input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.authForm button, .socialButton {
+  padding: 10px;
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.socialButton {
+  width: 100%;
+  margin-top: 10px;
+  background: #4a5568;
+}
+
+.divider {
+  text-align: center;
+  margin: 15px 0;
+  color: #94a3b8;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoutButton {
+  padding: 6px 12px;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.citizenTitle {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1e3c5c;
+}
+
+.citizenLoginButton {
+  padding: 6px 16px;
+  background: #2f855a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.loginButton {
+  padding: 6px 16px;
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.navButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.navButton:hover {
+  background: #e2e8f0;
 }

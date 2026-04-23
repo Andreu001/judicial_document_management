@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'other_materials',
     'case_management',
     'statistics_app',
+    'social_django',
+    'citizen_access',
 ]
 
 MIDDLEWARE = [
@@ -208,6 +210,10 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.IsAdminUser'],
     },
     'HIDE_USERS': False,
+        'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': [
+        'http://localhost:3000/social-login/complete/vk/',      # Адрес вашего фронтенда для VK
+        'http://localhost:3000/social-login/complete/yandex/', # Адрес вашего фронтенда для Yandex
+    ],
 }
 
 REST_AUTH_TOKEN_MODEL = 'rest_framework.authtoken.models.Token'
@@ -299,3 +305,45 @@ MAMMOTH_CUSTOM_STYLES = {
     'p[style-name="Title"]': 'h1.title',
     'p[style-name="Subtitle"]': 'h2.subtitle',
 }
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.vk.VKOAuth2',          # Бэкенд для VK
+    'social_core.backends.yandex.YandexOAuth2',  # Бэкенд для Yandex
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SOCIAL_AUTH_VK_OAUTH2_KEY = 'ВАШ_CLIENT_ID_VK'
+SOCIAL_AUTH_VK_OAUTH2_SECRET = 'ВАШ_CLIENT_SECRET_VK'
+# Для VK нужно запросить доступ к email пользователя
+SOCIAL_AUTH_VK_OAUTH2_SCOPE = []
+
+# ========== НАСТРОЙКИ YANDEX OAUTH ==========
+SOCIAL_AUTH_YANDEX_OAUTH2_KEY = '12be0f279e3a42a5a55ca0fff9755afb'
+SOCIAL_AUTH_YANDEX_OAUTH2_SECRET = 'e4349abc85144d78ae2b576877fe37a1'
+
+# Базовые настройки
+SOCIAL_AUTH_YANDEX_OAUTH2_SCOPE = ['login:info', 'login:email']
+SOCIAL_AUTH_YANDEX_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
+    'force_confirm': 'true',  # Запрашивать подтверждение при каждом входе
+}
+
+# Получение данных пользователя
+SOCIAL_AUTH_YANDEX_OAUTH2_EXTRA_DATA = [
+    ('id', 'id'),
+    ('login', 'login'),
+    ('default_email', 'email'),
+    ('real_name', 'fullname'),
+    ('first_name', 'first_name'),
+    ('last_name', 'last_name'),
+    ('display_name', 'display_name'),
+    ('sex', 'sex'),
+    ('birthday', 'birthday'),
+]
+
+# Версия API
+SOCIAL_AUTH_YANDEX_OAUTH2_API_VERSION = '1'
+
+# Измените LOGIN_URL на новый префикс
+LOGIN_URL = '/social/login/yandex-oauth2/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/citizen/dashboard/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/social/login/error/'

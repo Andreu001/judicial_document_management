@@ -637,12 +637,93 @@
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
   .quickAction {
-    flex: 1 1 calc(33.333% - 4px); /* По 3 кнопки в ряд на мобильных */
+    flex: 1 1 calc(33.333% - 4px);
   }
 }
 
 @media (max-width: 480px) {
   .quickAction {
-    flex: 1 1 calc(50% - 4px); /* По 2 кнопки в ряд на очень маленьких экранах */
+    flex: 1 1 calc(50% - 4px);
   }
+}
+/* Цветовые индикаторы для разных видов производств */
+.cardContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  opacity: 0.9;
+  transition: width 0.2s ease;
+}
+
+.cardContainer:hover::after {
+  width: 6px;
+}
+
+/* Исковое производство (1) - зеленый */
+.caseType-icon-1 .cardContainer::after,
+.cardContainer[data-case-type="1"]::after {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+/* Приказное производство (2) - синий */
+.cardContainer[data-case-type="2"]::after {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+/* Особое производство (3) - фиолетовый */
+.cardContainer[data-case-type="3"]::after {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+/* Упрощенное производство (4) - оранжевый */
+.cardContainer[data-case-type="4"]::after {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+/* Производство по исполнению (5) - красный */
+.cardContainer[data-case-type="5"]::after {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+/* Бейдж вида производства в заголовке */
+.caseTypeBadge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+/* Цветные бейджи для разных типов */
+.caseTypeBadge-1 {
+  background: rgba(46, 204, 113, 0.85);
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.3);
+}
+
+.caseTypeBadge-2 {
+  background: rgba(52, 152, 219, 0.85);
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+}
+
+.caseTypeBadge-3 {
+  background: rgba(155, 89, 182, 0.85);
+  box-shadow: 0 0 8px rgba(155, 89, 182, 0.3);
+}
+
+.caseTypeBadge-4 {
+  background: rgba(230, 126, 34, 0.85);
+  box-shadow: 0 0 8px rgba(230, 126, 34, 0.3);
+}
+
+.caseTypeBadge-5 {
+  background: rgba(231, 76, 60, 0.85);
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
 }

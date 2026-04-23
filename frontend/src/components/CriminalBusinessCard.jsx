@@ -18,6 +18,7 @@ const CriminalBusinessCard = ({ card, remove }) => {
   const [activeTab, setActiveTab] = useState('summary');
   const [executions, setExecutions] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [civilClaims, setCivilClaims] = useState([]);
 
   const [quickStats, setQuickStats] = useState({
     allSides: 0,
@@ -96,6 +97,10 @@ const CriminalBusinessCard = ({ card, remove }) => {
       const executionsData = await CriminalCaseService.getExecutions(card.criminal_proceedings_id);
       setExecutions(executionsData);
       setQuickStats(prev => ({ ...prev, executions: executionsData.length }));
+
+      const civilClaimsData = await CriminalCaseService.getCivilClaims(card.criminal_proceedings_id);
+      setCivilClaims(civilClaimsData);
+      setQuickStats(prev => ({ ...prev, civilClaims: civilClaimsData.length }));
 
     } catch (error) {
       console.error('Ошибка загрузки связанных данных:', error);
@@ -323,6 +328,28 @@ const CriminalBusinessCard = ({ card, remove }) => {
     }
   };
 
+  const handleAddCivilClaim = () => {
+    if (card.criminal_proceedings_id) {
+      router(`/criminal-proceedings/${card.criminal_proceedings_id}/civil-claims/create`);
+    }
+  };
+
+  const handleEditCivilClaim = (claimId) => {
+    if (card.criminal_proceedings_id) {
+      router(`/criminal-proceedings/${card.criminal_proceedings_id}/civil-claims/${claimId}`);
+    }
+  };
+
+  const handleDeleteCivilClaim = async (claimId) => {
+    try {
+      await CriminalCaseService.deleteCivilClaim(card.criminal_proceedings_id, claimId);
+      setCivilClaims(civilClaims.filter(c => c.id !== claimId));
+      setQuickStats(prev => ({ ...prev, civilClaims: prev.civilClaims - 1 }));
+    } catch (error) {
+      console.error('Ошибка удаления гражданского иска:', error);
+    }
+  };
+
   const handleDeleteExecution = async (executionId) => {
     try {
       await CriminalCaseService.deleteExecution(card.criminal_proceedings_id, executionId);
@@ -359,6 +386,52 @@ const CriminalBusinessCard = ({ card, remove }) => {
         </button>
         <button 
           onClick={() => handleDeleteExecution(execution.id)}
+          className={styles.deleteButton}
+          title="Удалить"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+
+  const CivilClaimItem = ({ claim }) => (
+    <div className={styles.compactItem}>
+      <div className={styles.compactItemContent}>
+        <div className={styles.compactItemTitle}>
+          Гражданский иск #{claim.id}
+          {claim.claim_amount && (
+            <span className={styles.sideType}>
+              {claim.claim_amount} руб.
+            </span>
+          )}
+        </div>
+        {claim.plaintiff_name && (
+          <div className={styles.compactItemSubtitle}>
+            Истец: {claim.plaintiff_name}
+          </div>
+        )}
+        {claim.result && (
+          <div className={styles.compactItemSubtitle}>
+            Результат: {claim.result_display || claim.result}
+          </div>
+        )}
+        {claim.decision_date && (
+          <div className={styles.compactItemSubtitle}>
+            Решение от: {formatDate(claim.decision_date)}
+          </div>
+        )}
+      </div>
+      <div className={styles.compactItemActions}>
+        <button 
+          onClick={() => handleEditCivilClaim(claim.id)}
+          className={styles.actionButton}
+          title="Просмотреть"
+        >
+          →
+        </button>
+        <button 
+          onClick={() => handleDeleteCivilClaim(claim.id)}
           className={styles.deleteButton}
           title="Удалить"
         >
@@ -668,6 +741,14 @@ const CriminalBusinessCard = ({ card, remove }) => {
           Ходатайства
         </button>
         <button 
+          className={`${styles.quickAction} ${activeTab === 'civilClaims' ? styles.active : ''}`}
+          onClick={() => setActiveTab('civilClaims')}
+          title="Гражданские иски"
+        >
+          <span className={styles.quickActionCount}>{quickStats.civilClaims || 0}</span>
+          Гражданские иски
+        </button>
+        <button 
           className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
           onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/documents`)}
           title="Документы по делу"
@@ -869,6 +950,29 @@ const CriminalBusinessCard = ({ card, remove }) => {
                 ))
               ) : (
                 <p className={styles.noData}>Нет данных об исполнении</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'civilClaims' && (
+          <div className={styles.tabContent}>
+            <div className={styles.tabHeader}>
+              <h3>Гражданские иски ({civilClaims.length})</h3>
+              <button 
+                onClick={handleAddCivilClaim}
+                className={styles.addButton}
+              >
+                + Добавить
+              </button>
+            </div>
+            <div className={styles.compactList}>
+              {civilClaims.length > 0 ? (
+                civilClaims.map(claim => (
+                  <CivilClaimItem key={claim.id} claim={claim} />
+                ))
+              ) : (
+                <p className={styles.noData}>Нет данных о гражданских исках</p>
               )}
             </div>
           </div>

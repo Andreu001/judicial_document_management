@@ -8,7 +8,6 @@ urlpatterns = [
     # path('', include('djoser.urls')),
     path('admin/', admin.site.urls),
     path('business_card/', include('business_card.urls')),
-    path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
     path('api/', include('users.urls')),
     path('criminal_proceedings/', include('criminal_proceedings.urls')),
@@ -23,8 +22,9 @@ urlpatterns = [
     path('case-documents/', include('case_documents.urls')),
     path('other-materials/', include('other_materials.urls')),
     path('case-management/', include('case_management.urls')),
-    path('api/', include('statistics_app.api.urls')),
-]
+    path('statistics/', include('statistics_app.urls')),
+    path('auth/', include('social_django.urls', namespace='social')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Добавьте для обслуживания медиа-файлов в режиме разработки
 if settings.DEBUG:

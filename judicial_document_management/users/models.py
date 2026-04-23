@@ -61,6 +61,19 @@ class User(AbstractBaseUser, PermissionsMixin):
                                      blank=True,
                                      verbose_name='Уровень субъекта')
 
+    # Поля для верификации гражданина
+    is_verified = models.BooleanField(default=False, verbose_name='Верифицирован')
+    verification_date = models.DateTimeField(null=True, blank=True, verbose_name='Дата верификации')
+    
+    # Социальные ID
+    vk_id = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name='VK ID')
+    yandex_id = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name='Яндекс ID')
+    
+    # Для связки с делами
+    passport_series = models.CharField(max_length=10, blank=True, verbose_name='Серия паспорта')
+    passport_number = models.CharField(max_length=20, blank=True, verbose_name='Номер паспорта')
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
+
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)

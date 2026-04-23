@@ -823,6 +823,236 @@ class CriminalCaseService {
       throw error;
     }
   }
+
+  // === Апелляционное рассмотрение (CriminalAppealInstance) ===
+  
+  static async getAppealInstances(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/appeal-instances/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching appeal instances:', error);
+      return [];
+    }
+  }
+
+  static async getAppealInstanceById(proceedingId, appealId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/appeal-instances/${appealId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Апелляционное рассмотрение не найдено');
+      }
+      console.error('Error fetching appeal instance:', error);
+      throw error;
+    }
+  }
+
+  static async createAppealInstance(proceedingId, appealData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/appeal-instances/`,
+        appealData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating appeal instance:', error);
+      throw error;
+    }
+  }
+
+  static async updateAppealInstance(proceedingId, appealId, appealData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/appeal-instances/${appealId}/`,
+        appealData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating appeal instance:', error);
+      throw error;
+    }
+  }
+
+  static async deleteAppealInstance(proceedingId, appealId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/appeal-instances/${appealId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting appeal instance:', error);
+      throw error;
+    }
+  }
+
+  // === Кассационное рассмотрение (CriminalCassationInstance) ===
+  
+  static async getCassationInstances(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/cassation-instances/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching cassation instances:', error);
+      return [];
+    }
+  }
+
+  static async getCassationInstanceById(proceedingId, cassationId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/cassation-instances/${cassationId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Кассационное рассмотрение не найдено');
+      }
+      console.error('Error fetching cassation instance:', error);
+      throw error;
+    }
+  }
+
+  static async createCassationInstance(proceedingId, cassationData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/cassation-instances/`,
+        cassationData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating cassation instance:', error);
+      throw error;
+    }
+  }
+
+  static async updateCassationInstance(proceedingId, cassationId, cassationData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/cassation-instances/${cassationId}/`,
+        cassationData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating cassation instance:', error);
+      throw error;
+    }
+  }
+
+  static async deleteCassationInstance(proceedingId, cassationId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/cassation-instances/${cassationId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting cassation instance:', error);
+      throw error;
+    }
+  }
+
+  // === Гражданские иски (CriminalCivilClaim) ===
+  
+  static async getCivilClaims(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/civil-claims/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching civil claims:', error);
+      return [];
+    }
+  }
+
+  static async getCivilClaimById(proceedingId, claimId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/civil-claims/${claimId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Гражданский иск не найден');
+      }
+      console.error('Error fetching civil claim:', error);
+      throw error;
+    }
+  }
+
+  static async createCivilClaim(proceedingId, claimData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/civil-claims/`,
+        claimData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating civil claim:', error);
+      throw error;
+    }
+  }
+
+  static async updateCivilClaim(proceedingId, claimId, claimData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/civil-claims/${claimId}/`,
+        claimData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating civil claim:', error);
+      throw error;
+    }
+  }
+
+  static async deleteCivilClaim(proceedingId, claimId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/civil-claims/${claimId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting civil claim:', error);
+      throw error;
+    }
+  }
+
+  // === Справочники для апелляции и кассации ===
+  
+  static async getAppealApplicantStatuses() {
+    try {
+      const response = await baseService.get(`${BASE_URL}appeal-applicant-statuses/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching appeal applicant statuses:', error);
+      return [];
+    }
+  }
+
+  static async getCassationResults() {
+    try {
+      const response = await baseService.get(`${BASE_URL}cassation-results/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching cassation results:', error);
+      return [];
+    }
+  }
+
+  static async getSupervisoryResults() {
+    try {
+      const response = await baseService.get(`${BASE_URL}supervisory-results/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching supervisory results:', error);
+      return [];
+    }
+  }
 }
 
 export default CriminalCaseService;

@@ -4,6 +4,7 @@ import CivilCaseService from '../API/CivilCaseService';
 import PetitionService from '../API/PetitionService';
 import styles from './UI/Card/CivilBusinessCard.module.css';
 import ConfirmModal from './UI/Modal/ConfirmModal';
+import baseService from '../API/baseService';
 
 const CivilBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -17,6 +18,7 @@ const CivilBusinessCard = ({ card, remove }) => {
   const [activeTab, setActiveTab] = useState('summary');
   const [isArchived, setIsArchived] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [civilProceedingsTypes, setCivilProceedingsTypes] = useState([]);
 
   const [quickStats, setQuickStats] = useState({
     sides: 0,
@@ -35,6 +37,10 @@ const CivilBusinessCard = ({ card, remove }) => {
       loadRelatedData();
     }
   }, [card]);
+
+  useEffect(() => {
+    loadCivilProceedingsTypes();
+  }, []);
 
   const loadCivilCaseData = async () => {
     try {
@@ -298,6 +304,47 @@ const CivilBusinessCard = ({ card, remove }) => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
     }).format(amount);
+  };
+
+  const loadCivilProceedingsTypes = async () => {
+    try {
+      const response = await baseService.get('/civil_proceedings/civil-proceeding-types/');
+      setCivilProceedingsTypes(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки типов производств:', error);
+    }
+  };
+
+  const getCaseTypeLabel = (caseTypeId) => {
+    if (!caseTypeId) return 'Не указан';
+    const found = civilProceedingsTypes.find(t => t.id === caseTypeId);
+    return found?.label || String(caseTypeId);
+  };
+
+  const getCaseTypeBadgeClass = (caseTypeId) => {
+    if (!caseTypeId) return '';
+    const typeMap = {
+      1: 'caseTypeBadge-1',
+      2: 'caseTypeBadge-2',
+      3: 'caseTypeBadge-3',
+      4: 'caseTypeBadge-4',
+      5: 'caseTypeBadge-5',
+    };
+    return typeMap[caseTypeId] || '';
+  };
+
+  const getCaseTypeBadgeText = (caseTypeId) => {
+    if (!caseTypeId) return '';
+    const found = civilProceedingsTypes.find(t => t.id === caseTypeId);
+    // Сокращенные названия для бейджа
+    const shortNames = {
+      1: 'Исковое',
+      2: 'Приказное',
+      3: 'Особое',
+      4: 'Упрощенное',
+      5: 'Исполнение',
+    };
+    return shortNames[caseTypeId] || found?.label?.split(' ')[0] || '';
   };
 
   // Компонент для отображения стороны
@@ -603,12 +650,17 @@ const CivilBusinessCard = ({ card, remove }) => {
   };
 
   return (
-    <div className={styles.cardContainer}>
+    <div className={styles.cardContainer} data-case-type={civilCase?.case_type || ''}>
       {/* Заголовок карточки */}
       <div className={styles.cardHeader}>
         <div className={styles.headerMain}>
           <div className={styles.caseType}>
             ГРАЖДАНСКОЕ
+            {civilCase?.case_type && (
+              <span className={`${styles.caseTypeBadge} ${getCaseTypeBadgeClass(civilCase.case_type)}`}>
+                {getCaseTypeBadgeText(civilCase.case_type)}
+              </span>
+            )}
             {isArchived && <span className={styles.archivedBadge}>АРХИВ</span>}
           </div>
           <div className={styles.caseNumber}>
@@ -693,7 +745,7 @@ const CivilBusinessCard = ({ card, remove }) => {
                 <div className={styles.detailRow}>
                   <div className={styles.detailLabel}>Вид производства:</div>
                   <div className={styles.detailValue}>
-                    {civilCase.get_case_type_display || civilCase.case_type}
+                    {getCaseTypeLabel(civilCase.case_type)}
                   </div>
                 </div>
               )}

@@ -951,3 +951,21 @@
     min-width: 100%;
   }
 }
+/* Стили для субъектов и мер обеспечения */
+.sideType-subject {
+  background-color: #fefcbf;
+  color: #975a16;
+}
+
+.sideType-measure {
+  background-color: #e6fffa;
+  color: #234e52;
+}
+
+.sidebarListItem.sideType-subject:hover {
+  border-left-color: #d69e2e;
+}
+
+.sidebarListItem.sideType-measure:hover {
+  border-left-color: #319795;
+}

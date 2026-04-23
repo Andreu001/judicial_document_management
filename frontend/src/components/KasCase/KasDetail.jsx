@@ -485,11 +485,13 @@ const KasDetail = () => {
                 <AdditionalInfoTab
                   isEditing={isEditing}
                   formData={formData}
+                  options={options}
                   kasData={kasData}
                   handleDateChange={handleDateChange}
                   handleInputChange={handleInputChange}
                   formatDate={formatDate}
                   isArchived={isArchived}
+                  getOptionLabel={getOptionLabel}
                 />
               )}
             </div>

@@ -715,6 +715,341 @@ class AdministrativeCaseService {
       return [];
     }
   }
+
+  // Порядок поступления дела
+  static async getCaseOrderOptions() {
+    try {
+      const response = await baseService.get('/administrative_code/case-order-options/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching case order options:', error);
+      return [];
+    }
+  }
+
+  // Категория дела
+  static async getCaseCategoryOptions() {
+    try {
+      const response = await baseService.get('/administrative_code/case-category-options/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching case category options:', error);
+      return [];
+    }
+  }
+
+  // Стадии исполнения
+  static async getExecutionStageOptions() {
+    try {
+      const response = await baseService.get('/administrative_code/execution-stage-options/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching execution stage options:', error);
+      return [];
+    }
+  }
+
+  // Соблюдение сроков
+  static async getTermComplianceOptions() {
+    try {
+      const response = await baseService.get('/administrative_code/term-compliance-options/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching term compliance options:', error);
+      return [];
+    }
+  }
+
+  // Причины отложения (из PostponementReasonAdmin)
+  static async getPostponementReasons() {
+    try {
+      const response = await baseService.get('/administrative_code/postponement-reasons-admin/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching postponement reasons:', error);
+      return [];
+    }
+  }
+
+  // Причины приостановления (из SuspensionReasonAdmin)
+  static async getSuspensionReasons() {
+    try {
+      const response = await baseService.get('/administrative_code/suspension-reasons-admin/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching suspension reasons:', error);
+      return [];
+    }
+  }
+
+  // ===== АПЕЛЛЯЦИЯ =====
+  static async getAppeal(proceedingId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error fetching appeal:', error);
+      return null;
+    }
+  }
+
+  static async createAppeal(proceedingId, appealData) {
+    try {
+      const cleanedData = this.cleanData(appealData);
+      const response = await baseService.post(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating appeal:', error);
+      throw error;
+    }
+  }
+
+  static async updateAppeal(proceedingId, appealData) {
+    try {
+      const cleanedData = this.cleanData(appealData);
+      const response = await baseService.patch(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating appeal:', error);
+      throw error;
+    }
+  }
+
+  // ===== КАССАЦИЯ =====
+  static async getCassation(proceedingId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error fetching cassation:', error);
+      return null;
+    }
+  }
+
+  static async createCassation(proceedingId, cassationData) {
+    try {
+      const cleanedData = this.cleanData(cassationData);
+      const response = await baseService.post(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating cassation:', error);
+      throw error;
+    }
+  }
+
+  static async updateCassation(proceedingId, cassationData) {
+    try {
+      const cleanedData = this.cleanData(cassationData);
+      const response = await baseService.patch(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating cassation:', error);
+      throw error;
+    }
+  }
+
+  // ===== СУБЪЕКТЫ ПРАВОНАРУШЕНИЯ =====
+  static async getSubjects(proceedingId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/subjects/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      return [];
+    }
+  }
+
+  static async createSubject(proceedingId, subjectData) {
+    try {
+      const cleanedData = this.cleanData(subjectData);
+      const response = await baseService.post(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/subjects/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating subject:', error);
+      throw error;
+    }
+  }
+
+  static async updateSubject(proceedingId, subjectId, subjectData) {
+    try {
+      const cleanedData = this.cleanData(subjectData);
+      const response = await baseService.patch(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/subjects/${subjectId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      throw error;
+    }
+  }
+
+  static async deleteSubject(proceedingId, subjectId) {
+    try {
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/subjects/${subjectId}/`);
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      throw error;
+    }
+  }
+
+  // Типы субъектов (статический справочник)
+  static getSubjectTypes() {
+    return [
+      { value: 'legal_entity', label: 'Юридическое лицо' },
+      { value: 'official', label: 'Должностное лицо' },
+      { value: 'entrepreneur', label: 'Лицо, осуществляющее предпринимательскую деятельность' },
+      { value: 'military', label: 'Военнослужащий' },
+      { value: 'foreign', label: 'Иностранный гражданин/лицо без гражданства' },
+      { value: 'federal_civil_servant', label: 'Федеральный государственный гражданский служащий' },
+      { value: 'regional_civil_servant', label: 'Государственный гражданский служащий субъекта РФ' },
+      { value: 'municipal_servant', label: 'Служащий органа местного самоуправления' },
+      { value: 'other_physical', label: 'Иное физическое лицо' },
+    ];
+  }
+
+  // ===== МЕРЫ ОБЕСПЕЧЕНИЯ =====
+  static async getSecurityMeasures(proceedingId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching security measures:', error);
+      return [];
+    }
+  }
+
+  static async createSecurityMeasure(proceedingId, measureData) {
+    try {
+      const cleanedData = this.cleanData(measureData);
+      const response = await baseService.post(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating security measure:', error);
+      throw error;
+    }
+  }
+
+  static async updateSecurityMeasure(proceedingId, measureId, measureData) {
+    try {
+      const cleanedData = this.cleanData(measureData);
+      const response = await baseService.patch(
+        `${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/${measureId}/`,
+        cleanedData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating security measure:', error);
+      throw error;
+    }
+  }
+
+  static async deleteSecurityMeasure(proceedingId, measureId) {
+    try {
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/${measureId}/`);
+    } catch (error) {
+      console.error('Error deleting security measure:', error);
+      throw error;
+    }
+  }
+
+  // Типы мер обеспечения (статический справочник)
+  static getSecurityMeasureTypes() {
+    return [
+      { value: 'delivery', label: 'Доставление' },
+      { value: 'detention', label: 'Административное задержание' },
+      { value: 'drive', label: 'Привод' },
+      { value: 'personal_search', label: 'Личный досмотр' },
+      { value: 'search_of_items', label: 'Досмотр вещей' },
+      { value: 'vehicle_search', label: 'Досмотр транспортного средства' },
+      { value: 'examination', label: 'Осмотр помещений' },
+      { value: 'removal_from_driving', label: 'Отстранение от управления ТС' },
+      { value: 'alcohol_examination', label: 'Освидетельствование на состояние алкогольного опьянения' },
+      { value: 'medical_examination', label: 'Медицинское освидетельствование на состояние опьянения' },
+      { value: 'seizure_of_items', label: 'Изъятие вещей и документов' },
+      { value: 'detention_of_vehicle', label: 'Задержание транспортного средства' },
+      { value: 'arrest_of_goods', label: 'Арест товаров, транспортных средств и иных вещей' },
+      { value: 'pledge_for_vessel', label: 'Залог за арестованное судно' },
+      { value: 'temporary_ban', label: 'Временный запрет деятельности' },
+      { value: 'arrest_of_property', label: 'Арест имущества (ст. 19.28 КоАП РФ)' },
+      { value: 'placement_in_special_institution', label: 'Помещение в специальное учреждение (иностранных граждан)' },
+    ];
+  }
+
+  // Результаты апелляционного обжалования (из CSV)
+  static getAppealResultOptions() {
+    return [
+      { value: '1', label: 'Постановление оставлено без изменения' },
+      { value: '2', label: 'Постановление изменено' },
+      { value: '3', label: 'Постановление отменено, производство по делу прекращено' },
+      { value: '4', label: 'Постановление отменено, дело возвращено на новое рассмотрение' },
+      { value: '5', label: 'Постановление отменено, дело направлено по подведомственности' },
+      { value: '6', label: 'Вынесено новое постановление' },
+      { value: '7', label: 'Производство по жалобе прекращено' },
+    ];
+  }
+
+  // Результаты кассационного обжалования (из CSV)
+  static getCassationResultOptions() {
+    return [
+      { value: '1', label: 'Оставлен без изменения' },
+      { value: '2', label: 'Отменен с передачей на новое судебное рассмотрение' },
+      { value: '3', label: 'Отменен с прекращением дела' },
+      { value: '4', label: 'Изменен' },
+      { value: '5', label: 'Отменен с вынесением нового приговора' },
+      { value: '6', label: 'Отменен с возвращением дела прокурору' },
+      { value: '7', label: 'Отменен с оставлением в силе приговора суда I инстанции' },
+    ];
+  }
+
+  static async getSecurityMeasureById(proceedingId, measureId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/${measureId}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Мера обеспечения не найдена');
+      }
+      console.error('Error fetching security measure:', error);
+      throw error;
+    }
+  }
+  static async getSubjectById(proceedingId, subjectId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/subjects/${subjectId}/`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error('Субъект не найден');
+      }
+      console.error('Error fetching subject:', error);
+      throw error;
+    }
+  }
 }
 
 export default AdministrativeCaseService;

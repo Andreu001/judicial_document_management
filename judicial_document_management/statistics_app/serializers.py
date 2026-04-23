@@ -1,32 +1,44 @@
+# statistics_app/serializers.py
 from rest_framework import serializers
-from ..models import StatisticalReport, ReportSchedule
+from django.apps import apps
+from django.db.models import Model
 
 
-class StatisticalReportSerializer(serializers.ModelSerializer):
-    """Сериализатор для статистического отчета."""
-    report_type_display = serializers.CharField(source='get_report_type_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    base_model = serializers.CharField(source='base_content_type.model', read_only=True)
+class DynamicFieldSerializer(serializers.Serializer):
+    """Динамический сериализатор для любых моделей"""
     
-    class Meta:
-        model = StatisticalReport
-        fields = [
-            'id', 'name', 'code', 'report_type', 'report_type_display', 'description',
-            'status', 'status_display', 'rows_definition', 'columns_definition',
-            'measures_definition', 'default_filters', 'available_filters',
-            'default_output_format', 'is_drilldown_enabled', 'order', 'base_model',
-            'drilldown_reports', 'created_at', 'updated_at'
-        ]
-
-
-class ExecuteReportSerializer(serializers.Serializer):
-    """Сериализатор для выполнения отчета."""
-    filters = serializers.JSONField(required=False, default=dict)
-    output_format = serializers.ChoiceField(choices=['table', 'chart', 'pivot'], default='table')
-
-
-class ReportScheduleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ReportSchedule
-        fields = '__all__'
-        read_only_fields = ['last_run', 'next_run']
+    def __init__(self, model_class, fields, *args, **kwargs):
+        self.model_class = model_class
+        self.fields_list = fields
+        super().__init__(*args, **kwargs)
+        
+        # Динамически создаем поля
+        for field_name in fields:
+            self.fields[field_name] = serializers.SerializerMethodField()
+    
+    def get_field_value(self, obj, field_name):
+        """Получение значения поля с поддержкой вложенных связей"""
+        parts = field_name.split('__')
+        value = obj
+        for part in parts:
+            if value is None:
+                return None
+            if hasattr(value, part):
+                value = getattr(value, part)
+                if callable(value):
+                    value = value()
+            else:
+                return None
+        
+        # Форматирование дат и других объектов
+        if hasattr(value, 'strftime'):
+            return value.strftime('%Y-%m-%d')
+        if hasattr(value, '__str__') and not isinstance(value, (str, int, float, bool, type(None))):
+            return str(value)
+        return value
+    
+    def to_representation(self, instance):
+        result = {}
+        for field_name in self.fields_list:
+            result[field_name] = self.get_field_value(instance, field_name)
+        return result

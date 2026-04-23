@@ -9,7 +9,7 @@ import styles from './UI/input/CategoryBasedForm.module.css';
 import { useProtectedFetching } from '../hooks/useProtectedFetching';
 import { useAuth } from '../context/AuthContext';
 import MyButton from './UI/button/MyButton';
-import MyInput from './UI/input/MyInput';
+import baseService from '../API/baseService';
 
 const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
   const navigate = useNavigate();
@@ -32,6 +32,7 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [civilProceedingsTypes, setCivilProceedingsTypes] = useState([]);
   
   // Маппинг индексов для гражданских дел на значения case_type
   const civilCaseTypeMapping = {
@@ -76,6 +77,27 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (isAuthenticated()) {
+        loadCivilProceedingsTypes();
+    }
+  }, [isAuthenticated]);
+
+  const loadCivilProceedingsTypes = async () => {
+      try {
+          const response = await baseService.get('/civil_proceedings/civil-proceeding-types/');
+          setCivilProceedingsTypes(response.data);
+      } catch (error) {
+          console.error('Ошибка загрузки типов производств:', error);
+      }
+  };
+
+  const getCivilCaseTypeOptions = () => {
+    return civilProceedingsTypes.map(type => ({
+      value: type.id,  // ВАЖНО: передаем ID, а не code
+      label: type.label
+    }));
+  };
   // Загрузка индексов - только один раз
   useEffect(() => {
     if (isAuthenticated() && !indexesLoaded.current) {
@@ -465,11 +487,11 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
   };
 
   const handleCivilCaseTypeChange = (e) => {
-    const caseTypeValue = e.target.value;
-    setSelectedCivilCaseType(caseTypeValue);
+    const caseTypeId = e.target.value;
+    setSelectedCivilCaseType(caseTypeId);
     setCard(prev => ({
       ...prev,
-      case_type: caseTypeValue
+      case_type: caseTypeId
     }));
   };
 
@@ -540,18 +562,24 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
         if (create) create(proceeding);
         navigate(`/criminal-proceedings/${proceeding.id}`);
         
-      } else if (proceedingType === 'civil') {
-        const civilData = {
-          case_number_civil: card.original_name,
-          status: 'active',
-          case_type: card.case_type || '',
-          // НЕ ПЕРЕДАЕМ registered_case_id - он установится автоматически через сигнал
-        };
-        
-        const proceeding = await CivilCaseService.createCivilProceedings(civilData);
-        
-        if (create) create(proceeding);
-        navigate(`/civil-proceedings/${proceeding.id}`);
+        } else if (proceedingType === 'civil') {
+          // Находим выбранный тип производства
+          let caseTypeId = null;
+          if (selectedCivilCaseType) {
+            // selectedCivilCaseType уже содержит ID, так как мы его сохранили
+            caseTypeId = parseInt(selectedCivilCaseType, 10);
+          }
+          
+          const civilData = {
+            case_number_civil: card.original_name,
+            status: 'active',
+            case_type: caseTypeId,  // Передаем ID
+          };
+          
+          const proceeding = await CivilCaseService.createCivilProceedings(civilData);
+          
+          if (create) create(proceeding);
+          navigate(`/civil-proceedings/${proceeding.id}`);
         
       } else if (proceedingType === 'administrative-offense') {
         // Создание административного правонарушения (КоАП)
@@ -850,7 +878,7 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
 
         {/* Для гражданских дел с индексом 2 показываем выбор вида производства */}
         {getProceedingType(selectedCategory) === 'civil' && 
-         selectedIndex && selectedIndex.index === '2' && (
+        selectedIndex && selectedIndex.index === '2' && (
           <div className={styles.formGroup} style={{ marginBottom: '1.5rem' }}>
             <label htmlFor="civilCaseType" className={styles.label}>
               Вид производства <span className={styles.required}>*</span>
@@ -863,7 +891,7 @@ const CategoryBasedForm = ({ create, editCardData, onSave, onCancel }) => {
               required
             >
               <option value="">Выберите вид производства</option>
-              {civilCaseTypeOptions.map((option) => (
+              {getCivilCaseTypeOptions().map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

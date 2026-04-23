@@ -12,7 +12,9 @@ export const BasicInfoTab = ({
   formatDate, 
   isArchived,
   judges = [],
-  referringAuthorities = []
+  referringAuthorities = [],
+  caseOrderOptions = [],
+  caseCategoryOptions = []
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -51,6 +53,49 @@ export const BasicInfoTab = ({
             />
           ) : (
             <span>{adminData.incoming_from || 'Не указано'}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Порядок поступления дела</label>
+          {isEditing ? (
+            <select
+              name="case_order"
+              value={formData.case_order || ''}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              <option value="">Выберите порядок</option>
+              {/* Опции должны передаваться через пропс caseOrderOptions */}
+              {caseOrderOptions?.map(option => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>{adminData.case_order_detail?.label || 'Не указано'}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Категория дела</label>
+          {isEditing ? (
+            <select
+              name="case_category"
+              value={formData.case_category || ''}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              <option value="">Выберите категорию</option>
+              {caseCategoryOptions?.map(option => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>{adminData.case_category_detail?.label || 'Не указано'}</span>
           )}
         </div>
       </div>
@@ -281,7 +326,8 @@ export const ConsiderationTab = ({
   handleInputChange, 
   getOptionLabel, 
   formatDate, 
-  isArchived 
+  isArchived,
+  suspensionReasons = []
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -336,6 +382,24 @@ export const ConsiderationTab = ({
             />
           ) : (
             <span>{adminData.hearing_time?.slice(0,5) || 'Не указано'}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Соблюдение сроков рассмотрения</label>
+          {isEditing ? (
+            <select
+              name="term_compliance"
+              value={formData.term_compliance || ''}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              <option value="">Выберите</option>
+              <option value="1">С соблюдением</option>
+              <option value="2">С нарушением</option>
+            </select>
+          ) : (
+            <span>{formData.term_compliance === '1' ? 'С соблюдением' : formData.term_compliance === '2' ? 'С нарушением' : 'Не указано'}</span>
           )}
         </div>
       </div>
@@ -409,26 +473,41 @@ export const ConsiderationTab = ({
 
         {formData.case_suspended && (
           <>
-            <div className={styles.field}>
-              <label>Основание приостановления</label>
-              {isEditing ? (
-                <select
-                  name="suspension_reason"
-                  value={formData.suspension_reason || ''}
-                  onChange={handleInputChange}
-                  className={styles.select}
-                >
-                  <option value="">Выберите основание</option>
-                  {options.suspensionReason?.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <span>{getOptionLabel(options.suspensionReason, adminData.suspension_reason)}</span>
-              )}
-            </div>
+          <div className={styles.field}>
+            <label>Основание приостановления</label>
+            {isEditing ? (
+              <select
+                name="suspension_reason"
+                value={formData.suspension_reason || ''}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="">Выберите основание</option>
+                {suspensionReasons?.map(reason => (
+                  <option key={reason.id} value={reason.id}>
+                    {reason.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>{adminData.suspension_reason_detail?.label || 'Не указано'}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>Иное основание приостановления (текстом)</label>
+            {isEditing ? (
+              <textarea
+                name="suspension_reason_text"
+                value={formData.suspension_reason_text || ''}
+                onChange={handleInputChange}
+                className={styles.textarea}
+                rows={2}
+              />
+            ) : (
+              <span>{adminData.suspension_reason_text || 'Не указано'}</span>
+            )}
+          </div>
 
             <div className={styles.field}>
               <label>Дата приостановления</label>
@@ -726,7 +805,9 @@ export const ExecutionTab = ({
   getOptionLabel, 
   formatDate,
   formatCurrency,
-  isArchived 
+  isArchived,
+  executionResultOptions = [],
+  executionStageOptions = []
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -782,26 +863,33 @@ export const ExecutionTab = ({
       <div className={styles.fieldGroup}>
         <h3 className={styles.subsectionTitle}>Исполнение постановления</h3>
         
-        <div className={styles.field}>
-          <label>Результат исполнения</label>
-          {isEditing ? (
-            <select
-              name="execution_result"
-              value={formData.execution_result || ''}
-              onChange={handleInputChange}
-              className={styles.select}
-            >
-              <option value="">Выберите результат</option>
-              {options.executionResult?.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span>{getOptionLabel(options.executionResult, adminData.execution_result)}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+            <label>Результат исполнения</label>
+            {isEditing ? (
+              <select
+                name="execution_result"
+                value={formData.execution_result || ''}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="">Выберите результат</option>
+                <option value="1">Исполнено</option>
+                <option value="2">Не исполнено</option>
+                <option value="3">Возвращено без исполнения</option>
+                <option value="4">Частично исполнено</option>
+                <option value="5">Направлено по принадлежности</option>
+              </select>
+            ) : (
+              <span>
+                {adminData.execution_result === '1' && 'Исполнено'}
+                {adminData.execution_result === '2' && 'Не исполнено'}
+                {adminData.execution_result === '3' && 'Возвращено без исполнения'}
+                {adminData.execution_result === '4' && 'Частично исполнено'}
+                {adminData.execution_result === '5' && 'Направлено по принадлежности'}
+                {!adminData.execution_result && 'Не указано'}
+              </span>
+            )}
+          </div>
 
         <div className={styles.field}>
           <label>Дата фактического исполнения</label>
@@ -1086,6 +1174,27 @@ export const ExecutionTab = ({
             />
           ) : (
             <span>{adminData.enforcement_proceedings_number || 'Не указано'}</span>
+          )}
+        </div>
+
+        <div className={styles.field}>
+          <label>Стадия исполнения</label>
+          {isEditing ? (
+            <select
+              name="current_stage"
+              value={formData.current_stage || ''}
+              onChange={handleInputChange}
+              className={styles.select}
+            >
+              <option value="">Выберите стадию</option>
+              {executionStageOptions?.map(stage => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>{adminData.current_stage_detail?.label || 'Не указано'}</span>
           )}
         </div>
       </div>

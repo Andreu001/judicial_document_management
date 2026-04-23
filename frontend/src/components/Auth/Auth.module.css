@@ -13,51 +13,179 @@
 
 .authContent {
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 300px;
+  padding: 30px;
+  border-radius: 12px;
+  width: 350px;
   position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .closeButton {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 15px;
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
+  color: #94a3b8;
+}
+
+.closeButton:hover {
+  color: #1e3c5c;
+}
+
+.authContent h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e3c5c;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 24px;
+  font-size: 14px;
 }
 
 .authForm {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
 .formGroup input {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #1e3c5c;
+  box-shadow: 0 0 0 3px rgba(30, 60, 92, 0.1);
 }
 
 .submitButton {
-  background: #007bff;
+  width: 100%;
+  padding: 12px;
+  background: #1e3c5c;
   color: white;
   border: none;
-  padding: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #2c4a6e;
 }
 
 .submitButton:disabled {
-  background: #ccc;
+  background: #94a3b8;
   cursor: not-allowed;
 }
 
 .error {
-  color: red;
+  color: #e53e3e;
   font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  text-align: center;
+  padding: 8px;
+  background: #fff5f5;
+  border-radius: 8px;
+}
+
+.divider {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+.divider span {
+  background: white;
+  padding: 0 10px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e2e8f0;
+  z-index: -1;
+}
+
+.socialButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.socialButton {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.socialButton:hover {
+  opacity: 0.9;
+}
+
+.vkButton {
+  background: #4a76a8;
+}
+
+.vkButton:hover {
+  background: #3b5d86;
+}
+
+.yandexButton {
+  background: #fc3f1d;
+}
+
+.yandexButton:hover {
+  background: #e03512;
+}
+
+.switchLink {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.switchLink button {
+  background: none;
+  border: none;
+  color: #1e3c5c;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.switchLink button:hover {
+  text-decoration: underline;
+}
+
+.formGroup {
+  width: 100%;
 }

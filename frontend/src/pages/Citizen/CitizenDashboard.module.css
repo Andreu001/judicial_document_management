@@ -1,0 +1,246 @@
+.dashboard {
+  margin-left: 6.3cm;
+  padding: 80px 24px 24px;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #1e3c5c;
+  margin: 0;
+}
+
+.userInfo {
+  font-size: 14px;
+  color: #64748b;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #1e3c5c;
+}
+
+.tab.active {
+  color: #1e3c5c;
+  border-bottom: 2px solid #1e3c5c;
+}
+
+.casesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.caseCard {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s;
+}
+
+.caseCard:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.caseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.caseNumber {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e3c5c;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusActive {
+  background: #e6f7e6;
+  color: #2e7d32;
+}
+
+.statusCompleted {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.statusExecution {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.statusArchived {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.caseInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.caseInfo > div {
+  background: #f8fafc;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
+.caseActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.caseActions button, .caseActions a {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.viewButton {
+  background: #f0f2f5;
+  color: #2d3748;
+  border: none;
+}
+
+.viewButton:hover {
+  background: #e2e8f0;
+}
+
+.petitionButton {
+  background: #1e3c5c;
+  color: white;
+  border: none;
+}
+
+.petitionButton:hover {
+  background: #2c4a6e;
+}
+
+.uploadButton {
+  background: #2f855a;
+  color: white;
+  border: none;
+}
+
+.uploadButton:hover {
+  background: #276749;
+}
+
+.downloadButton {
+  background: #ed8936;
+  color: white;
+  border: none;
+}
+
+.downloadButton:hover {
+  background: #dd6b20;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px;
+  background: white;
+  border-radius: 12px;
+  color: #94a3b8;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #64748b;
+}
+
+.verificationContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  margin-left: 6.3cm;
+  padding: 40px;
+}
+
+.verificationCard {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.verificationCard h2 {
+  font-size: 24px;
+  color: #1e3c5c;
+  margin-bottom: 16px;
+}
+
+.verificationCard p {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.verifyButton {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #1e3c5c;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.verifyButton:hover {
+  background: #2c4a6e;
+}

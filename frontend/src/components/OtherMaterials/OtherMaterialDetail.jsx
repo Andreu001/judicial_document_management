@@ -1,6 +1,3 @@
-// components/OtherMaterial/OtherMaterialDetail.jsx
-// Обновите существующий файл полностью
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import OtherMaterialService from '../../API/OtherMaterialService';
@@ -10,7 +7,6 @@ import {
   BasicInfoTab,
   ConsiderationTab,
   DecisionTab,
-  ExecutionTab,
   AdditionalInfoTab
 } from './OtherMaterialTabComponents';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
@@ -22,10 +18,7 @@ const OtherMaterialDetail = () => {
   const [materialData, setMaterialData] = useState(null);
   const [sides, setSides] = useState([]);
   const [lawyers, setLawyers] = useState([]);
-  const [movements, setMovements] = useState([]);
-  const [petitions, setPetitions] = useState([]);
-  const [decisions, setDecisions] = useState([]);        // НОВОЕ
-  const [executions, setExecutions] = useState([]);      // НОВОЕ
+  const [decisions, setDecisions] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -35,8 +28,7 @@ const OtherMaterialDetail = () => {
   const [options, setOptions] = useState({
     status: [],
     responsiblePersonRoles: [],
-    outcome: [],              // НОВОЕ
-    executionResult: []       // НОВОЕ
+    outcome: []
   });
   const [isArchived, setIsArchived] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
@@ -52,10 +44,7 @@ const OtherMaterialDetail = () => {
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
     sides: true,
-    movements: true,
-    petitions: true,
-    decisions: true,      // НОВОЕ
-    executions: true      // НОВОЕ
+    decisions: true
   });
 
   useEffect(() => {
@@ -76,25 +65,16 @@ const OtherMaterialDetail = () => {
           const [
             sidesResponse,
             lawyersResponse,
-            movementsResponse,
-            petitionsResponse,
-            decisionsResponse,
-            executionsResponse
+            decisionsResponse
           ] = await Promise.all([
             OtherMaterialService.getSides(materialResponse.id),
             OtherMaterialService.getLawyers(materialResponse.id),
-            OtherMaterialService.getMovements(materialResponse.id),
-            OtherMaterialService.getPetitions(materialResponse.id),
-            OtherMaterialService.getDecisions(materialResponse.id),
-            OtherMaterialService.getExecutions(materialResponse.id)
+            OtherMaterialService.getDecisions(materialResponse.id)
           ]);
           
           setSides(sidesResponse);
           setLawyers(lawyersResponse);
-          setMovements(movementsResponse);
-          setPetitions(petitionsResponse);
           setDecisions(decisionsResponse);
-          setExecutions(executionsResponse);
         } else {
           setError('Материал не найден');
         }
@@ -123,16 +103,11 @@ const OtherMaterialDetail = () => {
       setOptions({
         ...optionsData,
         outcome: [
-          { value: '1', label: 'Удовлетворено' },
-          { value: '2', label: 'Отказано в удовлетворении' },
-          { value: '3', label: 'Прекращено производство' },
-          { value: '4', label: 'Оставлено без рассмотрения' },
-          { value: '5', label: 'Передано по подведомственности' },
-        ],
-        executionResult: [
-          { value: '1', label: 'Исполнено полностью' },
-          { value: '2', label: 'Не исполнено' },
-          { value: '3', label: 'Частично исполнено' },
+          { value: 'satisfied', label: 'Удовлетворено' },
+          { value: 'rejected', label: 'Отказано в удовлетворении' },
+          { value: 'dismissed', label: 'Прекращено производство' },
+          { value: 'left_without', label: 'Оставлено без рассмотрения' },
+          { value: 'transferred', label: 'Передано по подсудности/подведомственности' },
         ]
       });
     } catch (error) {
@@ -189,15 +164,15 @@ const OtherMaterialDetail = () => {
       
       delete dataToSend.sides;
       delete dataToSend.lawyers;
-      delete dataToSend.movements;
-      delete dataToSend.petitions;
       delete dataToSend.decisions;
-      delete dataToSend.executions;
       delete dataToSend.id;
       delete dataToSend.responsible_person_full_name;
       delete dataToSend.status_display;
-      delete dataToSend.registered_case_info;
+      delete dataToSend.outcome_display;
+      delete dataToSend.material_type_detail;
       delete dataToSend.documents_count;
+      delete dataToSend.other_decisions;
+      delete dataToSend.related_case_info;
       delete dataToSend.created_at;
       delete dataToSend.updated_at;
 
@@ -274,18 +249,12 @@ const OtherMaterialDetail = () => {
   // Навигация для создания
   const handleAddSide = () => navigate(`/other-materials/${id}/sides/create`);
   const handleAddLawyer = () => navigate(`/other-materials/${id}/lawyers/create`);
-  const handleAddMovement = () => navigate(`/other-materials/${id}/movements/create`);
-  const handleAddPetition = () => navigate(`/other-materials/${id}/petitions/create`);
   const handleAddDecision = () => navigate(`/other-materials/${id}/decisions/create`);
-  const handleAddExecution = () => navigate(`/other-materials/${id}/executions/create`);
 
   // Навигация для просмотра
   const handleViewSide = (sideId) => navigate(`/other-materials/${id}/sides/${sideId}`);
   const handleViewLawyer = (lawyerId) => navigate(`/other-materials/${id}/lawyers/${lawyerId}`);
-  const handleViewMovement = (movementId) => navigate(`/other-materials/${id}/movements/${movementId}`);
-  const handleViewPetition = (petitionId) => navigate(`/other-materials/${id}/petitions/${petitionId}`);
   const handleViewDecision = (decisionId) => navigate(`/other-materials/${id}/decisions/${decisionId}`);
-  const handleViewExecution = (executionId) => navigate(`/other-materials/${id}/executions/${executionId}`);
 
   // Удаление
   const handleDeleteSide = async (sideId) => {
@@ -312,30 +281,6 @@ const OtherMaterialDetail = () => {
     }
   };
 
-  const handleDeleteMovement = async (movementId) => {
-    if (window.confirm('Удалить движение?')) {
-      try {
-        await OtherMaterialService.deleteMovement(id, movementId);
-        setMovements(movements.filter(m => m.id !== movementId));
-      } catch (error) {
-        console.error('Ошибка удаления движения:', error);
-        alert('Не удалось удалить движение');
-      }
-    }
-  };
-
-  const handleDeletePetition = async (petitionId) => {
-    if (window.confirm('Удалить ходатайство/заявление?')) {
-      try {
-        await OtherMaterialService.deletePetition(id, petitionId);
-        setPetitions(petitions.filter(p => p.id !== petitionId));
-      } catch (error) {
-        console.error('Ошибка удаления ходатайства:', error);
-        alert('Не удалось удалить ходатайство');
-      }
-    }
-  };
-
   const handleDeleteDecision = async (decisionId) => {
     if (window.confirm('Удалить решение?')) {
       try {
@@ -344,18 +289,6 @@ const OtherMaterialDetail = () => {
       } catch (error) {
         console.error('Ошибка удаления решения:', error);
         alert('Не удалось удалить решение');
-      }
-    }
-  };
-
-  const handleDeleteExecution = async (executionId) => {
-    if (window.confirm('Удалить исполнение?')) {
-      try {
-        await OtherMaterialService.deleteExecution(id, executionId);
-        setExecutions(executions.filter(e => e.id !== executionId));
-      } catch (error) {
-        console.error('Ошибка удаления исполнения:', error);
-        alert('Не удалось удалить исполнение');
       }
     }
   };
@@ -466,32 +399,22 @@ const OtherMaterialDetail = () => {
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
               <button 
-                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
-                onClick={() => !(isArchived && isEditing) && setActiveTab('basic')}
-                disabled={isArchived && isEditing}
+                className={`${styles.tab} ${activeTab === 'basic' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('basic')}
               >
                 Основные сведения
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'consideration' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
-                onClick={() => !(isArchived && isEditing) && setActiveTab('consideration')}
-                disabled={isArchived && isEditing}
+                className={`${styles.tab} ${activeTab === 'consideration' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('consideration')}
               >
                 Рассмотрение
               </button>
               <button 
-                className={`${styles.tab} ${activeTab === 'decision' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
-                onClick={() => !(isArchived && isEditing) && setActiveTab('decision')}
-                disabled={isArchived && isEditing}
+                className={`${styles.tab} ${activeTab === 'decision' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('decision')}
               >
                 Решение
-              </button>
-              <button 
-                className={`${styles.tab} ${activeTab === 'execution' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
-                onClick={() => !(isArchived && isEditing) && setActiveTab('execution')}
-                disabled={isArchived && isEditing}
-              >
-                Исполнение
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`}
@@ -530,19 +453,6 @@ const OtherMaterialDetail = () => {
               )}
               {activeTab === 'decision' && (
                 <DecisionTab
-                  isEditing={isEditing && !isArchived}
-                  formData={formData}
-                  options={options}
-                  materialData={materialData}
-                  handleDateChange={handleDateChange}
-                  handleInputChange={handleInputChange}
-                  getOptionLabel={getOptionLabel}
-                  formatDate={formatDate}
-                  isArchived={isArchived}
-                />
-              )}
-              {activeTab === 'execution' && (
-                <ExecutionTab
                   isEditing={isEditing && !isArchived}
                   formData={formData}
                   options={options}
@@ -623,14 +533,14 @@ const OtherMaterialDetail = () => {
                     {allParticipants.slice(0, 5).map(participant => (
                       <div 
                         key={`${participant.type}-${participant.id}`} 
-                        className={`${styles.sidebarListItem} ${styles[`sideType-${participant.type}`]}`}
+                        className={`${styles.sidebarListItem}`}
                         onClick={() => navigate(participant.detailPath)}
                       >
                         <div className={styles.sidebarListItemHeader}>
                           <span className={styles.sidebarListItemTitle}>
                             {participant.displayName}
                           </span>
-                          <span className={`${styles.sideType} ${styles[`sideType-${participant.type}`]}`}>
+                          <span className={styles.participantType}>
                             {participant.typeLabel}
                           </span>
                         </div>
@@ -655,7 +565,7 @@ const OtherMaterialDetail = () => {
             )}
           </div>
 
-          {/* Блок "Решения" - НОВЫЙ */}
+          {/* Блок "Решения" */}
           <div className={styles.sidebarSection}>
             <div 
               className={styles.sidebarSectionHeader}
@@ -683,245 +593,36 @@ const OtherMaterialDetail = () => {
                 
                 {decisions.length > 0 ? (
                   <div className={styles.sidebarList}>
-                    {decisions.slice(0, 3).map(decision => {
-                      const outcomeMap = {
-                        '1': 'Удовлетворено',
-                        '2': 'Отказано',
-                        '3': 'Прекращено',
-                        '4': 'Оставлено без рассмотрения',
-                        '5': 'Передано'
-                      };
-                      return (
-                        <div 
-                          key={decision.id} 
-                          className={`${styles.sidebarListItem} ${styles.sideType-decision}`}
-                          onClick={() => handleViewDecision(decision.id)}
-                        >
-                          <div className={styles.sidebarListItemHeader}>
-                            <span className={styles.sidebarListItemTitle}>
-                              {decision.decision_date ? formatDate(decision.decision_date) : 'Решение'}
-                            </span>
-                            <span className={`${styles.sideType} ${styles.sideType-decision}`}>
-                              Решение
-                            </span>
-                          </div>
-                          <div className={styles.sidebarListItemSubtitle}>
-                            {outcomeMap[decision.outcome] || decision.outcome || 'Результат не указан'}
-                          </div>
-                          <div className={styles.sidebarListItemHint}>
-                            Нажмите для просмотра →
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {decisions.length > 3 && (
-                      <div className={styles.sidebarListItemMore}>
-                        + еще {decisions.length - 3} решений
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className={styles.sidebarNoData}>Решения не добавлены</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Блок "Исполнения" - НОВЫЙ */}
-          <div className={styles.sidebarSection}>
-            <div 
-              className={styles.sidebarSectionHeader}
-              onClick={() => toggleSection('executions')}
-            >
-              <h2 className={styles.sidebarSectionTitle}>
-                Исполнения 
-                <span className={styles.sidebarSectionCount}>
-                  {executions.length}
-                </span>
-              </h2>
-              <button className={styles.sidebarToggleButton}>
-                {collapsedSections.executions ? 'Развернуть' : 'Свернуть'}
-              </button>
-            </div>
-            
-            {!collapsedSections.executions && (
-              <div className={styles.sidebarSectionContent}>
-                <button 
-                  onClick={handleAddExecution} 
-                  className={styles.addButton}
-                >
-                  + Добавить исполнение
-                </button>
-                
-                {executions.length > 0 ? (
-                  <div className={styles.sidebarList}>
-                    {executions.slice(0, 3).map(execution => (
+                    {decisions.slice(0, 5).map(decision => (
                       <div 
-                        key={execution.id} 
-                        className={`${styles.sidebarListItem} ${styles.sideType-execution}`}
-                        onClick={() => handleViewExecution(execution.id)}
+                        key={decision.id} 
+                        className={styles.sidebarListItem}
+                        onClick={() => handleViewDecision(decision.id)}
                       >
                         <div className={styles.sidebarListItemHeader}>
                           <span className={styles.sidebarListItemTitle}>
-                            {execution.execution_document_date ? formatDate(execution.execution_document_date) : 'Исполнение'}
+                            {decision.decision_date ? formatDate(decision.decision_date) : 'Решение'}
                           </span>
-                          <span className={`${styles.sideType} ${styles.sideType-execution}`}>
-                            Исполнение
+                          <span className={styles.participantType}>
+                            Решение
                           </span>
                         </div>
                         <div className={styles.sidebarListItemSubtitle}>
-                          Результат: {execution.executed ? 'Исполнено' : 'Не исполнено'}
+                          {getOptionLabel(options.outcome, decision.outcome)}
                         </div>
                         <div className={styles.sidebarListItemHint}>
                           Нажмите для просмотра →
                         </div>
                       </div>
                     ))}
-                    {executions.length > 3 && (
+                    {decisions.length > 5 && (
                       <div className={styles.sidebarListItemMore}>
-                        + еще {executions.length - 3} исполнений
+                        + еще {decisions.length - 5} решений
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className={styles.sidebarNoData}>Исполнения не добавлены</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Блок "Движения" */}
-          <div className={styles.sidebarSection}>
-            <div 
-              className={styles.sidebarSectionHeader}
-              onClick={() => toggleSection('movements')}
-            >
-              <h2 className={styles.sidebarSectionTitle}>
-                Движения 
-                <span className={styles.sidebarSectionCount}>
-                  {movements.length}
-                </span>
-              </h2>
-              <button className={styles.sidebarToggleButton}>
-                {collapsedSections.movements ? 'Развернуть' : 'Свернуть'}
-              </button>
-            </div>
-            
-            {!collapsedSections.movements && (
-              <div className={styles.sidebarSectionContent}>
-                <button 
-                  onClick={handleAddMovement} 
-                  className={styles.addButton}
-                >
-                  + Добавить движение
-                </button>
-                
-                {movements.length > 0 ? (
-                  <div className={styles.sidebarList}>
-                    {movements.slice(0, 3).map(movement => {
-                      const movementData = movement.business_movement_detail || movement;
-                      return (
-                        <div 
-                          key={movement.id} 
-                          className={`${styles.sidebarListItem} ${styles.sideType-movement}`}
-                          onClick={() => handleViewMovement(movement.id)}
-                        >
-                          <div className={styles.sidebarListItemHeader}>
-                            <span className={styles.sidebarListItemTitle}>
-                              {movementData.date_meeting ? formatDate(movementData.date_meeting) : 'Движение'}
-                            </span>
-                            <span className={`${styles.sideType} ${styles.sideType-movement}`}>
-                              Движение
-                            </span>
-                          </div>
-                          {movementData.result_court_session && (
-                            <div className={styles.sidebarListItemSubtitle}>
-                              {movementData.result_court_session.slice(0, 50)}
-                              {movementData.result_court_session.length > 50 && '...'}
-                            </div>
-                          )}
-                          <div className={styles.sidebarListItemHint}>
-                            Нажмите для просмотра →
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {movements.length > 3 && (
-                      <div className={styles.sidebarListItemMore}>
-                        + еще {movements.length - 3} движений
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className={styles.sidebarNoData}>Движения не добавлены</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Блок "Ходатайства/заявления" */}
-          <div className={styles.sidebarSection}>
-            <div 
-              className={styles.sidebarSectionHeader}
-              onClick={() => toggleSection('petitions')}
-            >
-              <h2 className={styles.sidebarSectionTitle}>
-                Ходатайства/заявления 
-                <span className={styles.sidebarSectionCount}>
-                  {petitions.length}
-                </span>
-              </h2>
-              <button className={styles.sidebarToggleButton}>
-                {collapsedSections.petitions ? 'Развернуть' : 'Свернуть'}
-              </button>
-            </div>
-            
-            {!collapsedSections.petitions && (
-              <div className={styles.sidebarSectionContent}>
-                <button 
-                  onClick={handleAddPetition} 
-                  className={styles.addButton}
-                >
-                  + Добавить ходатайство/заявление
-                </button>
-                
-                {petitions.length > 0 ? (
-                  <div className={styles.sidebarList}>
-                    {petitions.slice(0, 3).map(petition => {
-                      const petitionDetail = petition.petitions_incase_detail || {};
-                      return (
-                        <div 
-                          key={petition.id} 
-                          className={`${styles.sidebarListItem} ${styles.sideType-petition}`}
-                          onClick={() => handleViewPetition(petition.id)}
-                        >
-                          <div className={styles.sidebarListItemHeader}>
-                            <span className={styles.sidebarListItemTitle}>
-                              {petitionDetail.date_application ? formatDate(petitionDetail.date_application) : 'Ходатайство'}
-                            </span>
-                            <span className={`${styles.sideType} ${styles.sideType-petition}`}>
-                              Ходатайство
-                            </span>
-                          </div>
-                          {petitionDetail.petitions_name && petitionDetail.petitions_name.length > 0 && (
-                            <div className={styles.sidebarListItemSubtitle}>
-                              Тип: {petitionDetail.petitions_name.map(p => p.name).join(', ')}
-                            </div>
-                          )}
-                          <div className={styles.sidebarListItemHint}>
-                            Нажмите для просмотра →
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {petitions.length > 3 && (
-                      <div className={styles.sidebarListItemMore}>
-                        + еще {petitions.length - 3} ходатайств
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className={styles.sidebarNoData}>Ходатайства/заявления не добавлены</p>
+                  <p className={styles.sidebarNoData}>Решения не добавлены</p>
                 )}
               </div>
             )}

@@ -12,6 +12,8 @@ import {
 } from './AdministrativeTabComponents';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 import ProgressLog from '../CaseManagement/ProgressLog';
+import SubjectDetail from './SubjectDetail';
+import SecurityMeasureDetail from './SecurityMeasureDetail';
 
 const AdministrativeDetail = () => {
   const { id } = useParams();
@@ -47,6 +49,18 @@ const AdministrativeDetail = () => {
   const [referringAuthorities, setReferringAuthorities] = useState([]);
   const [collapsedNotifications, setCollapsedNotifications] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
+  const [caseOrderOptions, setCaseOrderOptions] = useState([]);
+  const [caseCategoryOptions, setCaseCategoryOptions] = useState([]);
+  const [executionStageOptions, setExecutionStageOptions] = useState([]);
+  const [termComplianceOptions, setTermComplianceOptions] = useState([]);
+  const [postponementReasons, setPostponementReasons] = useState([]);
+  const [suspensionReasons, setSuspensionReasons] = useState([]);
+  const [appealData, setAppealData] = useState(null);
+  const [cassationData, setCassationData] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [securityMeasures, setSecurityMeasures] = useState([]);
+  const [isEditingAppeal, setIsEditingAppeal] = useState(false);
+  const [isEditingCassation, setIsEditingCassation] = useState(false);
   
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -54,7 +68,9 @@ const AdministrativeDetail = () => {
     decisions: true,
     executions: true,
     movements: true,
-    petitions: true
+    petitions: true,
+    subjects: true,
+    securityMeasures: true
   });
 
   useEffect(() => {
@@ -90,6 +106,20 @@ const AdministrativeDetail = () => {
           
           const petitionsResponse = await AdministrativeCaseService.getPetitions(adminResponse.id);
           setPetitions(petitionsResponse);
+
+          // Загружаем апелляцию и кассацию
+          const appealResponse = await AdministrativeCaseService.getAppeal(adminResponse.id);
+          setAppealData(appealResponse);
+
+          const cassationResponse = await AdministrativeCaseService.getCassation(adminResponse.id);
+          setCassationData(cassationResponse);
+
+          // Загружаем субъекты и меры обеспечения
+          const subjectsResponse = await AdministrativeCaseService.getSubjects(adminResponse.id);
+          setSubjects(subjectsResponse);
+
+          const measuresResponse = await AdministrativeCaseService.getSecurityMeasures(adminResponse.id);
+          setSecurityMeasures(measuresResponse);
         } else {
           setError('Административное дело не найдено');
         }
@@ -136,17 +166,25 @@ const AdministrativeDetail = () => {
 
   const loadOptions = async () => {
     try {
-      const response = await AdministrativeCaseService.getAdminOptions();
-      setOptions(response);
+      const [optionsData, orderData, categoryData, stageData, termData, postponementData, suspensionData] = await Promise.all([
+        AdministrativeCaseService.getAdminOptions(),
+        AdministrativeCaseService.getCaseOrderOptions(),
+        AdministrativeCaseService.getCaseCategoryOptions(),
+        AdministrativeCaseService.getExecutionStageOptions(),
+        AdministrativeCaseService.getTermComplianceOptions(),
+        AdministrativeCaseService.getPostponementReasons(),
+        AdministrativeCaseService.getSuspensionReasons(),
+      ]);
+      
+      setOptions(optionsData);
+      setCaseOrderOptions(orderData);
+      setCaseCategoryOptions(categoryData);
+      setExecutionStageOptions(stageData);
+      setTermComplianceOptions(termData);
+      setPostponementReasons(postponementData);
+      setSuspensionReasons(suspensionData);
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
-      setOptions({
-        considerationType: [],
-        outcome: [],
-        punishmentType: [],
-        executionResult: [],
-        suspensionReason: []
-      });
     }
   };
 
@@ -221,6 +259,10 @@ const AdministrativeDetail = () => {
       delete dataToSend.status_display;
       delete dataToSend.referring_authority_detail;
       delete dataToSend.registered_case_info;
+      delete dataToSend.appeal;
+      delete dataToSend.cassation;
+      delete dataToSend.subjects;
+      delete dataToSend.security_measures;
 
       if (isArchived) {
         const allowedFields = ['archive_notes', 'archived_date', 'status'];
@@ -602,6 +644,8 @@ const AdministrativeDetail = () => {
                   isArchived={isArchived}
                   judges={judges}
                   referringAuthorities={referringAuthorities}
+                  caseOrderOptions={caseOrderOptions}
+                  caseCategoryOptions={caseCategoryOptions}
                 />
               )}
               {activeTab === 'consideration' && (
@@ -615,6 +659,7 @@ const AdministrativeDetail = () => {
                   getOptionLabel={getOptionLabel}
                   formatDate={formatDate}
                   isArchived={isArchived}
+                  suspensionReasons={suspensionReasons}
                 />
               )}
               {activeTab === 'decision' && (
@@ -643,6 +688,8 @@ const AdministrativeDetail = () => {
                   formatDate={formatDate}
                   formatCurrency={formatCurrency}
                   isArchived={isArchived}
+                  executionResultOptions={options.executionResult || []}
+                  executionStageOptions={executionStageOptions}
                 />
               )}
               {activeTab === 'additional' && (
@@ -824,6 +871,136 @@ const AdministrativeDetail = () => {
             )}
           </div>
 
+          {/* Блок "Субъекты правонарушения" */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('subjects')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Субъекты правонарушения 
+                <span className={styles.sidebarSectionCount}>
+                  {subjects.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.subjects ? 'Развернуть' : 'Свернуть'}
+              </button>
+            </div>
+            
+            {!collapsedSections.subjects && (
+              <div className={styles.sidebarSectionContent}>
+                <button 
+                  onClick={() => navigate(`/admin-proceedings/${id}/subjects/create`)}
+                  className={styles.addButton}
+                >
+                  + Добавить субъект
+                </button>
+                
+                {subjects.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {subjects.slice(0, 5).map(subject => (
+                      <div 
+                        key={subject.id} 
+                        className={`${styles.sidebarListItem} ${styles.sideType-subject}`}
+                        onClick={() => navigate(`/admin-proceedings/${id}/subjects/${subject.id}`)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {subject.subject_type_label || subject.subject_type}
+                          </span>
+                          <span className={`${styles.sideType} ${styles.sideType-subject}`}>
+                            Субъект
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {subject.sides_case_incase_detail?.name || 'Сторона не указана'}
+                        </div>
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {subjects.length > 5 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {subjects.length - 5} субъектов
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Субъекты не добавлены</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Блок "Меры обеспечения" */}
+          <div className={styles.sidebarSection}>
+            <div 
+              className={styles.sidebarSectionHeader}
+              onClick={() => toggleSection('securityMeasures')}
+            >
+              <h2 className={styles.sidebarSectionTitle}>
+                Меры обеспечения 
+                <span className={styles.sidebarSectionCount}>
+                  {securityMeasures.length}
+                </span>
+              </h2>
+              <button className={styles.sidebarToggleButton}>
+                {collapsedSections.securityMeasures ? 'Развернуть' : 'Свернуть'}
+              </button>
+            </div>
+            
+            {!collapsedSections.securityMeasures && (
+              <div className={styles.sidebarSectionContent}>
+                <button 
+                  onClick={() => navigate(`/admin-proceedings/${id}/security-measures/create`)}
+                  className={styles.addButton}
+                >
+                  + Добавить меру обеспечения
+                </button>
+                
+                {securityMeasures.length > 0 ? (
+                  <div className={styles.sidebarList}>
+                    {securityMeasures.slice(0, 5).map(measure => (
+                      <div 
+                        key={measure.id} 
+                        className={`${styles.sidebarListItem} ${styles.sideType-measure}`}
+                        onClick={() => navigate(`/admin-proceedings/${id}/security-measures/${measure.id}`)}
+                      >
+                        <div className={styles.sidebarListItemHeader}>
+                          <span className={styles.sidebarListItemTitle}>
+                            {measure.measure_type_label || measure.measure_type}
+                          </span>
+                          <span className={`${styles.sideType} ${styles.sideType-measure}`}>
+                            Мера
+                          </span>
+                        </div>
+                        <div className={styles.sidebarListItemSubtitle}>
+                          {measure.applied_date ? formatDate(measure.applied_date) : 'Дата не указана'}
+                        </div>
+                        {measure.amount > 0 && (
+                          <div className={styles.sidebarListItemSubtitle}>
+                            Сумма: {formatCurrency(measure.amount)}
+                          </div>
+                        )}
+                        <div className={styles.sidebarListItemHint}>
+                          Нажмите для просмотра →
+                        </div>
+                      </div>
+                    ))}
+                    {securityMeasures.length > 5 && (
+                      <div className={styles.sidebarListItemMore}>
+                        + еще {securityMeasures.length - 5} мер
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className={styles.sidebarNoData}>Меры обеспечения не добавлены</p>
+                )}
+              </div>
+            )}
+          </div>
           {/* Блок "Исполнения" */}
           <div className={styles.sidebarSection}>
             <div 

@@ -1,5 +1,3 @@
-// AppRouters.jsx - исправленная версия с полными маршрутами для OtherMaterial
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import About from "../pages/About";
@@ -30,6 +28,8 @@ import PersonnelPage from '../pages/personnel/PersonnelPage';
 import AdministrativeDetail from './AdminCase/AdministrativeDetail';
 import AdministrativeDecisionDetail from './AdminCase/AdministrativeDecisionDetail';
 import AdministrativeProcedureActionDetail from './AdminCase/AdministrativeProcedureActionDetail';
+import SubjectDetail from './AdminCase/SubjectDetail';
+import SecurityMeasureDetail from './AdminCase/SecurityMeasureDetail';
 import KasDetail from './KasCase/KasDetail';
 import KasDecisionDetail from './KasCase/KasDecisionDetail';
 import KasExecutionDetail from './KasCase/KasExecutionDetail';
@@ -41,7 +41,9 @@ import DocumentDetailPage from './Documents/DocumentDetailPage';
 import CriminalPersonCard from './CriminalCase/CriminalPersonCard';
 import OtherMaterialDetail from './OtherMaterials/OtherMaterialDetail';
 import OtherMaterialDecisionDetail from './OtherMaterials/OtherMaterialDecisionDetail';
-import OtherMaterialExecutionDetail from './OtherMaterials/OtherMaterialExecutionDetail';
+import CriminalCivilClaimDetail from './CriminalCase/CriminalCivilClaimDetail';
+import Statistics from './Statistics/Statistics';
+import CitizenDashboard from '../pages/Citizen/CitizenDashboard';
 
 
 const AppRouter = () => {
@@ -56,7 +58,12 @@ const AppRouter = () => {
                 <Route path="person-search" element={<PersonSearch />} />
                 <Route path="hr" element={<PersonnelPage />} />
                 <Route path="/legal-documents" element={<LegalDocuments />} />
-                
+                <Route path="statistics" element={<Statistics />} />
+
+                <Route index element={<Navigate to="/citizen/dashboard" />} />
+                <Route path="dashboard" element={<CitizenDashboard />} />
+                <Route path="archive" element={<CitizenDashboard showArchived />} />
+
                 {/* Входящая корреспонденция */}
                 <Route path="/in" element={<CorrespondenceIn />} />
                 <Route path="/in/new" element={<CorrespondenceForm />} />
@@ -143,6 +150,14 @@ const AppRouter = () => {
                 
                 <Route path="criminal-proceedings/:proceedingId/executions/create" element={<CriminalExecutionDetail />} />
                 <Route path="criminal-proceedings/:proceedingId/executions/:executionId" element={<CriminalExecutionDetail />} />
+
+                <Route path="/criminal-proceedings/:proceedingId/criminal-decisions/:id?" element={<CriminalDecisionDetail />} />
+                <Route path="/criminal-proceedings/:proceedingId/civil-claims/:id?" element={<CriminalCivilClaimDetail />} />
+                <Route path="/criminal-proceedings/:proceedingId/civil-claims/create" element={<CriminalCivilClaimDetail />} />
+
+                {/* Гражданские иски */}
+                <Route path="/criminal-proceedings/:proceedingId/civil-claims/:claimId" element={<CriminalCivilClaimDetail />} />
+                <Route path="/criminal-proceedings/:proceedingId/civil-claims/create" element={<CriminalCivilClaimDetail />} />
                 
                 {/* ========== ГРАЖДАНСКИЕ ПРОИЗВОДСТВА ========== */}
                 <Route path="civil-proceedings/:id" element={<CivilDetail />} />
@@ -188,6 +203,14 @@ const AppRouter = () => {
                 <Route path="admin-proceedings/:proceedingId/executions/create" element={<AdministrativeProcedureActionDetail />} />
                 <Route path="admin-proceedings/:proceedingId/executions/:executionId" element={<AdministrativeProcedureActionDetail />} />
 
+                {/* Субъекты правонарушения */}
+                <Route path="admin-proceedings/:proceedingId/subjects/create" element={<SubjectDetail />} />
+                <Route path="admin-proceedings/:proceedingId/subjects/:subjectId" element={<SubjectDetail />} />
+
+                {/* Меры обеспечения */}
+                <Route path="admin-proceedings/:proceedingId/security-measures/create" element={<SecurityMeasureDetail />} />
+                <Route path="admin-proceedings/:proceedingId/security-measures/:measureId" element={<SecurityMeasureDetail />} />
+
                 {/* ========== АДМИНИСТРАТИВНЫЕ ДЕЛА (КАС РФ) ========== */}
                 <Route path="kas-proceedings/create" element={<KasDetail />} />
                 <Route path="kas-proceedings/:id" element={<KasDetail />} />
@@ -222,21 +245,9 @@ const AppRouter = () => {
                 <Route path="other-materials/:materialId/lawyers/create" element={<LawyerDetails />} />
                 <Route path="other-materials/:materialId/lawyers/:lawyerId" element={<LawyerDetails />} />
 
-                {/* Движения (используем MovementDetail) */}
-                <Route path="other-materials/:materialId/movements/create" element={<MovementDetail />} />
-                <Route path="other-materials/:materialId/movements/:movementId" element={<MovementDetail />} />
-
-                {/* Ходатайства (используем PetitionDetail) */}
-                <Route path="other-materials/:materialId/petitions/create" element={<PetitionDetail />} />
-                <Route path="other-materials/:materialId/petitions/:petitionId" element={<PetitionDetail />} />
-
                 {/* Решения по иным материалам */}
                 <Route path="other-materials/:materialId/decisions/create" element={<OtherMaterialDecisionDetail />} />
                 <Route path="other-materials/:materialId/decisions/:decisionId" element={<OtherMaterialDecisionDetail />} />
-
-                {/* Исполнения по иным материалам */}
-                <Route path="other-materials/:materialId/executions/create" element={<OtherMaterialExecutionDetail />} />
-                <Route path="other-materials/:materialId/executions/:executionId" element={<OtherMaterialExecutionDetail />} />
 
                 {/* Документы по иным материалам */}
                 <Route path="other-materials/:materialId/documents" 
