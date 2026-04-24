@@ -1,3 +1,4 @@
+// src/API/citizenAuthService.jsx
 import baseService from './baseService';
 
 class CitizenAuthService {
@@ -20,12 +21,12 @@ class CitizenAuthService {
 
   // Логин через VK
   getVkAuthUrl() {
-    return `${baseService.defaults.baseURL}/auth/login/vk-oauth2/?next=/citizen/dashboard/`;
+    return `http://localhost:8000/auth/login/vk-oauth2/?next=/citizen/dashboard/`;
   }
 
   // Логин через Яндекс
   getYandexAuthUrl() {
-    return `${baseService.defaults.baseURL}/auth/login/yandex-oauth2/?next=/citizen/dashboard/`;
+    return `http://localhost:8000/auth/login/yandex-oauth2/?next=/citizen/dashboard/`;
   }
 
   async logout() {
@@ -33,6 +34,8 @@ class CitizenAuthService {
       await baseService.post('/citizen/api/logout/');
     } catch (error) {
       console.error('Ошибка при выходе:', error);
+    } finally {
+      localStorage.removeItem('citizen_token');
     }
   }
 
@@ -69,6 +72,26 @@ class CitizenAuthService {
 
   getToken() {
     return localStorage.getItem('citizen_token');
+  }
+
+    async getYandexInfo() {
+    try {
+      const response = await baseService.get('/citizen/api/yandex-info/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Yandex info:', error);
+      return null;
+    }
+  }
+
+  // Автоматическая проверка - можно ли верифицировать пользователя
+  async autoVerifyFromYandex() {
+    try {
+      const response = await baseService.post('/citizen/api/auto-verify/', {});
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Ошибка автоматической верификации');
+    }
   }
 }
 

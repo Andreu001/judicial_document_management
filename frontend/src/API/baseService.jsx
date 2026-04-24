@@ -1,3 +1,4 @@
+// src/API/baseService.jsx
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8000';
@@ -12,12 +13,19 @@ const baseService = axios.create({
 // Интерцептор для добавления токена
 baseService.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // 🔧 Единый токен для всех запросов
+    let token = localStorage.getItem('token');
+    
+    // Если нет, пробуем citizen_token (для обратной совместимости)
+    if (!token) {
+      token = localStorage.getItem('citizen_token');
+    }
+    
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
     
-    // Добавляем CSRF токен для Django
+    // CSRF токен
     const csrfToken = getCookie('csrftoken');
     if (csrfToken) {
       config.headers['X-CSRFToken'] = csrfToken;
@@ -30,7 +38,6 @@ baseService.interceptors.request.use(
   }
 );
 
-// Функция для получения куки
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {

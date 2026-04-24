@@ -496,3 +496,26 @@
 .navButton:hover {
   background: #e2e8f0;
 }
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e3c5c;
+}
+
+.logoutButton {
+  padding: 6px 12px;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}

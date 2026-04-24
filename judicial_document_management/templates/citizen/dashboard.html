@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет гражданина</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        // Передаем данные пользователя в React
+        window.__INITIAL_STATE__ = {
+            user: {
+                id: {{ user.id|default:'null' }},
+                username: "{{ user.username|default:'' }}",
+                first_name: "{{ user.first_name|default:'' }}",
+                last_name: "{{ user.last_name|default:'' }}",
+                middle_name: "{{ user.middle_name|default:'' }}",
+                email: "{{ user.email|default:'' }}",
+                role: "{{ user.role|default:'citizen' }}",
+                is_verified: {{ user.is_verified|default:'false'|lower }}
+            },
+            token: "{{ token|default:'' }}"
+        };
+    </script>
+    <script src="http://localhost:3000/static/js/bundle.js"></script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+# citizen_access/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
@@ -9,7 +10,11 @@ router.register('documents', views.CitizenDocumentUploadViewSet, basename='citiz
 
 urlpatterns = [
     path('api/', include(router.urls)),
-    path('api/verify/', views.CitizenVerificationView.as_view(), name='citizen-verify'),
+    path('api/auth-complete/', views.auth_complete, name='auth-complete'),
+    path('api/logout/', views.citizen_logout, name='citizen-logout'),
     path('api/profile/', views.CitizenProfileView.as_view(), name='citizen-profile'),
-    path('api/petitions/<int:pk>/submit/', views.CitizenPetitionViewSet.as_view({'post': 'submit'}), name='submit-petition'),
+    path('api/dashboard-data/', views.citizen_dashboard_data, name='citizen-dashboard-data'),
+    path('dashboard/', views.citizen_dashboard_page, name='citizen-dashboard-page'),
+    path('oauth-callback/', views.oauth_callback_view, name='oauth-callback'),
+    path('api/yandex-info/', views.get_yandex_user_info, name='yandex-info'),
 ]

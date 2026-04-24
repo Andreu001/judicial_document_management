@@ -189,3 +189,34 @@
 .formGroup {
   width: 100%;
 }
+
+/* Добавьте в Auth.module.css */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #1e3c5c;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.info {
+  margin-top: 20px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.smallText {
+  font-size: 12px;
+  color: #1e3c5c;
+  margin: 0;
+}

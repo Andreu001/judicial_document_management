@@ -73,6 +73,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     passport_series = models.CharField(max_length=10, blank=True, verbose_name='Серия паспорта')
     passport_number = models.CharField(max_length=20, blank=True, verbose_name='Номер паспорта')
     birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
+    sex = models.CharField(max_length=10, blank=True, null=True, verbose_name='Пол')
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)

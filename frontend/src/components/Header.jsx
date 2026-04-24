@@ -55,8 +55,7 @@ const Header = ({ filter, setFilter, onSearch }) => {
     setShowCalendar(true);
   };
 
-  // Если гражданин - показываем упрощенный хедер
-  if (isCitizen()) {
+  if (isCitizen() && user) {
     return (
       <>
         <div className={styles.header}>
@@ -64,7 +63,14 @@ const Header = ({ filter, setFilter, onSearch }) => {
             📋 Личный кабинет участника процесса
           </div>
           <div className={styles.actions}>
-            <UserMenu user={user} onLogout={handleLogout} />
+            <div className={styles.userInfo}>
+              <span className={styles.userName}>
+                {user?.last_name} {user?.first_name}
+              </span>
+            </div>
+            <button onClick={handleLogout} className={styles.logoutButton}>
+              Выйти
+            </button>
           </div>
         </div>
 

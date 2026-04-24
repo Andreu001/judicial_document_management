@@ -140,7 +140,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 
 LOGIN_URL = 'users:login'
-LOGIN_REDIRECT_URL = 'business_card:index'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
@@ -194,7 +193,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny', # 'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticated', # 'rest_framework.permissions.IsAuthenticated',
     ),
 }
 
@@ -318,14 +317,9 @@ SOCIAL_AUTH_VK_OAUTH2_SECRET = 'ВАШ_CLIENT_SECRET_VK'
 SOCIAL_AUTH_VK_OAUTH2_SCOPE = []
 
 # ========== НАСТРОЙКИ YANDEX OAUTH ==========
-SOCIAL_AUTH_YANDEX_OAUTH2_KEY = '12be0f279e3a42a5a55ca0fff9755afb'
-SOCIAL_AUTH_YANDEX_OAUTH2_SECRET = 'e4349abc85144d78ae2b576877fe37a1'
-
-# Базовые настройки
+SOCIAL_AUTH_YANDEX_OAUTH2_KEY = '7ae23a1626884d3e8fb7399c3f1dc630'
+SOCIAL_AUTH_YANDEX_OAUTH2_SECRET = 'e70c4567a8db4a53945610e0873688c4'
 SOCIAL_AUTH_YANDEX_OAUTH2_SCOPE = ['login:info', 'login:email']
-SOCIAL_AUTH_YANDEX_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
-    'force_confirm': 'true',  # Запрашивать подтверждение при каждом входе
-}
 
 # Получение данных пользователя
 SOCIAL_AUTH_YANDEX_OAUTH2_EXTRA_DATA = [
@@ -343,7 +337,27 @@ SOCIAL_AUTH_YANDEX_OAUTH2_EXTRA_DATA = [
 # Версия API
 SOCIAL_AUTH_YANDEX_OAUTH2_API_VERSION = '1'
 
-# Измените LOGIN_URL на новый префикс
-LOGIN_URL = '/social/login/yandex-oauth2/'
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/citizen/dashboard/'
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/social/login/error/'
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/citizen/oauth-callback/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/citizen/login-error/'
+
+LOGIN_REDIRECT_URL = '/citizen/dashboard/'
+
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.social_auth.associate_by_email',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'citizen_access.pipeline.save_social_id',
+    'citizen_access.pipeline.set_citizen_role',
+    'citizen_access.pipeline.auto_verify_from_yandex',
+)

@@ -1,6 +1,6 @@
+// src/pages/Citizen/CitizenLoginForm.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import citizenAuthService from '../../API/citizenAuthService';
 import styles from '../../components/Auth/Auth.module.css';
 
 const CitizenLoginForm = ({ onClose, onSwitchToStaff }) => {
@@ -27,11 +27,10 @@ const CitizenLoginForm = ({ onClose, onSwitchToStaff }) => {
   };
 
   const handleSocialLogin = (provider) => {
-    const baseUrl = 'http://localhost:8000';
     if (provider === 'vk') {
-      window.location.href = `${baseUrl}/auth/login/vk-oauth2/?next=/citizen/dashboard/`;
+      window.location.href = 'http://localhost:8000/auth/login/vk-oauth2/';
     } else if (provider === 'yandex') {
-      window.location.href = `${baseUrl}/auth/login/yandex-oauth2/?next=/citizen/dashboard/`;
+      window.location.href = 'http://localhost:8000/auth/login/yandex-oauth2/';
     }
   };
 

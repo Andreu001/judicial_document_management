@@ -44,6 +44,15 @@ import OtherMaterialDecisionDetail from './OtherMaterials/OtherMaterialDecisionD
 import CriminalCivilClaimDetail from './CriminalCase/CriminalCivilClaimDetail';
 import Statistics from './Statistics/Statistics';
 import CitizenDashboard from '../pages/Citizen/CitizenDashboard';
+import CriminalCasesPage from './CaseCategories/CriminalCasesPage';
+import CivilCasesPage from './CaseCategories/CivilCasesPage';
+import AdministrativeCasesPage from './CaseCategories/AdministrativeCasesPage';
+import AdminOffensesPage from './CaseCategories/AdminOffensesPage';
+import CitizenWelcome from '../pages/Citizen/CitizenWelcome';
+import CitizenVerify from '../pages/Citizen/CitizenVerify';
+import OAuthCallback from '../pages/Citizen/OAuthCallback';
+import CitizenCaseListView from '../pages/Citizen/CitizenCaseListView';
+import ArchivePage from '../pages/Citizen/ArchivePage';
 
 
 const AppRouter = () => {
@@ -59,6 +68,21 @@ const AppRouter = () => {
                 <Route path="hr" element={<PersonnelPage />} />
                 <Route path="/legal-documents" element={<LegalDocuments />} />
                 <Route path="statistics" element={<Statistics />} />
+                <Route path="criminal" element={<CriminalCasesPage />} />
+                <Route path="civil" element={<CivilCasesPage />} />
+                <Route path="administrative" element={<AdministrativeCasesPage />} />
+                <Route path="admin-offenses" element={<AdminOffensesPage />} />
+
+                <Route path="citizen/cases/criminal" element={<CitizenCaseListView caseType="criminal" title="Уголовные дела" />} />
+                <Route path="citizen/cases/civil" element={<CitizenCaseListView caseType="civil" title="Гражданские дела" />} />
+                <Route path="citizen/cases/coap" element={<CitizenCaseListView caseType="coap" title="Административные правонарушения" />} />
+                <Route path="citizen/cases/kas" element={<CitizenCaseListView caseType="kas" title="Дела КАС" />} />
+                <Route path="citizen/archive" element={<ArchivePage />} />
+
+                <Route path="citizen/verify" element={<CitizenVerify />} />
+                <Route path="citizen/welcome" element={<CitizenWelcome />} />
+                <Route path="citizen/dashboard" element={<CitizenDashboard />} />
+                <Route path="/citizen/oauth-callback" element={<OAuthCallback />} />
 
                 <Route index element={<Navigate to="/citizen/dashboard" />} />
                 <Route path="dashboard" element={<CitizenDashboard />} />

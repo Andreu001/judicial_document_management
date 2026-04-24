@@ -1,33 +1,46 @@
+// src/pages/Citizen/CitizenCaseListView.jsx
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import citizenCaseService from '../../API/citizenCaseService';
-import styles from './CitizenDashboard.module.css';
+import styles from './CitizenCaseListView.module.css';
 
-const CitizenDashboard = () => {
+const CitizenCaseListView = ({ caseType, title }) => {
   const { user } = useAuth();
-  const location = useLocation();
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('active');
+  const [filter, setFilter] = useState('all'); // all, active, completed, archived
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    
-    if (token) {
-      localStorage.setItem('token', token);
-      window.history.replaceState({}, document.title, '/citizen/dashboard');
-    }
-    
     loadCases();
-  }, [location]);
+  }, []);
 
   const loadCases = async () => {
     setLoading(true);
-    const data = await citizenCaseService.getCases();
-    setCases(data || []);
-    setLoading(false);
+    try {
+      // Получаем ВСЕ дела, к которым у пользователя есть доступ
+      const allCases = await citizenCaseService.getCases();
+      
+      // Фильтруем по типу дела
+      const filtered = allCases.filter(c => {
+        if (caseType === 'criminal') return c.case_type === 'criminalproceedings';
+        if (caseType === 'civil') return c.case_type === 'civilproceedings';
+        if (caseType === 'coap') return c.case_type === 'administrativeproceedings';
+        if (caseType === 'kas') return c.case_type === 'kasproceedings';
+        return true;
+      });
+      
+      setCases(filtered);
+    } catch (error) {
+      console.error('Error loading cases:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFilteredCases = () => {
+    if (filter === 'all') return cases;
+    return cases.filter(c => c.case_status === filter);
   };
 
   const getStatusColor = (status) => {
@@ -50,19 +63,12 @@ const CitizenDashboard = () => {
     }
   };
 
-  const filteredCases = cases.filter(c => {
-    if (activeTab === 'active') return c.case_status === 'active';
-    if (activeTab === 'completed') return c.case_status === 'completed';
-    if (activeTab === 'archived') return c.case_status === 'archived';
-    return true;
-  });
-
   if (!user?.is_verified) {
     return (
       <div className={styles.verificationContainer}>
         <div className={styles.verificationCard}>
-          <h2>🔐 Подтверждение личности</h2>
-          <p>Для доступа к делам необходимо подтвердить свою личность</p>
+          <h2>🔐 Требуется верификация</h2>
+          <p>Для просмотра дел необходимо подтвердить свою личность</p>
           <Link to="/citizen/verify" className={styles.verifyButton}>
             Пройти верификацию
           </Link>
@@ -72,34 +78,42 @@ const CitizenDashboard = () => {
   }
 
   if (loading) {
-    return <div className={styles.loading}>Загрузка...</div>;
+    return <div className={styles.loading}>Загрузка ваших дел...</div>;
   }
 
+  const filteredCases = getFilteredCases();
+
   return (
-    <div className={styles.dashboard}>
+    <div className={styles.container}>
       <div className={styles.header}>
-        <h1>Мои дела</h1>
-        <div className={styles.userInfo}>
-          <span>{user?.last_name} {user?.first_name} {user?.middle_name}</span>
+        <h1>{title}</h1>
+        <div className={styles.stats}>
+          Всего дел: {cases.length}
         </div>
       </div>
 
-      <div className={styles.tabs}>
+      <div className={styles.filters}>
         <button 
-          className={`${styles.tab} ${activeTab === 'active' ? styles.active : ''}`}
-          onClick={() => setActiveTab('active')}
+          className={`${styles.filterBtn} ${filter === 'all' ? styles.active : ''}`}
+          onClick={() => setFilter('all')}
         >
-          В производстве ({cases.filter(c => c.case_status === 'active').length})
+          Все ({cases.length})
         </button>
         <button 
-          className={`${styles.tab} ${activeTab === 'completed' ? styles.active : ''}`}
-          onClick={() => setActiveTab('completed')}
+          className={`${styles.filterBtn} ${filter === 'active' ? styles.active : ''}`}
+          onClick={() => setFilter('active')}
+        >
+          В работе ({cases.filter(c => c.case_status === 'active').length})
+        </button>
+        <button 
+          className={`${styles.filterBtn} ${filter === 'completed' ? styles.active : ''}`}
+          onClick={() => setFilter('completed')}
         >
           Рассмотренные ({cases.filter(c => c.case_status === 'completed').length})
         </button>
         <button 
-          className={`${styles.tab} ${activeTab === 'archived' ? styles.active : ''}`}
-          onClick={() => setActiveTab('archived')}
+          className={`${styles.filterBtn} ${filter === 'archived' ? styles.active : ''}`}
+          onClick={() => setFilter('archived')}
         >
           В архиве ({cases.filter(c => c.case_status === 'archived').length})
         </button>
@@ -107,7 +121,10 @@ const CitizenDashboard = () => {
 
       {filteredCases.length === 0 ? (
         <div className={styles.emptyState}>
-          <p>У вас нет дел в этом разделе</p>
+          <p>У вас нет дел в этой категории</p>
+          <p className={styles.emptyHint}>
+            Если вы считаете, что это ошибка, обратитесь в канцелярию суда
+          </p>
         </div>
       ) : (
         <div className={styles.casesList}>
@@ -123,14 +140,8 @@ const CitizenDashboard = () => {
               </div>
               
               <div className={styles.caseInfo}>
-                <div className={styles.caseType}>
-                  {caseItem.case_type === 'criminalproceedings' && '⚖️ Уголовное дело'}
-                  {caseItem.case_type === 'civilproceedings' && '📋 Гражданское дело'}
-                  {caseItem.case_type === 'administrativeproceedings' && '📜 Административное дело (КоАП)'}
-                  {caseItem.case_type === 'kasproceedings' && '🏛 Административное дело (КАС)'}
-                </div>
                 <div className={styles.caseRole}>
-                  Роль: <strong>{caseItem.role_in_case}</strong>
+                  Ваша роль: <strong>{caseItem.role_in_case || 'Участник'}</strong>
                 </div>
                 {caseItem.judge_name && (
                   <div className={styles.caseJudge}>
@@ -184,4 +195,4 @@ const CitizenDashboard = () => {
   );
 };
 
-export default CitizenDashboard;
+export default CitizenCaseListView;

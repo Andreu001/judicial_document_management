@@ -110,7 +110,7 @@ const Navbar = () => {
             <div className={styles.dropdownContent}>
               <Link to="/criminal">Уголовные дела</Link>
               <Link to="/civil">Гражданские дела</Link>
-              <Link to="/administrative">Административные дела</Link>
+              <Link to="/administrative">Административные дела КАС</Link>
               <Link to="/admin-offenses">Адм. правонарушения</Link>
             </div>
           )}

@@ -1,21 +1,31 @@
+// src/API/citizenCaseService.jsx
 import baseService from './baseService';
 
 class CitizenCaseService {
   // Получить список дел
   async getCases() {
     try {
+      // Используем правильный endpoint
       const response = await baseService.get('/citizen/api/cases/');
       return response.data;
     } catch (error) {
       console.error('Error fetching cases:', error);
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      
+      // Если 401 - пользователь не авторизован
+      if (error.response?.status === 401) {
+        console.warn('User not authenticated, redirecting to login...');
+        // Можно вызвать редирект, но не будем делать это автоматически
+      }
       return [];
     }
   }
 
   // Получить детали дела
-  async getCaseDetail(caseId) {
+  async getCaseDetail(accessId) {
     try {
-      const response = await baseService.get(`/citizen/api/cases/${caseId}/case_detail/`);
+      const response = await baseService.get(`/citizen/api/cases/${accessId}/case_detail/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching case detail:', error);
@@ -30,12 +40,10 @@ class CitizenCaseService {
         responseType: 'blob'
       });
       
-      // Создаем ссылку для скачивания
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       
-      // Получаем имя файла из заголовка Content-Disposition
       const contentDisposition = response.headers['content-disposition'];
       let filename = 'decision.pdf';
       if (contentDisposition) {
@@ -80,7 +88,7 @@ class CitizenCaseService {
     }
   }
 
-  // Обновить ходатайство (черновик)
+  // Обновить ходатайство
   async updatePetition(petitionId, petitionData) {
     try {
       const response = await baseService.put(`/citizen/api/petitions/${petitionId}/`, petitionData);
@@ -154,6 +162,16 @@ class CitizenCaseService {
       return response.data;
     } catch (error) {
       console.error('Error uploading multiple documents:', error);
+      throw error;
+    }
+  }
+  
+  async getCaseById(accessId) {
+    try {
+      const response = await baseService.get(`/citizen/api/cases/${accessId}/case_detail/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching case:', error);
       throw error;
     }
   }

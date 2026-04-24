@@ -1,0 +1,281 @@
+.container {
+  margin-left: 6.3cm;
+  padding: 24px;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e3c5c;
+  margin: 0;
+}
+
+.createButton {
+  padding: 10px 20px;
+  background: #2f855a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.createButton:hover {
+  background: #276749;
+  transform: translateY(-1px);
+}
+
+.filters {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.searchBar {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 40px 10px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #1e3c5c;
+  box-shadow: 0 0 0 3px rgba(30, 60, 92, 0.1);
+}
+
+.searchIcon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.filterButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 6px 14px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #475569;
+}
+
+.filterBtn:hover {
+  background: #e2e8f0;
+}
+
+.filterBtn.active {
+  background: #1e3c5c;
+  color: white;
+}
+
+.tableWrapper {
+  background: white;
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 14px 16px;
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+
+.table tr:hover td {
+  background: #f8fafc;
+}
+
+.caseNumber {
+  font-weight: 600;
+  color: #1e3c5c;
+}
+
+.description {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.viewButton {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #475569;
+}
+
+.viewButton:hover {
+  background: #1e3c5c;
+  border-color: #1e3c5c;
+  color: white;
+}
+
+/* Badges */
+.badgeArchived {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e2e8f0;
+  color: #475569;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badgeCompleted {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #c6f6d5;
+  color: #276749;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badgeInProgress {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #bee3f8;
+  color: #2c5282;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badgePending {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fefcbf;
+  color: #975a16;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badgeOriginal {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e9d8fd;
+  color: #6b46c1;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badgeComplaint {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fed7d7;
+  color: #c53030;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badgeOther {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e2e8f0;
+  color: #718096;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px;
+  background: white;
+  border-radius: 12px;
+}
+
+.emptyState p {
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.emptyState button {
+  padding: 8px 20px;
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    margin-left: 0;
+    padding: 16px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .table th,
+  .table td {
+    padding: 10px 12px;
+  }
+}
