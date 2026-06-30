@@ -66,7 +66,6 @@ const KasDetail = () => {
           setFormData(kasResponse);
           setIsArchived(kasResponse.status === 'archived');
           
-          // Загружаем связанные данные
           const sidesResponse = await KasCaseService.getSides(kasResponse.id);
           setSides(sidesResponse);
           
@@ -79,7 +78,6 @@ const KasDetail = () => {
           setError('Административное дело не найдено');
         }
 
-        // Загружаем опции и судей параллельно
         await Promise.all([
           loadOptions(),
           loadJudges()
@@ -139,7 +137,6 @@ const KasDetail = () => {
     }));
   }, [isArchived, isEditing]);
 
-  // Функция для переключения сворачивания секций
   const toggleSection = (section) => {
     setCollapsedSections(prev => ({
       ...prev,
@@ -405,7 +402,6 @@ const KasDetail = () => {
       </div>
 
       <div className={styles.content}>
-        {/* Основной контент с вкладками */}
         <div className={styles.mainContent}>
           <div className={styles.tabsContainer}>
             <div className={styles.tabs}>
@@ -498,14 +494,12 @@ const KasDetail = () => {
           </div>
         </div>
 
-        {/* Правая колонка - обновленный сайдбар в стиле уголовных дел */}
         <div className={styles.sidebar}>
-
-            <ProgressLog 
-              caseType="kas"
-              caseId={id}
-              onRefresh={refreshProgress}
-            />
+          <ProgressLog 
+            caseType="kas"
+            caseId={id}
+            onRefresh={refreshProgress}
+          />
 
           <NotificationsPanel
             caseType="kas"
@@ -514,6 +508,7 @@ const KasDetail = () => {
             collapsed={collapsedNotifications}
             onToggle={setCollapsedNotifications}
           />
+          
           {/* Стороны по делу */}
           <div className={styles.section}>
             <div 

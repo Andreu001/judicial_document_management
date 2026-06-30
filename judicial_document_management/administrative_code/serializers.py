@@ -10,10 +10,43 @@ from .models import (
     AdministrativeSidesCaseInCase, AdministrativeLawyer,
     AdministrativeCaseMovement, AdministrativePetition, ReferringAuthorityAdmin,
     AdministrativeAppeal, AdministrativeCassation, PostponementReasonAdmin,
-    SuspensionReasonAdmin, AdministrativeSubject
+    SuspensionReasonAdmin, AdministrativeSubject, CaseOrderAdmin,
+    AdministrativeCategory, ExecutionStageAdmin, AdministrativeSecurityMeasure
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
+
+
+class AdministrativeSecurityMeasureSerializer(serializers.ModelSerializer):
+    measure_type_label = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AdministrativeSecurityMeasure
+        fields = '__all__'
+        read_only_fields = ('administrative_proceedings',)
+    
+    def get_measure_type_label(self, obj):
+        return obj.get_measure_type_display()
+
+
+class CaseOrderAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CaseOrderAdmin
+        fields = '__all__'
+
+class AdministrativeCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdministrativeCategory
+        fields = '__all__'
+
+class ExecutionStageAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExecutionStageAdmin
+        fields = '__all__'
+
+class TermComplianceSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
 
 
 class PostponementReasonAdminSerializer(serializers.ModelSerializer):
@@ -686,11 +719,24 @@ class AdministrativePetitionSerializer(serializers.ModelSerializer):
         return instance
 
 
+# Сериализатор для статьи КоАП
+class KoapArticleSimpleSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    full_number = serializers.CharField()
+    title = serializers.CharField()
+    chapter = serializers.CharField()
+    section = serializers.CharField()
+
+
 class AdministrativeProceedingsSerializer(serializers.ModelSerializer):
     presiding_judge_full_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     referring_authority_detail = ReferringAuthorityAdminSerializer(source='referring_authority', read_only=True)
     registered_case_info = serializers.SerializerMethodField()
+    
+    # Новые поля для отображения области и статьи
+    offense_area_display = serializers.CharField(source='get_offense_area_display', read_only=True)
+    koap_article_detail = serializers.SerializerMethodField()
     
     admin_decisions = AdministrativeDecisionSerializer(many=True, read_only=True)
     admin_executions = AdministrativeExecutionSerializer(many=True, read_only=True)
@@ -714,6 +760,14 @@ class AdministrativeProceedingsSerializer(serializers.ModelSerializer):
                 obj.presiding_judge.middle_name
             ])
             return ' '.join(parts).strip() or str(obj.presiding_judge)
+        return None
+
+    def get_koap_article_detail(self, obj):
+        if obj.koap_article:
+            from legal_codes.serializers import AdministrativeCodeArticleSerializer
+            data = AdministrativeCodeArticleSerializer(obj.koap_article).data
+            data['selected_part'] = obj.koap_article_part
+            return data
         return None
 
     def validate_case_number_admin(self, value):

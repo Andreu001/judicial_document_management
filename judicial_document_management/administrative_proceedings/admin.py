@@ -310,10 +310,8 @@ class KasDecisionAdmin(admin.ModelAdmin):
     """Админка для решений КАС"""
     list_display = (
         'kas_proceedings', 'decision_date', 'outcome_display_admin',
-        'decision_is_appealed', 'decision_appeal_result_display_admin',
-        'decision_is_cassation_filed', 'decision_cassation_result_display_admin'
     )
-    list_filter = ('decision_date', 'outcome', 'decision_is_appealed', 'decision_is_cassation_filed')
+    list_filter = ('decision_date', 'outcome')
     search_fields = ('kas_proceedings__case_number_kas',)
     raw_id_fields = ('kas_proceedings',)
     
@@ -353,20 +351,7 @@ class KasDecisionAdmin(admin.ModelAdmin):
                 'special_rulings_reports_received'
             )
         }),
-        ('Апелляционное обжалование решения', {
-            'classes': ('collapse',),
-            'fields': (
-                'decision_is_appealed', 'decision_appeal_date',
-                'decision_appeal_review_date', 'decision_appeal_result'
-            )
-        }),
-        ('Кассационное обжалование решения', {
-            'classes': ('collapse',),
-            'fields': (
-                'decision_is_cassation_filed', 'decision_cassation_date',
-                'decision_cassation_review_date', 'decision_cassation_result'
-            )
-        }),
+        # УДАЛЕНЫ БЛОКИ 'Апелляционное обжалование решения' и 'Кассационное обжалование решения'
         ('Другие постановления', {
             'classes': ('collapse',),
             'fields': (
@@ -382,16 +367,6 @@ class KasDecisionAdmin(admin.ModelAdmin):
         """Отображение результата"""
         return obj.get_outcome_display() if obj.outcome else '-'
     outcome_display_admin.short_description = 'Результат'
-    
-    def decision_appeal_result_display_admin(self, obj):
-        """Отображение результата апелляции решения"""
-        return obj.get_decision_appeal_result_display() if obj.decision_appeal_result else '-'
-    decision_appeal_result_display_admin.short_description = 'Результат апелляции решения'
-    
-    def decision_cassation_result_display_admin(self, obj):
-        """Отображение результата кассации решения"""
-        return obj.get_decision_cassation_result_display() if obj.decision_cassation_result else '-'
-    decision_cassation_result_display_admin.short_description = 'Результат кассации решения'
 
 
 @admin.register(KasExecution)

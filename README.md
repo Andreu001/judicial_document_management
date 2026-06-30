@@ -3,7 +3,7 @@
 
 Второй этап проекта "Судебный процесс". Наполнение смыслом скелета карточки, по соответствующим кодексам. Создание API, фронт на react/
 
-В проекте есть готовая БД с четырьмя карточками и заполнеными сторонами
+В проекте есть готовая БД с карточками
 На данном этапе реализованно:
 - создание/удаление/редактрование карточек;
 - просмотр подробностей по конкретной карточки;
@@ -11,6 +11,7 @@
 - доп кнопки "движение дела", "ходатайства по делу", "решения";
 - просмотр, редактирование и удаление в каждой из вкладках выше;
 - сортировка и поиск по заданным параметрам
+- 
 
 ## Дальнейшие действия по проекту
 
@@ -50,10 +51,26 @@ python manage.py migrate
 ```
 Загрузка данных
 ```sh
-python manage.py loading_csv
+python manage.py load_csv
+```
+Загрузка кодексов (актуальность на май 2026)
+```sh
+python manage.py import_all_codes
+Тихий режим
+python manage.py import_all_codes --silent
+```
+```sh
+python manage.py loaddata initial_notification_data.json
+```
+```sh
+python manage.py loaddata initial_action_types.json
+```
+```sh
+python manage.py loaddata initial_templates.json
 ```
 ```sh
 python manage.py runserver
+daphne -b 0.0.0.0 -p 8000 judicial_document_management.asgi:application
 ```
 ### Запуск фронта
 - установить node.js https://nodejs.org/en/download

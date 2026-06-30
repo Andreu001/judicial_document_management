@@ -1,10 +1,9 @@
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 10px;
   padding: 20px 24px;
-  margin-left: 6.3cm;
-  margin-right: 24px;
+  margin-right: 5px;
   position: relative;
   top: 48px;
 }

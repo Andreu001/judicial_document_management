@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JoditEditor from 'jodit-react';
+import useModalDialog from '../../hooks/useModalDialog';
 import styles from './Documents.module.css';
 import baseService from '../../API/baseService';
 
@@ -33,6 +34,7 @@ const DocumentForm = ({
   const navigate = useNavigate();
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
+  const { showConfirm, showInfo, showError, ModalDialog } = useModalDialog();
   
   const [formData, setFormData] = useState({
     template: '',
@@ -44,7 +46,7 @@ const DocumentForm = ({
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 
-  // Конфигурация Jodit редактора с кастомными стилями под ваш проект
+  // Конфигурация Jodit редактора
   const editorConfig = {
     readonly: false,
     height: 600,
@@ -52,16 +54,14 @@ const DocumentForm = ({
     toolbar: true,
     spellcheck: true,
     
-    // Кастомные цвета под вашу цветовую схему
     colors: {
       palette: [
-        ['#2c3e50', '#34495e', '#4a5568', '#718096', '#a0aec0'], // Основные цвета
-        ['#c53030', '#9b2c2c', '#fed7d7', '#c6f6d5', '#22543d'], // Акцентные
+        ['#2c3e50', '#34495e', '#4a5568', '#718096', '#a0aec0'],
+        ['#c53030', '#9b2c2c', '#fed7d7', '#c6f6d5', '#22543d'],
         ['#38a169', '#2f855a', '#3182ce', '#2c5282', '#1e2a36']
       ]
     },
     
-    // Кнопки панели инструментов
     buttons: [
       'source', '|',
       'bold', 'italic', 'underline', 'strikethrough', '|',
@@ -74,7 +74,6 @@ const DocumentForm = ({
       'print', 'about'
     ],
     
-    // Настройки для вставки изображений
     uploader: {
       insertImageAsBase64URI: true,
       imagesExtensions: ['jpg', 'png', 'jpeg', 'gif', 'svg', 'webp'],
@@ -86,13 +85,11 @@ const DocumentForm = ({
       }
     },
     
-    // Настройки для работы с Word
     askBeforePasteHTML: false,
     askBeforePasteFromWord: false,
     pasteFromWordAction: 'insert',
     pasteFromWordInsert: true,
     
-    // Шрифты и размеры
     style: {
       font: {
         'Arial': 'Arial, Helvetica, sans-serif',
@@ -119,7 +116,6 @@ const DocumentForm = ({
       }
     },
     
-    // Стили по умолчанию (как в ГОСТ для документов)
     defaultStyle: {
       fontFamily: 'Times New Roman, Times, serif',
       fontSize: '14px',
@@ -128,10 +124,8 @@ const DocumentForm = ({
       padding: '0'
     },
     
-    // Кастомные CSS стили для содержимого
     editorCssClass: 'jodit-document-editor',
     
-    // Настройки для печати
     print: {
       styles: `
         body {
@@ -146,7 +140,6 @@ const DocumentForm = ({
       `
     },
     
-    // Дополнительные настройки
     showXPathInStatusbar: true,
     showWordsCounter: true,
     showCharsCounter: true,
@@ -158,7 +151,6 @@ const DocumentForm = ({
     showPlaceholder: true,
     enableDragAndDropFileToEditor: true,
     
-    // Кастомные кнопки
     extraButtons: [
       {
         name: 'insertDate',
@@ -264,7 +256,7 @@ const DocumentForm = ({
     if (!file) return;
 
     if (!file.name.match(/\.(doc|docx)$/i)) {
-      alert('Пожалуйста, выберите файл в формате Word (.doc или .docx)');
+      showError('Ошибка', 'Пожалуйста, выберите файл в формате Word (.doc или .docx)');
       return;
     }
 
@@ -286,24 +278,22 @@ const DocumentForm = ({
 
       const data = response.data;
       
-      // Устанавливаем контент в редактор
       if (editorRef.current) {
         editorRef.current.setEditorState(data.content);
         setFormData(prev => ({ ...prev, content: data.content }));
       }
       
-      // Если в Word файле есть заголовок, используем его
       if (data.title && !formData.title) {
         setFormData(prev => ({ ...prev, title: data.title }));
       }
 
       event.target.value = '';
       
-      alert('Документ успешно загружен! Теперь вы можете редактировать его содержимое.');
+      showInfo('Успешно', 'Документ успешно загружен! Теперь вы можете редактировать его содержимое.');
 
     } catch (error) {
       console.error('Error uploading Word file:', error);
-      alert(`Не удалось загрузить Word файл: ${error.response?.data?.error || error.message}`);
+      showError('Ошибка', `Не удалось загрузить Word файл: ${error.response?.data?.error || error.message}`);
     } finally {
       setIsLoadingTemplate(false);
     }
@@ -312,6 +302,10 @@ const DocumentForm = ({
   const handlePrint = () => {
     const printContent = formData.content;
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showError('Ошибка', 'Пожалуйста, разрешите всплывающие окна для печати');
+      return;
+    }
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -394,10 +388,11 @@ const DocumentForm = ({
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      showInfo('Успешно', 'Документ сохранен в Word');
 
     } catch (error) {
       console.error('Error saving to Word:', error);
-      alert('Не удалось сохранить документ в Word');
+      showError('Ошибка', 'Не удалось сохранить документ в Word');
     }
   };
 
@@ -422,163 +417,167 @@ const DocumentForm = ({
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      showInfo('Успешно', 'Документ сохранен в PDF');
 
     } catch (error) {
       console.error('Error saving to PDF:', error);
-      alert('Не удалось сохранить документ в PDF');
+      showError('Ошибка', 'Не удалось сохранить документ в PDF');
     }
   };
 
   return (
-    <div className={styles.formContainer}>
-      <h2>{isEdit ? 'Редактирование документа' : 'Создание нового документа'}</h2>
-      
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label htmlFor="template">Шаблон документа *</label>
-          <select
-            id="template"
-            name="template"
-            value={formData.template}
-            onChange={handleTemplateChange}
-            className={errors.template ? styles.errorInput : ''}
-            disabled={isEdit}
-          >
-            <option value="">Выберите шаблон</option>
-            {templates.map(template => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </select>
-          {errors.template && <span className={styles.errorMessage}>{errors.template}</span>}
-        </div>
-
-        {selectedTemplate && (
-          <div className={styles.templateInfo}>
-            <strong>{selectedTemplate.name}</strong>
-            <p>{selectedTemplate.description}</p>
+    <>
+      <ModalDialog />
+      <div className={styles.formContainer}>
+        <h2>{isEdit ? 'Редактирование документа' : 'Создание нового документа'}</h2>
+        
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.formGroup}>
+            <label htmlFor="template">Шаблон документа *</label>
+            <select
+              id="template"
+              name="template"
+              value={formData.template}
+              onChange={handleTemplateChange}
+              className={errors.template ? styles.errorInput : ''}
+              disabled={isEdit}
+            >
+              <option value="">Выберите шаблон</option>
+              {templates.map(template => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+            {errors.template && <span className={styles.errorMessage}>{errors.template}</span>}
           </div>
-        )}
 
-        <div className={styles.formGroup}>
-          <label htmlFor="title">Заголовок документа *</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleTitleChange}
-            placeholder="Например: Постановление о назначении экспертизы"
-            className={errors.title ? styles.errorInput : ''}
-          />
-          {errors.title && <span className={styles.errorMessage}>{errors.title}</span>}
-        </div>
+          {selectedTemplate && (
+            <div className={styles.templateInfo}>
+              <strong>{selectedTemplate.name}</strong>
+              <p>{selectedTemplate.description}</p>
+            </div>
+          )}
 
-        <div className={styles.editorToolbar}>
-          <button 
-            type="button" 
-            onClick={() => insertSpecialField('date')}
-            className={styles.toolbarButton}
-            title="Вставить текущую дату"
-          >
-            📅 Дата
-          </button>
-          <button 
-            type="button" 
-            onClick={() => insertSpecialField('case_number')}
-            className={styles.toolbarButton}
-            title="Вставить номер дела"
-          >
-            📁 Номер дела
-          </button>
-          <button 
-            type="button" 
-            onClick={() => insertSpecialField('judge')}
-            className={styles.toolbarButton}
-            title="Вставить ФИО судьи"
-          >
-            👨‍⚖️ Судья
-          </button>
-          <button 
-            type="button" 
-            onClick={() => insertSpecialField('participants')}
-            className={styles.toolbarButton}
-            title="Вставить участников"
-          >
-            👥 Участники
-          </button>
-          
-          <div className={styles.toolbarSeparator}></div>
-          
-          <button 
-            type="button" 
-            onClick={handlePrint}
-            className={styles.toolbarButton}
-            title="Печать"
-          >
-            🖨️ Печать
-          </button>
-          
-          <button 
-            type="button" 
-            onClick={handleSaveToWord}
-            className={styles.toolbarButton}
-            title="Сохранить в Word"
-          >
-            📥 Word
-          </button>
-          
-          <button 
-            type="button" 
-            onClick={handleSaveToPdf}
-            className={styles.toolbarButton}
-            title="Сохранить в PDF"
-          >
-            📄 PDF
-          </button>
-          
-          <div className={styles.toolbarSeparator}></div>
-          
-          <button 
-            type="button" 
-            onClick={() => fileInputRef.current.click()}
-            className={styles.toolbarButton}
-            title="Загрузить из Word"
-            disabled={isLoadingTemplate}
-          >
-            {isLoadingTemplate ? '⏳ Загрузка...' : '📤 Загрузить Word'}
-          </button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleWordUpload}
-            accept=".doc,.docx"
-            style={{ display: 'none' }}
-          />
-        </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="title">Заголовок документа *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleTitleChange}
+              placeholder="Например: Постановление о назначении экспертизы"
+              className={errors.title ? styles.errorInput : ''}
+            />
+            {errors.title && <span className={styles.errorMessage}>{errors.title}</span>}
+          </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="content">Содержание документа *</label>
-          <JoditEditor
-            ref={editorRef}
-            value={formData.content}
-            config={editorConfig}
-            onBlur={handleContentChange}
-          />
-          {errors.content && <span className={styles.errorMessage}>{errors.content}</span>}
-        </div>
+          <div className={styles.editorToolbar}>
+            <button 
+              type="button" 
+              onClick={() => insertSpecialField('date')}
+              className={styles.toolbarButton}
+              title="Вставить текущую дату"
+            >
+              📅 Дата
+            </button>
+            <button 
+              type="button" 
+              onClick={() => insertSpecialField('case_number')}
+              className={styles.toolbarButton}
+              title="Вставить номер дела"
+            >
+              📁 Номер дела
+            </button>
+            <button 
+              type="button" 
+              onClick={() => insertSpecialField('judge')}
+              className={styles.toolbarButton}
+              title="Вставить ФИО судьи"
+            >
+              👨‍⚖️ Судья
+            </button>
+            <button 
+              type="button" 
+              onClick={() => insertSpecialField('participants')}
+              className={styles.toolbarButton}
+              title="Вставить участников"
+            >
+              👥 Участники
+            </button>
+            
+            <div className={styles.toolbarSeparator}></div>
+            
+            <button 
+              type="button" 
+              onClick={handlePrint}
+              className={styles.toolbarButton}
+              title="Печать"
+            >
+              🖨️ Печать
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleSaveToWord}
+              className={styles.toolbarButton}
+              title="Сохранить в Word"
+            >
+              📥 Word
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleSaveToPdf}
+              className={styles.toolbarButton}
+              title="Сохранить в PDF"
+            >
+              📄 PDF
+            </button>
+            
+            <div className={styles.toolbarSeparator}></div>
+            
+            <button 
+              type="button" 
+              onClick={() => fileInputRef.current.click()}
+              className={styles.toolbarButton}
+              title="Загрузить из Word"
+              disabled={isLoadingTemplate}
+            >
+              {isLoadingTemplate ? '⏳ Загрузка...' : '📤 Загрузить Word'}
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleWordUpload}
+              accept=".doc,.docx"
+              style={{ display: 'none' }}
+            />
+          </div>
 
-        <div className={styles.formActions}>
-          <button type="button" onClick={handleCancel} className={styles.cancelButton}>
-            Отмена
-          </button>
-          <button type="submit" className={styles.submitButton}>
-            {isEdit ? 'Сохранить изменения' : 'Создать документ'}
-          </button>
-        </div>
-      </form>
-    </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="content">Содержание документа *</label>
+            <JoditEditor
+              ref={editorRef}
+              value={formData.content}
+              config={editorConfig}
+              onBlur={handleContentChange}
+            />
+            {errors.content && <span className={styles.errorMessage}>{errors.content}</span>}
+          </div>
+
+          <div className={styles.formActions}>
+            <button type="button" onClick={handleCancel} className={styles.cancelButton}>
+              Отмена
+            </button>
+            <button type="submit" className={styles.submitButton}>
+              {isEdit ? 'Сохранить изменения' : 'Создать документ'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 };
 

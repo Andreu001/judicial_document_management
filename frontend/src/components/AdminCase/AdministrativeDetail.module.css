@@ -969,3 +969,41 @@
 .sidebarListItem.sideType-measure:hover {
   border-left-color: #319795;
 }
+
+/* Стиль для индикатора загрузки структуры */
+.structureLoading {
+    color: #6c757d;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 4px;
+}
+
+/* Стиль для полей, которые зависят от других полей */
+.dependentField {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.dependentField.active {
+    opacity: 1;
+}
+/* Стили для поиска статей */
+.articleSearchContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.articleSearchContainer select {
+    min-height: 100px;
+    max-height: 150px;
+}
+
+.articleSearchContainer select option {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.articleSearchContainer select option:hover {
+    background-color: #e9ecef;
+}

@@ -104,6 +104,18 @@ class AdministrativeProceedings(models.Model):
         ('execution', 'На исполнении'),
         ('archived', 'В архиве'),
     ]
+    
+    OFFENSE_AREA_CHOICES = [
+        ('administrative', 'Административное правонарушение'),
+        ('tax', 'Налоговое правонарушение'),
+        ('customs', 'Таможенное правонарушение'),
+        ('traffic', 'Нарушение ПДД'),
+        ('environmental', 'Экологическое правонарушение'),
+        ('labor', 'Нарушение трудового законодательства'),
+        ('housing', 'Нарушение жилищного законодательства'),
+        ('business', 'Нарушение в сфере предпринимательской деятельности'),
+        ('other', 'Иное'),
+    ]
 
     # ------------------- Раздел 1. Общие сведения -------------------
     case_number_admin = models.CharField(
@@ -163,15 +175,28 @@ class AdministrativeProceedings(models.Model):
         verbose_name="Код судьи",
         null=True, blank=True
     )
-    article_number = models.CharField(
+    
+    # НОВЫЕ ПОЛЯ ДЛЯ ВЫБОРА ОБЛАСТИ И СТАТЬИ
+    offense_area = models.CharField(
         max_length=50,
-        verbose_name="Статья КоАП РФ",
+        choices=OFFENSE_AREA_CHOICES,
+        verbose_name="Область правонарушения",
         null=True, blank=True
     )
-    article_part = models.CharField(
-        max_length=50,
-        verbose_name="Часть статьи",
-        null=True, blank=True
+    
+    # Внешний ключ на статью КоАП из приложения legal_codes
+    koap_article = models.ForeignKey(
+        'legal_codes.AdministrativeCodeArticle',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Статья КоАП РФ",
+        related_name='admin_proceedings'
+    )
+    koap_article_part = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        verbose_name="Часть статьи КоАП РФ"
     )
     offense_description = models.TextField(
         verbose_name="Описание правонарушения",
@@ -250,7 +275,6 @@ class AdministrativeProceedings(models.Model):
         verbose_name="Дата возобновления производства",
         null=True, blank=True
     )
-    # Соблюдение сроков (новое поле)
     term_compliance = models.CharField(
         max_length=10,
         choices=[
@@ -328,7 +352,6 @@ class AdministrativeSubject(models.Model):
         choices=SUBJECT_TYPES,
         verbose_name="Тип субъекта"
     )
-    # Ссылка на сторону из business_card (опционально, если нужно связать с конкретной стороной)
     sides_case_incase = models.ForeignKey(
         'business_card.SidesCaseInCase',
         on_delete=models.SET_NULL,
@@ -984,13 +1007,11 @@ class AdministrativeSecurityMeasure(models.Model):
         verbose_name="Дата применения",
         null=True, blank=True
     )
-    # Для некоторых мер (например, залог) нужна сумма
     amount = models.DecimalField(
         max_digits=12, decimal_places=2,
         null=True, blank=True,
         verbose_name="Сумма (для залога, ареста имущества и т.д.)"
     )
-    # Для помещения в спецучреждение - срок
     period = models.CharField(
         max_length=100,
         blank=True, null=True,

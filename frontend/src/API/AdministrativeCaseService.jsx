@@ -1,3 +1,4 @@
+// src/API/AdministrativeCaseService.jsx
 import baseService from './baseService';
 
 const BASE_URL = '/administrative_code/';
@@ -40,10 +41,7 @@ class AdministrativeCaseService {
   static async createReferringAuthority(authorityData) {
     try {
       const cleanedData = this.cleanData(authorityData);
-      const response = await baseService.post(
-        `${BASE_URL}referring-authorities-admin/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}referring-authorities-admin/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating referring authority:', error);
@@ -54,10 +52,7 @@ class AdministrativeCaseService {
   static async updateReferringAuthority(authorityId, authorityData) {
     try {
       const cleanedData = this.cleanData(authorityData);
-      const response = await baseService.patch(
-        `${BASE_URL}referring-authorities-admin/${authorityId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}referring-authorities-admin/${authorityId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating referring authority:', error);
@@ -107,10 +102,7 @@ class AdministrativeCaseService {
   static async createAdministrativeProceedings(proceedingsData) {
     try {
       const cleanedData = this.cleanData(proceedingsData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating administrative proceedings:', error);
@@ -121,10 +113,7 @@ class AdministrativeCaseService {
   static async updateAdministrativeProceedings(proceedingsId, proceedingsData) {
     try {
       const cleanedData = this.cleanData(proceedingsData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingsId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingsId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating administrative proceedings:', error);
@@ -151,9 +140,7 @@ class AdministrativeCaseService {
   
   static async getDecisions(proceedingId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/decisions/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/decisions/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching administrative decisions:', error);
@@ -163,9 +150,7 @@ class AdministrativeCaseService {
   
   static async getDecisionById(proceedingId, decisionId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/decisions/${decisionId}/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/decisions/${decisionId}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -179,10 +164,7 @@ class AdministrativeCaseService {
   static async createDecision(proceedingId, decisionData) {
     try {
       const cleanedData = this.cleanData(decisionData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/decisions/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/decisions/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating administrative decision:', error);
@@ -193,10 +175,7 @@ class AdministrativeCaseService {
   static async updateDecision(proceedingId, decisionId, decisionData) {
     try {
       const cleanedData = this.cleanData(decisionData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/decisions/${decisionId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/decisions/${decisionId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating administrative decision:', error);
@@ -206,9 +185,7 @@ class AdministrativeCaseService {
   
   static async deleteDecision(proceedingId, decisionId) {
     try {
-      await baseService.delete(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/decisions/${decisionId}/`
-      );
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/decisions/${decisionId}/`);
     } catch (error) {
       console.error('Error deleting administrative decision:', error);
       throw error;
@@ -219,9 +196,7 @@ class AdministrativeCaseService {
   
   static async getSides(proceedingId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/sides/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/sides/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching administrative sides:', error);
@@ -231,9 +206,7 @@ class AdministrativeCaseService {
 
   static async getSideById(proceedingId, sideId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/sides/${sideId}/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/sides/${sideId}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -247,10 +220,7 @@ class AdministrativeCaseService {
   static async createSide(proceedingId, sideData) {
     try {
       const cleanedData = this.cleanData(sideData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/sides/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/sides/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating side:', error);
@@ -261,10 +231,7 @@ class AdministrativeCaseService {
   static async updateSide(proceedingId, sideId, sideData) {
     try {
       const cleanedData = this.cleanData(sideData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/sides/${sideId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/sides/${sideId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating side:', error);
@@ -274,9 +241,7 @@ class AdministrativeCaseService {
 
   static async deleteSide(proceedingId, sideId) {
     try {
-      await baseService.delete(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/sides/${sideId}/`
-      );
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/sides/${sideId}/`);
     } catch (error) {
       console.error('Error deleting side:', error);
       throw error;
@@ -287,9 +252,7 @@ class AdministrativeCaseService {
   
   static async getLawyers(proceedingId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyers:', error);
@@ -299,9 +262,7 @@ class AdministrativeCaseService {
 
   static async getLawyerById(proceedingId, lawyerId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/${lawyerId}/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/${lawyerId}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -315,10 +276,7 @@ class AdministrativeCaseService {
   static async createLawyer(proceedingId, lawyerData) {
     try {
       const cleanedData = this.cleanData(lawyerData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating lawyer:', error);
@@ -329,10 +287,7 @@ class AdministrativeCaseService {
   static async updateLawyer(proceedingId, lawyerId, lawyerData) {
     try {
       const cleanedData = this.cleanData(lawyerData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/${lawyerId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/${lawyerId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating lawyer:', error);
@@ -342,9 +297,7 @@ class AdministrativeCaseService {
 
   static async deleteLawyer(proceedingId, lawyerId) {
     try {
-      await baseService.delete(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/${lawyerId}/`
-      );
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/lawyers/${lawyerId}/`);
     } catch (error) {
       console.error('Error deleting lawyer:', error);
       throw error;
@@ -355,9 +308,7 @@ class AdministrativeCaseService {
   
   static async getMovements(proceedingId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/movements/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/movements/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching movements:', error);
@@ -367,9 +318,7 @@ class AdministrativeCaseService {
 
   static async getMovementById(proceedingId, movementId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/movements/${movementId}/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/movements/${movementId}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -383,10 +332,7 @@ class AdministrativeCaseService {
   static async createMovement(proceedingId, movementData) {
     try {
       const cleanedData = this.cleanData(movementData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/movements/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/movements/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating movement:', error);
@@ -397,10 +343,7 @@ class AdministrativeCaseService {
   static async updateMovement(proceedingId, movementId, movementData) {
     try {
       const cleanedData = this.cleanData(movementData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/movements/${movementId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/movements/${movementId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating movement:', error);
@@ -410,9 +353,7 @@ class AdministrativeCaseService {
 
   static async deleteMovement(proceedingId, movementId) {
     try {
-      await baseService.delete(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/movements/${movementId}/`
-      );
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/movements/${movementId}/`);
     } catch (error) {
       console.error('Error deleting movement:', error);
       throw error;
@@ -423,9 +364,7 @@ class AdministrativeCaseService {
   
   static async getPetitions(proceedingId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/petitions/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/petitions/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching petitions:', error);
@@ -435,9 +374,7 @@ class AdministrativeCaseService {
 
   static async getPetitionById(proceedingId, petitionId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/petitions/${petitionId}/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/petitions/${petitionId}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -451,10 +388,7 @@ class AdministrativeCaseService {
   static async createPetition(proceedingId, petitionData) {
     try {
       const cleanedData = this.cleanData(petitionData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/petitions/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/petitions/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating petition:', error);
@@ -465,10 +399,7 @@ class AdministrativeCaseService {
   static async updatePetition(proceedingId, petitionId, petitionData) {
     try {
       const cleanedData = this.cleanData(petitionData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/petitions/${petitionId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/petitions/${petitionId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating petition:', error);
@@ -478,9 +409,7 @@ class AdministrativeCaseService {
 
   static async deletePetition(proceedingId, petitionId) {
     try {
-      await baseService.delete(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/petitions/${petitionId}/`
-      );
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/petitions/${petitionId}/`);
     } catch (error) {
       console.error('Error deleting petition:', error);
       throw error;
@@ -491,9 +420,7 @@ class AdministrativeCaseService {
   
   static async getExecutions(proceedingId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/executions/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/executions/`);
       return response.data;
     } catch (error) {
       console.error('Error fetching executions:', error);
@@ -503,9 +430,7 @@ class AdministrativeCaseService {
 
   static async getExecutionById(proceedingId, executionId) {
     try {
-      const response = await baseService.get(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/executions/${executionId}/`
-      );
+      const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/executions/${executionId}/`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -519,10 +444,7 @@ class AdministrativeCaseService {
   static async createExecution(proceedingId, executionData) {
     try {
       const cleanedData = this.cleanData(executionData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/executions/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/executions/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating execution:', error);
@@ -533,10 +455,7 @@ class AdministrativeCaseService {
   static async updateExecution(proceedingId, executionId, executionData) {
     try {
       const cleanedData = this.cleanData(executionData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/executions/${executionId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/executions/${executionId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating execution:', error);
@@ -546,9 +465,7 @@ class AdministrativeCaseService {
 
   static async deleteExecution(proceedingId, executionId) {
     try {
-      await baseService.delete(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/executions/${executionId}/`
-      );
+      await baseService.delete(`${BASE_URL}administrative-proceedings/${proceedingId}/executions/${executionId}/`);
     } catch (error) {
       console.error('Error deleting execution:', error);
       throw error;
@@ -591,9 +508,7 @@ class AdministrativeCaseService {
 
   static async archiveAdministrativeProceeding(proceedingId) {
       try {
-          const response = await baseService.post(
-              `${BASE_URL}administrative-proceedings/${proceedingId}/archive/`
-          );
+          const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/archive/`);
           return response.data;
       } catch (error) {
           console.error('Error archiving administrative proceeding:', error);
@@ -603,9 +518,7 @@ class AdministrativeCaseService {
 
   static async unarchiveAdministrativeProceeding(proceedingId) {
       try {
-          const response = await baseService.post(
-              `${BASE_URL}administrative-proceedings/${proceedingId}/unarchive/`
-          );
+          const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/unarchive/`);
           return response.data;
       } catch (error) {
           console.error('Error unarchiving administrative proceeding:', error);
@@ -648,11 +561,25 @@ class AdministrativeCaseService {
     }
   }
 
+  // === Статус уведомлений по делу ===
+  
+  static async getNotificationStatus(proceedingId) {
+    try {
+      // Добавляем параметр для прямого запроса
+      const response = await baseService.get(
+        `/notifications/case-activities/status/?case_type=administrative&case_id=${proceedingId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching notification status:', error);
+      return { has_unread: false, total_unread: 0, party_documents: 0, petitions: 0, correspondence: 0 };
+    }
+  }
+
   // === Методы для административных правонарушений (индексы 5 и 12) ===
 
   static async getAdministrativeOffenseTypes() {
     try {
-      // Возвращаем статические данные о типах административных правонарушений
       return [
         { value: '5', label: 'Дело об административном правонарушении' },
         { value: '12', label: 'Дело по жалобе на постановление по делу об административном правонарушении' },
@@ -665,7 +592,6 @@ class AdministrativeCaseService {
 
   static async getProceedingsByType(type) {
     try {
-      // Фильтрация производств по типу (индексу)
       const allProceedings = await this.getAllAdministrativeProceedings();
       if (type === '5' || type === '12') {
         return allProceedings.filter(p => p.registry_index === type || p.offense_type === type);
@@ -696,7 +622,6 @@ class AdministrativeCaseService {
 
   static async getComplaintProceedings() {
     try {
-      // Получение только дел по жалобам (индекс 12)
       const allProceedings = await this.getAllAdministrativeProceedings();
       return allProceedings.filter(p => p.registry_index === '12' || p.offense_type === '12');
     } catch (error) {
@@ -707,7 +632,6 @@ class AdministrativeCaseService {
 
   static async getOriginalOffenseProceedings() {
     try {
-      // Получение только дел об АП (индекс 5)
       const allProceedings = await this.getAllAdministrativeProceedings();
       return allProceedings.filter(p => p.registry_index === '5' || p.offense_type === '5');
     } catch (error) {
@@ -799,10 +723,7 @@ class AdministrativeCaseService {
   static async createAppeal(proceedingId, appealData) {
     try {
       const cleanedData = this.cleanData(appealData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating appeal:', error);
@@ -813,10 +734,7 @@ class AdministrativeCaseService {
   static async updateAppeal(proceedingId, appealData) {
     try {
       const cleanedData = this.cleanData(appealData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/appeal/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating appeal:', error);
@@ -841,10 +759,7 @@ class AdministrativeCaseService {
   static async createCassation(proceedingId, cassationData) {
     try {
       const cleanedData = this.cleanData(cassationData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating cassation:', error);
@@ -855,10 +770,7 @@ class AdministrativeCaseService {
   static async updateCassation(proceedingId, cassationData) {
     try {
       const cleanedData = this.cleanData(cassationData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/cassation/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating cassation:', error);
@@ -880,10 +792,7 @@ class AdministrativeCaseService {
   static async createSubject(proceedingId, subjectData) {
     try {
       const cleanedData = this.cleanData(subjectData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/subjects/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/subjects/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating subject:', error);
@@ -894,10 +803,7 @@ class AdministrativeCaseService {
   static async updateSubject(proceedingId, subjectId, subjectData) {
     try {
       const cleanedData = this.cleanData(subjectData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/subjects/${subjectId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/subjects/${subjectId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating subject:', error);
@@ -943,10 +849,7 @@ class AdministrativeCaseService {
   static async createSecurityMeasure(proceedingId, measureData) {
     try {
       const cleanedData = this.cleanData(measureData);
-      const response = await baseService.post(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/`,
-        cleanedData
-      );
+      const response = await baseService.post(`${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error creating security measure:', error);
@@ -957,10 +860,7 @@ class AdministrativeCaseService {
   static async updateSecurityMeasure(proceedingId, measureId, measureData) {
     try {
       const cleanedData = this.cleanData(measureData);
-      const response = await baseService.patch(
-        `${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/${measureId}/`,
-        cleanedData
-      );
+      const response = await baseService.patch(`${BASE_URL}administrative-proceedings/${proceedingId}/security-measures/${measureId}/`, cleanedData);
       return response.data;
     } catch (error) {
       console.error('Error updating security measure:', error);
@@ -977,7 +877,6 @@ class AdministrativeCaseService {
     }
   }
 
-  // Типы мер обеспечения (статический справочник)
   static getSecurityMeasureTypes() {
     return [
       { value: 'delivery', label: 'Доставление' },
@@ -1000,7 +899,6 @@ class AdministrativeCaseService {
     ];
   }
 
-  // Результаты апелляционного обжалования (из CSV)
   static getAppealResultOptions() {
     return [
       { value: '1', label: 'Постановление оставлено без изменения' },
@@ -1013,7 +911,6 @@ class AdministrativeCaseService {
     ];
   }
 
-  // Результаты кассационного обжалования (из CSV)
   static getCassationResultOptions() {
     return [
       { value: '1', label: 'Оставлен без изменения' },
@@ -1038,6 +935,7 @@ class AdministrativeCaseService {
       throw error;
     }
   }
+  
   static async getSubjectById(proceedingId, subjectId) {
     try {
       const response = await baseService.get(`${BASE_URL}administrative-proceedings/${proceedingId}/subjects/${subjectId}/`);
@@ -1049,6 +947,55 @@ class AdministrativeCaseService {
       console.error('Error fetching subject:', error);
       throw error;
     }
+  }
+
+  // === Статьи КоАП РФ (из legal_codes) ===
+
+  static async getKoapArticles(search = '') {
+    try {
+      // Исправленный URL - должно быть 'administrative-articles', а не 'administrative/articles'
+      const url = search 
+        ? `/legal-codes/administrative-articles/?search=${encodeURIComponent(search)}`
+        : '/legal-codes/administrative-articles/';
+      const response = await baseService.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching KoAP articles:', error);
+      return [];
+    }
+  }
+
+  static async getKoapArticleById(articleId) {
+    try {
+      const response = await baseService.get(`/legal-codes/administrative-articles/${articleId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching KoAP article:', error);
+      return null;
+    }
+  }
+
+  // Области правонарушения (уже есть в views, добавим метод)
+  static async getOffenseAreaOptions() {
+    try {
+      const response = await baseService.get('/administrative_code/offense-area-options/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching offense area options:', error);
+      return [];
+    }
+  }
+
+  static async getKoapArticleStructure(articleId) {
+      try {
+          const response = await baseService.get(
+              `/legal-codes/administrative-articles/${articleId}/structure/`
+          );
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching KoAP article structure:', error);
+          return { parts: [] };
+      }
   }
 }
 

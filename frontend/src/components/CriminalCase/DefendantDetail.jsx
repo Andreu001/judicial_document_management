@@ -1,10 +1,11 @@
-// DefendantDetail.jsx - полностью обновленный файл
+// DefendantDetail.jsx - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import baseService from '../../API/baseService';
 import styles from './CriminalDetail.module.css';
+import ArticleSelector from './ArticleSelector';
 
 const DefendantDetail = () => {
   const { proceedingId, id } = useParams();
@@ -15,7 +16,6 @@ const DefendantDetail = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
-  const [decisions, setDecisions] = useState([]);
   const [options, setOptions] = useState({
     sex: [],
     restraint_measure: [],
@@ -29,6 +29,14 @@ const DefendantDetail = () => {
   const [selectedSideId, setSelectedSideId] = useState('');
   const isCreateMode = !id || id === 'create';
   
+  // Состояния для статей (пункты теперь хранятся как МАССИВ)
+  const [selectedArticleId, setSelectedArticleId] = useState(null);
+  const [selectedArticlePart, setSelectedArticlePart] = useState('');
+  const [selectedArticleClauses, setSelectedArticleClauses] = useState([]);
+  
+  const [selectedConvictionArticleId, setSelectedConvictionArticleId] = useState(null);
+  const [selectedConvictionArticlePart, setSelectedConvictionArticlePart] = useState('');
+  const [selectedConvictionArticleClauses, setSelectedConvictionArticleClauses] = useState([]);
 
   // Опции для гражданства
   const citizenshipOptions = [
@@ -44,8 +52,6 @@ const DefendantDetail = () => {
         setDefendant(null);
         setFormData({
           full_name_criminal: '',
-          article: '',
-          maximum_penalty_article: '',
           birth_date: '',
           sex: '',
           citizenship: '',
@@ -57,7 +63,6 @@ const DefendantDetail = () => {
           restraint_change: '',
           restraint_change_date: '',
           restraint_change_to: '',
-          conviction_article: '',
           punishment_type: '',
           punishment_term: '',
           additional_punishment: '',
@@ -78,32 +83,41 @@ const DefendantDetail = () => {
     }
   }, [proceedingId, id]);
 
-  useEffect(() => {
-    if (!isCreateMode && defendant && defendant.id) {
-      loadDecisions();
-    }
-  }, [defendant]);
-
   const loadDefendantDetails = async () => {
     try {
       setLoading(true);
       const data = await CriminalCaseService.getDefendantById(proceedingId, id);
       
-      const defendantData = {
-        ...data,
-        name: data?.name || data?.sides_case_defendant?.name || 'Не указано',
-        sides_case_defendant_id: data?.sides_case_defendant_id || 
-                               data?.sides_case_defendant?.id || 
-                               null,
-        sides_case_defendant_name: data?.sides_case_defendant_name || 
-                                 data?.sides_case_defendant?.sides_case || 
-                                 'Не указан'
-      };
+      setDefendant(data);
+      setFormData(data);
       
-      setDefendant(defendantData);
-      setFormData(defendantData);
-      setSelectedSideId(defendantData?.sides_case_defendant_id ? 
-                        String(defendantData.sides_case_defendant_id) : '');
+      // Устанавливаем значения для статей
+      setSelectedArticleId(data.article || null);
+      setSelectedArticlePart(data.article_part || '');
+      // Преобразуем строку с пунктами в массив
+      let clausesArray = [];
+      if (data.article_clauses) {
+        if (Array.isArray(data.article_clauses)) {
+          clausesArray = data.article_clauses;
+        } else if (typeof data.article_clauses === 'string') {
+          clausesArray = data.article_clauses.split(',').map(c => c.trim()).filter(c => c);
+        }
+      }
+      setSelectedArticleClauses(clausesArray);
+      
+      setSelectedConvictionArticleId(data.conviction_article || null);
+      setSelectedConvictionArticlePart(data.conviction_article_part || '');
+      let convClausesArray = [];
+      if (data.conviction_article_clauses) {
+        if (Array.isArray(data.conviction_article_clauses)) {
+          convClausesArray = data.conviction_article_clauses;
+        } else if (typeof data.conviction_article_clauses === 'string') {
+          convClausesArray = data.conviction_article_clauses.split(',').map(c => c.trim()).filter(c => c);
+        }
+      }
+      setSelectedConvictionArticleClauses(convClausesArray);
+      
+      setSelectedSideId(data?.sides_case_defendant_id ? String(data.sides_case_defendant_id) : '');
       setLoading(false);
     } catch (error) {
       console.error('Ошибка загрузки данных подсудимого:', error);
@@ -133,24 +147,6 @@ const DefendantDetail = () => {
   const isDefendantSide = (sideId) => {
     const defendantSideIds = ['8', '9', '12', '13'];
     return defendantSideIds.includes(String(sideId));
-  };
-
-  const loadDecisions = async () => {
-    try {
-      const response = await CriminalCaseService.getDecisions(proceedingId);
-      if (response && response.length > 0 && defendant?.id) {
-        const defendantDecisions = response.filter(decision => 
-          decision.defendants?.some(def => def.id === parseInt(id)) || 
-          decision.defendant_id === parseInt(id)
-        );
-        setDecisions(defendantDecisions);
-      } else {
-        setDecisions([]);
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки решений:', error);
-      setDecisions([]);
-    }
   };
 
   const loadOptions = async () => {
@@ -184,25 +180,52 @@ const DefendantDetail = () => {
       }));
     }
   };
-
+  
   const handleSave = async () => {
     try {
       setSaving(true);
+
+      // Преобразуем массивы пунктов в строки для API
+      const articleClausesStr = Array.isArray(selectedArticleClauses) 
+        ? selectedArticleClauses.join(',') 
+        : (selectedArticleClauses || '');
+      
+      const convictionClausesStr = Array.isArray(selectedConvictionArticleClauses) 
+        ? selectedConvictionArticleClauses.join(',') 
+        : (selectedConvictionArticleClauses || '');
 
       const dataToSend = {
         ...formData,
         sides_case_defendant_input: selectedSideId ? parseInt(selectedSideId, 10) : null,
         full_name_criminal: formData.full_name_criminal || '',
+        // Статья обвинения - ВАЖНО: явно передаем null если нет значения
+        article: selectedArticleId ? Number(selectedArticleId) : null,
+        article_part: selectedArticlePart || null,
+        article_clauses: articleClausesStr || null,
+        // Статья по приговору
+        conviction_article: selectedConvictionArticleId ? Number(selectedConvictionArticleId) : null,
+        conviction_article_part: selectedConvictionArticlePart || null,
+        conviction_article_clauses: convictionClausesStr || null
       };
 
+      // Удаляем поля, которые не нужны для API
       delete dataToSend.sides_case_defendant_id;
       delete dataToSend.sides_case_defendant_name;
       delete dataToSend.name;
       delete dataToSend.full_name;
+      delete dataToSend.article_detail;
+      delete dataToSend.conviction_article_detail;
+      delete dataToSend.article_structure;
+      delete dataToSend.conviction_article_structure;
+      delete dataToSend.id;
+      delete dataToSend.criminal_proceedings;
+      delete dataToSend.created_at;
+      delete dataToSend.updated_at;
       
       const cleanData = {};
       Object.keys(dataToSend).forEach(key => {
-        if (dataToSend[key] !== undefined && dataToSend[key] !== null && dataToSend[key] !== '') {
+        // Явно разрешаем null для статей
+        if (dataToSend[key] !== undefined) {
           cleanData[key] = dataToSend[key];
         }
       });
@@ -225,7 +248,7 @@ const DefendantDetail = () => {
       } else {
         await CriminalCaseService.updateDefendant(proceedingId, id, cleanData);
         setIsEditing(false);
-        await loadDefendantDetails();
+        await loadDefendantDetails(); // Перезагружаем данные после сохранения
       }
       
       setSaving(false);
@@ -258,6 +281,32 @@ const DefendantDetail = () => {
       setFormData(defendant || {});
       setSelectedSideId(defendant?.sides_case_defendant_id ? 
                         String(defendant.sides_case_defendant_id) : '');
+      // Восстанавливаем значения статей
+      if (defendant) {
+        setSelectedArticleId(defendant.article || null);
+        setSelectedArticlePart(defendant.article_part || '');
+        let clausesArray = [];
+        if (defendant.article_clauses) {
+          if (Array.isArray(defendant.article_clauses)) {
+            clausesArray = defendant.article_clauses;
+          } else if (typeof defendant.article_clauses === 'string') {
+            clausesArray = defendant.article_clauses.split(',').map(c => c.trim()).filter(c => c);
+          }
+        }
+        setSelectedArticleClauses(clausesArray);
+        
+        setSelectedConvictionArticleId(defendant.conviction_article || null);
+        setSelectedConvictionArticlePart(defendant.conviction_article_part || '');
+        let convClausesArray = [];
+        if (defendant.conviction_article_clauses) {
+          if (Array.isArray(defendant.conviction_article_clauses)) {
+            convClausesArray = defendant.conviction_article_clauses;
+          } else if (typeof defendant.conviction_article_clauses === 'string') {
+            convClausesArray = defendant.conviction_article_clauses.split(',').map(c => c.trim()).filter(c => c);
+          }
+        }
+        setSelectedConvictionArticleClauses(convClausesArray);
+      }
       setIsEditing(false);
     }
   };
@@ -560,22 +609,20 @@ const DefendantDetail = () => {
                     <h3 className={styles.subsectionTitle}>Уголовная статья</h3>
                     <div className={styles.tabGrid}>
                       <div className={styles.field}>
-                        <label>Статья УК РФ</label>
-                        {isEditing || isCreateMode ? (
-                          <input
-                            type="number"
-                            name="article"
-                            value={formData.article || ''}
-                            onChange={handleInputChange}
-                            className={styles.input}
-                          />
-                        ) : (
-                          <span>ст. {currentDefendant?.article || 'Не указана'}</span>
-                        )}
+                        <ArticleSelector
+                          value={selectedArticleId}
+                          onChange={setSelectedArticleId}
+                          onPartChange={setSelectedArticlePart}
+                          onClausesChange={setSelectedArticleClauses}
+                          partValue={selectedArticlePart}
+                          clausesValue={selectedArticleClauses}
+                          label="Статья обвинения (УК РФ)"
+                          disabled={!isEditing && !isCreateMode}
+                        />
                       </div>
 
                       <div className={styles.field}>
-                        <label>Максимальное наказание</label>
+                        <label>Максимальное наказание (лет)</label>
                         {isEditing || isCreateMode ? (
                           <input
                             type="number"
@@ -720,18 +767,16 @@ const DefendantDetail = () => {
                   <div className={styles.fieldGroup}>
                     <div className={styles.tabGrid}>
                       <div className={styles.field}>
-                        <label>Статья по приговору</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="conviction_article"
-                            value={formData.conviction_article || ''}
-                            onChange={handleInputChange}
-                            className={styles.input}
-                          />
-                        ) : (
-                          <span>{currentDefendant?.conviction_article || 'Не указано'}</span>
-                        )}
+                        <ArticleSelector
+                          value={selectedConvictionArticleId}
+                          onChange={setSelectedConvictionArticleId}
+                          onPartChange={setSelectedConvictionArticlePart}
+                          onClausesChange={setSelectedConvictionArticleClauses}
+                          partValue={selectedConvictionArticlePart}
+                          clausesValue={selectedConvictionArticleClauses}
+                          label="Статья по приговору"
+                          disabled={!isEditing && !isCreateMode}
+                        />
                       </div>
 
                       <div className={styles.field}>
@@ -780,7 +825,7 @@ const DefendantDetail = () => {
                       </div>
 
                       <div className={styles.field}>
-                        <label>Условно-досрочное освобождение</label>
+                        <label>Условно-досрочное освобождение / испытательный срок</label>
                         {isEditing ? (
                           <input
                             type="text"
@@ -803,7 +848,7 @@ const DefendantDetail = () => {
                   <div className={styles.fieldGroup}>
                     <div className={styles.tabGrid}>
                       <div className={styles.field}>
-                        <label>Сумма ущерба</label>
+                        <label>Сумма ущерба (руб.)</label>
                         {isEditing ? (
                           <input
                             type="number"
@@ -821,7 +866,7 @@ const DefendantDetail = () => {
                       </div>
 
                       <div className={styles.field}>
-                        <label>Сумма морального вреда</label>
+                        <label>Сумма морального вреда (руб.)</label>
                         {isEditing ? (
                           <input
                             type="number"
@@ -865,7 +910,6 @@ const DefendantDetail = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -7,7 +7,7 @@
   box-shadow: 0 4px 12px rgba(40, 60, 50, 0.03);
   margin-bottom: 20px;
   transition: all 0.25s cubic-bezier(0.02, 0.8, 0.2, 1);
-  height: 320px;
+  height: 370px;
   display: flex;
   flex-direction: column;
   overflow: hidden; /* Скрываем прокрутку на контейнере */
@@ -96,27 +96,6 @@
   flex-shrink: 0; /* Не сжимается */
 }
 
-.quickAction {
-  flex: 1 1 auto;
-  min-width: 70px; /* Минимальная ширина для читаемости */
-  padding: 4px 2px;
-  background: white;
-  border: 1px solid #d9dfe5;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 500;
-  color: #4a5b5f;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  min-height: 28px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap; /* Текст в одну строку */
-}
 
 .quickAction:hover {
   border-color: #5e9b87;
@@ -600,38 +579,62 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
-
-/* Обновляем быстрые действия для 6 кнопок */
 .quickActions {
   display: flex;
   flex-wrap: wrap;
   padding: 6px 8px;
-  border-bottom: 1px solid #e8ecef;
-  background: #f7f9fa;
+  border-bottom: 1px solid #d4d4d4;
+  background: #f0f0f0;
   gap: 4px;
   flex-shrink: 0;
 }
 
 .quickAction {
-  flex: 1 1 calc(16.666% - 4px); /* Для 6 кнопок */
-  min-width: 70px;
-  padding: 4px 2px;
+  flex: 1 1 auto;
+  min-width: 90px;
+  max-width: auto;
+  padding: 4px 4px;
   background: white;
-  border: 1px solid #d9dfe5;
+  border: 1px solid #c0c0c0;
   border-radius: 6px;
   font-size: 10px;
   font-weight: 500;
-  color: #4a5b5f;
+  color: #3a3a3a;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  min-height: 28px;
+  min-height: 25px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.02);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.2;
+}
+/* счётчик */
+.quickActionCount {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  padding: 0 5px;
+  background: #e8e8e8;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 9px;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+/* активное состояние */
+.quickAction.active .quickActionCount {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
 }
 
 /* Адаптивность для мобильных устройств */

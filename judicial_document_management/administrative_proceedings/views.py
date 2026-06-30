@@ -400,7 +400,7 @@ def judges_list(request):
 @api_view(['GET'])
 def kas_decision_options(request):
     try:
-        choices_data = KasDecisionOptionsSerializer.get_choices_from_model()
+        choices_data = KasDecisionSerializer.get_choices_from_model()
         return Response(choices_data)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -459,20 +459,19 @@ def kas_options(request):
 def kas_all_options(request):
     """
     Возвращает ВСЕ справочные данные для фронтенда одним запросом.
-    Это оптимизирует загрузку страницы - не нужно делать 10 отдельных запросов.
     """
     from django.apps import apps
     
-    # Получаем модели справочников
-    AdmissionOrder = apps.get_model('administrative_code', 'AdmissionOrder')
-    PostponementReason = apps.get_model('administrative_code', 'PostponementReason')
-    SuspensionReason = apps.get_model('administrative_code', 'SuspensionReason')
-    PreliminaryProtection = apps.get_model('administrative_code', 'PreliminaryProtection')
-    ExpertiseType = apps.get_model('administrative_code', 'ExpertiseType')
-    AppealResult = apps.get_model('administrative_code', 'AppealResult')
-    CassationResult = apps.get_model('administrative_code', 'CassationResult')
-    TermCompliance = apps.get_model('administrative_code', 'TermCompliance')
-    Outcome = apps.get_model('administrative_code', 'Outcome')
+
+    AdmissionOrder = apps.get_model('administrative_proceedings', 'AdmissionOrder')
+    PostponementReason = apps.get_model('administrative_proceedings', 'PostponementReason')
+    SuspensionReason = apps.get_model('administrative_proceedings', 'SuspensionReason')
+    PreliminaryProtection = apps.get_model('administrative_proceedings', 'PreliminaryProtection')
+    ExpertiseType = apps.get_model('administrative_proceedings', 'ExpertiseType')
+    AppealResult = apps.get_model('administrative_proceedings', 'AppealResult')
+    CassationResult = apps.get_model('administrative_proceedings', 'CassationResult')
+    TermCompliance = apps.get_model('administrative_proceedings', 'TermCompliance')
+    Outcome = apps.get_model('administrative_proceedings', 'Outcome')
     
     options = {
         'admissionOrder': [{'value': obj.code, 'label': obj.label} for obj in AdmissionOrder.objects.all().order_by('id')],

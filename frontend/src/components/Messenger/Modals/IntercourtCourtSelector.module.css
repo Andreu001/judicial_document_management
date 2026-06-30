@@ -1,0 +1,179 @@
+/* communication-frontend/src/components/Messenger/Modals/IntercourtCourtSelector.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e3e6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #222;
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 20px;
+  color: #666;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  background: #f0f2f5;
+  color: #333;
+}
+
+.searchContainer {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #dde1e6;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.searchInput:focus {
+  border-color: #3390ec;
+  box-shadow: 0 0 0 3px rgba(51, 144, 236, 0.1);
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.courtList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.courtList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.courtList::-webkit-scrollbar-thumb {
+  background: #c4c9d0;
+  border-radius: 2px;
+}
+
+.courtItem {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f5f6f8;
+}
+
+.courtItem:hover {
+  background: #f0f4f9;
+}
+
+.courtItem.selected {
+  background: #e8f0fe;
+}
+
+.courtName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+.courtDetails {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #777;
+}
+
+.courtCode {
+  background: #f0f2f5;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.courtRegion {
+  color: #555;
+}
+
+.courtLevel {
+  color: #555;
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e0e3e6;
+  flex-shrink: 0;
+}
+
+.selectBtn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: #3390ec;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.selectBtn:hover {
+  background: #2b7ed4;
+}

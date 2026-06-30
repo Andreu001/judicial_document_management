@@ -1,0 +1,122 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .manual-add-container {
+        max-width: 800px;
+        margin: 20px auto;
+    }
+    .manual-add-form {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .form-row {
+        margin-bottom: 20px;
+        padding: 10px;
+    }
+    .form-row label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    .form-row .wide-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    .form-row select.wide-input {
+        height: 40px;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+    .submit-row {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .submit-row input {
+        background: #1e3c5c;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .result-success {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border-left: 4px solid #28a745;
+    }
+    .result-error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border-left: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="manual-add-container">
+    <h1>Ручное добавление доступа к делу</h1>
+    <p>Используйте эту форму, чтобы предоставить стороне дела доступ по номеру дела.</p>
+    
+    {% if result %}
+    <div class="result-success">
+        <strong>✅ Доступ успешно создан!</strong><br>
+        Сторона: {{ result.side_case_name }}<br>
+        Дело: {{ result.case_number }}<br>
+        Роль: {{ result.role }}<br>
+        <a href="{% url 'admin:citizen_access_sidecaseaccess_change' result.access_id %}">Перейти к записи доступа</a>
+    </div>
+    {% endif %}
+    
+    {% if error %}
+    <div class="result-error">
+        <strong>❌ Ошибка:</strong> {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="manual-add-form">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                {{ field }}
+                {% if field.help_text %}
+                <div class="help-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                <div class="help-text" style="color: #dc3545;">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="submit-row">
+                <input type="submit" value="➕ Добавить доступ">
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

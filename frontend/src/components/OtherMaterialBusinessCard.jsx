@@ -331,7 +331,7 @@ const OtherMaterialBusinessCard = ({ card, remove }) => {
               onClick={() => navigate(`/other-materials/${card.other_material_id}/documents`)}
             >
               <span className={styles.quickActionCount}>0</span>
-              Документы
+              Электронные решения
             </button>
           </div>
         </div>

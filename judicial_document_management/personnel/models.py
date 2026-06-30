@@ -33,7 +33,7 @@ class AbsenceRecord(models.Model):
         on_delete=models.CASCADE,
         related_name='absence_records',
         verbose_name='Судья',
-        limit_choices_to={'role': 'judge'}   # только судьи
+        limit_choices_to={'role': 'judge'}
     )
     absence_type = models.ForeignKey(
         AbsenceType,

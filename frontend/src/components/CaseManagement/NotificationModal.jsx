@@ -228,23 +228,29 @@ const NotificationModal = ({
     }
   };
 
-  const getFilteredTemplates = () => {
-    // Исправлено: проверяем, что participant_id существует и является строкой
-    if (!formData.participant_id || typeof formData.participant_id !== 'string') return templates;
-    
-    const participantType = formData.participant_type;
-    
-    const templateTypeMap = {
-      'side': 'side',
-      'lawyer': 'lawyer',
-      'defendant': 'defendant'
-    };
-    
-    const mappedType = templateTypeMap[participantType];
-    if (!mappedType) return templates;
-    
-    return templates.filter(t => t.participant_type === mappedType);
+const getFilteredTemplates = () => {
+  if (!formData.participant_id || typeof formData.participant_id !== 'string') {
+    return [];
+  }
+  
+  const participantType = formData.participant_type;
+  
+  // Маппинг типа участника на participant_type в шаблоне
+  const templateTypeMap = {
+    'side': 'side',
+    'lawyer': 'lawyer',
+    'defendant': 'defendant'
   };
+  
+  const mappedType = templateTypeMap[participantType];
+  if (!mappedType) return [];
+  
+  // Дополнительно фильтруем по категории дела
+  return templates.filter(t => 
+    t.participant_type === mappedType && 
+    t.case_category === caseType
+  );
+};
 
   const getParticipantDisplay = (participant) => {
     if (participant.type === 'defendant') {

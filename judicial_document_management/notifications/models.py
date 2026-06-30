@@ -5,8 +5,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
 
 RULE_TYPES = [
     ('jurisdiction_check', 'Проверка подсудности'),
@@ -207,3 +209,176 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"[{self.get_priority_display()}] {self.title}"
+
+
+class CaseActivity(models.Model):
+    """
+    Отслеживание активности по делу (новые документы, ходатайства и т.д.)
+    Универсальная модель для всех типов дел.
+    """
+    ACTIVITY_TYPES = (
+        ('new_party_document', 'Новый документ от стороны'),
+        ('new_petition', 'Новое ходатайство'),
+        ('new_correspondence', 'Новая корреспонденция'),
+        ('document_status_changed', 'Изменение статуса документа'),
+        ('petition_resolved', 'Ходатайство рассмотрено'),
+    )
+    
+    # Связь с делом (универсальная)
+    case_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to={
+            'model__in': (
+                'criminalproceedings',
+                'administrativeproceedings',  # КоАП
+                'civilproceedings',
+                'kasproceedings'
+            )
+        },
+        verbose_name="Тип дела"
+    )
+    case_object_id = models.PositiveIntegerField(verbose_name="ID дела")
+    case = GenericForeignKey('case_content_type', 'case_object_id')
+    
+    # Тип активности
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPES, verbose_name="Тип активности")
+    
+    # Связанный объект (документ, ходатайство, корреспонденция)
+    related_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='+'
+    )
+    related_object_id = models.PositiveIntegerField(null=True, blank=True)
+    related_object = GenericForeignKey('related_content_type', 'related_object_id')
+    
+    # Дополнительная информация
+    title = models.CharField(max_length=500, verbose_name="Заголовок")
+    description = models.TextField(verbose_name="Описание", blank=True)
+    
+    # Ссылка для перехода
+    link = models.CharField(max_length=500, verbose_name="Ссылка", blank=True)
+    
+    # Статус для судьи (прочитано/не прочитано)
+    is_read_by_judge = models.BooleanField(default=False, verbose_name="Прочитано судьей")
+    
+    # Время создания
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Активность по делу"
+        verbose_name_plural = "Активности по делам"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['case_content_type', 'case_object_id', '-created_at']),
+            models.Index(fields=['activity_type']),
+            models.Index(fields=['is_read_by_judge']),
+        ]
+    
+    def __str__(self):
+        return f"[{self.get_activity_type_display()}] {self.title[:50]}"
+    
+    def mark_as_read(self):
+        """Отметить активность как прочитанную судьей"""
+        if not self.is_read_by_judge:
+            self.is_read_by_judge = True
+            self.save(update_fields=['is_read_by_judge'])
+            return True
+        return False
+
+
+class CaseNotificationSummary(models.Model):
+    """
+    Сводка по уведомлениям для карточки дела.
+    Кеширует количество непрочитанных активностей.
+    """
+    case_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        verbose_name="Тип дела"
+    )
+    case_object_id = models.PositiveIntegerField(verbose_name="ID дела")
+    case = GenericForeignKey('case_content_type', 'case_object_id')
+    
+    # Для кого (судья)
+    judge = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+        verbose_name="Судья"
+    )
+    
+    # Количество непрочитанных активностей по типам
+    unread_party_documents = models.PositiveIntegerField(default=0, verbose_name="Непрочитанных документов сторон")
+    unread_petitions = models.PositiveIntegerField(default=0, verbose_name="Непрочитанных ходатайств")
+    unread_correspondence = models.PositiveIntegerField(default=0, verbose_name="Непрочитанной корреспонденции")
+    
+    # Общее количество
+    total_unread = models.PositiveIntegerField(default=0, verbose_name="Всего непрочитанных")
+    
+    # Время последнего обновления
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Сводка уведомлений по делу"
+        verbose_name_plural = "Сводки уведомлений по делам"
+        unique_together = ['case_content_type', 'case_object_id', 'judge']
+        indexes = [
+            models.Index(fields=['case_content_type', 'case_object_id']),
+            models.Index(fields=['judge', 'total_unread']),
+        ]
+    
+    def __str__(self):
+        case_number = self._get_case_number()
+        return f"Уведомления по делу {case_number} для {self.judge.get_full_name()}: {self.total_unread}"
+    
+    def _get_case_number(self):
+        """Получение номера дела для отображения"""
+        case = self.case
+        if not case:
+            return "Неизвестно"
+        
+        # Определяем тип дела и номер
+        case_number = None
+        if hasattr(case, 'case_number_admin'):
+            case_number = case.case_number_admin
+        elif hasattr(case, 'case_number_criminal'):
+            case_number = case.case_number_criminal
+        elif hasattr(case, 'case_number_civil'):
+            case_number = case.case_number_civil
+        elif hasattr(case, 'case_number_kas'):
+            case_number = case.case_number_kas
+        
+        return case_number or f"Дело #{case.id}"
+    
+    def update_summary(self):
+        """Обновить сводку из активностей"""
+        from django.contrib.contenttypes.models import ContentType
+        
+        # Получаем все непрочитанные активности по этому делу для этого судьи
+        # Примечание: нужно знать, какие активности относятся к судье
+        # Пока просто считаем все непрочитанные по делу
+        
+        unread_activities = CaseActivity.objects.filter(
+            case_content_type=self.case_content_type,
+            case_object_id=self.case_object_id,
+            is_read_by_judge=False
+        )
+        
+        self.unread_party_documents = unread_activities.filter(
+            activity_type='new_party_document'
+        ).count()
+        
+        self.unread_petitions = unread_activities.filter(
+            activity_type='new_petition'
+        ).count()
+        
+        self.unread_correspondence = unread_activities.filter(
+            activity_type='new_correspondence'
+        ).count()
+        
+        self.total_unread = unread_activities.count()
+        self.save()
+        
+        return self.total_unread

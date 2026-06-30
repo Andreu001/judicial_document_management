@@ -1,31 +1,27 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSideAuth } from '../context/SideAuthContext';
 import LoginForm from './Auth/LoginForm';
 import UserMenu from './User/UserMenu';
 import NotificationBell from './Notifications/NotificationsBell';
 import MeetingsCalendar from './Calendar/MeetingsCalendar';
+import SideLoginForm from './SideAuth/SideLoginForm';
 import styles from './UI/Header/Header.module.css';
-import CitizenLoginForm from '../pages/Citizen/CitizenLoginForm';
-
+import MessengerApp from './Messenger/MessengerApp';
 
 const Header = ({ filter, setFilter, onSearch }) => {
   const [showLogin, setShowLogin] = useState(false);
-  const [showCitizenLogin, setShowCitizenLogin] = useState(false);
+  const [showSideLogin, setShowSideLogin] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const { user, isAuthenticated, isCitizen, logout } = useAuth();
+  const [showMessenger, setShowMessenger] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const { user: sideUser, logout: sideLogout, isAuthenticated: isSideAuthenticated } = useSideAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = async () => {
-    await logout();
-    if (isCitizen()) {
-      window.location.href = '/';
-    } else {
-      window.location.reload();
-    }
-  };
+  const isSide = isSideAuthenticated();
+  const isJudge = isAuthenticated();
 
   const getActiveButton = () => {
     const params = new URLSearchParams(location.search);
@@ -37,6 +33,21 @@ const Header = ({ filter, setFilter, onSearch }) => {
 
   const handleNavigation = (type) => {
     navigate(`/legal-documents?type=${type}`);
+  };
+
+  const handleMyCasesClick = () => {
+    if (isSide) {
+      navigate('/my-cases');
+    } else {
+      setShowSideLogin(true);
+    }
+  };
+
+  const handleSideLogout = () => {
+    sideLogout();
+    if (location.pathname === '/my-cases') {
+      navigate('/cards');
+    }
   };
 
   const handleSearch = () => {
@@ -55,33 +66,53 @@ const Header = ({ filter, setFilter, onSearch }) => {
     setShowCalendar(true);
   };
 
-  if (isCitizen() && user) {
+  const handleMessengerToggle = () => {
+    setShowMessenger(!showMessenger);
+  };
+
+  // Для стороны - хедер только с календарем и кнопкой выхода
+  if (isSide && !isJudge) {
     return (
       <>
         <div className={styles.header}>
-          <div className={styles.citizenTitle}>
-            📋 Личный кабинет участника процесса
-          </div>
-          <div className={styles.actions}>
-            <div className={styles.userInfo}>
-              <span className={styles.userName}>
-                {user?.last_name} {user?.first_name}
-              </span>
-            </div>
-            <button onClick={handleLogout} className={styles.logoutButton}>
-              Выйти
+          <div className={styles.navigation}>
+            <button 
+              className={`${styles.navButton} ${styles.calendarButton}`}
+              onClick={handleCalendarClick}
+            >
+              Календарь заседаний
             </button>
+            <button 
+              className={`${styles.navButton} ${styles.messengerButton}`}
+              onClick={handleMessengerToggle}
+              >Мессенджер
+              {showMessenger ? 'Скрыть чаты' : 'Мои чаты'}
+            </button>
+          </div>
+
+          <div className={styles.actions}>
+            {sideUser && (
+              <div className={styles.sideUserInfo}>
+                <span className={styles.sideUserName}>
+                  {sideUser.full_name || sideUser.email}
+                </span>
+                <button onClick={handleSideLogout} className={styles.sideLogoutButton}>
+                  Выйти
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {showCalendar && (
           <MeetingsCalendar onClose={() => setShowCalendar(false)} />
         )}
+
       </>
     );
   }
 
-  // Полный хедер для сотрудников (ВСЕ ВОССТАНОВЛЕНО)
+  // Для сотрудников суда - полная версия
   return (
     <>
       <div className={styles.header}>
@@ -104,25 +135,18 @@ const Header = ({ filter, setFilter, onSearch }) => {
           >
             Справочные материалы
           </button>
+          
           <button 
             className={`${styles.navButton} ${styles.calendarButton}`}
             onClick={handleCalendarClick}
           >
-            📅 Календарь заседаний
+            Календарь заседаний
           </button>
-        </div>
-
-        <div className={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Поиск..."
-            className={styles.searchInput}
-            value={filter?.query || ''}
-            onChange={(e) => setFilter && setFilter({ ...filter, query: e.target.value })}
-            onKeyDown={handleKeyDown}
-          />
-          <button className={styles.searchButton} onClick={handleSearch}>
-            🔍
+          <button 
+            className={`${styles.navButton} ${styles.messengerButton}`}
+            onClick={handleMessengerToggle}
+          >
+            {showMessenger ? 'Скрыть чаты' : 'Мессенджер'}
           </button>
         </div>
 
@@ -130,43 +154,38 @@ const Header = ({ filter, setFilter, onSearch }) => {
           <NotificationBell />
           <div className={styles.divider}></div>
           
-          {isAuthenticated() && user ? (
-            <UserMenu user={user} onLogout={handleLogout} />
+          {isJudge && user ? (
+            <UserMenu user={user} onLogout={logout} />
           ) : (
-            <>
-              <button 
-                onClick={() => setShowCitizenLogin(true)}
-                className={styles.citizenLoginButton}
-              >
-                Вход для граждан
-              </button>
-              <button 
-                onClick={() => setShowLogin(true)}
-                className={styles.loginButton}
-              >
-                Вход для сотрудников
-              </button>
-            </>
+            <button 
+              onClick={() => setShowLogin(true)} 
+              className={styles.loginButton}
+            >
+              Вход для сотрудников
+            </button>
           )}
+          
+          <div className={styles.divider}></div>
+          
+          <button 
+            onClick={handleMyCasesClick}
+            className={styles.myCasesButton}
+          >
+            Мои дела
+          </button>
         </div>
       </div>
 
       {showLogin && (
-        <LoginForm 
-          onClose={() => setShowLogin(false)} 
-          onSwitchToCitizen={() => {
-            setShowLogin(false);
-            setShowCitizenLogin(true);
-          }}
-        />
+        <LoginForm onClose={() => setShowLogin(false)} />
       )}
 
-      {showCitizenLogin && (
-        <CitizenLoginForm 
-          onClose={() => setShowCitizenLogin(false)}
-          onSwitchToStaff={() => {
-            setShowCitizenLogin(false);
-            setShowLogin(true);
+      {showSideLogin && (
+        <SideLoginForm 
+          onClose={() => setShowSideLogin(false)}
+          onSuccess={() => {
+            setShowSideLogin(false);
+            navigate('/my-cases');
           }}
         />
       )}
@@ -174,6 +193,7 @@ const Header = ({ filter, setFilter, onSearch }) => {
       {showCalendar && (
         <MeetingsCalendar onClose={() => setShowCalendar(false)} />
       )}
+      {showMessenger && <MessengerApp onClose={() => setShowMessenger(false)} />}
     </>
   );
 };

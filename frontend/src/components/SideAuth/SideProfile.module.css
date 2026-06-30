@@ -1,0 +1,888 @@
+/* SideProfile.module.css - исправленная версия */
+.container {
+  min-height: 100vh;
+  background: #f0f4f8;
+  /* navbar имеет ширину 6.3cm ≈ 170px */
+  padding: 80px 24px 40px calc(6.3cm + 24px);
+}
+
+/* Шапка профиля */
+.header {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #1e3c5c, #2c5282);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: white;
+}
+
+.userDetails h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  color: #1a202c;
+}
+
+.email {
+  color: #4a5568;
+  margin: 0 0 4px;
+}
+
+.provider {
+  font-size: 12px;
+  color: #718096;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.syncButton {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.syncButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.syncButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.logoutButton {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.logoutButton:hover {
+  background: #c53030;
+}
+
+/* Результат синхронизации */
+.syncResult {
+  background: #c6f6d5;
+  border-left: 4px solid #38a169;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.syncResult p {
+  margin: 0;
+}
+
+/* Паспортные данные */
+.passportSection {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h3 {
+  margin: 0;
+  color: #2d3748;
+}
+
+.editButton {
+  background: #edf2f7;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.editButton:hover {
+  background: #e2e8f0;
+}
+
+.passportFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1;
+  min-width: 150px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: #718096;
+  margin-bottom: 4px;
+}
+
+.field span {
+  display: block;
+  padding: 8px 0;
+  color: #2d3748;
+}
+
+.field input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.1);
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.saveButton, .cancelButton {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveButton {
+  background: #38a169;
+  color: white;
+}
+
+.saveButton:hover {
+  background: #2f855a;
+}
+
+.cancelButton {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.cancelButton:hover {
+  background: #e2e8f0;
+}
+
+.passportHint {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #718096;
+  background: #f7fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+/* Заголовок моих дел */
+.casesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.casesHeader h2 {
+  font-size: 1.5rem;
+  color: #2d3748;
+  font-weight: 500;
+  margin: 0;
+}
+
+.showAllButton {
+  background: #edf2f7;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #4a5568;
+  font-size: 13px;
+}
+
+.showAllButton:hover {
+  background: #e2e8f0;
+}
+
+/* Список дел */
+.casesContainer {
+  min-height: 400px;
+}
+
+.caseCategory {
+  margin-bottom: 32px;
+}
+
+.categoryTitle {
+  font-size: 1.2rem;
+  color: #2d3748;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.categoryCount {
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.casesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 20px;
+}
+
+.caseCard {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.caseCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e0;
+}
+
+.caseCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.caseNumber {
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.caseNumber strong {
+  color: #1e3c5c;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statusPending {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.statusCompleted {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.statusArchived {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.statusSuspended {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+.statusUnknown {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.caseCardBody {
+  padding: 16px;
+}
+
+.caseInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.infoRow span:first-child {
+  color: #718096;
+}
+
+.infoRow strong {
+  color: #2d3748;
+}
+
+.accessLevel {
+  font-size: 12px;
+}
+
+.caseCardActions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #fafbfc;
+}
+
+.caseCardActions button {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.caseCardActions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.viewButton {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.viewButton:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.petitionButton {
+  background: #4299e1;
+  color: white;
+}
+
+.petitionButton:hover:not(:disabled) {
+  background: #3182ce;
+}
+
+.documentButton {
+  background: #48bb78;
+  color: white;
+}
+
+.documentButton:hover:not(:disabled) {
+  background: #38a169;
+}
+
+.decisionButton {
+  background: #ed8936;
+  color: white;
+}
+
+.decisionButton:hover:not(:disabled) {
+  background: #dd6b20;
+}
+
+/* Пустое состояние */
+.emptyCases {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.emptyCases h3 {
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.emptyCases p {
+  color: #718096;
+  margin-bottom: 24px;
+}
+
+.syncEmptyButton {
+  background: #1e3c5c;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.syncEmptyButton:hover {
+  background: #2c5282;
+  transform: translateY(-1px);
+}
+
+/* Модальные окна */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalSmall {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 550px;
+  max-height: 85vh;
+  overflow: auto;
+  box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f7fafc;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: #2d3748;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #a0aec0;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalClose:hover {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f7fafc;
+}
+
+.caseRef {
+  background: #edf2f7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  color: #2d3748;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 6px;
+}
+
+.input, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.input:focus, .textarea:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.1);
+}
+
+.fileInput {
+  padding: 8px 0;
+}
+
+.fileHint {
+  font-size: 11px;
+  color: #a0aec0;
+  margin-top: 4px;
+}
+
+.submitButton {
+  background: #38a169;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #2f855a;
+}
+
+.cancelModalButton {
+  background: #edf2f7;
+  color: #4a5568;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cancelModalButton:hover {
+  background: #e2e8f0;
+}
+
+/* Загрузка */
+.loadingCases {
+  text-align: center;
+  padding: 60px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #1e3c5c;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== АДАПТИВНОСТЬ - ИСПРАВЛЕНО ========== */
+/* navbar имеет фиксированную ширину 6.3cm ≈ 170px */
+
+/* Для планшетов и маленьких ноутбуков */
+@media (max-width: 1200px) {
+  .container {
+    /* НЕ убираем отступ! Просто уменьшаем правый отступ */
+    padding: 80px 20px 40px calc(6.3cm + 20px);
+  }
+  
+  .casesGrid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+/* Для планшетов в портретной ориентации */
+@media (max-width: 992px) {
+  .container {
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+}
+
+/* Для мобильных устройств - здесь navbar перестает быть fixed или меняется layout */
+@media (max-width: 768px) {
+  .container {
+    /* На мобильных обычно navbar сворачивается, 
+       но если нет - оставляем отступ */
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .headerActions {
+    justify-content: center;
+  }
+  
+  .caseCardActions {
+    flex-wrap: wrap;
+  }
+  
+  .caseCardActions button {
+    flex: 1 1 calc(50% - 4px);
+  }
+  
+  .casesHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .passportFields {
+    flex-direction: column;
+  }
+  
+  .field {
+    width: 100%;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 576px) {
+  .container {
+    padding: 70px 12px 30px calc(6.3cm + 12px);
+  }
+  
+  .casesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .caseCardActions button {
+    flex: 1 1 100%;
+  }
+}
+
+.modalDocument {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 650px;
+  max-height: 85vh;
+  overflow: auto;
+  box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2);
+}
+
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.1);
+}
+
+.errorInput {
+  border-color: #e53e3e !important;
+}
+
+.errorText {
+  font-size: 12px;
+  color: #e53e3e;
+  margin-top: 4px;
+  display: block;
+}
+
+.fileInput {
+  padding: 8px 0;
+  width: 100%;
+}
+
+.fileHint {
+  font-size: 11px;
+  color: #a0aec0;
+  margin-top: 4px;
+}
+
+/* Адаптивность для модального окна */
+@media (max-width: 768px) {
+  .modalDocument {
+    width: 95%;
+    max-width: none;
+  }
+}
+
+.claimButton {
+  background: #ed8936;
+  color: white;
+}
+
+.claimButton:hover:not(:disabled) {
+  background: #dd6b20;
+}
+
+/* Добавьте в конец файла SideProfile.module.css */
+
+/* Кнопка подачи иска */
+.newClaimButton {
+  background: linear-gradient(135deg, #805ad5, #6b46c0);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.newClaimButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(128, 90, 213, 0.3);
+  background: linear-gradient(135deg, #6b46c0, #553c9a);
+}
+
+.emptyActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.newClaimEmptyButton {
+  background: linear-gradient(135deg, #805ad5, #6b46c0);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.newClaimEmptyButton:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #6b46c0, #553c9a);
+}
+
+/* Для мобильных устройств */
+@media (max-width: 768px) {
+  .newClaimButton {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Кнопка подачи нового иска */
+.newClaimButton {
+  background: linear-gradient(135deg, #805ad5, #6b46c0);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.newClaimButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(128, 90, 213, 0.3);
+  background: linear-gradient(135deg, #6b46c0, #553c9a);
+}
+
+/* Кнопки в пустом состоянии */
+.emptyActions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.newClaimEmptyButton {
+  background: linear-gradient(135deg, #805ad5, #6b46c0);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.newClaimEmptyButton:hover {
+  background: linear-gradient(135deg, #6b46c0, #553c9a);
+  transform: translateY(-1px);
+}

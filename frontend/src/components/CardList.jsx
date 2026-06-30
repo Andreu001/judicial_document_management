@@ -13,12 +13,10 @@ const CardList = (props) => {
   // Создаем рефы для каждой карточки
   const nodeRefs = useRef({});
 
+  // Проверка на пустой массив - возвращаем null, чтобы ничего не рендерить
+  // Сообщение "Карточки не найдены!" будет отображаться в родительском компоненте
   if (!cards || !Array.isArray(cards) || cards.length === 0) {
-    return (
-      <h1 style={{ textAlign: 'center' }}>
-        Карточки не найдены!
-      </h1>
-    );
+    return null;
   }
 
   return (
@@ -98,7 +96,7 @@ const CardList = (props) => {
                 </div>
               </CSSTransition>
             );
-          } else if (card.is_other_material) {  // Добавляем проверку для иных материалов
+          } else if (card.is_other_material) {
             return (
               <CSSTransition
                 key={card.id}

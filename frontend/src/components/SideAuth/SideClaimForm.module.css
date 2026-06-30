@@ -1,0 +1,377 @@
+/* src/components/SideAuth/SideClaimForm.module.css */
+.container {
+  min-height: 100vh;
+  background: #f0f4f8;
+  padding: 80px 24px 40px calc(6.3cm + 24px);
+}
+
+.header {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #4299e1;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2d3748;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #718096;
+}
+
+.content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.caseInfo {
+  background: #f7fafc;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.caseInfoTitle {
+  font-size: 14px;
+  color: #718096;
+  margin-bottom: 4px;
+}
+
+.caseInfoNumber {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e3c5c;
+  margin-bottom: 8px;
+}
+
+.caseInfoSide {
+  font-size: 13px;
+  color: #48bb78;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.formSection {
+  margin-bottom: 32px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 24px;
+}
+
+.formSection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.formSection h3 {
+  font-size: 1rem;
+  color: #2d3748;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #4299e1;
+}
+
+.formRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.formRow .formGroup {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.hint {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+.checkboxGroup {
+  margin-bottom: 16px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.checkboxLabel input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addRow .input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.addButton {
+  background: #48bb78;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.addButton:hover:not(:disabled) {
+  background: #38a169;
+}
+
+.listItems {
+  margin-top: 12px;
+}
+
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f7fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.removeButton {
+  background: #fc8181;
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.removeButton:hover {
+  background: #f56565;
+}
+
+.attachButton {
+  background: #edf2f7;
+  border: 1px dashed #cbd5e0;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #4a5568;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.attachButton:hover:not(:disabled) {
+  background: #e2e8f0;
+  border-color: #4299e1;
+}
+
+.documentsList {
+  margin-top: 16px;
+}
+
+.documentsTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.documentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f7fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.removeDocButton {
+  background: #fc8181;
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.error {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.success {
+  background: #c6f6d5;
+  color: #276749;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.success p {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.submitButton {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  flex: 1;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3182ce, #2c5282);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: #edf2f7;
+  color: #4a5568;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #e2e8f0;
+}
+
+.note {
+  margin-top: 32px;
+  padding: 16px;
+  background: #fefcbf;
+  border-radius: 12px;
+  color: #975a16;
+  font-size: 13px;
+}
+
+.note ul {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.note li {
+  margin: 4px 0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+  
+  .formRow {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .submitButton, .cancelButton {
+    width: 100%;
+  }
+  
+  .header h1 {
+    font-size: 1.2rem;
+  }
+}

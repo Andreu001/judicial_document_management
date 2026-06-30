@@ -1,50 +1,26 @@
-import {BrowserRouter} from "react-router-dom";
-import './styles/App.css'
+// App.js
+import { BrowserRouter } from "react-router-dom";
+import './styles/App.css';
 import { AuthProvider } from './context/AuthContext';
-import Navbar from "./components/UI/Navbar/Navbar";
+import { SideAuthProvider } from './context/SideAuthContext';
 import AppRouter from "./components/AppRouters";
-
+import Navbar from "./components/UI/Navbar/Navbar";
 
 function App() {
-	return (
+  return (
     <AuthProvider>
-			<BrowserRouter>
-				<Navbar/>
-				<AppRouter/>
-			</BrowserRouter>
-    </AuthProvider>  
-	)
+      <SideAuthProvider>
+        <BrowserRouter>
+          <div style={{ display: 'flex', minHeight: '100vh' }}>
+            <Navbar /> {/* Навбар слева */}
+            <div className="main-content"> {/* Основной контент с отступом */}
+              <AppRouter />
+            </div>
+          </div>
+        </BrowserRouter>
+      </SideAuthProvider>
+    </AuthProvider>
+  );
 }
 
 export default App;
-
-
-
-/* import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sides from './components/Sides';
-import SideDetail from './components/SideDetail';
-import Home from './components/Home';
-import AddBusinessCard from './components/AddBusinessCard';
-import Login from './components/Login';
-import DjangoAdmin from './components/DjangoAdmin';
-
-
-
-
-const App = () => {
-  return (
-    <Router>
-      <Routes>
-	  	<Route path="/" element={<Home />} />
-        <Route path="/sides" element={<Sides />} />
-        <Route path="/sides/:id" element={<SideDetail />} />
-        <Route path="/business_card/" element={<AddBusinessCard />} />
-        <Route path="/auth/login/" element={<Login />} />
-        <Route path="/admin/" element={<DjangoAdmin />} />
-      </Routes>
-    </Router>
-  );
-};
-
-export default App;
-*/

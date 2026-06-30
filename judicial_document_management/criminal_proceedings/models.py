@@ -1,22 +1,23 @@
 from django.db import models
 from business_card.models import (
-                                SidesCase, Lawyer,
-                                SidesCaseInCase, PetitionsInCase,
-                                Petitions
-                            )
+    SidesCase, Lawyer, BusinessMovement,
+    SidesCaseInCase,
+    Petitions
+)
 from django.core.validators import MinValueValidator, MaxValueValidator
 from users.models import User
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 import logging
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
+from legal_codes.models import CriminalCodeArticle
 
 logger = logging.getLogger(__name__)
 
 
 class ReferringAuthority(models.Model):
-    """Органы, направившие материалы"""
+    """
+    Органы, направившие материалы
+    """
     name = models.CharField(max_length=255, verbose_name="Название органа")
     code = models.CharField(max_length=50, verbose_name="Код", unique=True)
 
@@ -26,7 +27,8 @@ class ReferringAuthority(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return str(self.name) if self.name is not None else "Не указано"
+
 
 
 class CriminalDecisions(models.Model):
@@ -39,7 +41,8 @@ class CriminalDecisions(models.Model):
         verbose_name_plural = "Решения по уголовным делам"
 
     def __str__(self):
-        return self.name
+        return str(self.name) if self.name is not None else "Не указано"
+
 
 
 class CriminalAppeal(models.Model):
@@ -52,21 +55,21 @@ class CriminalAppeal(models.Model):
         verbose_name_plural = "Апелляции по уголовным делам"
 
     def __str__(self):
-        return self.name
+        return str(self.name) if self.name is not None else "Не указано"
 
 
 class CriminalExpertiseType(models.Model):
     """Справочник видов экспертиз по уголовным делам"""
     code = models.CharField(max_length=10, unique=True, verbose_name="Код")
     name = models.CharField(max_length=200, verbose_name="Наименование экспертизы")
-    
+
     class Meta:
         verbose_name = "Вид экспертизы"
         verbose_name_plural = "Виды экспертиз"
         ordering = ['name']
-    
+
     def __str__(self):
-        return self.name
+        return str(self.name) if self.name is not None else "Не указано"
 
 
 class CriminalProceedings(models.Model):
@@ -198,6 +201,17 @@ class CriminalProceedings(models.Model):
         null=True, blank=True, verbose_name="Дата принятия дела судьей"
     )
 
+    closed_court_session = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=[
+            ('1', 'Да'),
+            ('2', 'Нет'),
+        ],
+        verbose_name="Закрытое судебное заседание"
+    )
+
     # Пункт 5 - Решение судьи при назначении дела
     judge_decision = models.CharField(
         max_length=255,
@@ -207,9 +221,18 @@ class CriminalProceedings(models.Model):
             ('1', 'о направлении уголовного дела по подсудности'),
             ('2', 'о назначении предварительного слушания'),
             ('3', 'о назначении судебного заседания'),
-            ('4', 'о назначении закрытого судебного заседания в соответствии со ст. 241 УПК РФ'),
         ],
         verbose_name="Решение судьи при назначении дела"
+    )
+
+    transfer_to_court = models.CharField(
+        max_length=500,
+        null=True, blank=True,
+        verbose_name="Куда направлено дело (при направлении по подсудности)"
+    )
+    transfer_reason = models.TextField(
+        null=True, blank=True,
+        verbose_name="Причина направления по подсудности"
     )
 
     preliminary_hearing_grounds = models.CharField(
@@ -326,17 +349,6 @@ class CriminalProceedings(models.Model):
         verbose_name="Рассмотрено в закрытом судебном заседании"
     )
 
-    # Пункт 10.4 - Использование технологий
-    vks_technology = models.BooleanField(
-        null=True, blank=True, verbose_name="Использование ВКС"
-        )
-    audio_recording = models.BooleanField(
-        null=True, blank=True, verbose_name="Использование аудиозаписи"
-    )
-    video_recording = models.BooleanField(
-        null=True, blank=True, verbose_name="Использование видеозаписи"
-    )
-
     # Особый порядок
     special_procedure_consent = models.BooleanField(
         null=True, blank=True,
@@ -385,8 +397,8 @@ class CriminalProceedings(models.Model):
         null=True, blank=True, verbose_name="Особые отметки"
     )
     # ==================== ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ РАЗДЕЛА А ====================
-    
-    # Пункт 6 - Результат предварительного слушания (расширенный)
+
+    # Пункт 6 - Результат предварительного слушания
     preliminary_hearing_result = models.CharField(
         max_length=255,
         null=True, blank=True,
@@ -400,98 +412,39 @@ class CriminalProceedings(models.Model):
         ],
         verbose_name="Результат предварительного слушания"
     )
-    
-    # Пункт 7 - Дата первого заседания
-    first_hearing_date = models.DateField(
+
+    preliminary_hearing_date = models.DateField(
         null=True, blank=True,
-        verbose_name="Дата первого судебного заседания"
+        verbose_name="Дата Предварительного судебного заседания"
     )
-    
-    # Пункт 8 - Соблюдение сроков рассмотрения
-    hearing_compliance = models.CharField(
-        max_length=2,
+    # Пункт 8 - Причина приостановления
+    date_suspension_case = models.DateField(
         null=True, blank=True,
-        choices=[
-            ('1', 'с соблюдением сроков, установленных УПК РФ'),
-            ('2', 'с нарушением сроков'),
-        ],
-        verbose_name="Соблюдение сроков рассмотрения"
+        verbose_name="Дата приостановления дела"
     )
-    
-    # Пункт 8 - Причина отложения (детализированная)
-    postponement_reason_code = models.CharField(
-        max_length=10,
-        null=True, blank=True,
-        choices=[
-            ('1', 'неявка подсудимого'),
-            ('2', 'неявка защитника'),
-            ('3', 'неявка прокурора'),
-            ('4', 'неявка потерпевшего'),
-            ('5', 'неявка других участников процесса'),
-            ('6', 'неявка свидетелей'),
-            ('7', 'необходимость истребования новых доказательств'),
-            ('8', 'недоставление подсудимого'),
-            ('9', 'назначение экспертизы'),
-            ('10', 'другие основания'),
-        ],
-        verbose_name="Код причины отложения дела"
-    )
-    
-    postponement_reason_text = models.TextField(
-        null=True, blank=True,
-        verbose_name="Текст причины отложения (при выборе 'другие основания')"
-    )
-    
-    # Количество отложений
-    postponement_count = models.PositiveIntegerField(
-        default=0,
-        null=True, blank=True,
-        verbose_name="Количество отложений рассмотрения дела"
-    )
-    
-    # Пункт 8 - Основания приостановления (детализированные)
+
     suspension_reason_code = models.CharField(
         max_length=10,
         null=True, blank=True,
         choices=[
-            ('1', 'розыск подсудимого'),
-            ('2', 'психическое заболевание подсудимого'),
-            ('3', 'иное тяжелое заболевание подсудимого'),
-            ('4', 'запрос в Конституционный Суд РФ'),
-            ('5', 'невозможность участия обвиняемого в судебном разбирательстве'),
-            ('6', 'невозможность раздельного судебного разбирательства'),
-            ('7', 'назначение экспертизы'),
-            ('8', 'розыск потерпевшего или свидетеля'),
+            ('1', 'обвиняемый скрылся и место его пребывания неизвестно'),
+            ('2', 'тяжелое заболевание обвиняемого'),
+            ('3', 'запрос в Конституционный Суд РФ или принятие жалобы к рассмотрению'),
+            ('4', 'место нахождения обвиняемого известно, но реальная возможность участия отсутствует'),
+            ('5', 'призыв на военную службу в период мобилизации/военное время или заключение контракта'),
         ],
         verbose_name="Код причины приостановления производства"
     )
-    
+
     suspension_reason_text = models.TextField(
         null=True, blank=True,
         verbose_name="Текст причины приостановления (при выборе 'иное')"
     )
-    
+
     # Продолжительность приостановления
     suspension_duration_days = models.PositiveIntegerField(
         null=True, blank=True,
         verbose_name="Продолжительность приостановления (дней)"
-    )
-    
-    # Пункт 9 - Результат рассмотрения дела в целом (расширенный)
-    case_result_detailed = models.CharField(
-        max_length=255,
-        null=True, blank=True,
-        choices=[
-            ('1', 'вынесен приговор'),
-            ('2', 'прекращено'),
-            ('3', 'принудительные меры медицинского характера'),
-            ('4', 'направлено по подсудности'),
-            ('5', 'направлено по подведомственности прокурору, в орган следствия, дознания'),
-            ('6', 'возвращено прокурору в порядке ст. 237 УПК РФ'),
-            ('7', 'возвращено в связи с отказом в удовлетворении ходатайства о прекращении в порядке ст. 446.2 УПК РФ'),
-            ('8', 'роспуск коллегии присяжных'),
-        ],
-        verbose_name="Результат рассмотрения дела в целом (детализированный)"
     )
     
     # ==================== ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ РАЗДЕЛА B ====================
@@ -707,16 +660,62 @@ class Defendant(models.Model):
         related_name='criminal_defendants',
         verbose_name='Подсудимый по делу'
     )
-    article = models.IntegerField(
+    
+    # --- ИЗМЕНЕНИЕ: ЗАМЕНЯЕМ IntegerField на ForeignKey ---
+    # Статья обвинения (обвинение)
+    article = models.ForeignKey(
+        CriminalCodeArticle,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Статья'
+        related_name='defendant_charges',
+        verbose_name='Статья УК РФ (обвинение)'
     )
-
+    
+    # Статья по приговору
+    conviction_article = models.ForeignKey(
+        CriminalCodeArticle,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='defendant_convictions',
+        verbose_name='Статья по приговору'
+    )
+    
+    # Часть статьи (сохраняем как CharField, т.к. части могут быть "1", "2", "3" и т.д.)
+    article_part = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        verbose_name='Часть статьи'
+    )
+    
+    conviction_article_part = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        verbose_name='Часть статьи по приговору'
+    )
+    
+    # Пункты статьи (сохраняем как JSON или CharField с разделителями)
+    article_clauses = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        verbose_name='Пункты статьи (через запятую)'
+    )
+    
+    conviction_article_clauses = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        verbose_name='Пункты статьи по приговору (через запятую)'
+    )
+    
     maximum_penalty_article = models.IntegerField(
         null=True,
         blank=True,
-        verbose_name='Максимальное наказание по статье'
+        verbose_name='Максимальное наказание по статье (лет)'
     )
     address = models.CharField(
         max_length=500, null=True, blank=True, verbose_name="Адрес проживания"
@@ -775,7 +774,7 @@ class Defendant(models.Model):
 
     restraint_date = models.DateField(
         null=True, blank=True, verbose_name="Дата избрания меры пресечения"
-        )
+    )
 
     # Применение меры пресечения
     restraint_application = models.CharField(
@@ -810,10 +809,8 @@ class Defendant(models.Model):
         verbose_name="Изменена на меру"
     )
 
-    conviction_article = models.CharField(
-        max_length=255, null=True, blank=True,
-        verbose_name="Статья по приговору"
-    )
+    # Статья по приговору (уже есть выше)
+    
     punishment_type = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Вид наказания"
     )
@@ -845,57 +842,44 @@ class Defendant(models.Model):
     detention_address = models.CharField(
         max_length=500, null=True, blank=True,
         verbose_name="Адрес учреждения"
-        )
+    )
 
     special_notes = models.TextField(
         null=True, blank=True, verbose_name="Особые отметки по лицу"
     )
 
-    # ==================== ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ ДЛЯ ПОДСУДИМОГО ====================
-    
-    # Полный адрес с индексом
+    # Дополнительные поля для подсудимого
     postal_code = models.CharField(
         max_length=20,
         null=True, blank=True,
         verbose_name="Почтовый индекс"
     )
-    
-    # Место работы/учебы
     place_of_work = models.CharField(
         max_length=500,
         null=True, blank=True,
         verbose_name="Место работы/учебы"
     )
-    
     work_position = models.CharField(
         max_length=255,
         null=True, blank=True,
         verbose_name="Должность/специальность"
     )
-    
-    # Характеристика
     character_reference = models.TextField(
         null=True, blank=True,
         verbose_name="Характеристика"
     )
-    
-    # Состоит на учете
     registered_with_psychiatrist = models.BooleanField(
         default=False,
         verbose_name="Состоит на учете у психиатра"
     )
-    
     registered_with_narcologist = models.BooleanField(
         default=False,
         verbose_name="Состоит на учете у нарколога"
     )
-    
-    # Инвалидность
     has_disability = models.BooleanField(
         default=False,
         verbose_name="Имеет инвалидность"
     )
-    
     disability_group = models.CharField(
         max_length=10,
         null=True, blank=True,
@@ -906,31 +890,23 @@ class Defendant(models.Model):
         ],
         verbose_name="Группа инвалидности"
     )
-    
-    # Беременность (для женщин)
     is_pregnant = models.BooleanField(
         default=False,
         verbose_name="Беременная женщина"
     )
-    
     has_child_under_3 = models.BooleanField(
         default=False,
         verbose_name="Имеет ребенка в возрасте до трех лет"
     )
-    
-    # Несовершеннолетний
     is_minor = models.BooleanField(
         default=False,
         verbose_name="Несовершеннолетний"
     )
-    
     age_at_crime = models.PositiveSmallIntegerField(
         null=True, blank=True,
         validators=[MinValueValidator(14), MaxValueValidator(120)],
         verbose_name="Возраст на момент совершения преступления"
     )
-    
-    # Рецидив
     recidivism_type = models.CharField(
         max_length=10,
         null=True, blank=True,
@@ -942,26 +918,21 @@ class Defendant(models.Model):
         ],
         verbose_name="Вид рецидива"
     )
-    
-    # Отбытие наказания
     correctional_institution = models.CharField(
         max_length=500,
         null=True, blank=True,
         verbose_name="Исправительное учреждение"
     )
-    
     detention_days_total = models.PositiveIntegerField(
         default=0,
         null=True, blank=True,
         verbose_name="Всего дней содержания под стражей"
     )
-    
     detention_days_before_court = models.PositiveIntegerField(
         default=0,
         null=True, blank=True,
         verbose_name="Дней содержания под стражей до суда"
     )
-    
     detention_days_during_trial = models.PositiveIntegerField(
         default=0,
         null=True, blank=True,
@@ -972,43 +943,8 @@ class Defendant(models.Model):
         verbose_name = "Обвиняемый"
         verbose_name_plural = "Обвиняемые"
 
-
-class LawyerCriminal(models.Model):
-    '''Модель для адвокатов в уголовных делах'''
-    
-    criminal_proceedings = models.ForeignKey(
-        CriminalProceedings,
-        on_delete=models.CASCADE,
-        related_name='criminal_lawyers',
-        verbose_name="Уголовное производство"
-    )
-    
-    lawyer = models.ForeignKey(
-        'business_card.Lawyer',
-        on_delete=models.CASCADE,
-        related_name='criminal_lawyers',
-        verbose_name="Адвокат",
-        null=True,
-        blank=True
-    )
-    
-    sides_case_role = models.ForeignKey(
-        'business_card.SidesCase',
-        on_delete=models.CASCADE,
-        related_name='criminal_lawyers',
-        verbose_name="Роль в деле",
-        null=True,
-        blank=True
-    )
-    
-    class Meta:
-        verbose_name = "Адвокат в уголовном деле"
-        verbose_name_plural = "Адвокаты в уголовных делах"
-
     def __str__(self):
-        if self.lawyer:
-            return f"Адвокат: {self.lawyer.law_firm_name}"
-        return f"Адвокат по делу {self.criminal_proceedings.case_number_criminal}"
+        return self.full_name_criminal
 
 
 class CriminalSidesCaseInCase(models.Model):
@@ -1038,7 +974,7 @@ class CriminalSidesCaseInCase(models.Model):
         null=True,
         blank=True
     )
-    
+
     class Meta:
         verbose_name = 'Сторона уголовного дела'
         verbose_name_plural = 'Стороны уголовного дела'
@@ -1047,7 +983,34 @@ class CriminalSidesCaseInCase(models.Model):
         return f'Адвокат: {self.criminal_side_case.name}'
 
 
-# criminal_case/models.py - исправленная модель PetitionCriminal
+class LawyerCriminal(models.Model):
+    """Адвокаты-представители"""
+    criminal_proceedings = models.ForeignKey(
+        CriminalProceedings,
+        on_delete=models.CASCADE,
+        related_name='criminal_lawyers',
+        verbose_name="Гражданское производство"
+    )
+    lawyer = models.ForeignKey(
+        Lawyer,
+        on_delete=models.CASCADE,
+        related_name='criminal_lawyers',
+        verbose_name="Адвокат (данные из business_card)"
+    )
+    sides_case_role = models.ForeignKey(
+        SidesCase,
+        on_delete=models.CASCADE,
+        related_name='criminal_lawyers',
+        verbose_name="Представитель какой стороны"
+    )
+
+    class Meta:
+        verbose_name = "Адвокат в уголовном деле"
+        verbose_name_plural = "Адвокаты в уголовном делах"
+
+    def __str__(self):
+        return f"{self.sides_case_role} - {self.lawyer}"
+
 
 class PetitionCriminal(models.Model):
     '''Модель для ходатайств в уголовном деле'''
@@ -1087,7 +1050,7 @@ class PetitionCriminal(models.Model):
         null=True,
         blank=True
     )
-    
+
     petitions_incase = models.ForeignKey(
         'business_card.PetitionsInCase',
         on_delete=models.CASCADE,
@@ -1096,7 +1059,7 @@ class PetitionCriminal(models.Model):
         null=True,
         blank=True
     )
-    
+
     # ДОБАВИТЬ ЭТИ ПОЛЯ:
     petitioner_type = models.CharField(
         max_length=30,
@@ -1110,49 +1073,60 @@ class PetitionCriminal(models.Model):
         null=True,
         blank=True
     )
-    
+
     class Meta:
         verbose_name = 'Ходатайство уголовного дела'
         verbose_name_plural = 'Ходатайства уголовного дела'
         indexes = [
             models.Index(fields=['petitioner_type', 'petitioner_id']),
         ]
-    
+
     def __str__(self):
         if self.petitions_criminal:
             return f'Ходатайство: {self.petitions_criminal}'
         return 'Ходатайство'
-    
+
+
     @property
     def petitioner(self):
         """Получение объекта заявителя"""
         if not self.petitioner_type or not self.petitioner_id:
             return None
-        
+
         if self.petitioner_type == 'criminal_defendant':
             try:
-                return Defendant.objects.get(id=self.petitioner_id, criminal_proceedings=self.criminal_proceedings)
+                return Defendant.objects.get(
+                    id=self.petitioner_id,
+                    criminal_proceedings=self.criminal_proceedings
+                )
             except Defendant.DoesNotExist:
                 return None
         elif self.petitioner_type == 'criminal_lawyer':
             try:
-                return LawyerCriminal.objects.get(id=self.petitioner_id, criminal_proceedings=self.criminal_proceedings)
+                return LawyerCriminal.objects.get(
+                    id=self.petitioner_id,
+                    criminal_proceedings=self.criminal_proceedings
+                )
             except LawyerCriminal.DoesNotExist:
                 return None
         elif self.petitioner_type == 'criminal_side':
             try:
-                return CriminalSidesCaseInCase.objects.get(id=self.petitioner_id, criminal_proceedings=self.criminal_proceedings)
+                return CriminalSidesCaseInCase.objects.get(
+                    id=self.petitioner_id,
+                    criminal_proceedings=self.criminal_proceedings
+                )
             except CriminalSidesCaseInCase.DoesNotExist:
                 return None
         return None
-    
+
+
     @property
     def petitioner_info(self):
         """Получение информации о заявителе для отображения"""
         petitioner = self.petitioner
         if not petitioner:
             return None
-        
+
         if self.petitioner_type == 'criminal_defendant':
             return {
                 'id': petitioner.id,
@@ -1397,107 +1371,27 @@ class CriminalDecision(models.Model):
 
 
 class CriminalCaseMovement(models.Model):
-    """
-    Модель для отслеживания движения уголовного дела (пункты 6-9 раздела А)
-    """
+    """Движение дела (готовые записи из BusinessMovement)"""
     criminal_proceedings = models.ForeignKey(
         CriminalProceedings,
         on_delete=models.CASCADE,
-        related_name="case_movement",
-        verbose_name="Уголовное производство"
+        related_name='criminal_movements',
+        verbose_name="Гражданское производство"
     )
-
-    # Пункт 6 - Результат предварительного слушания
-    preliminary_hearing_result = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'о направлении уголовного дела по подсудности'),
-            ('2', 'о возвращении уголовного дела прокурору'),
-            ('3', 'о приостановлении производства по делу'),
-            ('4', 'о прекращении уголовного дела'),
-            ('5', 'о назначении судебного заседания'),
-            ('6', 'о назначении закрытого судебного заседания'),
-        ],
-        verbose_name="Результат предварительного слушания"
-    )
-
-    first_hearing_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата первого заседания"
-    )
-    meeting_time = models.TimeField(
-        verbose_name='Время заседания',
-        null=True,
-        blank=True,
-    )
-    hearing_compliance = models.CharField(
-        max_length=1,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'с соблюдением сроков, установленных УПК РФ'),
-            ('2', 'по делам с нарушением сроков'),
-        ],
-        verbose_name="Соблюдение сроков"
-    )
-
-    # Пункт 8 - Причины отложения дела
-    hearing_postponed_reason = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'неявка подсудимого'),
-            ('2', 'неявка защитника'),
-            ('3', 'неявка прокурора'),
-            ('4', 'неявка потерпевшего'),
-            ('5', 'неявка других участников процесса'),
-            ('6', 'неявка свидетелей'),
-            ('7', 'необходимость истребования новых доказательств'),
-            ('8', 'недоставление подсудимого'),
-            ('9', 'назначение экспертизы'),
-            ('10', 'другие основания'),
-        ],
-        verbose_name="Причина отложения"
-    )
-
-    # Дополнительное поле для текстового описания причины
-    hearing_postponed_reason_text = models.TextField(
-        null=True, blank=True,
-        verbose_name="Текст причины отложения"
-    )
-
-    suspension_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата приостановления производства"
-    )
-
-    # Пункт 8 - Основания приостановления
-    suspension_reason = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'розыск подсудимого'),
-            ('2', 'психическое заболевание'),
-            ('3', 'другое тяжкое заболевание'),
-            ('4', 'запрос в Конституционный Суд РФ'),
-            ('5', 'невозможность участия обвиняемого в судебном разбирательстве'),
-            ('6', 'невозможность раздельного судебного разбирательства'),
-        ],
-        verbose_name="Причина приостановления"
-    )
-
-    resumption_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата возобновления производства"
+    business_movement = models.ForeignKey(
+        BusinessMovement,
+        on_delete=models.CASCADE,
+        related_name='criminal_movements',
+        verbose_name="Движение дела (из business_card)"
     )
 
     class Meta:
-        verbose_name = "Движение дела"
-        verbose_name_plural = "Движения дел"
+        verbose_name = "Движение дела (уголовные)"
+        verbose_name_plural = "Движения дела (уголовные)"
+        ordering = ['-business_movement__date_meeting', '-business_movement__meeting_time']
 
     def __str__(self):
-        return f"Движение дела {self.criminal_proceedings.case_number_criminal}"
+        return f"Движение по делу {self.criminal_proceedings.case_number_criminal} от {self.business_movement.date_meeting}"
 
 
 class CriminalCivilClaim(models.Model):

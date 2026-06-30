@@ -95,3 +95,69 @@
   color: white;
   background: rgba(255, 255, 255, 0.03);
 }
+
+.dividerLine {
+  height: 1px;
+  background: #2d3748;
+  margin: 16px 20px;
+}
+
+.sideCabinet {
+  margin-top: 8px;
+  padding: 0 0 8px 0;
+}
+
+.sideCabinetHeader {
+  padding: 10px 20px 6px 20px;
+  color: #7f8c8d;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sideCabinetLink {
+  display: block;
+  padding: 10px 20px;
+  color: #48bb78;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: rgba(72, 187, 120, 0.1);
+  margin: 4px 12px;
+  border-radius: 6px;
+}
+
+.sideCabinetLink:hover {
+  background: rgba(72, 187, 120, 0.2);
+  color: #68d391;
+}
+
+.sideCabinetDesc {
+  padding: 6px 20px 10px 20px;
+  color: #6b7c8a;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.activeLink {
+  background: rgba(72, 187, 120, 0.15);
+  color: #68d391;
+  font-weight: 500;
+  border-left: 3px solid #48bb78;
+}
+
+.categoryLink {
+  padding: 10px 20px;
+  color: #a0aec0;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: block;
+}
+
+.categoryLink:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}

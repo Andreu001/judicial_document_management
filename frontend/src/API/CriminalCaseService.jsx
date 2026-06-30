@@ -214,74 +214,7 @@ class CriminalCaseService {
     }
   }
 
-  // === Движение дела (CriminalCaseMovement) ===
-  
-  static async getCaseMovements(proceedingId) {
-    try {
-      const response = await baseService.get(
-        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/`
-      );
-      return response.data || [];
-    } catch (error) {
-      console.error('Error fetching case movements:', error);
-      return [];
-    }
-  }
-
-  static async getCaseMovementById(proceedingId, movementId) {
-    try {
-      const response = await baseService.get(
-        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/${movementId}/`
-      );
-      return response.data;
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return null;
-      }
-      console.error('Error fetching case movement by ID:', error);
-      throw error;
-    }
-  }
-
-  static async createCaseMovement(proceedingId, movementData) {
-    try {
-      const response = await baseService.post(
-        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/`, 
-        movementData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating case movement:', error);
-      throw error;
-    }
-  }
-
-  static async updateCaseMovement(proceedingId, movementId, movementData) {
-    try {
-      const response = await baseService.patch(
-        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/${movementId}/`, 
-        movementData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating case movement:', error);
-      throw error;
-    }
-  }
-
-  static async deleteCaseMovement(proceedingId, movementId) {
-    try {
-      await baseService.delete(
-        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/${movementId}/`
-      );
-    } catch (error) {
-      console.error('Error deleting case movement:', error);
-      throw error;
-    }
-  }
-
-  // === Адвокаты (LawyerCriminal) - ИСПРАВЛЕНО URL ===
-  // Теперь URL: /criminal_proceedings/criminal-proceedings/{id}/lawyers/
+  // === Адвокаты (LawyerCriminal) ===
 
   static async getLawyers(proceedingId) {
     try {
@@ -1051,6 +984,259 @@ class CriminalCaseService {
     } catch (error) {
       console.error('Error fetching supervisory results:', error);
       return [];
+    }
+  }
+
+  // === Движение дела (CriminalCaseMovement) ===
+
+  static async getCaseMovements(proceedingId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/`
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching case movements:', error);
+      return [];
+    }
+  }
+
+  static async getCaseMovementById(proceedingId, movementId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/${movementId}/`
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error fetching case movement by ID:', error);
+      throw error;
+    }
+  }
+
+  static async createCaseMovement(proceedingId, movementData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/`, 
+        movementData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating case movement:', error);
+      throw error;
+    }
+  }
+
+  static async updateCaseMovement(proceedingId, movementId, movementData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/${movementId}/`, 
+        movementData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating case movement:', error);
+      throw error;
+    }
+  }
+
+  static async deleteCaseMovement(proceedingId, movementId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}criminal-proceedings/${proceedingId}/criminal-case-movement/${movementId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting case movement:', error);
+      throw error;
+    }
+  }
+
+  // Получить решения для выпадающего списка (CriminalDecisions)
+  static async getCriminalDecisionsList() {
+    try {
+      const response = await baseService.get('/business_card/decisions/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching decisions:', error);
+      return [];
+    }
+  }
+  // === Статьи УК РФ ===
+
+  static async getAllCriminalCodeArticles() {
+      try {
+          const response = await baseService.get('/legal-codes/articles/');
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching criminal code articles:', error);
+          return [];
+      }
+  }
+
+  static async searchCriminalCodeArticles(searchTerm) {
+    try {
+      const response = await baseService.get(`/legal-codes/articles/?search=${encodeURIComponent(searchTerm)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error searching criminal code articles:', error);
+      return [];
+    }
+  }
+
+  static async getArticleStructure(articleId) {
+    try {
+      const response = await baseService.get(`/legal-codes/articles/${articleId}/structure/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching article structure:', error);
+      return null;
+    }
+  }
+  
+  static async getPreviousConvictions(personCardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${personCardId}/previous-convictions/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching previous convictions:', error);
+      return [];
+    }
+  }
+
+  static async createPreviousConviction(personCardId, convictionData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}person-cards/${personCardId}/previous-convictions/`,
+        convictionData  // Не используем cleanData здесь
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating previous conviction:', error);
+      throw error;
+    }
+  }
+
+  static async updatePreviousConviction(personCardId, convictionId, convictionData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}person-cards/${personCardId}/previous-convictions/${convictionId}/`,
+        convictionData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating previous conviction:', error);
+      throw error;
+    }
+  }
+
+  static async deletePreviousConviction(personCardId, convictionId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}person-cards/${personCardId}/previous-convictions/${convictionId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting previous conviction:', error);
+      throw error;
+    }
+  }
+
+  // === Составы преступлений (CrimeComposition) ===
+
+  static async getCrimeCompositions(personCardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${personCardId}/crime-compositions/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching crime compositions:', error);
+      return [];
+    }
+  }
+
+  static async createCrimeComposition(personCardId, crimeData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}person-cards/${personCardId}/crime-compositions/`,
+        crimeData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating crime composition:', error);
+      throw error;
+    }
+  }
+
+  static async updateCrimeComposition(personCardId, crimeId, crimeData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}person-cards/${personCardId}/crime-compositions/${crimeId}/`,
+        crimeData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating crime composition:', error);
+      throw error;
+    }
+  }
+
+  static async deleteCrimeComposition(personCardId, crimeId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}person-cards/${personCardId}/crime-compositions/${crimeId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting crime composition:', error);
+      throw error;
+    }
+  }
+
+  // === Назначенные наказания (SentencedPunishment) ===
+
+  static async getSentences(personCardId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}person-cards/${personCardId}/sentences/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sentences:', error);
+      return [];
+    }
+  }
+
+  static async createSentence(personCardId, sentenceData) {
+    try {
+      const response = await baseService.post(
+        `${BASE_URL}person-cards/${personCardId}/sentences/`,
+        sentenceData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating sentence:', error);
+      throw error;
+    }
+  }
+
+  static async updateSentence(personCardId, sentenceId, sentenceData) {
+    try {
+      const response = await baseService.patch(
+        `${BASE_URL}person-cards/${personCardId}/sentences/${sentenceId}/`,
+        sentenceData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating sentence:', error);
+      throw error;
+    }
+  }
+
+  static async deleteSentence(personCardId, sentenceId) {
+    try {
+      await baseService.delete(
+        `${BASE_URL}person-cards/${personCardId}/sentences/${sentenceId}/`
+      );
+    } catch (error) {
+      console.error('Error deleting sentence:', error);
+      throw error;
     }
   }
 }

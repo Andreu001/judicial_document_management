@@ -54,8 +54,24 @@ INSTALLED_APPS = [
     'case_management',
     'statistics_app',
     'social_django',
-    'citizen_access',
+    'side_case_access',
+    'judge_assistant',
+    'legal_codes',
+    'court_registry',
+    'communication',
+    'channels',
 ]
+
+ASGI_APPLICATION = 'judicial_document_management.asgi.application'
+CHANNEL_LAYERS = {
+
+    "default": {
+
+        "BACKEND":
+            "channels.layers.InMemoryChannelLayer",
+
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -155,7 +171,7 @@ X_FRAME_OPTIONS = 'ALLOWALL'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Замените этот URL на ваш фронтенд URL
-    # Другие разрешенные источники...
+
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Временно разрешаем все источники.
@@ -191,9 +207,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'side_case_access.auth.ExternalUserAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated', # 'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticated',
     ),
 }
 
@@ -339,10 +356,10 @@ SOCIAL_AUTH_YANDEX_OAUTH2_API_VERSION = '1'
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/citizen/oauth-callback/'
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/citizen/login-error/'
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/side_case/oauth-callback/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/side_case/login-error/'
 
-LOGIN_REDIRECT_URL = '/citizen/dashboard/'
+LOGIN_REDIRECT_URL = '/side_case/dashboard/'
 
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
@@ -357,7 +374,11 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
-    'citizen_access.pipeline.save_social_id',
-    'citizen_access.pipeline.set_citizen_role',
-    'citizen_access.pipeline.auto_verify_from_yandex',
+    'side_case_access.pipeline.save_social_id',
+    'side_case_access.pipeline.set_side_case_role',
+    'side_case_access.pipeline.auto_verify_from_yandex',
 )
+
+EXTERNAL_USER_MODEL = 'side_case_access.ExternalUser'
+
+SOCIAL_AUTH_USER_MODEL = 'side_case_access.ExternalUser'

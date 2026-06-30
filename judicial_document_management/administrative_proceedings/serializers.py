@@ -1,4 +1,3 @@
-# administrative_code/serializers.py
 from rest_framework import serializers
 from users.models import User
 from business_card.models import (
@@ -28,8 +27,7 @@ class KasDecisionSerializer(serializers.ModelSerializer):
     outcome_display = serializers.CharField(source='get_outcome_display', read_only=True)
     term_compliance_display = serializers.CharField(source='get_term_compliance_display', read_only=True)
     court_composition_display = serializers.CharField(source='get_court_composition_display', read_only=True)
-    decision_appeal_result_display = serializers.CharField(source='get_decision_appeal_result_display', read_only=True)
-    decision_cassation_result_display = serializers.CharField(source='get_decision_cassation_result_display', read_only=True)
+
     
     class Meta:
         model = KasDecision
@@ -452,7 +450,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Получение отображаемого значения порядка поступления"""
         if obj.admission_order:
             from django.apps import apps
-            AdmissionOrder = apps.get_model('administrative_code', 'AdmissionOrder')
+            AdmissionOrder = apps.get_model('administrative_proceedings', 'AdmissionOrder')
             try:
                 order = AdmissionOrder.objects.get(code=obj.admission_order)
                 return order.label
@@ -464,7 +462,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Получение отображаемого значения причины отложения"""
         if obj.postponement_reason:
             from django.apps import apps
-            PostponementReason = apps.get_model('administrative_code', 'PostponementReason')
+            PostponementReason = apps.get_model('administrative_proceedings', 'PostponementReason')
             try:
                 reason = PostponementReason.objects.get(code=obj.postponement_reason)
                 return reason.label
@@ -476,7 +474,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Получение отображаемого значения причины приостановления"""
         if obj.suspension_reason:
             from django.apps import apps
-            SuspensionReason = apps.get_model('administrative_code', 'SuspensionReason')
+            SuspensionReason = apps.get_model('administrative_proceedings', 'SuspensionReason')
             try:
                 reason = SuspensionReason.objects.get(code=obj.suspension_reason)
                 return reason.label
@@ -488,7 +486,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Получение отображаемого значения мер предварительной защиты"""
         if obj.preliminary_protection:
             from django.apps import apps
-            PreliminaryProtection = apps.get_model('administrative_code', 'PreliminaryProtection')
+            PreliminaryProtection = apps.get_model('administrative_proceedings', 'PreliminaryProtection')
             try:
                 protection = PreliminaryProtection.objects.get(code=obj.preliminary_protection)
                 return protection.label
@@ -500,7 +498,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Получение отображаемого значения вида экспертизы"""
         if obj.expertise_type:
             from django.apps import apps
-            ExpertiseType = apps.get_model('administrative_code', 'ExpertiseType')
+            ExpertiseType = apps.get_model('administrative_proceedings', 'ExpertiseType')
             try:
                 exp_type = ExpertiseType.objects.get(code=obj.expertise_type)
                 return exp_type.label
@@ -518,7 +516,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Отображаемое значение результата апелляции"""
         if obj.appeal_result:
             from django.apps import apps
-            AppealResult = apps.get_model('administrative_code', 'AppealResult')
+            AppealResult = apps.get_model('administrative_proceedings', 'AppealResult')
             try:
                 result = AppealResult.objects.get(code=obj.appeal_result)
                 return result.label
@@ -536,7 +534,7 @@ class KasProceedingsSerializer(serializers.ModelSerializer):
         """Отображаемое значение результата кассации"""
         if obj.cassation_result:
             from django.apps import apps
-            CassationResult = apps.get_model('administrative_code', 'CassationResult')
+            CassationResult = apps.get_model('administrative_proceedings', 'CassationResult')
             try:
                 result = CassationResult.objects.get(code=obj.cassation_result)
                 return result.label

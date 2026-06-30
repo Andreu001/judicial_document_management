@@ -147,20 +147,20 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             for d in defendants
         ]
 
-        # 2. Адвокаты
+        # 2. Адвокаты (исправлено: используем lawyer.law_firm_name)
         lawyers = LawyerCriminal.objects.filter(criminal_proceedings=proceeding)
         lawyer_list = [
             {
                 'id': l.id,
                 'type': 'lawyer',
-                'name': l.sides_case_lawyer_criminal.law_firm_name if l.sides_case_lawyer_criminal else 'Адвокат',
-                'role': 'Адвокат',
-                'details': l.sides_case_lawyer_criminal.law_firm_name if l.sides_case_lawyer_criminal else ''
+                'name': l.lawyer.law_firm_name if l.lawyer else 'Адвокат',
+                'role': l.sides_case_role.sides_case if l.sides_case_role else 'Адвокат',
+                'details': l.lawyer.law_firm_name if l.lawyer else ''
             }
             for l in lawyers
         ]
 
-        # 3. Иные стороны
+        # 3. Иные стороны (исправлено: используем criminal_side_case.name)
         sides = CriminalSidesCaseInCase.objects.filter(criminal_proceedings=proceeding)
         side_list = [
             {
@@ -452,14 +452,22 @@ class CriminalCaseMovementViewSet(viewsets.ModelViewSet):
         if criminal_proceedings_id:
             return CriminalCaseMovement.objects.filter(
                 criminal_proceedings_id=criminal_proceedings_id
-            )
+            ).select_related('business_movement')
         return CriminalCaseMovement.objects.none()
 
-    def perform_create(self, serializer):
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
         criminal_proceedings_id = self.kwargs.get("criminal_proceedings")
         if criminal_proceedings_id:
-            proceedings = get_object_or_404(CriminalProceedings, pk=criminal_proceedings_id)
-            serializer.save(criminal_proceedings=proceedings)
+            context['criminal_proceedings'] = get_object_or_404(
+                CriminalProceedings, 
+                pk=criminal_proceedings_id
+            )
+        return context
+
+    def perform_create(self, serializer):
+        # criminal_proceedings уже в контексте, сериализатор сам его использует
+        serializer.save()
 
 
 class LawyerCriminalViewSet(viewsets.ModelViewSet):

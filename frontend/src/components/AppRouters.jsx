@@ -1,5 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
+import { useSideAuth } from '../context/SideAuthContext';
 import About from "../pages/About";
 import Profile from "../pages/Profile";
 import Archive from "../pages/Archive";
@@ -14,7 +16,6 @@ import Layout from './Layout';
 import DefendantDetail from "./CriminalCase/DefendantDetail";
 import CriminalDetail from "./CriminalCase/CriminalDetail";
 import CriminalDecisionDetail from "./CriminalCase/CriminalDecisionDetail";
-import CriminalMovementDetail from "./CriminalCase/CriminalMovementDetail";
 import CorrespondenceIn from "./Correspondence/CorrespondenceIn";
 import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
@@ -43,248 +44,434 @@ import OtherMaterialDetail from './OtherMaterials/OtherMaterialDetail';
 import OtherMaterialDecisionDetail from './OtherMaterials/OtherMaterialDecisionDetail';
 import CriminalCivilClaimDetail from './CriminalCase/CriminalCivilClaimDetail';
 import Statistics from './Statistics/Statistics';
-import CitizenDashboard from '../pages/Citizen/CitizenDashboard';
 import CriminalCasesPage from './CaseCategories/CriminalCasesPage';
 import CivilCasesPage from './CaseCategories/CivilCasesPage';
 import AdministrativeCasesPage from './CaseCategories/AdministrativeCasesPage';
 import AdminOffensesPage from './CaseCategories/AdminOffensesPage';
-import CitizenWelcome from '../pages/Citizen/CitizenWelcome';
-import CitizenVerify from '../pages/Citizen/CitizenVerify';
-import OAuthCallback from '../pages/Citizen/OAuthCallback';
-import CitizenCaseListView from '../pages/Citizen/CitizenCaseListView';
-import ArchivePage from '../pages/Citizen/ArchivePage';
+import SideProfile from './SideAuth/SideProfile';
+import OAuthCallbackHandler from './SideAuth/OAuthCallbackHandler';
+import CaseDetailView from './SideAuth/CaseDetailView';
+import DocumentsViewPage from './SideAuth/DocumentsViewPage';
+import SidePetitionForm from './SideAuth/SidePetitionForm';
+import PartyDocumentsPage from './Documents/PartyDocumentsPage';
+import PartyDocumentForm from './Documents/PartyDocumentForm';
+import PartyDocumentDetailPage from './Documents/PartyDocumentDetailPage';
+import SideClaimForm from './SideAuth/SideClaimForm';
 
+// Court Registry pages
+import CourtRegistryDashboard from '../components/CourtRegistry/CourtRegistryDashboard';
+import CourtList from '../components/CourtRegistry/Courts/CourtList';
+import CourtDetail from '../components/CourtRegistry/Courts/CourtDetail';
+import CourtForm from '../components/CourtRegistry/Courts/CourtForm';
+import TransferList from '../components/CourtRegistry/Transfers/TransferList';
+import TransferDetail from '../components/CourtRegistry/Transfers/TransferDetail';
+import TransferForm from '../components/CourtRegistry/Transfers/TransferForm';
+import NotificationList from '../components/CourtRegistry/Notifications/NotificationList';
+import PendingTransferList from '../components/CourtRegistry/PendingTransfers/PendingTransferList';
+import VCSList from '../components/CourtRegistry/VCS/VCSList';
+import VCSDetail from '../components/CourtRegistry/VCS/VCSDetail';
+import VCSForm from '../components/CourtRegistry/VCS/VCSForm';
+import MessengerRegistration from '../components/CourtRegistry/Messenger/MessengerRegistration';
+import AuditLog from '../components/CourtRegistry/Audit/AuditLog';
+
+import Messenger from './Messenger/MessengerApp';
+
+// Компонент для защиты маршрутов только для сотрудников суда
+const JudgeRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  const { isAuthenticated: isSideAuth } = useSideAuth();
+  
+  // Если авторизована сторона - редирект на мои дела
+  if (isSideAuth()) {
+    return <Navigate to="/my-cases" replace />;
+  }
+  
+  // Если не авторизован сотрудник - редирект на главную
+  if (!isAuthenticated()) {
+    return <Navigate to="/cards" replace />;
+  }
+  
+  return children;
+};
+
+// Компонент для защиты маршрутов только для сторон
+const SideRoute = ({ children }) => {
+  const { isAuthenticated: isSideAuth } = useSideAuth();
+  
+  if (!isSideAuth()) {
+    return <Navigate to="/cards" replace />;
+  }
+  
+  return children;
+};
 
 const AppRouter = () => {
-    return (
-        <Routes>
-            <Route path="/" element={<Layout />}>
-                <Route index element={<Cards />} />
-                <Route path="about" element={<About />} />
-                <Route path="cards" element={<Cards />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="archive" element={<Archive />} />
-                <Route path="person-search" element={<PersonSearch />} />
-                <Route path="hr" element={<PersonnelPage />} />
-                <Route path="/legal-documents" element={<LegalDocuments />} />
-                <Route path="statistics" element={<Statistics />} />
-                <Route path="criminal" element={<CriminalCasesPage />} />
-                <Route path="civil" element={<CivilCasesPage />} />
-                <Route path="administrative" element={<AdministrativeCasesPage />} />
-                <Route path="admin-offenses" element={<AdminOffensesPage />} />
+  return (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        {/* Публичные маршруты */}
+        <Route index element={<Cards />} />
+        <Route path="about" element={<About />} />
+        <Route path="cards" element={<Cards />} />
+        <Route path="archive" element={<Archive />} />
+        <Route path="legal-documents" element={<LegalDocuments />} />
+        <Route path="/civil-claim/new" element={
+          <SideRoute>
+            <SideClaimForm />
+          </SideRoute>
+        } />
+        <Route path="/civil-claim/:caseType/:caseId" element={<SideClaimForm />} />
+        <Route path="messenger" element={
+          <JudgeRoute>
+            <Messenger onClose={() => window.history.back()} />
+          </JudgeRoute>
+        } />
+        {/* ================================================================= */}
+        {/* Реестр судов — Court Registry */}
+        {/* ================================================================= */}
+        <Route path="court-registry" element={
+          <JudgeRoute>
+            <CourtRegistryDashboard />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/courts" element={
+          <JudgeRoute>
+            <CourtList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/courts/new" element={
+          <JudgeRoute>
+            <CourtForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/courts/:id" element={
+          <JudgeRoute>
+            <CourtDetail />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/courts/:id/edit" element={
+          <JudgeRoute>
+            <CourtForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/transfers" element={
+          <JudgeRoute>
+            <TransferList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/transfers/new" element={
+          <JudgeRoute>
+            <TransferForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/transfers/:id" element={
+          <JudgeRoute>
+            <TransferDetail />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/notifications" element={
+          <JudgeRoute>
+            <NotificationList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/pending-transfers" element={
+          <JudgeRoute>
+            <PendingTransferList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/vcs" element={
+          <JudgeRoute>
+            <VCSList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/vcs/new" element={
+          <JudgeRoute>
+            <VCSForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/vcs/:id" element={
+          <JudgeRoute>
+            <VCSDetail />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/messenger" element={
+          <JudgeRoute>
+            <MessengerRegistration />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/audit" element={
+          <JudgeRoute>
+            <AuditLog />
+          </JudgeRoute>
+        } />
+        {/* Маршруты для стороны (участники процесса) */}
+        <Route path="my-cases" element={
+          <SideRoute>
+            <SideProfile />
+          </SideRoute>
+        } />
+        <Route path="/case-view/:caseType/:caseId" element={<SideRoute><CaseDetailView /></SideRoute>} />
+        <Route path="/documents/:caseType/:caseId" element={<SideRoute><DocumentsViewPage /></SideRoute>} />
+        <Route path="side_case/oauth-callback/" element={<OAuthCallbackHandler />} />
 
-                <Route path="citizen/cases/criminal" element={<CitizenCaseListView caseType="criminal" title="Уголовные дела" />} />
-                <Route path="citizen/cases/civil" element={<CitizenCaseListView caseType="civil" title="Гражданские дела" />} />
-                <Route path="citizen/cases/coap" element={<CitizenCaseListView caseType="coap" title="Административные правонарушения" />} />
-                <Route path="citizen/cases/kas" element={<CitizenCaseListView caseType="kas" title="Дела КАС" />} />
-                <Route path="citizen/archive" element={<ArchivePage />} />
+        <Route path="/side-petition/:caseType/:caseId" element={<SidePetitionForm />} />
 
-                <Route path="citizen/verify" element={<CitizenVerify />} />
-                <Route path="citizen/welcome" element={<CitizenWelcome />} />
-                <Route path="citizen/dashboard" element={<CitizenDashboard />} />
-                <Route path="/citizen/oauth-callback" element={<OAuthCallback />} />
+        {/* Маршруты только для сотрудников суда */}
+        <Route path="profile" element={
+          <JudgeRoute>
+            <Profile />
+          </JudgeRoute>
+        } />
+        <Route path="person-search" element={
+          <JudgeRoute>
+            <PersonSearch />
+          </JudgeRoute>
+        } />
+        <Route path="hr" element={
+          <JudgeRoute>
+            <PersonnelPage />
+          </JudgeRoute>
+        } />
+        <Route path="statistics" element={
+          <JudgeRoute>
+            <Statistics />
+          </JudgeRoute>
+        } />
+        
+        {/* Экспедиция - только для сотрудников */}
+        <Route path="in" element={
+          <JudgeRoute>
+            <CorrespondenceIn />
+          </JudgeRoute>
+        } />
+        <Route path="in/new" element={
+          <JudgeRoute>
+            <CorrespondenceForm />
+          </JudgeRoute>
+        } />
+        <Route path="in/:id" element={
+          <JudgeRoute>
+            <CorrespondenceDetail />
+          </JudgeRoute>
+        } />
+        <Route path="in/:id/edit" element={
+          <JudgeRoute>
+            <CorrespondenceForm mode="edit" />
+          </JudgeRoute>
+        } />
+        <Route path="out" element={
+          <JudgeRoute>
+            <CorrespondenceOut />
+          </JudgeRoute>
+        } />
+        <Route path="out/new" element={
+          <JudgeRoute>
+            <CorrespondenceForm />
+          </JudgeRoute>
+        } />
+        <Route path="out/:id" element={
+          <JudgeRoute>
+            <CorrespondenceDetail />
+          </JudgeRoute>
+        } />
+        <Route path="out/:id/edit" element={
+          <JudgeRoute>
+            <CorrespondenceForm mode="edit" />
+          </JudgeRoute>
+        } />
 
-                <Route index element={<Navigate to="/citizen/dashboard" />} />
-                <Route path="dashboard" element={<CitizenDashboard />} />
-                <Route path="archive" element={<CitizenDashboard showArchived />} />
+        {/* Категории дел - только для сотрудников */}
+        <Route path="criminal" element={
+          <JudgeRoute>
+            <CriminalCasesPage />
+          </JudgeRoute>
+        } />
+        <Route path="civil" element={
+          <JudgeRoute>
+            <CivilCasesPage />
+          </JudgeRoute>
+        } />
+        <Route path="administrative" element={
+          <JudgeRoute>
+            <AdministrativeCasesPage />
+          </JudgeRoute>
+        } />
+        <Route path="admin-offenses" element={
+          <JudgeRoute>
+            <AdminOffensesPage />
+          </JudgeRoute>
+        } />
 
-                {/* Входящая корреспонденция */}
-                <Route path="/in" element={<CorrespondenceIn />} />
-                <Route path="/in/new" element={<CorrespondenceForm />} />
-                <Route path="/in/:id" element={<CorrespondenceDetail />} />
-                <Route path="/in/:id/edit" element={<CorrespondenceForm mode="edit" />} />
-                                
-                {/* Исходящая корреспонденция */}
-                <Route path="/out" element={<CorrespondenceOut />} />
-                <Route path="/out/new" element={<CorrespondenceForm />} />
-                <Route path="/out/:id" element={<CorrespondenceDetail />} />
-                <Route path="/out/:id/edit" element={<CorrespondenceForm mode="edit" />} />
-                
-                <Route path="cards/:id" element={<CardIdPage />} />
-                <Route path="business_card/businesscard/" element={<CardList />} />
+        <Route path="cards/:id" element={
+          <JudgeRoute>
+            <CardIdPage />
+          </JudgeRoute>
+        } />
+        <Route path="business_card/businesscard/" element={
+          <JudgeRoute>
+            <CardList />
+          </JudgeRoute>
+        } />
+        <Route path="business_card/businesscard/:id/sidescaseincase/:id" element={
+          <JudgeRoute>
+            <SideDetail />
+          </JudgeRoute>
+        } />
+        <Route path="/businesscard/:cardId/sides/:sideId" element={
+          <JudgeRoute>
+            <SideDetail />
+          </JudgeRoute>
+        } />
+        <Route path="business_card/businesscard/:id/considered/:id" element={
+          <JudgeRoute>
+            <ConsideredDetail />
+          </JudgeRoute>
+        } />
 
-                <Route path="business_card/businesscard/:id/sidescaseincase/:id" element={<SideDetail />} />
-                <Route path="/businesscard/:cardId/sides/:sideId" element={<SideDetail />} />
-                <Route path="business_card/businesscard/:id/considered/:id" element={<ConsideredDetail />} />
+        <Route path="/criminal-proceedings/:proceedingId/party-documents" element={<PartyDocumentsPage caseType="criminal" />} />
+        <Route path="/civil-proceedings/:proceedingId/party-documents" element={<PartyDocumentsPage caseType="civil" />} />
+        <Route path="/admin-proceedings/:proceedingId/party-documents" element={<PartyDocumentsPage caseType="admin" />} />
+        <Route path="/kas-proceedings/:proceedingId/party-documents" element={<PartyDocumentsPage caseType="kas" />} />
 
-                {/* ========== ДОКУМЕНТЫ ПО ДЕЛАМ ========== */}
+        <Route path="/criminal-proceedings/:proceedingId/party-documents/create" element={<PartyDocumentForm caseType="criminal" />} />
+        <Route path="/civil-proceedings/:proceedingId/party-documents/create" element={<PartyDocumentForm caseType="civil" />} />
+        <Route path="/admin-proceedings/:proceedingId/party-documents/create" element={<PartyDocumentForm caseType="admin" />} />
+        <Route path="/kas-proceedings/:proceedingId/party-documents/create" element={<PartyDocumentForm caseType="kas" />} />
 
-                {/* Уголовные дела */}
-                <Route path="criminal-proceedings/:proceedingId/documents" 
-                    element={<DocumentsPage caseType="criminal" />} />
-                <Route path="criminal-proceedings/:proceedingId/documents/create" 
-                    element={<DocumentFormPage caseType="criminal" />} />
-                <Route path="criminal-proceedings/:proceedingId/documents/:documentId" 
-                    element={<DocumentDetailPage caseType="criminal" />} />
-                <Route path="criminal-proceedings/:proceedingId/documents/:documentId/edit" 
-                    element={<DocumentFormPage caseType="criminal" isEdit={true} />} />
+        <Route path="/criminal-proceedings/:proceedingId/party-documents/:documentId" element={<PartyDocumentDetailPage caseType="criminal" />} />
+        <Route path="/civil-proceedings/:proceedingId/party-documents/:documentId" element={<PartyDocumentDetailPage caseType="civil" />} />
+        <Route path="/admin-proceedings/:proceedingId/party-documents/:documentId" element={<PartyDocumentDetailPage caseType="admin" />} />
+        <Route path="/kas-proceedings/:proceedingId/party-documents/:documentId" element={<PartyDocumentDetailPage caseType="kas" />} />
 
-                {/* Гражданские дела */}
-                <Route path="civil-proceedings/:proceedingId/documents" 
-                    element={<DocumentsPage caseType="civil" />} />
-                <Route path="civil-proceedings/:proceedingId/documents/create" 
-                    element={<DocumentFormPage caseType="civil" />} />
-                <Route path="civil-proceedings/:proceedingId/documents/:documentId" 
-                    element={<DocumentDetailPage caseType="civil" />} />
-                <Route path="civil-proceedings/:proceedingId/documents/:documentId/edit" 
-                    element={<DocumentFormPage caseType="civil" isEdit={true} />} />
+        {/* Документы по делам - только для сотрудников */}
+        <Route path="criminal-proceedings/:proceedingId/documents" 
+          element={<JudgeRoute><DocumentsPage caseType="criminal" /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/documents/create" 
+          element={<JudgeRoute><DocumentFormPage caseType="criminal" /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/documents/:documentId" 
+          element={<JudgeRoute><DocumentDetailPage caseType="criminal" /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/documents/:documentId/edit" 
+          element={<JudgeRoute><DocumentFormPage caseType="criminal" isEdit={true} /></JudgeRoute>} />
 
-                {/* Административные правонарушения (КОАП) */}
-                <Route path="admin-proceedings/:proceedingId/documents" 
-                    element={<DocumentsPage caseType="admin" />} />
-                <Route path="admin-proceedings/:proceedingId/documents/create" 
-                    element={<DocumentFormPage caseType="admin" />} />
-                <Route path="admin-proceedings/:proceedingId/documents/:documentId" 
-                    element={<DocumentDetailPage caseType="admin" />} />
-                <Route path="admin-proceedings/:proceedingId/documents/:documentId/edit" 
-                    element={<DocumentFormPage caseType="admin" isEdit={true} />} />
+        <Route path="civil-proceedings/:proceedingId/documents" 
+          element={<JudgeRoute><DocumentsPage caseType="civil" /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/documents/create" 
+          element={<JudgeRoute><DocumentFormPage caseType="civil" /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/documents/:documentId" 
+          element={<JudgeRoute><DocumentDetailPage caseType="civil" /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/documents/:documentId/edit" 
+          element={<JudgeRoute><DocumentFormPage caseType="civil" isEdit={true} /></JudgeRoute>} />
 
-                {/* Административные дела (КАС) */}
-                <Route path="kas-proceedings/:proceedingId/documents" 
-                    element={<DocumentsPage caseType="kas" />} />
-                <Route path="kas-proceedings/:proceedingId/documents/create" 
-                    element={<DocumentFormPage caseType="kas" />} />
-                <Route path="kas-proceedings/:proceedingId/documents/:documentId" 
-                    element={<DocumentDetailPage caseType="kas" />} />
-                <Route path="kas-proceedings/:proceedingId/documents/:documentId/edit" 
-                    element={<DocumentFormPage caseType="kas" isEdit={true} />} />
+        <Route path="admin-proceedings/:proceedingId/documents" 
+          element={<JudgeRoute><DocumentsPage caseType="admin" /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/documents/create" 
+          element={<JudgeRoute><DocumentFormPage caseType="admin" /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/documents/:documentId" 
+          element={<JudgeRoute><DocumentDetailPage caseType="admin" /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/documents/:documentId/edit" 
+          element={<JudgeRoute><DocumentFormPage caseType="admin" isEdit={true} /></JudgeRoute>} />
 
+        <Route path="kas-proceedings/:proceedingId/documents" 
+          element={<JudgeRoute><DocumentsPage caseType="kas" /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/documents/create" 
+          element={<JudgeRoute><DocumentFormPage caseType="kas" /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/documents/:documentId" 
+          element={<JudgeRoute><DocumentDetailPage caseType="kas" /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/documents/:documentId/edit" 
+          element={<JudgeRoute><DocumentFormPage caseType="kas" isEdit={true} /></JudgeRoute>} />
 
-                {/* ========== УГОЛОВНЫЕ ПРОИЗВОДСТВА ========== */}
-                <Route path="criminal-proceedings/:id" element={<CriminalDetail />} />
+        {/* Уголовные производства - только для сотрудников */}
+        <Route path="criminal-proceedings/:id" element={<JudgeRoute><CriminalDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/petitions/create" element={<JudgeRoute><PetitionDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
+        <Route path="criminal-proceedings/:proceedingId/criminal-decisions/create" element={<JudgeRoute><CriminalDecisionDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/criminal-decisions/:id" element={<JudgeRoute><CriminalDecisionDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/criminal-case-movement/create" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/criminal-case-movement/:movementId" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="/criminal-proceedings/:proceedingId/defendants/create" element={<JudgeRoute><DefendantDetail /></JudgeRoute>} />
+        <Route path="/criminal-proceedings/:proceedingId/defendants/:id" element={<JudgeRoute><DefendantDetail /></JudgeRoute>} />
+        <Route path="/criminal-proceedings/:proceedingId/defendants/:defendantId/person-card" element={<JudgeRoute><CriminalPersonCard /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/create" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/:lawyerId" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/create" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/:sideId" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/executions/create" element={<JudgeRoute><CriminalExecutionDetail /></JudgeRoute>} />
+        <Route path="criminal-proceedings/:proceedingId/executions/:executionId" element={<JudgeRoute><CriminalExecutionDetail /></JudgeRoute>} />
+        <Route path="/criminal-proceedings/:proceedingId/civil-claims/:id?" element={<JudgeRoute><CriminalCivilClaimDetail /></JudgeRoute>} />
+        <Route path="/criminal-proceedings/:proceedingId/civil-claims/create" element={<JudgeRoute><CriminalCivilClaimDetail /></JudgeRoute>} />
 
-                <Route path="criminal-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
-                <Route path="criminal-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
+        {/* Гражданские производства - только для сотрудников */}
+        <Route path="civil-proceedings/:id" element={<JudgeRoute><CivilDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/create" element={<JudgeRoute><CivilDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/lawyers/create" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/lawyers/:lawyerId" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/movements/create" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/movements/:movementId" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/petitions/create" element={<JudgeRoute><PetitionDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
+        <Route path="civil-proceedings/:proceedingId/sides/create" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/sides/:sideId" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/decisions/create" element={<JudgeRoute><CivilDecisionDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/decisions/:decisionId" element={<JudgeRoute><CivilDecisionDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/executions/create" element={<JudgeRoute><CivilExecutionDetail /></JudgeRoute>} />
+        <Route path="civil-proceedings/:proceedingId/executions/:executionId" element={<JudgeRoute><CivilExecutionDetail /></JudgeRoute>} />
 
-                <Route path="criminal-proceedings/:cardId/criminal-case-movement/:moveId" element={<CriminalMovementDetail />} />
-                <Route path="criminal-proceedings/:cardId/criminal-case-movement/:moveId/edit" element={<CriminalMovementDetail />} />
-                
-                <Route path="criminal-proceedings/:proceedingId/criminal-decisions/create" element={<CriminalDecisionDetail />} />
-                <Route path="criminal-proceedings/:proceedingId/criminal-decisions/:id" element={<CriminalDecisionDetail />} />
-                
-                <Route path="/criminal-proceedings/:proceedingId/defendants/create" element={<DefendantDetail />} />
-                <Route path="/criminal-proceedings/:proceedingId/defendants/:id" element={<DefendantDetail />} />
-                <Route path="/criminal-proceedings/:proceedingId/defendants/:defendantId/person-card" element={<CriminalPersonCard />} />
-                
-                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/create" element={<LawyerDetails />} />
-                <Route path="criminal-proceedings/:proceedingId/lawyers-criminal/:lawyerId" element={<LawyerDetails />} />
-                
-                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/create" element={<SideDetail />} />
-                <Route path="criminal-proceedings/:proceedingId/sides-case-in-case/:sideId" element={<SideDetail />} />
-                
-                <Route path="criminal-proceedings/:proceedingId/executions/create" element={<CriminalExecutionDetail />} />
-                <Route path="criminal-proceedings/:proceedingId/executions/:executionId" element={<CriminalExecutionDetail />} />
+        {/* Административные правонарушения (КоАП) - только для сотрудников */}
+        <Route path="admin-proceedings/create" element={<JudgeRoute><AdministrativeDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:id" element={<JudgeRoute><AdministrativeDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/sides/create" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/sides/:sideId" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/lawyers/create" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/lawyers/:lawyerId" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/movements/create" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/movements/:movementId" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/petitions/create" element={<JudgeRoute><PetitionDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
+        <Route path="admin-proceedings/:proceedingId/decisions/create" element={<JudgeRoute><AdministrativeDecisionDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/decisions/:decisionId" element={<JudgeRoute><AdministrativeDecisionDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/executions/create" element={<JudgeRoute><AdministrativeProcedureActionDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/executions/:executionId" element={<JudgeRoute><AdministrativeProcedureActionDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/subjects/create" element={<JudgeRoute><SubjectDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/subjects/:subjectId" element={<JudgeRoute><SubjectDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/security-measures/create" element={<JudgeRoute><SecurityMeasureDetail /></JudgeRoute>} />
+        <Route path="admin-proceedings/:proceedingId/security-measures/:measureId" element={<JudgeRoute><SecurityMeasureDetail /></JudgeRoute>} />
 
-                <Route path="/criminal-proceedings/:proceedingId/criminal-decisions/:id?" element={<CriminalDecisionDetail />} />
-                <Route path="/criminal-proceedings/:proceedingId/civil-claims/:id?" element={<CriminalCivilClaimDetail />} />
-                <Route path="/criminal-proceedings/:proceedingId/civil-claims/create" element={<CriminalCivilClaimDetail />} />
+        {/* Административные дела (КАС) - только для сотрудников */}
+        <Route path="kas-proceedings/create" element={<JudgeRoute><KasDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:id" element={<JudgeRoute><KasDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/sides/create" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/sides/:sideId" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/lawyers/create" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/lawyers/:lawyerId" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/movements/create" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/movements/:movementId" element={<JudgeRoute><MovementDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/petitions/create" element={<JudgeRoute><PetitionDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
+        <Route path="kas-proceedings/:proceedingId/decisions/create" element={<JudgeRoute><KasDecisionDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/decisions/:decisionId" element={<JudgeRoute><KasDecisionDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/executions/create" element={<JudgeRoute><KasExecutionDetail /></JudgeRoute>} />
+        <Route path="kas-proceedings/:proceedingId/executions/:executionId" element={<JudgeRoute><KasExecutionDetail /></JudgeRoute>} />
 
-                {/* Гражданские иски */}
-                <Route path="/criminal-proceedings/:proceedingId/civil-claims/:claimId" element={<CriminalCivilClaimDetail />} />
-                <Route path="/criminal-proceedings/:proceedingId/civil-claims/create" element={<CriminalCivilClaimDetail />} />
-                
-                {/* ========== ГРАЖДАНСКИЕ ПРОИЗВОДСТВА ========== */}
-                <Route path="civil-proceedings/:id" element={<CivilDetail />} />
-                <Route path="civil-proceedings/create" element={<CivilDetail />} />
-                
-                <Route path="civil-proceedings/:proceedingId/lawyers/create" element={<LawyerDetails />} />
-                <Route path="civil-proceedings/:proceedingId/lawyers/:lawyerId" element={<LawyerDetails />} />
-                
-                <Route path="civil-proceedings/:proceedingId/movements/create" element={<MovementDetail />} />
-                <Route path="civil-proceedings/:proceedingId/movements/:movementId" element={<MovementDetail />} />
-                
-                <Route path="civil-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
-                <Route path="civil-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
-
-                <Route path="civil-proceedings/:proceedingId/sides/create" element={<SideDetail />} />
-                <Route path="civil-proceedings/:proceedingId/sides/:sideId" element={<SideDetail />} />
-
-                <Route path="civil-proceedings/:proceedingId/decisions/create" element={<CivilDecisionDetail />} />
-                <Route path="civil-proceedings/:proceedingId/decisions/:decisionId" element={<CivilDecisionDetail />} />
-
-                <Route path="civil-proceedings/:proceedingId/executions/create" element={<CivilExecutionDetail />} />
-                <Route path="civil-proceedings/:proceedingId/executions/:executionId" element={<CivilExecutionDetail />} />
-
-                {/* ========== АДМИНИСТРАТИВНЫЕ ПРАВОНАРУШЕНИЯ (КОАП) ========== */}
-                <Route path="admin-proceedings/create" element={<AdministrativeDetail />} />
-                <Route path="admin-proceedings/:id" element={<AdministrativeDetail />} />
-
-                <Route path="admin-proceedings/:proceedingId/sides/create" element={<SideDetail />} />
-                <Route path="admin-proceedings/:proceedingId/sides/:sideId" element={<SideDetail />} />
-
-                <Route path="admin-proceedings/:proceedingId/lawyers/create" element={<LawyerDetails />} />
-                <Route path="admin-proceedings/:proceedingId/lawyers/:lawyerId" element={<LawyerDetails />} />
-
-                <Route path="admin-proceedings/:proceedingId/movements/create" element={<MovementDetail />} />
-                <Route path="admin-proceedings/:proceedingId/movements/:movementId" element={<MovementDetail />} />
-
-                <Route path="admin-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
-                <Route path="admin-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
-
-                <Route path="admin-proceedings/:proceedingId/decisions/create" element={<AdministrativeDecisionDetail />} />
-                <Route path="admin-proceedings/:proceedingId/decisions/:decisionId" element={<AdministrativeDecisionDetail />} />
-
-                <Route path="admin-proceedings/:proceedingId/executions/create" element={<AdministrativeProcedureActionDetail />} />
-                <Route path="admin-proceedings/:proceedingId/executions/:executionId" element={<AdministrativeProcedureActionDetail />} />
-
-                {/* Субъекты правонарушения */}
-                <Route path="admin-proceedings/:proceedingId/subjects/create" element={<SubjectDetail />} />
-                <Route path="admin-proceedings/:proceedingId/subjects/:subjectId" element={<SubjectDetail />} />
-
-                {/* Меры обеспечения */}
-                <Route path="admin-proceedings/:proceedingId/security-measures/create" element={<SecurityMeasureDetail />} />
-                <Route path="admin-proceedings/:proceedingId/security-measures/:measureId" element={<SecurityMeasureDetail />} />
-
-                {/* ========== АДМИНИСТРАТИВНЫЕ ДЕЛА (КАС РФ) ========== */}
-                <Route path="kas-proceedings/create" element={<KasDetail />} />
-                <Route path="kas-proceedings/:id" element={<KasDetail />} />
-
-                <Route path="kas-proceedings/:proceedingId/sides/create" element={<SideDetail />} />
-                <Route path="kas-proceedings/:proceedingId/sides/:sideId" element={<SideDetail />} />
-
-                <Route path="kas-proceedings/:proceedingId/lawyers/create" element={<LawyerDetails />} />
-                <Route path="kas-proceedings/:proceedingId/lawyers/:lawyerId" element={<LawyerDetails />} />
-
-                <Route path="kas-proceedings/:proceedingId/movements/create" element={<MovementDetail />} />
-                <Route path="kas-proceedings/:proceedingId/movements/:movementId" element={<MovementDetail />} />
-
-                <Route path="kas-proceedings/:proceedingId/petitions/create" element={<PetitionDetail />} />
-                <Route path="kas-proceedings/:proceedingId/petitions/:petitionId" element={<PetitionDetail />} />
-
-                <Route path="kas-proceedings/:proceedingId/decisions/create" element={<KasDecisionDetail />} />
-                <Route path="kas-proceedings/:proceedingId/decisions/:decisionId" element={<KasDecisionDetail />} />
-
-                <Route path="kas-proceedings/:proceedingId/executions/create" element={<KasExecutionDetail />} />
-                <Route path="kas-proceedings/:proceedingId/executions/:executionId" element={<KasExecutionDetail />} />
-
-                {/* ========== ИНЫЕ МАТЕРИАЛЫ (ИНДЕКС 15) ========== */}
-                <Route path="other-materials/create" element={<OtherMaterialDetail />} />
-                <Route path="other-materials/:id" element={<OtherMaterialDetail />} />
-
-                {/* Стороны (участники) - используем SideDetail, он уже работает */}
-                <Route path="other-materials/:materialId/sides/create" element={<SideDetail />} />
-                <Route path="other-materials/:materialId/sides/:sideId" element={<SideDetail />} />
-
-                {/* Представители - используем LawyerDetails */}
-                <Route path="other-materials/:materialId/lawyers/create" element={<LawyerDetails />} />
-                <Route path="other-materials/:materialId/lawyers/:lawyerId" element={<LawyerDetails />} />
-
-                {/* Решения по иным материалам */}
-                <Route path="other-materials/:materialId/decisions/create" element={<OtherMaterialDecisionDetail />} />
-                <Route path="other-materials/:materialId/decisions/:decisionId" element={<OtherMaterialDecisionDetail />} />
-
-                {/* Документы по иным материалам */}
-                <Route path="other-materials/:materialId/documents" 
-                    element={<DocumentsPage caseType="other" />} />
-                <Route path="other-materials/:materialId/documents/create" 
-                    element={<DocumentFormPage caseType="other" />} />
-                <Route path="other-materials/:materialId/documents/:documentId" 
-                    element={<DocumentDetailPage caseType="other" />} />
-                <Route path="other-materials/:materialId/documents/:documentId/edit" 
-                    element={<DocumentFormPage caseType="other" isEdit={true} />} />
-            </Route>
-        </Routes>
-    );
+        {/* Иные материалы - только для сотрудников */}
+        <Route path="other-materials/create" element={<JudgeRoute><OtherMaterialDetail /></JudgeRoute>} />
+        <Route path="other-materials/:id" element={<JudgeRoute><OtherMaterialDetail /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/sides/create" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/sides/:sideId" element={<JudgeRoute><SideDetail /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/lawyers/create" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/lawyers/:lawyerId" element={<JudgeRoute><LawyerDetails /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/decisions/create" element={<JudgeRoute><OtherMaterialDecisionDetail /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/decisions/:decisionId" element={<JudgeRoute><OtherMaterialDecisionDetail /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/documents" 
+          element={<JudgeRoute><DocumentsPage caseType="other" /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/documents/create" 
+          element={<JudgeRoute><DocumentFormPage caseType="other" /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/documents/:documentId" 
+          element={<JudgeRoute><DocumentDetailPage caseType="other" /></JudgeRoute>} />
+        <Route path="other-materials/:materialId/documents/:documentId/edit" 
+          element={<JudgeRoute><DocumentFormPage caseType="other" isEdit={true} /></JudgeRoute>} />
+      </Route>
+    </Routes>
+  );
 };
 
 export default AppRouter;

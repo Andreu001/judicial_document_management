@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DocumentService from '../../API/DocumentService';
 import DocumentForm from '../../components/Documents/DocumentForm';
+import useModalDialog from '../../hooks/useModalDialog';
 import styles from '../../components/Documents/Documents.module.css';
 
 const DocumentFormPage = ({ caseType, isEdit = false }) => {
   const navigate = useNavigate();
   const { proceedingId, materialId, documentId } = useParams();
-  // Для совместимости: если есть proceedingId, используем его, иначе materialId
+  const { showConfirm, showInfo, showError, ModalDialog } = useModalDialog();
+  
   const objectId = proceedingId || materialId;
   const [document, setDocument] = useState(null);
   const [templates, setTemplates] = useState([]);
@@ -112,8 +114,10 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
     try {
       if (isEdit) {
         await updateDocumentMethod(formData);
+        showInfo('Успешно', 'Документ обновлен');
       } else {
         await createDocumentMethod(formData);
+        showInfo('Успешно', 'Документ создан');
       }
       if (caseType === 'other') {
         navigate(`/other-materials/${materialId}/documents`);
@@ -122,7 +126,7 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
       }
     } catch (err) {
       console.error('Error saving document:', err);
-      alert('Не удалось сохранить документ');
+      showError('Ошибка', 'Не удалось сохранить документ');
     }
   };
 
@@ -151,6 +155,7 @@ const DocumentFormPage = ({ caseType, isEdit = false }) => {
 
   return (
     <div className={styles.container}>
+      <ModalDialog />
       <DocumentForm
         document={document}
         templates={templates}

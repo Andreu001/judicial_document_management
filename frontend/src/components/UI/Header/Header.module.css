@@ -7,7 +7,6 @@
   border-bottom: 1px solid #e5e9f0;
   position: fixed;
   top: 0;
-  left: 6.3cm;
   width: calc(100vw - 6.3cm);
   z-index: 10;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
@@ -117,7 +116,6 @@
   align-items: center;
   padding: 8px 24px;
   margin-top: -1cm;
-  margin-left: 6.3cm;
   margin-right: 24px;
   background: #ffffff;
   border-bottom: 1px solid #e5e9f0;
@@ -186,7 +184,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 24px;
-  margin-left: 6.3cm;
   margin-right: 24px;
   background: #f8fafc;
   border-radius: 12px;
@@ -256,7 +253,6 @@
 
 /* Верхняя пагинация */
 .topPagination {
-  margin-left: 6.3cm;
   margin-right: 24px;
   margin-bottom: 20px;
   padding: 0;
@@ -275,7 +271,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-left: 6.3cm;
   margin-right: 24px;
   padding: 24px 0 32px;
   position: relative;
@@ -308,7 +303,6 @@
   .statsBar,
   .topPagination,
   .bottomPagination {
-    margin-left: 6.3cm;
     margin-right: 16px;
   }
   
@@ -350,172 +344,106 @@
 }
 
 .calendarButton {
-  background: linear-gradient(135deg, #4299e1, #3182ce) !important;
+  background: linear-gradient(135deg, #4299e1, #3182ce);
   color: white !important;
-  font-weight: 600 !important;
+  font-weight: 500;
   padding: 6px 16px !important;
-  border-radius: 6px !important;
-  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3) !important;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
   transition: all 0.2s ease;
   margin-left: 8px;
-  font-size: 13px !important;
 }
 
 .calendarButton:hover {
-  background: linear-gradient(135deg, #3182ce, #2c5282) !important;
+  background: linear-gradient(135deg, #3182ce, #2c5282);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4) !important;
+  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
 }
 
 .calendarButton:active {
   transform: translateY(0);
 }
 
-.authModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.authContent {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 350px;
-  position: relative;
-}
-
-.closeButton {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.authForm {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.authForm input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.authForm button, .socialButton {
-  padding: 10px;
-  background: #1e3c5c;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.socialButton {
-  width: 100%;
-  margin-top: 10px;
-  background: #4a5568;
-}
-
-.divider {
-  text-align: center;
-  margin: 15px 0;
-  color: #94a3b8;
-}
-
-.error {
-  color: red;
-  font-size: 14px;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-.userMenu {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logoutButton {
-  padding: 6px 12px;
-  background: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.citizenTitle {
-  font-size: 18px;
-  font-weight: 500;
-  color: #1e3c5c;
-}
-
-.citizenLoginButton {
+.myCasesButton {
   padding: 6px 16px;
   background: #2f855a;
   color: white;
   border: none;
   border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
-.loginButton {
-  padding: 6px 16px;
-  background: #1e3c5c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.myCasesButton:hover {
+  background: #276749;
 }
 
-.navButton {
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.navButton:hover {
-  background: #e2e8f0;
-}
-
-.userInfo {
+.sideUserInfo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
+  gap: 12px;
 }
 
-.userName {
-  font-size: 14px;
+.sideUserName {
+  font-size: 13px;
+  color: #4a5568;
   font-weight: 500;
-  color: #1e3c5c;
 }
 
-.logoutButton {
-  padding: 6px 12px;
+.sideLogoutButton {
+  padding: 6px 16px;
   background: #e53e3e;
   color: white;
   border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  border-radius: 4px;
   font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.sideLogoutButton:hover {
+  background: #c53030;
+}
+
+.navButton.active {
+  background: #1e3c5c;
+  color: white;
+}
+
+.navButton.communicationButton {
+  background: #1a2634;
+  color: white;
+}
+
+.navButton.communicationButton:hover {
+  background: #2d3748;
+}
+
+.messengerButton {
+  background: linear-gradient(135deg, #1a2634, #2d3748);
+  color: white !important;
+  font-weight: 500;
+  padding: 6px 16px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.messengerButton:hover {
+  background: linear-gradient(135deg, #2d3748, #1a2634);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(26, 38, 52, 0.3);
+}
+
+.messengerButton:active {
+  transform: translateY(0);
+}
+
+.messengerButton.active {
+  background: linear-gradient(135deg, #2d3748, #1a2634);
+  box-shadow: 0 2px 8px rgba(26, 38, 52, 0.3);
 }

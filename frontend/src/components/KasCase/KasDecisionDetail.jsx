@@ -1,3 +1,5 @@
+// KasDecisionDetail.jsx - обновленная версия с полным переносом апелляции/кассации
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import KasCaseService from '../../API/KasCaseService';
@@ -13,6 +15,10 @@ const KasDecisionDetail = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('main'); // main, appeal, cassation, other
+  
+  // Участники дела для выбора заявителя
+  const [caseParticipants, setCaseParticipants] = useState([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
 
   // Опции для выпадающих списков
   const [options, setOptions] = useState({
@@ -43,6 +49,53 @@ const KasDecisionDetail = () => {
       { value: '2', label: 'Не урегулирован' }
     ]
   });
+
+  // Загрузка участников дела
+  useEffect(() => {
+    const fetchCaseParticipants = async () => {
+      if (proceedingId && proceedingId !== 'undefined' && proceedingId !== 'null') {
+        setLoadingParticipants(true);
+        try {
+          const sides = await KasCaseService.getSides(proceedingId);
+          const lawyers = await KasCaseService.getLawyers(proceedingId);
+          
+          const participants = [];
+          
+          sides.forEach(side => {
+            participants.push({
+              id: side.id,
+              type: 'kas_sides',
+              typeLabel: 'Сторона',
+              name: side.sides_case_incase_detail?.name || `Сторона ${side.id}`,
+              role: side.sides_case_role_detail?.name || '',
+              displayName: `${side.sides_case_role_detail?.name || 'Сторона'}: ${side.sides_case_incase_detail?.name || `ID ${side.id}`}`,
+              compositeKey: `kas_sides_${side.id}`
+            });
+          });
+          
+          lawyers.forEach(lawyer => {
+            participants.push({
+              id: lawyer.id,
+              type: 'kas_lawyer',
+              typeLabel: 'Представитель',
+              name: lawyer.lawyer_detail?.law_firm_name || `Представитель ${lawyer.id}`,
+              role: lawyer.sides_case_role_detail?.name || '',
+              displayName: `${lawyer.sides_case_role_detail?.name || 'Представитель'}: ${lawyer.lawyer_detail?.law_firm_name || `ID ${lawyer.id}`}`,
+              compositeKey: `kas_lawyer_${lawyer.id}`
+            });
+          });
+          
+          setCaseParticipants(participants);
+        } catch (err) {
+          console.error('Error fetching case participants:', err);
+        } finally {
+          setLoadingParticipants(false);
+        }
+      }
+    };
+    
+    fetchCaseParticipants();
+  }, [proceedingId]);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -78,10 +131,8 @@ const KasDecisionDetail = () => {
           setLoading(false);
         }
       } else {
-        // Режим создания - инициализируем все поля модели
         setDecisionData(null);
         setFormData({
-          // === III. РЕЗУЛЬТАТ РАССМОТРЕНИЯ ===
           decision_date: null,
           motivated_decision_date: null,
           is_simplified_procedure: false,
@@ -128,19 +179,35 @@ const KasDecisionDetail = () => {
           protocol_objections_extended_deadline: false,
           protocol_objections_reviewed_date: null,
 
-          // === IV. ОБЖАЛОВАНИЕ РЕШЕНИЯ (Апелляция) ===
+          // === АПЕЛЛЯЦИЯ РЕШЕНИЯ ===
           decision_is_appealed: false,
+          decision_appealed_by: null,
+          decision_appeal_type: '',
           decision_appeal_date: null,
+          decision_appeal_deadline_for_corrections: null,
+          decision_appeal_scheduled_date: null,
+          decision_appeal_scheduled_date_repeated: null,
+          decision_appeal_sent_to_higher_court_date: null,
+          decision_appeal_sent_to_higher_court_repeated: null,
+          decision_appeal_returned_without_review_date: null,
+          decision_appeal_return_reason: '',
           decision_appeal_review_date: null,
           decision_appeal_result: '',
 
-          // === IV. ОБЖАЛОВАНИЕ РЕШЕНИЯ (Кассация) ===
+          // === КАССАЦИЯ РЕШЕНИЯ ===
           decision_is_cassation_filed: false,
+          decision_cassation_filed_by: null,
+          decision_cassation_type: '',
           decision_cassation_date: null,
+          decision_cassation_deadline_for_corrections: null,
+          decision_cassation_scheduled_date: null,
+          decision_cassation_sent_to_higher_court_date: null,
+          decision_cassation_returned_without_review_date: null,
+          decision_cassation_return_reason: '',
           decision_cassation_review_date: null,
           decision_cassation_result: '',
 
-          // === VI. ДРУГИЕ СУДЕБНЫЕ ПОСТАНОВЛЕНИЯ ===
+          // === ДРУГИЕ ПОСТАНОВЛЕНИЯ ===
           additional_decision_date: null,
           clarification_ruling_date: null,
           execution_order_change_date: null,
@@ -212,6 +279,13 @@ const KasDecisionDetail = () => {
     return option?.label || value;
   };
 
+  // Получение отображаемого имени участника по составному ключу (type_id)
+  const getParticipantDisplayByCompositeKey = (compositeKey) => {
+    if (!compositeKey) return 'Не указано';
+    const participant = caseParticipants.find(p => p.compositeKey === compositeKey);
+    return participant ? participant.displayName : compositeKey;
+  };
+
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
@@ -260,13 +334,13 @@ const KasDecisionDetail = () => {
                 className={`${styles.tab} ${activeTab === 'appeal' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('appeal')}
               >
-                Апелляция
+                Апелляция решения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'cassation' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('cassation')}
               >
-                Кассация
+                Кассация решения
               </button>
               <button 
                 className={`${styles.tab} ${activeTab === 'other' ? styles.activeTab : ''}`}
@@ -282,7 +356,6 @@ const KasDecisionDetail = () => {
                 {/* === ВКЛАДКА 1: РЕЗУЛЬТАТ РАССМОТРЕНИЯ === */}
                 {activeTab === 'main' && (
                   <div className={styles.tabGrid}>
-                    
                     {/* Блок 1: Основные даты и результат */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Даты и результат рассмотрения</h3>
@@ -643,11 +716,10 @@ const KasDecisionDetail = () => {
                         </label>
                       </div>
                     </div>
-
                   </div>
                 )}
 
-                {/* === ВКЛАДКА 2: АПЕЛЛЯЦИЯ === */}
+                {/* === ВКЛАДКА 2: АПЕЛЛЯЦИЯ РЕШЕНИЯ === */}
                 {activeTab === 'appeal' && (
                   <div className={styles.tabGrid}>
                     <div className={styles.fieldGroup}>
@@ -660,11 +732,105 @@ const KasDecisionDetail = () => {
                       {formData.decision_is_appealed && (
                         <>
                           <div className={styles.field}>
+                            <label>Кем подана апелляционная жалоба/представление</label>
+                            {isEditing ? (
+                              <select 
+                                name="decision_appealed_by" 
+                                value={formData.decision_appealed_by || ''} 
+                                onChange={handleInputChange} 
+                                className={styles.select}
+                              >
+                                <option value="">Выберите участника</option>
+                                {caseParticipants.map(participant => (
+                                  <option key={participant.compositeKey} value={participant.compositeKey}>
+                                    {participant.displayName}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span>{getParticipantDisplayByCompositeKey(formData.decision_appealed_by)}</span>
+                            )}
+                            {isEditing && caseParticipants.length === 0 && !loadingParticipants && (
+                              <small style={{ color: '#c53030', display: 'block', marginTop: '4px' }}>
+                                Нет зарегистрированных участников. Добавьте стороны или представителей в карточке дела.
+                              </small>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Тип обжалования (апелляция)</label>
+                            {isEditing ? (
+                              <select name="decision_appeal_type" value={formData.decision_appeal_type || ''} onChange={handleInputChange} className={styles.select}>
+                                <option value="">Выберите</option>
+                                {options.appealTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                              </select>
+                            ) : (
+                              <span>{getOptionLabel(options.appealTypes, decisionData?.decision_appeal_type)}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
                             <label>Дата подачи апелляционной жалобы на решение</label>
                             {isEditing ? (
                               <input type="date" name="decision_appeal_date" value={formData.decision_appeal_date || ''}
                                 onChange={(e) => handleDateChange('decision_appeal_date', e.target.value)} className={styles.input} />
                             ) : <span>{formatDate(decisionData?.decision_appeal_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Срок для устранения недостатков апелляционной жалобы до</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_appeal_deadline_for_corrections" value={formData.decision_appeal_deadline_for_corrections || ''}
+                                onChange={(e) => handleDateChange('decision_appeal_deadline_for_corrections', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_appeal_deadline_for_corrections)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дело назначено к рассмотрению в апелляции на</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_appeal_scheduled_date" value={formData.decision_appeal_scheduled_date || ''}
+                                onChange={(e) => handleDateChange('decision_appeal_scheduled_date', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_appeal_scheduled_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Повторно назначено в апелляции на</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_appeal_scheduled_date_repeated" value={formData.decision_appeal_scheduled_date_repeated || ''}
+                                onChange={(e) => handleDateChange('decision_appeal_scheduled_date_repeated', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_appeal_scheduled_date_repeated)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дата направления дела в апелляционный суд</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_appeal_sent_to_higher_court_date" value={formData.decision_appeal_sent_to_higher_court_date || ''}
+                                onChange={(e) => handleDateChange('decision_appeal_sent_to_higher_court_date', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_appeal_sent_to_higher_court_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дата повторного направления в апелляционный суд</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_appeal_sent_to_higher_court_repeated" value={formData.decision_appeal_sent_to_higher_court_repeated || ''}
+                                onChange={(e) => handleDateChange('decision_appeal_sent_to_higher_court_repeated', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_appeal_sent_to_higher_court_repeated)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дата возврата апелляционной жалобы без рассмотрения</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_appeal_returned_without_review_date" value={formData.decision_appeal_returned_without_review_date || ''}
+                                onChange={(e) => handleDateChange('decision_appeal_returned_without_review_date', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_appeal_returned_without_review_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Причина возврата апелляционной жалобы</label>
+                            {isEditing ? (
+                              <textarea name="decision_appeal_return_reason" value={formData.decision_appeal_return_reason || ''} 
+                                onChange={handleInputChange} className={styles.textarea} rows={3} />
+                            ) : <span>{decisionData?.decision_appeal_return_reason || 'Не указано'}</span>}
                           </div>
 
                           <div className={styles.field}>
@@ -691,7 +857,7 @@ const KasDecisionDetail = () => {
                   </div>
                 )}
 
-                {/* === ВКЛАДКА 3: КАССАЦИЯ === */}
+                {/* === ВКЛАДКА 3: КАССАЦИЯ РЕШЕНИЯ === */}
                 {activeTab === 'cassation' && (
                   <div className={styles.tabGrid}>
                     <div className={styles.fieldGroup}>
@@ -704,11 +870,89 @@ const KasDecisionDetail = () => {
                       {formData.decision_is_cassation_filed && (
                         <>
                           <div className={styles.field}>
+                            <label>Кем подана кассационная жалоба/представление</label>
+                            {isEditing ? (
+                              <select 
+                                name="decision_cassation_filed_by" 
+                                value={formData.decision_cassation_filed_by || ''} 
+                                onChange={handleInputChange} 
+                                className={styles.select}
+                              >
+                                <option value="">Выберите участника</option>
+                                {caseParticipants.map(participant => (
+                                  <option key={participant.compositeKey} value={participant.compositeKey}>
+                                    {participant.displayName}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span>{getParticipantDisplayByCompositeKey(formData.decision_cassation_filed_by)}</span>
+                            )}
+                            {isEditing && caseParticipants.length === 0 && !loadingParticipants && (
+                              <small style={{ color: '#c53030', display: 'block', marginTop: '4px' }}>
+                                Нет зарегистрированных участников. Добавьте стороны или представителей в карточке дела.
+                              </small>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Тип обжалования (кассация)</label>
+                            {isEditing ? (
+                              <select name="decision_cassation_type" value={formData.decision_cassation_type || ''} onChange={handleInputChange} className={styles.select}>
+                                <option value="">Выберите</option>
+                                {options.cassationTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                              </select>
+                            ) : (
+                              <span>{getOptionLabel(options.cassationTypes, decisionData?.decision_cassation_type)}</span>
+                            )}
+                          </div>
+
+                          <div className={styles.field}>
                             <label>Дата подачи кассационной жалобы на решение</label>
                             {isEditing ? (
                               <input type="date" name="decision_cassation_date" value={formData.decision_cassation_date || ''}
                                 onChange={(e) => handleDateChange('decision_cassation_date', e.target.value)} className={styles.input} />
                             ) : <span>{formatDate(decisionData?.decision_cassation_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Срок для устранения недостатков кассационной жалобы до</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_cassation_deadline_for_corrections" value={formData.decision_cassation_deadline_for_corrections || ''}
+                                onChange={(e) => handleDateChange('decision_cassation_deadline_for_corrections', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_cassation_deadline_for_corrections)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дело назначено к рассмотрению в кассации на</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_cassation_scheduled_date" value={formData.decision_cassation_scheduled_date || ''}
+                                onChange={(e) => handleDateChange('decision_cassation_scheduled_date', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_cassation_scheduled_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дата направления дела в кассационный суд</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_cassation_sent_to_higher_court_date" value={formData.decision_cassation_sent_to_higher_court_date || ''}
+                                onChange={(e) => handleDateChange('decision_cassation_sent_to_higher_court_date', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_cassation_sent_to_higher_court_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Дата возврата кассационной жалобы без рассмотрения</label>
+                            {isEditing ? (
+                              <input type="date" name="decision_cassation_returned_without_review_date" value={formData.decision_cassation_returned_without_review_date || ''}
+                                onChange={(e) => handleDateChange('decision_cassation_returned_without_review_date', e.target.value)} className={styles.input} />
+                            ) : <span>{formatDate(decisionData?.decision_cassation_returned_without_review_date)}</span>}
+                          </div>
+
+                          <div className={styles.field}>
+                            <label>Причина возврата кассационной жалобы</label>
+                            {isEditing ? (
+                              <textarea name="decision_cassation_return_reason" value={formData.decision_cassation_return_reason || ''} 
+                                onChange={handleInputChange} className={styles.textarea} rows={3} />
+                            ) : <span>{decisionData?.decision_cassation_return_reason || 'Не указано'}</span>}
                           </div>
 
                           <div className={styles.field}>

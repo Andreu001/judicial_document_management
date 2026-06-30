@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import KasCaseService from '../API/KasCaseService';
 import styles from './UI/Card/KasBusinessCard.module.css';
 import ConfirmModal from './UI/Modal/ConfirmModal';
+import DocumentService from '../API/DocumentService';
+import PartyDocumentItem from './Documents/PartyDocumentItem';
 
 const KasBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -16,6 +18,8 @@ const KasBusinessCard = ({ card, remove }) => {
   const [activeTab, setActiveTab] = useState('summary');
   const [isArchived, setIsArchived] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [partyDocuments, setPartyDocuments] = useState([]);
+  const [partyDocumentsStats, setPartyDocumentsStats] = useState({ total: 0, pending: 0, accepted: 0 });
 
   const [quickStats, setQuickStats] = useState({
     sides: 0,
@@ -27,12 +31,53 @@ const KasBusinessCard = ({ card, remove }) => {
     lastActivity: null
   });
 
+  // Опции для отображения результатов апелляции/кассации
+  const [options, setOptions] = useState({
+    appealResults: [],
+    cassationResults: []
+  });
+
   useEffect(() => {
     if (card.kas_proceedings_id) {
       loadKasCaseData();
       loadRelatedData();
+      loadOptions();
     }
   }, [card]);
+
+  useEffect(() => {
+    if (card.kas_proceedings_id) {
+      loadPartyDocuments();
+    }
+  }, [card.kas_proceedings_id]);
+
+  const loadOptions = async () => {
+    try {
+      const allOptions = await KasCaseService.getAllOptions();
+      setOptions({
+        appealResults: allOptions.appealResults || [],
+        cassationResults: allOptions.cassationResults || []
+      });
+    } catch (error) {
+      console.error('Error loading options:', error);
+    }
+  };
+
+  const loadPartyDocuments = async () => {
+    if (!card.kas_proceedings_id) return;
+    
+    try {
+      const docs = await DocumentService.getPartyDocuments('kas', card.kas_proceedings_id);
+      setPartyDocuments(docs);
+      setPartyDocumentsStats({
+        total: docs.length,
+        pending: docs.filter(d => d.review_status === 'pending' || d.review_status === 'registered').length,
+        accepted: docs.filter(d => d.review_status === 'accepted' || d.review_status === 'attached_to_case').length
+      });
+    } catch (error) {
+      console.error('Error loading party documents:', error);
+    }
+  };
 
   const loadKasCaseData = async () => {
     try {
@@ -55,31 +100,24 @@ const KasBusinessCard = ({ card, remove }) => {
     if (!card.kas_proceedings_id) return;
     
     try {
-      // Загрузка сторон
       const sidesData = await KasCaseService.getSides(card.kas_proceedings_id);
       setSides(sidesData);
       
-      // Загрузка представителей
       const lawyersData = await KasCaseService.getLawyers(card.kas_proceedings_id);
       setLawyers(lawyersData);
       
-      // Загрузка решений
       const decisionsData = await KasCaseService.getDecisions(card.kas_proceedings_id);
       setDecisions(decisionsData);
       
-      // Загрузка исполнений
       const executionsData = await KasCaseService.getExecutions(card.kas_proceedings_id);
       setExecutions(executionsData);
       
-      // Загрузка движений дела
       const movementsData = await KasCaseService.getMovements(card.kas_proceedings_id);
       setMovements(movementsData);
       
-      // Загрузка ходатайств
       const petitionsData = await KasCaseService.getPetitions(card.kas_proceedings_id);
       setPetitions(petitionsData);
       
-      // Обновляем статистику
       setQuickStats(prev => ({
         ...prev,
         sides: sidesData.length,
@@ -295,7 +333,18 @@ const KasBusinessCard = ({ card, remove }) => {
     }).format(amount);
   };
 
-  // Компонент для отображения стороны
+  const getAppealResultLabel = (value) => {
+    if (!value) return null;
+    const option = options.appealResults.find(opt => opt.value === value);
+    return option?.label || value;
+  };
+
+  const getCassationResultLabel = (value) => {
+    if (!value) return null;
+    const option = options.cassationResults.find(opt => opt.value === value);
+    return option?.label || value;
+  };
+
   const SideItem = ({ side }) => {
     const sideDetail = side.sides_case_incase_detail || {};
     const roleDetail = side.sides_case_role_detail || {};
@@ -335,7 +384,6 @@ const KasBusinessCard = ({ card, remove }) => {
     );
   };
 
-  // Компонент для отображения представителя
   const LawyerItem = ({ lawyer }) => {
     const lawyerDetail = lawyer.lawyer_detail || {};
     const roleDetail = lawyer.sides_case_role_detail || {};
@@ -375,14 +423,16 @@ const KasBusinessCard = ({ card, remove }) => {
     );
   };
 
-  // Компонент для отображения решения
   const DecisionItem = ({ decision }) => {
     const getOutcomeText = () => {
-      if (decision.get_outcome_display) {
-        return decision.get_outcome_display;
+      if (decision.decision_appeal_result) {
+        const appealResultLabel = getAppealResultLabel(decision.decision_appeal_result);
+        return appealResultLabel ? `Апелляция: ${appealResultLabel}` : `Апелляция: ${decision.decision_appeal_result}`;
       }
-      if (decision.outcome_display) {
-        return decision.outcome_display;
+      
+      if (decision.decision_cassation_result) {
+        const cassationResultLabel = getCassationResultLabel(decision.decision_cassation_result);
+        return cassationResultLabel ? `Кассация: ${cassationResultLabel}` : `Кассация: ${decision.decision_cassation_result}`;
       }
       
       if (decision.outcome) {
@@ -397,8 +447,11 @@ const KasBusinessCard = ({ card, remove }) => {
         return outcomeMap[decision.outcome] || `Результат ${decision.outcome}`;
       }
       
-      return 'Результат не указан';
+      return 'Решение';
     };
+
+    const hasAppeal = decision.decision_is_appealed;
+    const hasCassation = decision.decision_is_cassation_filed;
 
     return (
       <div className={styles.compactItem}>
@@ -411,9 +464,16 @@ const KasBusinessCard = ({ card, remove }) => {
               </span>
             )}
           </div>
-          {decision.decision_effective_date && (
+          {hasAppeal && decision.decision_appeal_date && (
             <div className={styles.compactItemSubtitle}>
-              Вступило в силу: {formatDate(decision.decision_effective_date)}
+              Апелляция: {formatDate(decision.decision_appeal_date)}
+              {decision.decision_appeal_result && ` (${getAppealResultLabel(decision.decision_appeal_result)})`}
+            </div>
+          )}
+          {hasCassation && decision.decision_cassation_date && (
+            <div className={styles.compactItemSubtitle}>
+              Кассация: {formatDate(decision.decision_cassation_date)}
+              {decision.decision_cassation_result && ` (${getCassationResultLabel(decision.decision_cassation_result)})`}
             </div>
           )}
         </div>
@@ -437,7 +497,6 @@ const KasBusinessCard = ({ card, remove }) => {
     );
   };
 
-  // Компонент для отображения исполнения
   const ExecutionItem = ({ execution }) => (
     <div className={styles.compactItem}>
       <div className={styles.compactItemContent}>
@@ -479,7 +538,6 @@ const KasBusinessCard = ({ card, remove }) => {
     </div>
   );
 
-  // Компонент для отображения движения дела
   const MovementItem = ({ movement }) => {
     const getMovementData = () => {
       if (movement.business_movement_detail) {
@@ -546,7 +604,6 @@ const KasBusinessCard = ({ card, remove }) => {
     );
   };
 
-  // Компонент для отображения ходатайства
   const PetitionItem = ({ petition }) => {
     const petitionDetail = petition.petitions_incase_detail || {};
 
@@ -594,7 +651,6 @@ const KasBusinessCard = ({ card, remove }) => {
 
   return (
     <div className={styles.cardContainer}>
-      {/* Заголовок карточки */}
       <div className={styles.cardHeader}>
         <div className={styles.headerMain}>
           <div className={styles.caseType}>
@@ -615,13 +671,13 @@ const KasBusinessCard = ({ card, remove }) => {
         </div>
       </div>
       
-      {/* Быстрые действия */}
       <div className={styles.quickActions}>
         <button 
           className={`${styles.quickAction} ${activeTab === 'sides' ? styles.active : ''}`}
           onClick={handleShowSides}
           title="Стороны по делу"
         >
+          <span className={styles.quickActionCount}>{quickStats.sides}</span>
           Стороны
         </button>
         <button 
@@ -629,6 +685,7 @@ const KasBusinessCard = ({ card, remove }) => {
           onClick={handleShowDecisions}
           title="Решения по делу"
         >
+          <span className={styles.quickActionCount}>{quickStats.decisions}</span>
           Решения
         </button>
         <button 
@@ -636,6 +693,7 @@ const KasBusinessCard = ({ card, remove }) => {
           onClick={handleShowExecutions}
           title="Исполнение по делу"
         >
+          <span className={styles.quickActionCount}>{quickStats.executions}</span>
           Исполнения
         </button>
         <button 
@@ -643,6 +701,7 @@ const KasBusinessCard = ({ card, remove }) => {
           onClick={handleShowMovements}
           title="Движение дела"
         >
+          <span className={styles.quickActionCount}>{quickStats.movements}</span>
           Движения
         </button>
         <button 
@@ -650,14 +709,24 @@ const KasBusinessCard = ({ card, remove }) => {
           onClick={handleShowPetitions}
           title="Ходатайства по делу"
         >
+          <span className={styles.quickActionCount}>{quickStats.petitions}</span>
           Ходатайства
         </button>
         <button 
           className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
           onClick={() => router(`/kas-proceedings/${card.kas_proceedings_id}/documents`)}
-          title="Документы по делу"
+          title="Вынесенные решения по делу"
         >
-          Документы
+          <span className={styles.quickActionCount}>0</span>
+          Электронные решения
+        </button>
+        <button 
+          className={`${styles.quickAction} ${activeTab === 'partyDocuments' ? styles.active : ''}`}
+          onClick={() => setActiveTab('partyDocuments')}
+          title="Документы сторон"
+        >
+          <span className={styles.quickActionCount}>{partyDocumentsStats.total}</span>
+          Документы сторон
         </button>
       </div>
 
@@ -697,7 +766,7 @@ const KasBusinessCard = ({ card, remove }) => {
                 <div className={styles.detailRow}>
                   <div className={styles.detailLabel}>Порядок поступления:</div>
                   <div className={styles.detailValue}>
-                    {kasCase.get_admission_order_display || kasCase.admission_order}
+                    {kasCase.admission_order_display || kasCase.admission_order}
                   </div>
                 </div>
               )}
@@ -740,7 +809,6 @@ const KasBusinessCard = ({ card, remove }) => {
               </div>
             </div>
             <div className={styles.compactList}>
-              {/* Сначала показываем стороны */}
               {sides.length > 0 && (
                 <>
                   <h4 className={styles.listSubtitle}>Стороны</h4>
@@ -750,7 +818,6 @@ const KasBusinessCard = ({ card, remove }) => {
                 </>
               )}
               
-              {/* Затем показываем представителей */}
               {lawyers.length > 0 && (
                 <>
                   <h4 className={styles.listSubtitle}>Представители</h4>
@@ -858,9 +925,107 @@ const KasBusinessCard = ({ card, remove }) => {
             </div>
           </div>
         )}
+        
+        {activeTab === 'partyDocuments' && (
+          <div className={styles.tabContent}>
+            <div className={styles.tabHeader}>
+              <h3>Документы сторон ({partyDocumentsStats.total})</h3>
+              <button 
+                onClick={() => router(`/kas-proceedings/${card.kas_proceedings_id}/party-documents/create`)}
+                className={styles.addButton}
+              >
+                + Добавить документ
+              </button>
+            </div>
+            <div className={styles.compactList}>
+              {partyDocuments.length > 0 ? (
+                partyDocuments.map(doc => {
+                  const statusConfig = DocumentService.getReviewStatuses()[doc.review_status] || 
+                    { label: doc.review_status_display || doc.review_status, color: '#6c757d' };
+                  const documentTypes = DocumentService.getPartyDocumentTypes();
+                  const docTypeLabel = documentTypes.find(t => t.value === doc.document_type)?.label || doc.document_type;
+                  
+                  return (
+                    <div 
+                      key={doc.id} 
+                      className={styles.compactItem}
+                      onClick={() => router(`/kas-proceedings/${card.kas_proceedings_id}/party-documents/${doc.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className={styles.compactItemContent}>
+                        <div className={styles.compactItemTitle}>
+                          {docTypeLabel}
+                          <span className={styles.sideType} style={{ backgroundColor: statusConfig.color + '20', color: statusConfig.color }}>
+                            {statusConfig.label}
+                          </span>
+                        </div>
+                        <div className={styles.compactItemSubtitle}>
+                          {doc.title}
+                        </div>
+                        <div className={styles.compactItemSubtitle}>
+                          От: {doc.submitter_name} | Дата: {new Date(doc.submission_date).toLocaleDateString('ru-RU')}
+                          {doc.registration_number && ` | Вх. №: ${doc.registration_number}`}
+                        </div>
+                        {doc.description && (
+                          <div className={styles.compactItemSubtitle} style={{ color: '#7a8b9f' }}>
+                            {doc.description.length > 60 ? doc.description.substring(0, 60) + '...' : doc.description}
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.compactItemActions}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            DocumentService.downloadPartyDocument(doc.id).then(response => {
+                              const url = window.URL.createObjectURL(new Blob([response.data]));
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.setAttribute('download', doc.file_name || doc.title + '.pdf');
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                              window.URL.revokeObjectURL(url);
+                            }).catch(err => alert('Не удалось скачать файл'));
+                          }}
+                          className={styles.actionButton}
+                          title="Скачать файл"
+                        >
+                          ↓
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router(`/kas-proceedings/${card.kas_proceedings_id}/party-documents/${doc.id}`);
+                          }}
+                          className={styles.actionButton}
+                          title="Просмотреть"
+                        >
+                          →
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Удалить документ? Это действие необратимо.')) {
+                              DocumentService.deletePartyDocument(doc.id).then(() => loadPartyDocuments());
+                            }
+                          }}
+                          className={styles.deleteButton}
+                          title="Удалить"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className={styles.noData}>Документы от сторон не поступали</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
-      {/* Футер с основными действиями */}
       <div className={styles.cardFooter}>
         <button 
           onClick={handleShowDetails}
@@ -878,12 +1043,13 @@ const KasBusinessCard = ({ card, remove }) => {
           </button>
         </div>
       </div>
-        <ConfirmModal
-          isOpen={showDeleteModal}
-          message="Вы уверены, что хотите удалить административное дело (КАС)?"
-          onConfirm={handleDeleteKasCard}
-          onCancel={() => setShowDeleteModal(false)}
-        />
+      
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        message="Вы уверены, что хотите удалить административное дело (КАС)?"
+        onConfirm={handleDeleteKasCard}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </div>
   );
 };

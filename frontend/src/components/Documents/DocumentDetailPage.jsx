@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DocumentService from '../../API/DocumentService';
 import DocumentDetail from '../../components/Documents/DocumentDetail';
+import useModalDialog from '../../hooks/useModalDialog';
 import styles from '../../components/Documents/Documents.module.css';
 
 const DocumentDetailPage = ({ caseType }) => {
   const navigate = useNavigate();
   const { proceedingId, materialId, documentId } = useParams();
-  // Для совместимости: если есть proceedingId, используем его, иначе materialId
+  const { showConfirm, showInfo, showError, ModalDialog } = useModalDialog();
+  
   const objectId = proceedingId || materialId;
   const [document, setDocument] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -87,9 +89,10 @@ const DocumentDetailPage = ({ caseType }) => {
     try {
       const updatedDocument = await signDocumentMethod(id);
       setDocument(updatedDocument);
+      showInfo('Успешно', 'Документ подписан');
     } catch (err) {
       console.error('Error signing document:', err);
-      alert('Не удалось подписать документ');
+      showError('Ошибка', 'Не удалось подписать документ');
     }
   };
 
@@ -104,6 +107,7 @@ const DocumentDetailPage = ({ caseType }) => {
   const handleDelete = async (id) => {
     try {
       await deleteDocumentMethod(id);
+      showInfo('Успешно', 'Документ удален');
       if (caseType === 'other') {
         navigate(`/other-materials/${materialId}/documents`);
       } else {
@@ -111,7 +115,7 @@ const DocumentDetailPage = ({ caseType }) => {
       }
     } catch (err) {
       console.error('Error deleting document:', err);
-      alert('Не удалось удалить документ');
+      showError('Ошибка', 'Не удалось удалить документ');
     }
   };
 
@@ -141,6 +145,7 @@ const DocumentDetailPage = ({ caseType }) => {
 
   return (
     <div className={styles.container}>
+      <ModalDialog />
       <DocumentDetail
         document={document}
         onSign={handleSign}

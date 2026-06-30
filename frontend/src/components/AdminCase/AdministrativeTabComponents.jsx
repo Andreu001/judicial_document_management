@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './AdministrativeDetail.module.css';
+import KoapArticleSelect from './KoapArticleSelect';
 
 export const BasicInfoTab = ({ 
   isEditing, 
@@ -14,7 +15,16 @@ export const BasicInfoTab = ({
   judges = [],
   referringAuthorities = [],
   caseOrderOptions = [],
-  caseCategoryOptions = []
+  caseCategoryOptions = [],
+  offenseAreaOptions = [],
+  koapArticles = [],
+  koapArticlesLoading = false,
+  handleKoapArticleSearch,
+  articleParts = [],
+  onArticleChange = null,
+  onPartChange = null,
+  selectedPart = '',
+  selectedClause = '',
 }) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
@@ -219,99 +229,176 @@ export const BasicInfoTab = ({
       </div>
 
       <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>Правонарушение</h3>
-        
-        <div className={styles.field}>
-          <label>Статья КоАП РФ</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="article_number"
-              value={formData.article_number || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Например: 12.8"
-            />
-          ) : (
-            <span>{adminData.article_number || 'Не указано'}</span>
-          )}
-        </div>
+          <h3 className={styles.subsectionTitle}>Правонарушение</h3>
+          
+          <div className={styles.field}>
+              <label>Область правонарушения</label>
+              {isEditing ? (
+                  <select
+                      name="offense_area"
+                      value={formData.offense_area || ''}
+                      onChange={handleInputChange}
+                      className={styles.select}
+                  >
+                      <option value="">Выберите область</option>
+                      {offenseAreaOptions?.map(option => (
+                          <option key={option.value} value={option.value}>
+                              {option.label}
+                          </option>
+                      ))}
+                  </select>
+              ) : (
+                  <span>{formData.offense_area_display || 'Не указано'}</span>
+              )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Часть статьи</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="article_part"
-              value={formData.article_part || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Например: 1"
-            />
-          ) : (
-            <span>{adminData.article_part || 'Не указано'}</span>
-          )}
-        </div>
+          {/* ПОЛЕ: Статья КоАП РФ - С ПОИСКОМ */}
+          <div className={styles.field}>
+              <label>Статья КоАП РФ</label>
+              {isEditing ? (
+                  <div className={styles.articleSearchContainer}>
+                      <input
+                          type="text"
+                          placeholder="Введите номер или название статьи..."
+                          className={styles.input}
+                          onChange={(e) => {
+                              const value = e.target.value;
+                              if (handleKoapArticleSearch) {
+                                  handleKoapArticleSearch(value);
+                              }
+                          }}
+                      />
+                      <select
+                          name="koap_article"
+                          value={formData.koap_article || ''}
+                          onChange={(e) => {
+                              const value = e.target.value;
+                              handleInputChange(e);
+                              if (onArticleChange) {
+                                  onArticleChange(value);
+                              }
+                          }}
+                          className={styles.select}
+                          style={{ marginTop: '8px' }}
+                          size={Math.min(koapArticles?.length || 0, 6)}
+                      >
+                          <option value="">-- Выберите статью --</option>
+                          {koapArticles?.map(article => (
+                              <option key={article.id} value={article.id}>
+                                  {article.display_name || `Ст. ${article.full_number}`} - {article.title?.substring(0, 60)}...
+                              </option>
+                          ))}
+                      </select>
+                      {koapArticlesLoading && (
+                          <div className={styles.structureLoading}>Загрузка статей...</div>
+                      )}
+                  </div>
+              ) : (
+                  <span>
+                      {formData.koap_article_detail?.display_name || 
+                      formData.koap_article?.display_name || 
+                      (formData.koap_article ? `Статья ID: ${formData.koap_article}` : 'Не указано')}
+                  </span>
+              )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Описание правонарушения</label>
-          {isEditing ? (
-            <textarea
-              name="offense_description"
-              value={formData.offense_description || ''}
-              onChange={handleInputChange}
-              className={styles.textarea}
-              rows={3}
-            />
-          ) : (
-            <span>{adminData.offense_description || 'Не указано'}</span>
-          )}
-        </div>
+          {/* НОВОЕ ПОЛЕ: Часть статьи КоАП РФ */}
+          <div className={styles.field}>
+              <label>Часть статьи КоАП РФ</label>
+              {isEditing ? (
+                  <select
+                      name="koap_article_part"
+                      value={formData.koap_article_part || ''}
+                      onChange={(e) => {
+                          const value = e.target.value;
+                          handleInputChange(e);
+                          if (onPartChange) {
+                              onPartChange(value);
+                          }
+                      }}
+                      className={styles.select}
+                      disabled={!formData.koap_article || articleParts.length === 0}
+                  >
+                      <option value="">
+                          {!formData.koap_article 
+                              ? 'Сначала выберите статью' 
+                              : articleParts.length === 0 
+                                  ? 'Загрузка частей...' 
+                                  : 'Выберите часть'}
+                      </option>
+                      {articleParts.map(part => (
+                          <option key={part.number} value={part.number}>
+                              Часть {part.number}
+                          </option>
+                      ))}
+                  </select>
+              ) : (
+                  <span>
+                      {formData.koap_article_part ? `Часть ${formData.koap_article_part}` : 'Не указано'}
+                  </span>
+              )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Дата совершения правонарушения</label>
-          {isEditing ? (
-            <input
-              type="date"
-              name="offense_date"
-              value={formData.offense_date || ''}
-              onChange={(e) => handleDateChange('offense_date', e.target.value)}
-              className={styles.input}
-            />
-          ) : (
-            <span>{formatDate(adminData.offense_date)}</span>
-          )}
-        </div>
+          {/* Остальные поля (offense_description, offense_date, offense_time, offense_place) остаются без изменений */}
+          <div className={styles.field}>
+              <label>Описание правонарушения</label>
+              {isEditing ? (
+                  <textarea
+                      name="offense_description"
+                      value={formData.offense_description || ''}
+                      onChange={handleInputChange}
+                      className={styles.textarea}
+                      rows={3}
+                  />
+              ) : (
+                  <span>{formData.offense_description || 'Не указано'}</span>
+              )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Время совершения</label>
-          {isEditing ? (
-            <input
-              type="time"
-              name="offense_time"
-              value={formData.offense_time || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-            />
-          ) : (
-            <span>{adminData.offense_time?.slice(0,5) || 'Не указано'}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+              <label>Дата совершения правонарушения</label>
+              {isEditing ? (
+                  <input
+                      type="date"
+                      name="offense_date"
+                      value={formData.offense_date || ''}
+                      onChange={(e) => handleDateChange('offense_date', e.target.value)}
+                      className={styles.input}
+                  />
+              ) : (
+                  <span>{formatDate(formData.offense_date)}</span>
+              )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Место совершения</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="offense_place"
-              value={formData.offense_place || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-            />
-          ) : (
-            <span>{adminData.offense_place || 'Не указано'}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+              <label>Время совершения</label>
+              {isEditing ? (
+                  <input
+                      type="time"
+                      name="offense_time"
+                      value={formData.offense_time || ''}
+                      onChange={handleInputChange}
+                      className={styles.input}
+                  />
+              ) : (
+                  <span>{formData.offense_time?.slice(0,5) || 'Не указано'}</span>
+              )}
+          </div>
+
+          <div className={styles.field}>
+              <label>Место совершения</label>
+              {isEditing ? (
+                  <input
+                      type="text"
+                      name="offense_place"
+                      value={formData.offense_place || ''}
+                      onChange={handleInputChange}
+                      className={styles.input}
+                  />
+              ) : (
+                  <span>{formData.offense_place || 'Не указано'}</span>
+              )}
+          </div>
       </div>
     </div>
   </div>

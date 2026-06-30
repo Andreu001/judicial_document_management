@@ -12,6 +12,16 @@
     background: #f8fafc;
 }
 
+/* ОСНОВНОЙ КОНТЕЙНЕР - добавляем отступ под навбар */
+.main-content {
+    margin-left: 5.5cm; /* Ширина вашего навбара */
+    flex: 1;
+    min-height: 100vh;
+    padding: 24px 32px;
+    background: #f8fafc;
+    width: calc(100% - 6.3cm);
+}
+
 .App {
     flex-grow: 1;
     padding: 0;
@@ -21,23 +31,24 @@
 /* Удаляем старые стили для .post и .page, так как они теперь в модулях */
 /* Оставляем только глобальные стили */
 
-.navbar {
+/* ЭТОТ СТИЛЬ НУЖНО УДАЛИТЬ, так как он конфликтует с вашим новым навбаром */
+/* .navbar {
     height: 50px;
     width: 80vw;
     display: flex;
     align-items: center;
     padding: 0 15px;
     background: lightgray;
-}
+} */
 
-.navbar__links {
+/* .navbar__links {
     padding: 0 15px;
     display: flex;
-}
+} */
 
-.navbar__links > * + * {
+/* .navbar__links > * + * {
     margin-left: 20px;
-}
+} */
 
 /* Стили для форм - оставляем */
 .card_form {
@@ -57,5 +68,11 @@
 @media (max-width: 1200px) {
     #root {
         flex-direction: column;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 16px;
     }
 }

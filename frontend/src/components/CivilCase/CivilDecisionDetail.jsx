@@ -13,6 +13,10 @@ const CivilDecisionDetail = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('main');
+  
+  // Состояние для списка участников дела (для поля "Кем обжаловано")
+  const [caseParticipants, setCaseParticipants] = useState([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
 
   const [options, setOptions] = useState({
     // Раздел 3. Результаты рассмотрения
@@ -28,6 +32,79 @@ const CivilDecisionDetail = () => {
     is_complex_case: [],
     protocol_objections_extended_deadline: []
   });
+
+  // Загрузка участников дела (стороны и адвокаты)
+  useEffect(() => {
+    const loadCaseParticipants = async () => {
+      if (!proceedingId) return;
+      
+      setLoadingParticipants(true);
+      try {
+        // Загружаем стороны
+        const sides = await CivilCaseService.getSides(proceedingId);
+        // Загружаем адвокатов
+        const lawyers = await CivilCaseService.getLawyers(proceedingId);
+        
+        // Формируем список участников для отображения в select
+        const participants = [];
+        
+        // Добавляем стороны
+        sides.forEach(side => {
+          const sideDetail = side.sides_case_incase_detail || {};
+          const roleDetail = side.sides_case_role_detail || {};
+          let name = sideDetail.name || '';
+          
+          // Если имени нет, пробуем получить из других полей
+          if (!name && sideDetail.full_name) name = sideDetail.full_name;
+          if (!name && sideDetail.first_name) {
+            name = `${sideDetail.last_name || ''} ${sideDetail.first_name || ''} ${sideDetail.middle_name || ''}`.trim();
+          }
+          
+          if (name) {
+            participants.push({
+              id: `side_${side.id}`,
+              type: 'side',
+              displayName: `${name} (${roleDetail.name || 'Сторона'})`,
+              fullName: name,
+              role: roleDetail.name || 'Сторона'
+            });
+          } else {
+            // Если имя не найдено, используем ID
+            participants.push({
+              id: `side_${side.id}`,
+              type: 'side',
+              displayName: `Сторона №${side.id} (${roleDetail.name || 'Сторона'})`,
+              fullName: `Сторона ${side.id}`,
+              role: roleDetail.name || 'Сторона'
+            });
+          }
+        });
+        
+        // Добавляем адвокатов
+        lawyers.forEach(lawyer => {
+          const lawyerDetail = lawyer.lawyer_detail || {};
+          const roleDetail = lawyer.sides_case_role_detail || {};
+          const name = lawyerDetail.law_firm_name || lawyerDetail.full_name || `Адвокат №${lawyer.id}`;
+          
+          participants.push({
+            id: `lawyer_${lawyer.id}`,
+            type: 'lawyer',
+            displayName: `${name} (${roleDetail.law_firm_name || 'Адвокат'})`,
+            fullName: name,
+            role: roleDetail.law_firm_name || 'Адвокат'
+          });
+        });
+        
+        setCaseParticipants(participants);
+      } catch (err) {
+        console.error('Error loading case participants:', err);
+      } finally {
+        setLoadingParticipants(false);
+      }
+    };
+    
+    loadCaseParticipants();
+  }, [proceedingId]);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -641,14 +718,42 @@ const CivilDecisionDetail = () => {
                         <>
                           <div className={styles.field}>
                             <label>Кем обжаловано</label>
-                            <textarea
-                              name="appealed_by"
-                              value={formData.appealed_by || ''}
-                              onChange={handleInputChange}
-                              className={styles.textarea}
-                              rows={2}
-                              placeholder="Истец, Ответчик, Прокурор..."
-                            />
+                            {loadingParticipants ? (
+                              <div className={styles.loadingSmall}>Загрузка участников...</div>
+                            ) : caseParticipants.length > 0 ? (
+                              <select
+                                name="appealed_by"
+                                value={formData.appealed_by || ''}
+                                onChange={handleInputChange}
+                                className={styles.select}
+                              >
+                                <option value="">Выберите участника</option>
+                                {caseParticipants.map(participant => (
+                                  <option key={participant.id} value={participant.displayName}>
+                                    {participant.displayName}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div>
+                                <select
+                                  name="appealed_by"
+                                  value={formData.appealed_by || ''}
+                                  onChange={handleInputChange}
+                                  className={styles.select}
+                                >
+                                  <option value="">Выберите участника</option>
+                                  <option value="Истец">Истец</option>
+                                  <option value="Ответчик">Ответчик</option>
+                                  <option value="Третье лицо">Третье лицо</option>
+                                  <option value="Прокурор">Прокурор</option>
+                                  <option value="Другое">Другое</option>
+                                </select>
+                                <div className={styles.hint}>
+                                  (Для выбора из списка участников сначала добавьте стороны в карточку дела)
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div className={styles.field}>
@@ -808,13 +913,47 @@ const CivilDecisionDetail = () => {
                         <>
                           <div className={styles.field}>
                             <label>Кем подана кассационная жалоба</label>
-                            <textarea
-                              name="cassation_filed_by"
-                              value={formData.cassation_filed_by || ''}
-                              onChange={handleInputChange}
-                              className={styles.textarea}
-                              rows={2}
-                            />
+                            {loadingParticipants ? (
+                              <div className={styles.loadingSmall}>Загрузка участников...</div>
+                            ) : caseParticipants.length > 0 ? (
+                              <select
+                                name="cassation_filed_by"
+                                value={formData.cassation_filed_by || ''}
+                                onChange={handleInputChange}
+                                className={styles.select}
+                              >
+                                <option value="">Выберите участника</option>
+                                <option value="Истец">Истец</option>
+                                <option value="Ответчик">Ответчик</option>
+                                <option value="Третье лицо">Третье лицо</option>
+                                <option value="Прокурор">Прокурор</option>
+                                <option value="Другое">Другое</option>
+                                {caseParticipants.map(participant => (
+                                  <option key={participant.id} value={participant.displayName}>
+                                    {participant.displayName}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div>
+                                <select
+                                  name="cassation_filed_by"
+                                  value={formData.cassation_filed_by || ''}
+                                  onChange={handleInputChange}
+                                  className={styles.select}
+                                >
+                                  <option value="">Выберите участника</option>
+                                  <option value="Истец">Истец</option>
+                                  <option value="Ответчик">Ответчик</option>
+                                  <option value="Третье лицо">Третье лицо</option>
+                                  <option value="Прокурор">Прокурор</option>
+                                  <option value="Другое">Другое</option>
+                                </select>
+                                <div className={styles.hint}>
+                                  (Для выбора из списка участников сначала добавьте стороны в карточку дела)
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div className={styles.field}>

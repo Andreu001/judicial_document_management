@@ -11,8 +11,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# administrative_code/models.py (добавить в начало файла, после импортов)
-
 class AdmissionOrder(models.Model):
     """Справочник: Порядок поступления дела"""
     code = models.CharField(max_length=5, unique=True, verbose_name="Код")
@@ -335,18 +333,6 @@ class KasDecision(models.Model):
     protocol_objections_filed_date = models.DateField(verbose_name="Дата принесения замечаний", null=True, blank=True)
     protocol_objections_extended_deadline = models.BooleanField(verbose_name="Продлено по сложным делам", default=False, null=True, blank=True)
     protocol_objections_reviewed_date = models.DateField(verbose_name="Дата рассмотрения замечаний", null=True, blank=True)
-
-    # ------------------- IV. ОБЖАЛОВАНИЕ РЕШЕНИЯ (Апелляция) -------------------
-    decision_is_appealed = models.BooleanField(verbose_name="Решение обжаловано в апелляции", default=False, null=True, blank=True)
-    decision_appeal_date = models.DateField(verbose_name="Дата подачи апелляционной жалобы на решение", null=True, blank=True)
-    decision_appeal_review_date = models.DateField(verbose_name="Дата рассмотрения апелляции на решение", null=True, blank=True)
-    decision_appeal_result = models.CharField(max_length=2, verbose_name="Результат апелляционного обжалования решения", null=True, blank=True) # Справочник kas_appeal_result.csv
-
-    # ------------------- IV. ОБЖАЛОВАНИЕ РЕШЕНИЯ (Кассация) -------------------
-    decision_is_cassation_filed = models.BooleanField(verbose_name="Решение обжаловано в кассации", default=False, null=True, blank=True)
-    decision_cassation_date = models.DateField(verbose_name="Дата подачи кассационной жалобы на решение", null=True, blank=True)
-    decision_cassation_review_date = models.DateField(verbose_name="Дата рассмотрения кассации на решение", null=True, blank=True)
-    decision_cassation_result = models.CharField(max_length=2, verbose_name="Результат кассационного обжалования решения", null=True, blank=True) # Справочник kas_cassation_result.csv
 
     # ------------------- VI. ДРУГИЕ СУДЕБНЫЕ ПОСТАНОВЛЕНИЯ -------------------
     additional_decision_date = models.DateField(verbose_name="Дата дополнительного решения", null=True, blank=True)

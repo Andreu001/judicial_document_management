@@ -5,6 +5,8 @@ import PetitionService from '../API/PetitionService';
 import styles from './UI/Card/CriminalBusinessCard.module.css';
 import baseService from '../API/baseService';
 import ConfirmModal from './UI/Modal/ConfirmModal';
+import DocumentService from '../API/DocumentService';
+import PartyDocumentItem from './Documents/PartyDocumentItem';
 
 const CriminalBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -19,6 +21,8 @@ const CriminalBusinessCard = ({ card, remove }) => {
   const [executions, setExecutions] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [civilClaims, setCivilClaims] = useState([]);
+  const [appealInstances, setAppealInstances] = useState([]);
+  const [cassationInstances, setCassationInstances] = useState([]);
 
   const [quickStats, setQuickStats] = useState({
     allSides: 0,
@@ -31,6 +35,33 @@ const CriminalBusinessCard = ({ card, remove }) => {
     lastActivity: null
   });
   const BASE_URL = '/criminal-proceedings';
+
+    const [partyDocuments, setPartyDocuments] = useState([]);
+  const [partyDocumentsStats, setPartyDocumentsStats] = useState({ total: 0, pending: 0, accepted: 0 });
+  const [showPartyDocumentsList, setShowPartyDocumentsList] = useState(false);
+
+// Добавьте функцию загрузки документов сторон:
+  const loadPartyDocuments = async () => {
+    if (!card.criminal_proceedings_id) return;
+    try {
+      const docs = await DocumentService.getPartyDocuments('criminal', card.criminal_proceedings_id);
+      setPartyDocuments(docs);
+      setPartyDocumentsStats({
+        total: docs.length,
+        pending: docs.filter(d => d.review_status === 'pending' || d.review_status === 'registered').length,
+        accepted: docs.filter(d => d.review_status === 'accepted' || d.review_status === 'attached_to_case').length
+      });
+    } catch (error) {
+      console.error('Error loading party documents:', error);
+    }
+  };
+
+// Добавьте useEffect для загрузки (рядом с другими loadXXXX вызовами):
+  useEffect(() => {
+    if (card.criminal_proceedings_id) {
+      loadPartyDocuments();
+    }
+  }, [card.criminal_proceedings_id]);
 
   useEffect(() => {
     if (card.is_criminal && card.criminal_proceedings_id) {
@@ -77,6 +108,16 @@ const CriminalBusinessCard = ({ card, remove }) => {
         otherSides: otherSidesData.length,
         allSides: defendantsData.length + lawyersData.length + otherSidesData.length
       }));
+
+        try {
+          const appealsData = await CriminalCaseService.getAppealInstances(card.criminal_proceedings_id);
+          setAppealInstances(appealsData);
+          
+          const cassationsData = await CriminalCaseService.getCassationInstances(card.criminal_proceedings_id);
+          setCassationInstances(cassationsData);
+        } catch (error) {
+          console.error('Ошибка загрузки пересмотров:', error);
+        }
       
       // Загрузка движений дела
       const movementsData = await CriminalCaseService.getCaseMovements(card.criminal_proceedings_id);
@@ -104,6 +145,18 @@ const CriminalBusinessCard = ({ card, remove }) => {
 
     } catch (error) {
       console.error('Ошибка загрузки связанных данных:', error);
+    }
+  };
+
+  const handleAddAppeal = () => {
+    if (card.criminal_proceedings_id) {
+      router(`/criminal-proceedings/${card.criminal_proceedings_id}/criminal-decisions/create?tab=appeal`);
+    }
+  };
+
+  const handleAddCassation = () => {
+    if (card.criminal_proceedings_id) {
+      router(`/criminal-proceedings/${card.criminal_proceedings_id}/criminal-decisions/create?tab=cassation`);
     }
   };
 
@@ -440,6 +493,124 @@ const CriminalBusinessCard = ({ card, remove }) => {
       </div>
     </div>
   );
+
+  const AppealItem = ({ appeal }) => (
+    <div className={styles.compactItem}>
+      <div className={styles.compactItemContent}>
+        <div className={styles.compactItemTitle}>
+          Апелляция #{appeal.id}
+          <span className={styles.sideType}>
+            {appeal.appeal_type === 'appeal' ? 'Жалоба' : 'Представление'}
+          </span>
+        </div>
+        {appeal.appeal_date && (
+          <div className={styles.compactItemSubtitle}>
+            Дата подачи: {formatDate(appeal.appeal_date)}
+          </div>
+        )}
+        {appeal.appeal_applicant && (
+          <div className={styles.compactItemSubtitle}>
+            Заявитель: {appeal.appeal_applicant_name || appeal.appeal_applicant}
+          </div>
+        )}
+        {appeal.appeal_result && (
+          <div className={styles.compactItemSubtitle}>
+            Результат: {appeal.appeal_result_display || appeal.appeal_result}
+          </div>
+        )}
+        {appeal.court_consideration_date && (
+          <div className={styles.compactItemSubtitle}>
+            Рассмотрение: {formatDate(appeal.court_consideration_date)}
+          </div>
+        )}
+      </div>
+      <div className={styles.compactItemActions}>
+        <button 
+          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/criminal-decisions/${appeal.id}`)}
+          className={styles.actionButton}
+          title="Просмотреть"
+        >
+          →
+        </button>
+        <button 
+          onClick={() => handleDeleteAppeal(appeal.id)}
+          className={styles.deleteButton}
+          title="Удалить"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+
+  const CassationItem = ({ cassation }) => (
+    <div className={styles.compactItem}>
+      <div className={styles.compactItemContent}>
+        <div className={styles.compactItemTitle}>
+          {cassation.instance_type === 'cassation_first' ? 'Кассация' : 
+          cassation.instance_type === 'cassation_second' ? 'Вторая кассация' : 'Надзор'} #{cassation.id}
+          <span className={styles.sideType}>
+            {cassation.cassation_type === 'cassation' ? 'Жалоба' : 'Представление'}
+          </span>
+        </div>
+        {cassation.cassation_date && (
+          <div className={styles.compactItemSubtitle}>
+            Дата подачи: {formatDate(cassation.cassation_date)}
+          </div>
+        )}
+        {cassation.cassation_applicant && (
+          <div className={styles.compactItemSubtitle}>
+            Заявитель: {cassation.cassation_applicant_name || cassation.cassation_applicant}
+          </div>
+        )}
+        {cassation.cassation_result && (
+          <div className={styles.compactItemSubtitle}>
+            Результат: {cassation.cassation_result_display || cassation.cassation_result}
+          </div>
+        )}
+        {cassation.consideration_date && (
+          <div className={styles.compactItemSubtitle}>
+            Рассмотрение: {formatDate(cassation.consideration_date)}
+          </div>
+        )}
+      </div>
+      <div className={styles.compactItemActions}>
+        <button 
+          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/criminal-decisions/${cassation.id}`)}
+          className={styles.actionButton}
+          title="Просмотреть"
+        >
+          →
+        </button>
+        <button 
+          onClick={() => handleDeleteCassation(cassation.id)}
+          className={styles.deleteButton}
+          title="Удалить"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+
+  // Добавьте функции удаления
+  const handleDeleteAppeal = async (appealId) => {
+    try {
+      await CriminalCaseService.deleteAppealInstance(card.criminal_proceedings_id, appealId);
+      setAppealInstances(appealInstances.filter(a => a.id !== appealId));
+    } catch (error) {
+      console.error('Ошибка удаления апелляции:', error);
+    }
+  };
+
+  const handleDeleteCassation = async (cassationId) => {
+    try {
+      await CriminalCaseService.deleteCassationInstance(card.criminal_proceedings_id, cassationId);
+      setCassationInstances(cassationInstances.filter(c => c.id !== cassationId));
+    } catch (error) {
+      console.error('Ошибка удаления кассации:', error);
+    }
+  };
   
   const SideItem = ({ side, type }) => {
     // Проверка валидности ID
@@ -717,20 +888,20 @@ const CriminalBusinessCard = ({ card, remove }) => {
           Движение
         </button>
         <button 
-          className={`${styles.quickAction} ${activeTab === 'decisions' ? styles.active : ''}`}
-          onClick={handleShowDecisions}
-          title="Решения"
-        >
-          <span className={styles.quickActionCount}>{quickStats.decisions}</span>
-          Решения
-        </button>
-        <button 
           className={`${styles.quickAction} ${activeTab === 'executions' ? styles.active : ''}`}
           onClick={() => setActiveTab('executions')}
           title="Исполнение приговора"
         >
           <span className={styles.quickActionCount}>{quickStats.executions || 0}</span>
           Исполнение
+        </button>
+        <button 
+          className={`${styles.quickAction} ${activeTab === 'decisions' ? styles.active : ''}`}
+          onClick={handleShowDecisions}
+          title="Решения"
+        >
+          <span className={styles.quickActionCount}>{quickStats.decisions}</span>
+          Пересмотр
         </button>
         <button 
           className={`${styles.quickAction} ${activeTab === 'petitions' ? styles.active : ''}`}
@@ -751,10 +922,18 @@ const CriminalBusinessCard = ({ card, remove }) => {
         <button 
           className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
           onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/documents`)}
-          title="Документы по делу"
+          title="Вынесенные решения по делу"
         >
           <span className={styles.quickActionCount}>0</span>
-          Документы
+          Электронные решения
+        </button>
+        <button 
+          className={`${styles.quickAction} ${activeTab === 'partyDocuments' ? styles.active : ''}`}
+          onClick={() => setActiveTab('partyDocuments')}
+          title="Документы сторон"
+        >
+          <span className={styles.quickActionCount}>{partyDocumentsStats.total}</span>
+          Документы сторон
         </button>
       </div>
       
@@ -913,21 +1092,35 @@ const CriminalBusinessCard = ({ card, remove }) => {
         {activeTab === 'decisions' && (
           <div className={styles.tabContent}>
             <div className={styles.tabHeader}>
-              <h3>Решения ({decisions.length})</h3>
-              <button 
-                onClick={handleAddDecision}
-                className={styles.addButton}
-              >
-                + Добавить
-              </button>
+              <h3>Пересмотр ({appealInstances.length + cassationInstances.length})</h3>
+              <div className={styles.addButtonsGroup}>
+                <button 
+                  onClick={handleAddAppeal}
+                  className={styles.addButton}
+                >
+                  + Добавить
+                </button>
+              </div>
             </div>
             <div className={styles.compactList}>
-              {decisions.length > 0 ? (
-                decisions.map(decision => (
-                  <DecisionItem key={decision.id} decision={decision} />
-                ))
-              ) : (
-                <p className={styles.noData}>Нет данных о решениях</p>
+              {appealInstances.length > 0 && (
+                <>
+                  <h4 style={{ margin: '8px 0 4px 0', color: '#6c757d' }}>Апелляции:</h4>
+                  {appealInstances.map(appeal => (
+                    <AppealItem key={appeal.id} appeal={appeal} />
+                  ))}
+                </>
+              )}
+              {cassationInstances.length > 0 && (
+                <>
+                  <h4 style={{ margin: '8px 0 4px 0', color: '#6c757d' }}>Кассации/Надзор:</h4>
+                  {cassationInstances.map(cassation => (
+                    <CassationItem key={cassation.id} cassation={cassation} />
+                  ))}
+                </>
+              )}
+              {appealInstances.length === 0 && cassationInstances.length === 0 && (
+                <p className={styles.noData}>Нет данных о поданных жалоб</p>
               )}
             </div>
           </div>
@@ -973,6 +1166,104 @@ const CriminalBusinessCard = ({ card, remove }) => {
                 ))
               ) : (
                 <p className={styles.noData}>Нет данных о гражданских исках</p>
+              )}
+            </div>
+          </div>
+        )}
+        {activeTab === 'partyDocuments' && (
+          <div className={styles.tabContent}>
+            <div className={styles.tabHeader}>
+              <h3>Документы сторон ({partyDocumentsStats.total})</h3>
+              <button 
+                onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/party-documents/create`)}
+                className={styles.addButton}
+              >
+                + Добавить документ
+              </button>
+            </div>
+            <div className={styles.compactList}>
+              {partyDocuments.length > 0 ? (
+                partyDocuments.map(doc => {
+                  const statusConfig = DocumentService.getReviewStatuses()[doc.review_status] || 
+                    { label: doc.review_status_display || doc.review_status, color: '#6c757d' };
+                  const documentTypes = DocumentService.getPartyDocumentTypes();
+                  const docTypeLabel = documentTypes.find(t => t.value === doc.document_type)?.label || doc.document_type;
+                  
+                  return (
+                    <div 
+                      key={doc.id} 
+                      className={styles.compactItem}
+                      onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/party-documents/${doc.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className={styles.compactItemContent}>
+                        <div className={styles.compactItemTitle}>
+                          {docTypeLabel}
+                          <span className={styles.sideType} style={{ backgroundColor: statusConfig.color + '20', color: statusConfig.color }}>
+                            {statusConfig.label}
+                          </span>
+                        </div>
+                        <div className={styles.compactItemSubtitle}>
+                          {doc.title}
+                        </div>
+                        <div className={styles.compactItemSubtitle}>
+                          От: {doc.submitter_name} | Дата: {new Date(doc.submission_date).toLocaleDateString('ru-RU')}
+                          {doc.registration_number && ` | Вх. №: ${doc.registration_number}`}
+                        </div>
+                        {doc.description && (
+                          <div className={styles.compactItemSubtitle} style={{ color: '#6a6a6a' }}>
+                            {doc.description.length > 60 ? doc.description.substring(0, 60) + '...' : doc.description}
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.compactItemActions}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            DocumentService.downloadPartyDocument(doc.id).then(response => {
+                              const url = window.URL.createObjectURL(new Blob([response.data]));
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.setAttribute('download', doc.file_name || doc.title + '.pdf');
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                              window.URL.revokeObjectURL(url);
+                            }).catch(err => alert('Не удалось скачать файл'));
+                          }}
+                          className={styles.actionButton}
+                          title="Скачать файл"
+                        >
+                          ↓
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router(`/criminal-proceedings/${card.criminal_proceedings_id}/party-documents/${doc.id}`);
+                          }}
+                          className={styles.actionButton}
+                          title="Просмотреть"
+                        >
+                          →
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Удалить документ? Это действие необратимо.')) {
+                              DocumentService.deletePartyDocument(doc.id).then(() => loadPartyDocuments());
+                            }
+                          }}
+                          className={styles.deleteButton}
+                          title="Удалить"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className={styles.noData}>Документы от сторон не поступали</p>
               )}
             </div>
           </div>

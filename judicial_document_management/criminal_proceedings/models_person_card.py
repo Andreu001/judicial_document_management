@@ -5,6 +5,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from .models import Defendant, CriminalProceedings
 from .person_card_constants import *
+from legal_codes.models import CriminalCodeArticle
 
 
 class PreviousConviction(models.Model):
@@ -24,21 +25,27 @@ class PreviousConviction(models.Model):
         null=True, blank=True
     )
     
-    # 2.2 Статьи приговора
-    article = models.CharField(
-        max_length=50,
-        verbose_name="Статья",
-        null=True, blank=True
+    # 2.2 Статьи приговора - ИЗМЕНЕНИЕ: ForeignKey на CriminalCodeArticle
+    article = models.ForeignKey(
+        CriminalCodeArticle,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='previous_convictions',
+        verbose_name="Статья УК РФ"
     )
+    
     article_part = models.CharField(
         max_length=10,
         verbose_name="Часть",
         null=True, blank=True
     )
-    article_paragraph = models.CharField(
-        max_length=10,
-        verbose_name="Пункт",
-        null=True, blank=True
+    
+    article_clauses = models.CharField(
+        max_length=200,
+        verbose_name="Пункты",
+        null=True, blank=True,
+        help_text="Укажите пункты через запятую (например: а,б,в или 1,2,3)"
     )
     
     # Стадия совершения преступления
@@ -122,7 +129,8 @@ class PreviousConviction(models.Model):
         ordering = ['-sentence_date']
     
     def __str__(self):
-        return f"Судимость от {self.sentence_date or 'не указана'} - {self.article or ''}"
+        article_display = self.article.full_number if self.article else ''
+        return f"Судимость от {self.sentence_date or 'не указана'} - {article_display}"
 
 
 class CrimeComposition(models.Model):
@@ -165,23 +173,27 @@ class CrimeComposition(models.Model):
         default='first'
     )
     
-    # 4.1, 4.6 Статья УК РФ
-    article = models.CharField(
-        max_length=50,
-        verbose_name="Статья УК РФ",
-        db_index=True,
+    # 4.1, 4.6 Статья УК РФ - ИЗМЕНЕНИЕ: ForeignKey
+    article = models.ForeignKey(
+        CriminalCodeArticle,
+        on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,
+        related_name='crime_compositions',
+        verbose_name="Статья УК РФ"
     )
+    
     article_part = models.CharField(
         max_length=10,
         verbose_name="Часть",
         null=True, blank=True
     )
-    article_paragraphs = models.CharField(
-        max_length=100,
+    
+    article_clauses = models.CharField(
+        max_length=200,
         verbose_name="Пункты",
-        null=True, blank=True
+        null=True, blank=True,
+        help_text="Укажите пункты через запятую (например: а,б,в или 1,2,3)"
     )
     
     # Редакция ФЗ
@@ -457,7 +469,8 @@ class CrimeComposition(models.Model):
         ordering = ['-crime_date']
     
     def __str__(self):
-        return f"Ст. {self.article}{f' ч.{self.article_part}' if self.article_part else ''} - {self.get_instance_display()}"
+        article_display = self.article.full_number if self.article else ''
+        return f"Ст. {article_display}{f' ч.{self.article_part}' if self.article_part else ''} - {self.get_instance_display()}"
 
 
 class SentencedPunishment(models.Model):

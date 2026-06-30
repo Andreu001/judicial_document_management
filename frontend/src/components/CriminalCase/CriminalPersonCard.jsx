@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import styles from './CriminalPersonCard.module.css';
+import ArticleSelector from './ArticleSelector';
 
 const CriminalPersonCard = () => {
   const { proceedingId, defendantId } = useParams();
@@ -24,20 +25,23 @@ const CriminalPersonCard = () => {
   const [showAddCrime, setShowAddCrime] = useState(false);
   const [showAddSentence, setShowAddSentence] = useState(false);
   
-  // Новое состояние для формы
+  // Новое состояние для формы судимости
   const [newConviction, setNewConviction] = useState({
     sentence_date: '',
-    article: '',
+    article_id: '',
     article_part: '',
+    article_clauses: '',
     punishment_type: '',
     punishment_served: ''
   });
   
+  // Новое состояние для формы состава преступления
   const [newCrime, setNewCrime] = useState({
     instance: 'first',
     article_type: '2',
-    article: '',
+    article_id: '',
     article_part: '',
+    article_clauses: '',
     crime_stage: '0',
     recidivism: '0'
   });
@@ -193,8 +197,8 @@ const CriminalPersonCard = () => {
       // Подготавливаем данные для отправки
       const dataToSend = {
         ...formData,
-        defendant: parseInt(defendantId),        // было defendant_id
-        criminal_proceedings: parseInt(proceedingId)  // было criminal_proceedings_id
+        defendant: parseInt(defendantId),
+        criminal_proceedings: parseInt(proceedingId)
       };
       
       // Удаляем лишние поля
@@ -251,61 +255,128 @@ const CriminalPersonCard = () => {
   };
   
   const addConviction = async () => {
-    
     try {
+      // Проверяем, что карточка существует
+      if (!card || !card.id) {
+        console.error('Card not found, cannot add conviction');
+        alert('Сначала сохраните основную карточку');
+        return;
+      }
+
+      const convictionData = {
+        sentence_date: newConviction.sentence_date || null,
+        article_id: newConviction.article_id || null,  // Используем article_id вместо article
+        article_part: newConviction.article_part || null,
+        article_clauses: newConviction.article_clauses || null,
+        punishment_type: newConviction.punishment_type || null,
+        punishment_served: newConviction.punishment_served || null
+      };
+
+      console.log('Sending conviction data:', convictionData);
+
       const conviction = await CriminalCaseService.createPreviousConviction(
         card.id,
-        newConviction
+        convictionData
       );
+      
       setPreviousConvictions([...previousConvictions, conviction]);
       setShowAddConviction(false);
       setNewConviction({
         sentence_date: '',
-        article: '',
+        article_id: '',
         article_part: '',
+        article_clauses: '',
         punishment_type: '',
         punishment_served: ''
       });
       
-      // Обновляем счетчик
       setFormData(prev => ({
         ...prev,
         prior_convictions_count: previousConvictions.length + 1
       }));
+      
+      // Перезагружаем карточку для обновления счетчика
+      const updatedCard = await CriminalCaseService.getPersonCardByDefendant(defendantId);
+      if (updatedCard) {
+        setCard(updatedCard);
+        setFormData(prev => ({
+          ...prev,
+          prior_convictions_count: updatedCard.prior_convictions_count || 0
+        }));
+      }
     } catch (error) {
       console.error('Ошибка добавления судимости:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Ошибка добавления судимости: ${JSON.stringify(error.response?.data)}`);
     }
   };
   
   const addCrimeComposition = async () => {
-    
     try {
+      if (!card || !card.id) {
+        console.error('Card not found, cannot add crime composition');
+        alert('Сначала сохраните основную карточку');
+        return;
+      }
+
+      const crimeData = {
+        instance: newCrime.instance,
+        article_type: newCrime.article_type,
+        article_id: newCrime.article_id || null,  // Используем article_id
+        article_part: newCrime.article_part || null,
+        article_clauses: newCrime.article_clauses || null,
+        crime_stage: newCrime.crime_stage,
+        recidivism: newCrime.recidivism
+      };
+
+      console.log('Sending crime data:', crimeData);
+
       const crime = await CriminalCaseService.createCrimeComposition(
         card.id,
-        newCrime
+        crimeData
       );
+      
       setCrimeCompositions([...crimeCompositions, crime]);
       setShowAddCrime(false);
       setNewCrime({
         instance: 'first',
         article_type: '2',
-        article: '',
+        article_id: '',
         article_part: '',
+        article_clauses: '',
         crime_stage: '0',
         recidivism: '0'
       });
     } catch (error) {
       console.error('Ошибка добавления состава преступления:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Ошибка добавления состава преступления: ${JSON.stringify(error.response?.data)}`);
     }
   };
   
   const addSentence = async () => {
-    
     try {
+      if (!card || !card.id) {
+        console.error('Card not found, cannot add sentence');
+        alert('Сначала сохраните основную карточку');
+        return;
+      }
+
+      const sentenceData = {
+        instance: newSentence.instance,
+        punishment_category: newSentence.punishment_category,
+        punishment_type: newSentence.punishment_type,
+        amount: newSentence.amount || null,
+        assignment_features: newSentence.assignment_features || null
+      };
+
+      console.log('Sending sentence data:', sentenceData);
+
       const sentence = await CriminalCaseService.createSentence(
         card.id,
-        newSentence
+        sentenceData
       );
+      
       setSentences([...sentences, sentence]);
       setShowAddSentence(false);
       setNewSentence({
@@ -317,6 +388,8 @@ const CriminalPersonCard = () => {
       });
     } catch (error) {
       console.error('Ошибка добавления наказания:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Ошибка добавления наказания: ${JSON.stringify(error.response?.data)}`);
     }
   };
   
@@ -344,6 +417,24 @@ const CriminalPersonCard = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('ru-RU');
+  };
+  
+  const getArticleDisplay = (articleDetail, part, clauses) => {
+    if (!articleDetail) return 'ст. не указана';
+    let result = '';
+    if (articleDetail.full_number) {
+      result = `Ст. ${articleDetail.full_number}`;
+    } else if (articleDetail.id) {
+      result = `Статья ID: ${articleDetail.id}`;
+    } else {
+      return 'ст. не указана';
+    }
+    if (part) result += ` ч.${part}`;
+    if (clauses) {
+      const clausesStr = Array.isArray(clauses) ? clauses.join(',') : clauses;
+      if (clausesStr) result += ` п.${clausesStr}`;
+    }
+    return result;
   };
   
   if (loading) {
@@ -584,8 +675,8 @@ const CriminalPersonCard = () => {
               <div key={conviction.id} className={styles.cardItem}>
                 <div className={styles.cardItemHeader}>
                   <span className={styles.cardItemTitle}>
-                    Приговор от {formatDate(conviction.sentence_date)} — ст. {conviction.article}
-                    {conviction.article_part && ` ч.${conviction.article_part}`}
+                    Приговор от {formatDate(conviction.sentence_date)} — 
+                    {getArticleDisplay(conviction.article_detail, conviction.article_part, conviction.article_clauses)}
                   </span>
                   <button 
                     onClick={() => deleteItem('conviction', conviction.id)}
@@ -614,25 +705,29 @@ const CriminalPersonCard = () => {
                       className={styles.input}
                     />
                   </div>
+                  
                   <div className={styles.fieldGroup}>
-                    <label>Статья</label>
-                    <input
-                      type="text"
-                      value={newConviction.article}
-                      onChange={(e) => setNewConviction({...newConviction, article: e.target.value})}
-                      className={styles.input}
-                      placeholder="например, 158"
+                    <ArticleSelector
+                      value={newConviction.article_id}
+                      onChange={(id) => {
+                        console.log('Article selected:', id);
+                        setNewConviction(prev => ({...prev, article_id: id, article_part: '', article_clauses: ''}));
+                      }}
+                      onPartChange={(part) => {
+                        console.log('Part selected:', part);
+                        setNewConviction(prev => ({...prev, article_part: part, article_clauses: ''}));
+                      }}
+                      onClausesChange={(clauses) => {
+                        console.log('Clauses selected:', clauses);
+                        const clausesStr = Array.isArray(clauses) ? clauses.join(',') : clauses;
+                        setNewConviction(prev => ({...prev, article_clauses: clausesStr}));
+                      }}
+                      partValue={newConviction.article_part}
+                      clausesValue={newConviction.article_clauses}
+                      label="Статья УК РФ"
                     />
                   </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Часть</label>
-                    <input
-                      type="text"
-                      value={newConviction.article_part}
-                      onChange={(e) => setNewConviction({...newConviction, article_part: e.target.value})}
-                      className={styles.input}
-                    />
-                  </div>
+                  
                   <div className={styles.fieldGroup}>
                     <label>Вид наказания</label>
                     <select
@@ -681,7 +776,7 @@ const CriminalPersonCard = () => {
                 <div className={styles.cardItemHeader}>
                   <span className={styles.cardItemTitle}>
                     {crime.instance === 'first' ? 'I инстанция' : 'Апелляция'} — 
-                    ст. {crime.article}{crime.article_part && ` ч.${crime.article_part}`}
+                    {getArticleDisplay(crime.article_detail, crime.article_part, crime.article_clauses)}
                     {crime.article_type === '1' && ' (основная)'}
                   </span>
                   <button 
@@ -699,83 +794,82 @@ const CriminalPersonCard = () => {
               </div>
             ))}
             
-            {showAddCrime && (
-              <div className={styles.addForm}>
-                <h4>Добавление состава преступления</h4>
-                <div className={styles.formGrid}>
-                  <div className={styles.fieldGroup}>
-                    <label>Инстанция</label>
-                    <select
-                      value={newCrime.instance}
-                      onChange={(e) => setNewCrime({...newCrime, instance: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="first">Первая инстанция</option>
-                      <option value="appeal">Апелляция</option>
-                    </select>
+              {showAddCrime && (
+                <div className={styles.addForm}>
+                  <h4>Добавление состава преступления</h4>
+                  <div className={styles.formGrid}>
+                    <div className={styles.fieldGroup}>
+                      <label>Инстанция</label>
+                      <select
+                        value={newCrime.instance}
+                        onChange={(e) => setNewCrime({...newCrime, instance: e.target.value})}
+                        className={styles.select}
+                      >
+                        <option value="first">Первая инстанция</option>
+                        <option value="appeal">Апелляция</option>
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label>Тип статьи</label>
+                      <select
+                        value={newCrime.article_type}
+                        onChange={(e) => setNewCrime({...newCrime, article_type: e.target.value})}
+                        className={styles.select}
+                      >
+                        <option value="1">Основная статья</option>
+                        <option value="2">Дополнительная квалификация</option>
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <ArticleSelector
+                        value={newCrime.article_id}
+                        onChange={(id) => {
+                          setNewCrime(prev => ({...prev, article_id: id, article_part: '', article_clauses: ''}));
+                        }}
+                        onPartChange={(part) => {
+                          setNewCrime(prev => ({...prev, article_part: part, article_clauses: ''}));
+                        }}
+                        onClausesChange={(clauses) => {
+                          const clausesStr = Array.isArray(clauses) ? clauses.join(',') : clauses;
+                          setNewCrime(prev => ({...prev, article_clauses: clausesStr}));
+                        }}
+                        partValue={newCrime.article_part}
+                        clausesValue={newCrime.article_clauses}
+                        label="Статья УК РФ"
+                      />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label>Стадия преступления</label>
+                      <select
+                        value={newCrime.crime_stage}
+                        onChange={(e) => setNewCrime({...newCrime, crime_stage: e.target.value})}
+                        className={styles.select}
+                      >
+                        <option value="0">Оконченное</option>
+                        <option value="1">Приготовление</option>
+                        <option value="2">Покушение</option>
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label>Рецидив</label>
+                      <select
+                        value={newCrime.recidivism}
+                        onChange={(e) => setNewCrime({...newCrime, recidivism: e.target.value})}
+                        className={styles.select}
+                      >
+                        <option value="0">Отсутствует</option>
+                        <option value="1">Рецидив</option>
+                        <option value="2">Опасный рецидив</option>
+                        <option value="3">Особо опасный рецидив</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Тип статьи</label>
-                    <select
-                      value={newCrime.article_type}
-                      onChange={(e) => setNewCrime({...newCrime, article_type: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="1">Основная статья</option>
-                      <option value="2">Дополнительная квалификация</option>
-                    </select>
-                  </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Статья УК РФ</label>
-                    <input
-                      type="text"
-                      value={newCrime.article}
-                      onChange={(e) => setNewCrime({...newCrime, article: e.target.value})}
-                      className={styles.input}
-                      placeholder="например, 158"
-                    />
-                  </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Часть</label>
-                    <input
-                      type="text"
-                      value={newCrime.article_part}
-                      onChange={(e) => setNewCrime({...newCrime, article_part: e.target.value})}
-                      className={styles.input}
-                    />
-                  </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Стадия преступления</label>
-                    <select
-                      value={newCrime.crime_stage}
-                      onChange={(e) => setNewCrime({...newCrime, crime_stage: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="0">Оконченное</option>
-                      <option value="1">Приготовление</option>
-                      <option value="2">Покушение</option>
-                    </select>
-                  </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Рецидив</label>
-                    <select
-                      value={newCrime.recidivism}
-                      onChange={(e) => setNewCrime({...newCrime, recidivism: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="0">Отсутствует</option>
-                      <option value="1">Рецидив</option>
-                      <option value="2">Опасный рецидив</option>
-                      <option value="3">Особо опасный рецидив</option>
-                    </select>
+                  <div className={styles.formActions}>
+                    <button onClick={addCrimeComposition} className={styles.saveButton}>Добавить</button>
+                    <button onClick={() => setShowAddCrime(false)} className={styles.cancelButton}>Отмена</button>
                   </div>
                 </div>
-                <div className={styles.formActions}>
-                  <button onClick={addCrimeComposition} className={styles.saveButton}>Добавить</button>
-                  <button onClick={() => setShowAddCrime(false)} className={styles.cancelButton}>Отмена</button>
-                </div>
-              </div>
-            )}
+              )}
           </div>
         )}
         

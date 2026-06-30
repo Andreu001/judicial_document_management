@@ -1,0 +1,331 @@
+/* CaseViewOnly.module.css */
+.container {
+  min-height: 100vh;
+  background: #f0f4f8;
+  padding: 80px 24px 40px calc(6.3cm + 24px);
+}
+
+.header {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #1e3c5c;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.caseNumber {
+  font-size: 14px;
+  color: #4a5568;
+  margin-top: 8px;
+}
+
+.content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.section h2 {
+  font-size: 1.2rem;
+  color: #2d3748;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.infoRow {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.label {
+  width: 180px;
+  color: #718096;
+  font-size: 14px;
+}
+
+.value {
+  flex: 1;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.note {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fefcbf;
+  border-radius: 8px;
+  color: #975a16;
+  font-size: 13px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 16px;
+  color: #718096;
+}
+
+.error {
+  text-align: center;
+  padding: 60px;
+  color: #e53e3e;
+  font-size: 16px;
+}
+
+/* ========== АДАПТИВНОСТЬ - ИСПРАВЛЕНО ========== */
+@media (max-width: 1200px) {
+  .container {
+    padding: 80px 20px 40px calc(6.3cm + 20px);
+  }
+}
+
+@media (max-width: 992px) {
+  .container {
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+  
+  .infoRow {
+    flex-direction: column;
+  }
+  
+  .label {
+    width: auto;
+    margin-bottom: 4px;
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    padding: 70px 12px 30px calc(6.3cm + 12px);
+  }
+}
+
+/* Добавьте в конец файла CaseViewOnly.module.css */
+
+.decisionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.decisionCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 3px solid #48bb78;
+  transition: all 0.2s;
+}
+
+.decisionCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.decisionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.decisionDate {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.downloadBtn {
+  background: #1e3c5c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s;
+}
+
+.downloadBtn:hover {
+  background: #2c5282;
+}
+
+.decisionResult {
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.decisionMeta {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.decisionActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.printBtn {
+  background: #4a5568;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s;
+}
+
+.printBtn:hover {
+  background: #2d3748;
+}
+
+.pdfBtn {
+  background: #c53030;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s;
+}
+
+.pdfBtn:hover {
+  background: #9b2c2c;
+}
+
+.wordBtn {
+  background: #2c3e50;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s;
+}
+
+.wordBtn:hover {
+  background: #1e2a36;
+}
+
+.noData {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+  font-style: italic;
+}
+/* Добавьте в конец файла CaseViewOnly.module.css */
+
+.caseTypeLabel {
+  font-size: 13px;
+  color: #718096;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: #f0f4f8;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.decisionMeta {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 2px solid #e2e8f0;
+}
+
+.decisionActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.printBtn {
+  background: #4a5568;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s;
+}
+
+.printBtn:hover {
+  background: #2d3748;
+}
+
+.downloadBtn {
+  background: #1e3c5c;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: all 0.2s;
+}
+
+.downloadBtn:hover {
+  background: #2c5282;
+}
+
+@media (max-width: 768px) {
+  .decisionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .decisionActions {
+    flex-wrap: wrap;
+  }
+  
+  .decisionActions button {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+  }
+}

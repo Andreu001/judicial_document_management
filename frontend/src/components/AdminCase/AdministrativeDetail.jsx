@@ -61,6 +61,12 @@ const AdministrativeDetail = () => {
   const [securityMeasures, setSecurityMeasures] = useState([]);
   const [isEditingAppeal, setIsEditingAppeal] = useState(false);
   const [isEditingCassation, setIsEditingCassation] = useState(false);
+  const [offenseAreaOptions, setOffenseAreaOptions] = useState([]);
+  const [koapArticles, setKoapArticles] = useState([]);
+  const [koapArticlesLoading, setKoapArticlesLoading] = useState(false);
+  const [articleParts, setArticleParts] = useState([]);
+  const [selectedPart, setSelectedPart] = useState('');
+  const [structureLoading, setStructureLoading] = useState(false);
   
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -87,6 +93,26 @@ const AdministrativeDetail = () => {
           setAdminData(adminResponse);
           setFormData(adminResponse);
           setIsArchived(adminResponse.status === 'archived');
+          
+          // ===== НОВЫЙ БЛОК: Загружаем структуру статьи =====
+          // Если у дела есть выбранная статья - загружаем её структуру
+          if (adminResponse.koap_article) {
+            try {
+              const structureData = await AdministrativeCaseService.getKoapArticleStructure(
+                adminResponse.koap_article
+              );
+              setArticleParts(structureData.parts || []);
+              
+              // Устанавливаем выбранные часть и пункт из сохранённых данных
+              if (adminResponse.koap_article_part) {
+                setSelectedPart(adminResponse.koap_article_part);
+              }
+            } catch (error) {
+              console.error('Error loading article structure:', error);
+              setArticleParts([]);
+            }
+          }
+          // ===== КОНЕЦ НОВОГО БЛОКА =====
           
           // Загружаем связанные данные
           const sidesResponse = await AdministrativeCaseService.getSides(adminResponse.id);
@@ -128,7 +154,9 @@ const AdministrativeDetail = () => {
         await Promise.all([
           loadOptions(),
           loadJudges(),
-          loadReferringAuthorities()
+          loadReferringAuthorities(),
+          loadOffenseAreaOptions(),
+          loadKoapArticles()
         ]);
         
         setLoading(false);
@@ -143,6 +171,60 @@ const AdministrativeDetail = () => {
       fetchAdminDetails();
     }
   }, [id]);
+
+  const loadArticleStructure = useCallback(async (articleId) => {
+      if (!articleId) {
+          setArticleParts([]);
+          setSelectedPart('');
+          return;
+      }
+      
+      try {
+          setStructureLoading(true);
+          const data = await AdministrativeCaseService.getKoapArticleStructure(articleId);
+          setArticleParts(data.parts || []);
+          
+          // Если у формы уже есть выбранная часть, устанавливаем её
+          if (formData.koap_article_part) {
+              setSelectedPart(formData.koap_article_part);
+          }
+      } catch (error) {
+          console.error('Error loading article structure:', error);
+          setArticleParts([]);
+      } finally {
+          setStructureLoading(false);
+      }
+  }, [formData.koap_article_part]);
+
+  const handleArticleChange = useCallback((articleId) => {
+      // Сбрасываем часть и пункт при смене статьи
+      setSelectedPart('');
+      setArticleParts([]);
+      
+      // Обновляем formData
+      setFormData(prev => ({
+          ...prev,
+          koap_article: articleId,
+          koap_article_part: '',
+          koap_article_clause: ''
+      }));
+      
+      // Загружаем структуру новой статьи
+      if (articleId) {
+          loadArticleStructure(articleId);
+      }
+  }, [loadArticleStructure]);
+
+  // Обработчик смены части
+  const handlePartChange = useCallback((partNumber) => {
+      setSelectedPart(partNumber);
+      
+      setFormData(prev => ({
+          ...prev,
+          koap_article_part: partNumber,
+          koap_article_clause: '' // Сбрасываем пункт
+      }));
+  }, []);
 
   const loadJudges = async () => {
     try {
@@ -185,6 +267,27 @@ const AdministrativeDetail = () => {
       setSuspensionReasons(suspensionData);
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
+    }
+  };
+
+  const loadKoapArticles = async (search = '') => {
+    try {
+      setKoapArticlesLoading(true);
+      const articles = await AdministrativeCaseService.getKoapArticles(search);
+      setKoapArticles(articles);
+    } catch (error) {
+      console.error('Ошибка загрузки статей КоАП:', error);
+    } finally {
+      setKoapArticlesLoading(false);
+    }
+  };
+
+  const loadOffenseAreaOptions = async () => {
+    try {
+      const options = await AdministrativeCaseService.getOffenseAreaOptions();
+      setOffenseAreaOptions(options);
+    } catch (error) {
+      console.error('Ошибка загрузки областей правонарушения:', error);
     }
   };
 
@@ -385,6 +488,15 @@ const AdministrativeDetail = () => {
   const handleViewPetition = (petitionId) => {
     navigate(`/admin-proceedings/${id}/petitions/${petitionId}`);
   };
+
+  // Добавьте функцию поиска
+  const handleKoapArticleSearch = useCallback(async (searchText) => {
+    if (searchText.length >= 2) {
+      await loadKoapArticles(searchText);
+    } else if (searchText.length === 0) {
+      await loadKoapArticles('');
+    }
+  }, []);
 
   // Удаление
   const handleDeleteSide = async (sideId) => {
@@ -632,21 +744,30 @@ const AdministrativeDetail = () => {
             </div>
             <div className={styles.tabContentWrapper}>
               {activeTab === 'basic' && (
-                <BasicInfoTab
-                  isEditing={isEditing && !isArchived}
-                  formData={formData}
-                  options={options}
-                  adminData={adminData}
-                  handleDateChange={handleDateChange}
-                  handleInputChange={handleInputChange}
-                  getOptionLabel={getOptionLabel}
-                  formatDate={formatDate}
-                  isArchived={isArchived}
-                  judges={judges}
-                  referringAuthorities={referringAuthorities}
-                  caseOrderOptions={caseOrderOptions}
-                  caseCategoryOptions={caseCategoryOptions}
-                />
+                  <BasicInfoTab
+                      isEditing={isEditing && !isArchived}
+                      formData={formData}
+                      options={options}
+                      adminData={adminData}
+                      handleDateChange={handleDateChange}
+                      handleInputChange={handleInputChange}
+                      getOptionLabel={getOptionLabel}
+                      formatDate={formatDate}
+                      isArchived={isArchived}
+                      judges={judges}
+                      referringAuthorities={referringAuthorities}
+                      caseOrderOptions={caseOrderOptions}
+                      caseCategoryOptions={caseCategoryOptions}
+                      offenseAreaOptions={offenseAreaOptions}
+                      koapArticles={koapArticles}
+                      koapArticlesLoading={koapArticlesLoading}
+                      handleKoapArticleSearch={handleKoapArticleSearch}
+                      // ===== ДОБАВЬТЕ ЭТИ ПРОПСЫ =====
+                      articleParts={articleParts}
+                      onArticleChange={handleArticleChange}
+                      onPartChange={handlePartChange}
+                      selectedPart={selectedPart}
+                  />
               )}
               {activeTab === 'consideration' && (
                 <ConsiderationTab

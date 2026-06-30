@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+// src/components/UI/Card/AdministrativeBusinessCard.jsx
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdministrativeCaseService from '../API/AdministrativeCaseService';
+import NotificationService from '../API/NotificationService';
 import styles from './UI/Card/AdministrativeBusinessCard.module.css';
 import ConfirmModal from './UI/Modal/ConfirmModal';
+import DocumentService from '../API/DocumentService';
+import baseService from '../API/baseService';
 
 const AdministrativeBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -16,6 +20,14 @@ const AdministrativeBusinessCard = ({ card, remove }) => {
   const [activeTab, setActiveTab] = useState('summary');
   const [isArchived, setIsArchived] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [partyDocuments, setPartyDocuments] = useState([]);
+  const [partyDocumentsStats, setPartyDocumentsStats] = useState({ total: 0, pending: 0, accepted: 0 });
+  
+  // Состояние для уведомлений - важно: храним количество непрочитанных документов
+  const [unreadPartyDocumentsCount, setUnreadPartyDocumentsCount] = useState(0);
+  
+  const isLoadingRef = useRef(false);
+  const isDataLoadedRef = useRef(false);
 
   const [quickStats, setQuickStats] = useState({
     sides: 0,
@@ -28,13 +40,43 @@ const AdministrativeBusinessCard = ({ card, remove }) => {
     lastActivity: null
   });
 
-  useEffect(() => {
-    if (card.administrative_proceedings_id) {
-      loadAdminCaseData();
-      loadRelatedData();
+  // Загрузка статуса уведомлений - получаем количество непрочитанных документов
+  const loadNotificationStatus = async () => {
+    if (!card.administrative_proceedings_id) return;
+    
+    try {
+      const status = await AdministrativeCaseService.getNotificationStatus(card.administrative_proceedings_id);
+      // Устанавливаем количество непрочитанных документов
+      setUnreadPartyDocumentsCount(status.unread_party_documents || 0);
+    } catch (error) {
+      console.error('Error loading notification status:', error);
+      setUnreadPartyDocumentsCount(0);
     }
-  }, [card]);
+  };
 
+  const loadPartyDocuments = async () => {
+    if (!card.administrative_proceedings_id) {
+      return;
+    }
+    
+    try {
+      const docs = await DocumentService.getPartyDocumentsByCase('admin', card.administrative_proceedings_id);
+      setPartyDocuments(docs);
+      setPartyDocumentsStats({
+        total: docs.length,
+        pending: docs.filter(d => d.review_status === 'pending' || d.review_status === 'registered').length,
+        accepted: docs.filter(d => d.review_status === 'accepted' || d.review_status === 'attached_to_case').length
+      });
+      
+      // После загрузки документов обновляем статус уведомлений
+      await refreshNotificationStatus();
+    } catch (error) {
+      console.error('Error loading party documents:', error);
+      setPartyDocuments([]);
+      setPartyDocumentsStats({ total: 0, pending: 0, accepted: 0 });
+    }
+  };
+  
   const loadAdminCaseData = async () => {
     try {
       const response = await AdministrativeCaseService.getAdministrativeProceedingById(card.administrative_proceedings_id);
@@ -89,6 +131,32 @@ const AdministrativeBusinessCard = ({ card, remove }) => {
       console.error('Ошибка загрузки связанных данных:', error);
     }
   };
+
+  const loadAllData = async () => {
+    if (isLoadingRef.current || !card.administrative_proceedings_id) return;
+    
+    isLoadingRef.current = true;
+    
+    try {
+      await Promise.all([
+        loadAdminCaseData(),
+        loadRelatedData(),
+        loadPartyDocuments(),
+        loadNotificationStatus()
+      ]);
+      isDataLoadedRef.current = true;
+    } catch (error) {
+      console.error('Error loading all data:', error);
+    } finally {
+      isLoadingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (card.administrative_proceedings_id && !isDataLoadedRef.current) {
+      loadAllData();
+    }
+  }, [card.administrative_proceedings_id]);
 
   const handleShowDetails = () => {
     if (card.administrative_proceedings_id) {
@@ -289,6 +357,58 @@ const AdministrativeBusinessCard = ({ card, remove }) => {
       maximumFractionDigits: 2
     }).format(amount);
   };
+
+  // КЛЮЧЕВОЙ МЕТОД: обновление статуса уведомлений
+  const refreshNotificationStatus = async () => {
+    if (!card.administrative_proceedings_id) return;
+    
+    try {
+      // Получаем актуальный статус через правильный API
+      const response = await baseService.get(
+        `/notifications/case-activities/status/?case_type=administrative&case_id=${card.administrative_proceedings_id}`
+      );
+      const newStatus = response.data;
+      
+      // Обновляем количество непрочитанных документов
+      setUnreadPartyDocumentsCount(newStatus.unread_party_documents || 0);
+      
+      console.log('Notification status updated:', newStatus);
+      
+    } catch (error) {
+      console.error('Error refreshing notification status:', error);
+    }
+  };
+  
+  // Слушаем события обновления уведомлений
+  useEffect(() => {
+    const handleRefreshNotifications = async (event) => {
+      if (event.detail?.caseId === card.administrative_proceedings_id) {
+        if (event.detail?.status) {
+          // Если пришел полный статус, обновляем
+          setUnreadPartyDocumentsCount(event.detail.status.unread_party_documents || 0);
+        } else {
+          // Иначе запрашиваем свежий статус
+          await refreshNotificationStatus();
+        }
+      }
+    };
+    
+    // Слушаем событие обновления документов (когда меняется список)
+    const handlePartyDocumentsUpdated = async (event) => {
+      if (event.detail?.caseId === card.administrative_proceedings_id) {
+        await loadPartyDocuments();
+        await refreshNotificationStatus();
+      }
+    };
+    
+    window.addEventListener('refreshNotifications', handleRefreshNotifications);
+    window.addEventListener('partyDocumentsUpdated', handlePartyDocumentsUpdated);
+    
+    return () => {
+      window.removeEventListener('refreshNotifications', handleRefreshNotifications);
+      window.removeEventListener('partyDocumentsUpdated', handlePartyDocumentsUpdated);
+    };
+  }, [card.administrative_proceedings_id]);
 
   const getOffenseTypeInfo = () => {
     const index = adminCase?.registry_index || adminCase?.offense_type;
@@ -710,10 +830,24 @@ const AdministrativeBusinessCard = ({ card, remove }) => {
             <button 
               className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
               onClick={() => router(`/admin-proceedings/${card.administrative_proceedings_id}/documents`)}
-              title="Документы по делу"
+              title="Вынесенные решения по делу"
             >
               <span className={styles.quickActionCount}>0</span>
-              Документы
+              Электронные решения
+            </button>
+            {/* КЛЮЧЕВАЯ КНОПКА С УВЕДОМЛЕНИЯМИ */}
+            <button 
+              className={`${styles.quickAction} ${activeTab === 'partyDocuments' ? styles.active : ''} ${unreadPartyDocumentsCount > 0 ? styles.hasNotification : ''}`}
+              onClick={() => setActiveTab('partyDocuments')}
+              title="Документы сторон"
+            >
+              <span className={styles.quickActionCount}>{partyDocumentsStats.total}</span>
+              Документы сторон
+              {unreadPartyDocumentsCount > 0 && (
+                <span className={styles.notificationBadge}>
+                  {unreadPartyDocumentsCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -960,6 +1094,111 @@ const AdministrativeBusinessCard = ({ card, remove }) => {
                       Добавить ходатайство
                     </button>
                   </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'partyDocuments' && (
+            <div className={styles.tabContent}>
+              <div className={styles.tabHeader}>
+                <h3>Документы сторон ({partyDocumentsStats.total})</h3>
+                <button 
+                  onClick={() => router(`/admin-proceedings/${card.administrative_proceedings_id}/party-documents/create`)}
+                  className={styles.addButton}
+                >
+                  + Добавить документ
+                </button>
+              </div>
+              <div className={styles.compactList}>
+                {partyDocuments.length > 0 ? (
+                  partyDocuments.map(doc => {
+                    const statusConfig = DocumentService.getReviewStatuses()[doc.review_status] || 
+                      { label: doc.review_status_display || doc.review_status, color: '#6c757d' };
+                    const documentTypes = DocumentService.getPartyDocumentTypes();
+                    const docTypeLabel = documentTypes.find(t => t.value === doc.document_type)?.label || doc.document_type;
+                    
+                    // Проверяем, есть ли непрочитанное уведомление для этого документа
+                    const isUnread = doc.review_status === 'pending' && doc.is_read_by_judge === false;
+                    
+                    return (
+                      <div 
+                        key={doc.id} 
+                        className={`${styles.compactItem} ${isUnread ? styles.unreadItem : ''}`}
+                        onClick={() => router(`/admin-proceedings/${card.administrative_proceedings_id}/party-documents/${doc.id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className={styles.compactItemContent}>
+                          <div className={styles.compactItemTitle}>
+                            {docTypeLabel}
+                            <span className={styles.sideType} style={{ backgroundColor: statusConfig.color + '20', color: statusConfig.color }}>
+                              {statusConfig.label}
+                            </span>
+                          </div>
+                          <div className={styles.compactItemSubtitle}>
+                            {doc.title}
+                          </div>
+                          <div className={styles.compactItemSubtitle}>
+                            От: {doc.submitter_name} | Дата: {new Date(doc.submission_date).toLocaleDateString('ru-RU')}
+                            {doc.registration_number && ` | Вх. №: ${doc.registration_number}`}
+                          </div>
+                          {doc.description && (
+                            <div className={styles.compactItemSubtitle} style={{ color: '#8c8279' }}>
+                              {doc.description.length > 60 ? doc.description.substring(0, 60) + '...' : doc.description}
+                            </div>
+                          )}
+                        </div>
+                        <div className={styles.compactItemActions}>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              DocumentService.downloadPartyDocument(doc.id).then(response => {
+                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.setAttribute('download', doc.file_name || doc.title + '.pdf');
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                                window.URL.revokeObjectURL(url);
+                              }).catch(err => alert('Не удалось скачать файл'));
+                            }}
+                            className={styles.actionButton}
+                            title="Скачать файл"
+                          >
+                            ↓
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router(`/admin-proceedings/${card.administrative_proceedings_id}/party-documents/${doc.id}`);
+                            }}
+                            className={styles.actionButton}
+                            title="Просмотреть"
+                          >
+                            →
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Удалить документ? Это действие необратимо.')) {
+                                DocumentService.deletePartyDocument(doc.id).then(() => {
+                                  loadPartyDocuments();
+                                  refreshNotificationStatus();
+                                });
+                              }
+                            }}
+                            className={styles.deleteButton}
+                            title="Удалить"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className={styles.noData}>Документы от сторон не поступали</p>
                 )}
               </div>
             </div>

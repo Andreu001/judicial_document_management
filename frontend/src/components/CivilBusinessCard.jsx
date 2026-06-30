@@ -5,6 +5,8 @@ import PetitionService from '../API/PetitionService';
 import styles from './UI/Card/CivilBusinessCard.module.css';
 import ConfirmModal from './UI/Modal/ConfirmModal';
 import baseService from '../API/baseService';
+import DocumentService from '../API/DocumentService';
+import PartyDocumentItem from './Documents/PartyDocumentItem';
 
 const CivilBusinessCard = ({ card, remove }) => {
   const router = useNavigate();
@@ -19,6 +21,8 @@ const CivilBusinessCard = ({ card, remove }) => {
   const [isArchived, setIsArchived] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [civilProceedingsTypes, setCivilProceedingsTypes] = useState([]);
+    const [partyDocuments, setPartyDocuments] = useState([]);
+  const [partyDocumentsStats, setPartyDocumentsStats] = useState({ total: 0, pending: 0, accepted: 0 });
 
   const [quickStats, setQuickStats] = useState({
     sides: 0,
@@ -41,6 +45,29 @@ const CivilBusinessCard = ({ card, remove }) => {
   useEffect(() => {
     loadCivilProceedingsTypes();
   }, []);
+
+  useEffect(() => {
+    if (card.civil_proceedings_id) {
+      loadPartyDocuments();
+    }
+  }, [card.civil_proceedings_id]);
+
+  const loadPartyDocuments = async () => {
+    // Загружаем документы только для гражданского дела
+    if (!card.civil_proceedings_id) return;
+    
+    try {
+      const docs = await DocumentService.getPartyDocuments('civil', card.civil_proceedings_id);
+      setPartyDocuments(docs);
+      setPartyDocumentsStats({
+        total: docs.length,
+        pending: docs.filter(d => d.review_status === 'pending' || d.review_status === 'registered').length,
+        accepted: docs.filter(d => d.review_status === 'accepted' || d.review_status === 'attached_to_case').length
+      });
+    } catch (error) {
+      console.error('Error loading party documents:', error);
+    }
+  };
 
   const loadCivilCaseData = async () => {
     try {
@@ -253,7 +280,6 @@ const CivilBusinessCard = ({ card, remove }) => {
   };
 
   const handleViewLawyer = (lawyerId) => {
-    // Убедитесь, что lawyerId передается корректно
     console.log('Navigating to lawyer with ID:', lawyerId);
     router(`/civil-proceedings/${card.civil_proceedings_id}/lawyers/${lawyerId}`);
   };
@@ -336,7 +362,6 @@ const CivilBusinessCard = ({ card, remove }) => {
   const getCaseTypeBadgeText = (caseTypeId) => {
     if (!caseTypeId) return '';
     const found = civilProceedingsTypes.find(t => t.id === caseTypeId);
-    // Сокращенные названия для бейджа
     const shortNames = {
       1: 'Исковое',
       2: 'Приказное',
@@ -347,7 +372,61 @@ const CivilBusinessCard = ({ card, remove }) => {
     return shortNames[caseTypeId] || found?.label?.split(' ')[0] || '';
   };
 
-  // Компонент для отображения стороны
+  // Функция для определения типа решения
+  const getDecisionType = (decision) => {
+    // Если есть поле decision_type, используем его
+    if (decision.decision_type) {
+      const typeMap = {
+        'first_instance': 'Решение суда первой инстанции',
+        'appeal': 'Апелляционное определение',
+        'cassation': 'Кассационное определение',
+      };
+      return typeMap[decision.decision_type] || 'Решение суда';
+    }
+    
+    // Если есть флаг is_appealed или appeal_result, значит это апелляция
+    if (decision.is_appealed === true || decision.appeal_result) {
+      return 'Апелляционное определение';
+    }
+    
+    // Если есть флаг is_cassation_filed или cassation_result, значит это кассация
+    if (decision.is_cassation_filed === true || decision.cassation_result) {
+      return 'Кассационное определение';
+    }
+    
+    // По умолчанию - решение первой инстанции
+    return 'Решение суда первой инстанции';
+  };
+
+  // Функция для получения текстового значения результата решения
+  const getDecisionOutcomeText = (decision) => {
+    // Если есть display поле
+    if (decision.get_outcome_display) {
+      return decision.get_outcome_display;
+    }
+    if (decision.outcome_display) {
+      return decision.outcome_display;
+    }
+    
+    // Если есть outcome (ID), пробуем получить из choices модели
+    if (decision.outcome) {
+      const outcomeMap = {
+        '1': 'Иск удовлетворён полностью',
+        '2': 'Иск удовлетворён частично',
+        '3': 'В иске отказано',
+        '4': 'Производство прекращено',
+        '5': 'Заявление оставлено без рассмотрения',
+        '6': 'Передано по подсудности',
+        '7': 'Вынесено судебное решение (не иск)',
+        '8': 'Судебный приказ',
+      };
+      return outcomeMap[decision.outcome] || `Результат ${decision.outcome}`;
+    }
+    
+    return 'Результат не указан';
+  };
+
+  // Сторона
   const SideItem = ({ side }) => {
     const sideDetail = side.sides_case_incase_detail || {};
     const roleDetail = side.sides_case_role_detail || {};
@@ -387,7 +466,7 @@ const CivilBusinessCard = ({ card, remove }) => {
     );
   };
 
-  // Компонент для отображения адвоката
+  // Адвокат
   const LawyerItem = ({ lawyer }) => {
     const lawyerDetail = lawyer.lawyer_detail || {};
     const roleDetail = lawyer.sides_case_role_detail || {};
@@ -427,45 +506,24 @@ const CivilBusinessCard = ({ card, remove }) => {
     );
   };
 
+  // Решение - ОБНОВЛЕННЫЙ КОМПОНЕНТ с типом решения
   const DecisionItem = ({ decision }) => {
-    // Функция для получения текстового значения результата
-    const getOutcomeText = () => {
-      // Сначала проверяем, есть ли display поле
-      if (decision.get_outcome_display) {
-        return decision.get_outcome_display;
-      }
-      if (decision.outcome_display) {
-        return decision.outcome_display;
-      }
-      
-      // Если display поля нет, но есть outcome (ID), пробуем получить из choices модели
-      if (decision.outcome) {
-        const outcomeMap = {
-          '1': 'Иск удовлетворён полностью',
-          '2': 'Иск удовлетворён частично',
-          '3': 'В иске отказано',
-          '4': 'Производство прекращено',
-          '5': 'Заявление оставлено без рассмотрения',
-          '6': 'Передано по подсудности',
-          '7': 'Вынесено судебное решение (не иск)',
-          '8': 'Судебный приказ',
-        };
-        return outcomeMap[decision.outcome] || `Результат ${decision.outcome}`;
-      }
-      
-      return 'Результат не указан';
-    };
-
+    const decisionType = getDecisionType(decision);
+    const outcomeText = getDecisionOutcomeText(decision);
+    
     return (
       <div className={styles.compactItem}>
         <div className={styles.compactItemContent}>
           <div className={styles.compactItemTitle}>
-            {getOutcomeText()}
+            {decisionType}
             {decision.decision_date && (
               <span className={styles.sideType}>
                 {formatDate(decision.decision_date)}
               </span>
             )}
+          </div>
+          <div className={styles.compactItemSubtitle}>
+            {outcomeText}
           </div>
           {decision.decision_effective_date && (
             <div className={styles.compactItemSubtitle}>
@@ -493,7 +551,7 @@ const CivilBusinessCard = ({ card, remove }) => {
     );
   };
 
-  // Компонент для отображения исполнения
+  // Исполнение
   const ExecutionItem = ({ execution }) => (
     <div className={styles.compactItem}>
       <div className={styles.compactItemContent}>
@@ -535,14 +593,12 @@ const CivilBusinessCard = ({ card, remove }) => {
     </div>
   );
 
+  // Движение дела
   const MovementItem = ({ movement }) => {
-    // Функция для безопасного получения данных из движения
     const getMovementData = () => {
-      // Если данные приходят напрямую в movement
       if (movement.date_meeting) {
         return movement;
       }
-      // Если данные обернуты в business_movement_detail
       else if (movement.business_movement_detail) {
         return movement.business_movement_detail;
       }
@@ -575,7 +631,6 @@ const CivilBusinessCard = ({ card, remove }) => {
             )}
           </div>
           
-          {/* Время заседания */}
           {movementData.meeting_time && (
             <div className={styles.compactItemSubtitle}>
               {movementData.meeting_time.slice(0, 5)}
@@ -603,9 +658,9 @@ const CivilBusinessCard = ({ card, remove }) => {
     );
   };
 
+  // Ходатайство
   const PetitionItem = ({ petition }) => {
       const petitionDetail = petition.petitions_incase_detail || {};
-      // Убираем petitioner_info, так как его пока нет
 
       return (
           <div className={styles.compactItem}>
@@ -722,10 +777,18 @@ const CivilBusinessCard = ({ card, remove }) => {
         <button 
           className={`${styles.quickAction} ${activeTab === 'documents' ? styles.active : ''}`}
           onClick={() => router(`/civil-proceedings/${card.civil_proceedings_id}/documents`)}
-          title="Документы по делу"
+          title="Вынесенные решения по делу"
         >
           <span className={styles.quickActionCount}>0</span>
-          Документы
+          Электронные решения
+        </button>
+        <button 
+          className={`${styles.quickAction} ${activeTab === 'partyDocuments' ? styles.active : ''}`}
+          onClick={() => setActiveTab('partyDocuments')}
+          title="Документы сторон"
+        >
+          <span className={styles.quickActionCount}>{partyDocumentsStats.total}</span>
+          Документы сторон
         </button>
       </div>
 
@@ -806,7 +869,6 @@ const CivilBusinessCard = ({ card, remove }) => {
               </div>
             </div>
             <div className={styles.compactList}>
-              {/* Сначала показываем стороны */}
               {sides.length > 0 && (
                 <>
                   <h4 className={styles.listSubtitle}>Стороны</h4>
@@ -816,7 +878,6 @@ const CivilBusinessCard = ({ card, remove }) => {
                 </>
               )}
               
-              {/* Затем показываем адвокатов */}
               {lawyers.length > 0 && (
                 <>
                   <h4 className={styles.listSubtitle}>Адвокаты-представители</h4>
@@ -845,7 +906,8 @@ const CivilBusinessCard = ({ card, remove }) => {
                   <DecisionItem key={decision.id} decision={decision} />
                 ))
               ) : (
-                <div>
+                <div className={styles.emptyState}>
+                  <p>Решения не добавлены</p>
                 </div>
               )}
             </div>
@@ -869,6 +931,7 @@ const CivilBusinessCard = ({ card, remove }) => {
                 ))
               ) : (
                 <div className={styles.emptyState}>
+                  <p>Исполнения не добавлены</p>
                 </div>
               )}
             </div>
@@ -892,6 +955,7 @@ const CivilBusinessCard = ({ card, remove }) => {
                 ))
               ) : (
                 <div className={styles.emptyState}>
+                  <p>Движения не добавлены</p>
                 </div>
               )}
             </div>
@@ -917,6 +981,104 @@ const CivilBusinessCard = ({ card, remove }) => {
                 <div className={styles.emptyState}>
                   <p>Ходатайства не добавлены</p>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+        {activeTab === 'partyDocuments' && (
+          <div className={styles.tabContent}>
+            <div className={styles.tabHeader}>
+              <h3>Документы сторон ({partyDocumentsStats.total})</h3>
+              <button 
+                onClick={() => router(`/civil-proceedings/${card.civil_proceedings_id}/party-documents/create`)}
+                className={styles.addButton}
+              >
+                + Добавить документ
+              </button>
+            </div>
+            <div className={styles.compactList}>
+              {partyDocuments.length > 0 ? (
+                partyDocuments.map(doc => {
+                  const statusConfig = DocumentService.getReviewStatuses()[doc.review_status] || 
+                    { label: doc.review_status_display || doc.review_status, color: '#6c757d' };
+                  const documentTypes = DocumentService.getPartyDocumentTypes();
+                  const docTypeLabel = documentTypes.find(t => t.value === doc.document_type)?.label || doc.document_type;
+                  
+                  return (
+                    <div 
+                      key={doc.id} 
+                      className={styles.compactItem}
+                      onClick={() => router(`/civil-proceedings/${card.civil_proceedings_id}/party-documents/${doc.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className={styles.compactItemContent}>
+                        <div className={styles.compactItemTitle}>
+                          {docTypeLabel}
+                          <span className={styles.sideType} style={{ backgroundColor: statusConfig.color + '20', color: statusConfig.color }}>
+                            {statusConfig.label}
+                          </span>
+                        </div>
+                        <div className={styles.compactItemSubtitle}>
+                          {doc.title}
+                        </div>
+                        <div className={styles.compactItemSubtitle}>
+                          От: {doc.submitter_name} | Дата: {new Date(doc.submission_date).toLocaleDateString('ru-RU')}
+                          {doc.registration_number && ` | Вх. №: ${doc.registration_number}`}
+                        </div>
+                        {doc.description && (
+                          <div className={styles.compactItemSubtitle} style={{ color: '#6d7f7a' }}>
+                            {doc.description.length > 60 ? doc.description.substring(0, 60) + '...' : doc.description}
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.compactItemActions}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            DocumentService.downloadPartyDocument(doc.id).then(response => {
+                              const url = window.URL.createObjectURL(new Blob([response.data]));
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.setAttribute('download', doc.file_name || doc.title + '.pdf');
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                              window.URL.revokeObjectURL(url);
+                            }).catch(err => alert('Не удалось скачать файл'));
+                          }}
+                          className={styles.actionButton}
+                          title="Скачать файл"
+                        >
+                          ↓
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router(`/civil-proceedings/${card.civil_proceedings_id}/party-documents/${doc.id}`);
+                          }}
+                          className={styles.actionButton}
+                          title="Просмотреть"
+                        >
+                          →
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Удалить документ? Это действие необратимо.')) {
+                              DocumentService.deletePartyDocument(doc.id).then(() => loadPartyDocuments());
+                            }
+                          }}
+                          className={styles.deleteButton}
+                          title="Удалить"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className={styles.noData}>Документы от сторон не поступали</p>
               )}
             </div>
           </div>

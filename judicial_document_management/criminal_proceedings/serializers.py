@@ -1,23 +1,26 @@
 from rest_framework import serializers
 from users.models import User
 from django.contrib.contenttypes.models import ContentType
-from business_card.models import SidesCase, SidesCaseInCase, Lawyer, Petitions, PetitionsInCase  
+from business_card.models import SidesCase, SidesCaseInCase, Lawyer, Petitions, PetitionsInCase, Decisions
 from .models import (CriminalProceedings,
-                     Defendant,
-                     CriminalDecision,
-                     CriminalRuling,
-                     CriminalCaseMovement,
-                     CriminalDecisions,
-                     CriminalAppeal,
-                     ReferringAuthority, LawyerCriminal,
-                     CriminalSidesCaseInCase, PetitionCriminal,
-                     CriminalExecution, CriminalCivilClaim)
+    Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement,
+    CriminalDecisions, CriminalAppeal, ReferringAuthority, LawyerCriminal,
+    CriminalSidesCaseInCase, PetitionCriminal, CriminalExecution, CriminalCivilClaim
+)
 from .models_appeal_cassation import (
     CriminalAppealInstance, CriminalCassationInstance,
     CriminalAppealApplicantStatus, CriminalCassationResult, CriminalSupervisoryResult
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument
+from legal_codes.models import CriminalCodeArticle
+
+
+class CriminalCodeArticleSimpleSerializer(serializers.ModelSerializer):
+    """Краткий сериализатор для статей УК РФ"""
+    class Meta:
+        model = CriminalCodeArticle
+        fields = ['id', 'full_number', 'number', 'title_short', 'title']
 
 
 class SidesCaseInCaseDetailSerializer(serializers.ModelSerializer):
@@ -266,17 +269,59 @@ class DefendantSerializer(serializers.ModelSerializer):
     edit_address = serializers.CharField(write_only=True, required=False)
     edit_birth_date = serializers.DateField(write_only=True, required=False)
     
+    # --- НОВЫЕ ПОЛЯ ДЛЯ СТАТЕЙ ---
+    # Детальная информация о статье обвинения
+    article_detail = serializers.SerializerMethodField()
+    conviction_article_detail = serializers.SerializerMethodField()
+    
+    # Структура статьи (части и пункты) для фронтенда
+    article_structure = serializers.SerializerMethodField()
+    conviction_article_structure = serializers.SerializerMethodField()
+    
     class Meta:
         model = Defendant
         fields = "__all__"
         read_only_fields = ("criminal_proceedings", "sides_case_defendant")
         extra_kwargs = {
             'sides_case_defendant': {'required': False, 'read_only': True},
+            'article': {'required': False, 'allow_null': True},
+            'conviction_article': {'required': False, 'allow_null': True},
         }
+    
+    def get_article_detail(self, obj):
+        if obj.article:
+            return {
+                'id': obj.article.id,
+                'full_number': obj.article.full_number,
+                'title': obj.article.title[:100] if obj.article.title else '',
+                'parts': obj.article.structure.get('parts', []) if obj.article.structure else []
+            }
+        return None
+    
+    def get_conviction_article_detail(self, obj):
+        if obj.conviction_article:
+            return {
+                'id': obj.conviction_article.id,
+                'full_number': obj.conviction_article.full_number,
+                'title': obj.conviction_article.title[:100] if obj.conviction_article.title else '',
+                'parts': obj.conviction_article.structure.get('parts', []) if obj.conviction_article.structure else []
+            }
+        return None
+    
+    def get_article_structure(self, obj):
+        """Возвращает структуру статьи для фронтенда (части и пункты)"""
+        if obj.article and obj.article.structure:
+            return obj.article.structure
+        return None
+    
+    def get_conviction_article_structure(self, obj):
+        """Возвращает структуру статьи по приговору для фронтенда"""
+        if obj.conviction_article and obj.conviction_article.structure:
+            return obj.conviction_article.structure
+        return None
     
     def validate(self, data):
         """Валидация всех данных"""
-        # Извлекаем ID стороны из данных
         sides_case_defendant_id = data.get('sides_case_defendant_id')
         
         if not sides_case_defendant_id:
@@ -290,7 +335,6 @@ class DefendantSerializer(serializers.ModelSerializer):
             
             sides_case = SidesCase.objects.get(id=sides_case_defendant_id)
             
-            # Проверяем, что это сторона типа "подсудимый"
             defendant_side_ids = [8, 9, 12, 13]
             
             if sides_case_defendant_id not in defendant_side_ids:
@@ -311,8 +355,6 @@ class DefendantSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        """Создаем запись с указанной стороной"""
-        # Извлекаем ID стороны
         sides_case_defendant_id = validated_data.get('sides_case_defendant_id')
         
         if not sides_case_defendant_id:
@@ -320,7 +362,6 @@ class DefendantSerializer(serializers.ModelSerializer):
                 'sides_case_defendant_input': 'Не указан ID стороны'
             })
         
-        # Получаем объект SidesCase
         try:
             sides_case = SidesCase.objects.get(id=sides_case_defendant_id)
         except SidesCase.DoesNotExist:
@@ -328,21 +369,16 @@ class DefendantSerializer(serializers.ModelSerializer):
                 'sides_case_defendant_input': f'Вид стороны с ID {sides_case_defendant_id} не найден'
             })
         
-        # Удаляем поле ID из validated_data
         validated_data.pop('sides_case_defendant_id', None)
         
-        # Создаем запись с объектом стороны
         return Defendant.objects.create(
             sides_case_defendant=sides_case,
             **validated_data
         )
     
     def update(self, instance, validated_data):
-        """Обновляем запись с указанной стороной"""
-        # Извлекаем ID стороны, если он предоставлен
         sides_case_defendant_id = validated_data.pop('sides_case_defendant_id', None)
         
-        # Если предоставлен новый ID стороны
         if sides_case_defendant_id is not None:
             try:
                 sides_case = SidesCase.objects.get(id=sides_case_defendant_id)
@@ -352,7 +388,6 @@ class DefendantSerializer(serializers.ModelSerializer):
                     'sides_case_defendant_input': f'Вид стороны с ID {sides_case_defendant_id} не найден'
                 })
         
-        # Обновляем остальные поля
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         
@@ -595,11 +630,138 @@ class CriminalDecisionSerializer(serializers.ModelSerializer):
 
 
 class CriminalCaseMovementSerializer(serializers.ModelSerializer):
-    """Сериализатор для движения дела"""
+    """Сериализатор для движения дела (по аналогии с гражданскими)"""
+    
+    business_movement_detail = serializers.SerializerMethodField(read_only=True)
+    
+    # Поля для создания BusinessMovement
+    date_meeting = serializers.DateField(required=True, write_only=True)
+    meeting_time = serializers.TimeField(required=True, write_only=True)
+    decision_case = serializers.PrimaryKeyRelatedField(
+        queryset=Decisions.objects.all(),
+        many=True,
+        required=False,
+        write_only=True
+    )
+    composition_colleges = serializers.CharField(
+        required=False, 
+        allow_blank=True, 
+        write_only=True
+    )
+    result_court_session = serializers.CharField(
+        required=False, 
+        allow_blank=True, 
+        write_only=True
+    )
+    reason_deposition = serializers.CharField(
+        required=False, 
+        allow_blank=True, 
+        write_only=True
+    )
+
     class Meta:
         model = CriminalCaseMovement
-        fields = "__all__"
-        read_only_fields = ("criminal_proceedings",)
+        fields = [
+            'id', 'criminal_proceedings', 'business_movement',
+            'business_movement_detail', 'date_meeting', 'meeting_time',
+            'decision_case', 'composition_colleges', 'result_court_session',
+            'reason_deposition'
+        ]
+        read_only_fields = ('criminal_proceedings', 'business_movement')
+
+    def get_business_movement_detail(self, obj):
+        if obj.business_movement:
+            return {
+                'id': obj.business_movement.id,
+                'date_meeting': obj.business_movement.date_meeting,
+                'meeting_time': obj.business_movement.meeting_time,
+                'decision_case': [
+                    {'id': d.id, 'name_case': d.name_case} 
+                    for d in obj.business_movement.decision_case.all()
+                ],
+                'composition_colleges': obj.business_movement.composition_colleges,
+                'result_court_session': obj.business_movement.result_court_session,
+                'reason_deposition': obj.business_movement.reason_deposition,
+            }
+        return None
+
+    def validate(self, data):
+        request_method = self.context.get('request').method if self.context.get('request') else None
+        
+        if request_method == 'POST':
+            if not data.get('date_meeting'):
+                raise serializers.ValidationError({'date_meeting': 'Обязательное поле.'})
+            if not data.get('meeting_time'):
+                raise serializers.ValidationError({'meeting_time': 'Обязательное поле.'})
+        
+        return data
+
+    def create(self, validated_data):
+        criminal_proceedings = self.context.get('criminal_proceedings')
+        if not criminal_proceedings:
+            raise serializers.ValidationError(
+                {'criminal_proceedings': 'Не указано уголовное производство'}
+            )
+
+        date_meeting = validated_data.pop('date_meeting')
+        meeting_time = validated_data.pop('meeting_time')
+        decision_case_ids = validated_data.pop('decision_case', [])
+        composition_colleges = validated_data.pop('composition_colleges', '')
+        result_court_session = validated_data.pop('result_court_session', '')
+        reason_deposition = validated_data.pop('reason_deposition', '')
+
+        # Создаем BusinessMovement
+        business_movement = BusinessMovement.objects.create(
+            date_meeting=date_meeting,
+            meeting_time=meeting_time,
+            composition_colleges=composition_colleges,
+            result_court_session=result_court_session,
+            reason_deposition=reason_deposition
+        )
+
+        if decision_case_ids:
+            business_movement.decision_case.set(decision_case_ids)
+
+        # Создаем CriminalCaseMovement
+        criminal_movement = CriminalCaseMovement.objects.create(
+            criminal_proceedings=criminal_proceedings,
+            business_movement=business_movement
+        )
+
+        return criminal_movement
+
+    def update(self, instance, validated_data):
+        date_meeting = validated_data.pop('date_meeting', None)
+        meeting_time = validated_data.pop('meeting_time', None)
+        decision_case_ids = validated_data.pop('decision_case', None)
+        composition_colleges = validated_data.pop('composition_colleges', None)
+        result_court_session = validated_data.pop('result_court_session', None)
+        reason_deposition = validated_data.pop('reason_deposition', None)
+
+        if instance.business_movement:
+            business_movement = instance.business_movement
+            
+            if date_meeting is not None:
+                business_movement.date_meeting = date_meeting
+            if meeting_time is not None:
+                business_movement.meeting_time = meeting_time
+            if composition_colleges is not None:
+                business_movement.composition_colleges = composition_colleges
+            if result_court_session is not None:
+                business_movement.result_court_session = result_court_session
+            if reason_deposition is not None:
+                business_movement.reason_deposition = reason_deposition
+            
+            business_movement.save()
+
+            if decision_case_ids is not None:
+                business_movement.decision_case.set(decision_case_ids)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
 
 class CriminalExecutionSerializer(serializers.ModelSerializer):
@@ -850,16 +1012,22 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
         source='get_status_display', 
         read_only=True
     )
-
+    
+    # ========== ВАЖНО: ПОЛЕ ДЛЯ ПРИЕМА ID ОРГАНА С ФРОНТЕНДА ==========
+    referring_authority_id = serializers.IntegerField(
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    
     class Meta:
         model = CriminalProceedings
         fields = "__all__"
         read_only_fields = ("id", "created_at", "updated_at")
-    
+
     def get_presiding_judge_full_name(self, obj):
         """Получить полное ФИО председательствующего судьи"""
         if obj.presiding_judge:
-            # Собираем ФИО из частей
             parts = []
             if obj.presiding_judge.last_name:
                 parts.append(obj.presiding_judge.last_name)
@@ -889,7 +1057,6 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
         return None
     
     def validate_case_number_criminal(self, value):
-        # Проверка уникальности на уровне сериализатора
         instance = self.instance
         if instance and instance.case_number_criminal == value:
             return value
@@ -899,11 +1066,9 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
         return value
     
     def validate(self, data):
-        # Валидация: нельзя изменять некоторые поля для архивных дел
         instance = self.instance
         
         if instance and instance.status == 'archived':
-            # Определяем, какие поля можно редактировать в архиве
             editable_in_archive = [
                 'archive_notes',
                 'special_notes',
@@ -911,7 +1076,6 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
                 'status',
             ]
             
-            # Проверяем, не пытаются ли изменить запрещенные поля
             for field in data.keys():
                 if field not in editable_in_archive:
                     raise serializers.ValidationError(
@@ -936,6 +1100,33 @@ class CriminalProceedingsSerializer(serializers.ModelSerializer):
             content_type=content_type,
             object_id=obj.id
         ).count()
+    
+    # ========== ВАЖНО: ПЕРЕОПРЕДЕЛЯЕМ create ДЛЯ СОХРАНЕНИЯ ОРГАНА ==========
+    def create(self, validated_data):
+        referring_authority_id = validated_data.pop('referring_authority_id', None)
+        
+        if referring_authority_id:
+            try:
+                validated_data['referring_authority'] = ReferringAuthority.objects.get(id=referring_authority_id)
+            except ReferringAuthority.DoesNotExist:
+                pass
+        
+        return super().create(validated_data)
+    
+    # ========== ВАЖНО: ПЕРЕОПРЕДЕЛЯЕМ update ДЛЯ СОХРАНЕНИЯ ОРГАНА ==========
+    def update(self, instance, validated_data):
+        referring_authority_id = validated_data.pop('referring_authority_id', None)
+        
+        if referring_authority_id is not None:
+            if referring_authority_id:
+                try:
+                    instance.referring_authority = ReferringAuthority.objects.get(id=referring_authority_id)
+                except ReferringAuthority.DoesNotExist:
+                    instance.referring_authority = None
+            else:
+                instance.referring_authority = None
+        
+        return super().update(instance, validated_data)
 
 
 class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):
@@ -959,6 +1150,7 @@ class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):
             'repeat_case',
             'repeat_case_date',
             'case_category_criminal',
+            'closed_court_session',
             'judge_acceptance_date',
             'preliminary_hearing_grounds',
             'total_duration_days',
@@ -975,14 +1167,13 @@ class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):
             'absence_lawyer',
             'absence_pmmh_person',
             'closed_hearing',
-            'vks_technology',
-            'audio_recording',
-            'video_recording',
             'special_procedure_consent',
             'special_procedure_agreement',
             'private_rulings_count',
             'sentence_date',
             'sentence_result',
+            'transfer_to_court',
+            'transfer_reason',
         )
     
     def validate(self, data):
@@ -1016,23 +1207,102 @@ class ArchivedCriminalProceedingsSerializer(CriminalProceedingsSerializer):
 
 
 class CriminalOptionsSerializer(serializers.Serializer):
-    """Сериализатор для получения опций из choices
-            полей модели CriminalProceedings"""
+    """Сериализатор для получения опций из choices полей модели CriminalProceedings"""
 
     @staticmethod
     def get_choices_from_model():
         """Получает все choices опции из модели CriminalProceedings"""
-        model_fields = CriminalProceedings._meta.get_fields()
-        choices_data = {}
+        
+        # ========== ВАЖНО: ЯВНО ЗАДАЕМ ВСЕ НУЖНЫЕ ОПЦИИ ==========
+        choices_data = {
+            # Порядок поступления дела
+            'case_order': [
+                {'value': '1', 'label': 'с обвинительным заключением'},
+                {'value': '2', 'label': 'с обвинительным актом'},
+                {'value': '2.1', 'label': 'с обвинительным постановлением'},
+                {'value': '2.2', 'label': 'с ходатайством о прекращении дела и назначении судебного штрафа'},
+                {'value': '12', 'label': 'для применения мер медицинского характера в отношении невменяемого'},
+                {'value': '3', 'label': 'заявление в порядке частного обвинения'},
+                {'value': '8', 'label': 'материал в порядке частного обвинения (по подведомственности)'},
+                {'value': '4', 'label': 'выделено в отдельное производство'},
+                {'value': '5', 'label': 'по подсудности из другого суда'},
+                {'value': '6', 'label': 'после розыска обвиняемого'},
+                {'value': '7', 'label': 'после отмены судебного постановления вышестоящим судом'},
+                {'value': '9', 'label': 'после возвращения дела прокурору'},
+                {'value': '11', 'label': 'после отмены суд. постановления по новым или вновь открывшимся обстоятельствам'},
+                {'value': '11.1', 'label': 'в связи с правовой позицией Европейского Суда по правам человека'},
+                {'value': '11.2', 'label': 'в связи с постановлением Конституционного Суда РФ'},
+                {'value': '11.3', 'label': 'в связи с постановлением Президиума ВС РФ'},
+                {'value': '11.4', 'label': 'в связи с постановлением Пленума ВС РФ'},
+                {'value': '13', 'label': 'после отказа в удовлетворении ходатайства о прекращении уг. дела с назначением суд. штрафа'},
+                {'value': '13.1', 'label': 'после отказа в принятии к производству ходатайства о прекращении уг. дела с назначением суд. штрафа'},
+                {'value': '14', 'label': 'после отмены прекращения дела с назначением суд. штрафа'},
+                {'value': '15', 'label': 'после отмены принудительных мер медицинского характера'},
+                {'value': '16', 'label': 'после отмены принудительных мер воспитательного воздействия'},
+            ],
+            
+            # ========== КАТЕГОРИЯ ДЕЛА (ЭТО ТО, ЧТО ВАМ НУЖНО) ==========
+            'case_category_criminal': [
+                {'value': '1', 'label': 'с участием лица, содержащегося под стражей'},
+                {'value': '2', 'label': 'с участием несовершеннолетнего'},
+                {'value': '3', 'label': 'с представлением прокурора об особом порядке проведения судебного заседания'},
+            ],
+            
+            # Решение судьи
+            'judge_decision': [
+                {'value': '1', 'label': 'о направлении уголовного дела по подсудности'},
+                {'value': '2', 'label': 'о назначении предварительного слушания'},
+                {'value': '3', 'label': 'о назначении судебного заседания'},
+            ],
 
-        for field in model_fields:
-            if hasattr(field, 'choices') and field.choices:
-                field_name = field.name
-                choices_data[field_name] = [
-                    {'value': choice[0], 'label': choice[1]}
-                    for choice in field.choices
-                ]
-
+            'preliminary_hearing_grounds': [
+                {'value': '229.2.1', 'label': 'Ходатайство об исключении доказательства (ч. 3 ст. 229 УПК РФ)'},
+                {'value': '229.2.2', 'label': 'Основания для возвращения дела прокурору (ст. 237 УПК РФ)'},
+                {'value': '229.2.3', 'label': 'Основания для приостановления или прекращения дела'},
+                {'value': '229.2.4.1', 'label': 'Ходатайство о проведении заседания без участия подсудимого (ч. 5 ст. 247 УПК РФ)'},
+                {'value': '229.2.5', 'label': 'Решение вопроса о рассмотрении дела с участием присяжных заседателей'},
+                {'value': '229.2.6', 'label': 'Наличие приговора с условным осуждением за ранее совершенное преступление'},
+                {'value': '229.2.7', 'label': 'Основания для выделения уголовного дела'},
+                {'value': '229.2.8', 'label': 'Ходатайство о соединении уголовных дел'},
+                {'value': 'other', 'label': 'Иные основания по решению судьи'},
+            ],
+            
+            # Результат предварительного слушания
+            'preliminary_hearing_result': [
+                {'value': '1', 'label': 'о направлении уголовного дела по подсудности'},
+                {'value': '2', 'label': 'о возвращении уголовного дела прокурору'},
+                {'value': '3', 'label': 'о приостановлении производства по делу'},
+                {'value': '4', 'label': 'о прекращении уголовного дела'},
+                {'value': '5', 'label': 'о назначении судебного заседания'},
+                {'value': '6', 'label': 'о назначении закрытого судебного заседания'},
+            ],
+            
+            # Соблюдение сроков
+            'hearing_compliance': [
+                {'value': '1', 'label': 'с соблюдением сроков, установленных УПК РФ'},
+                {'value': '2', 'label': 'с нарушением сроков'},
+            ],
+            
+            # Результат рассмотрения дела
+            'case_result': [
+                {'value': '1', 'label': 'вынесен приговор'},
+                {'value': '2', 'label': 'прекращено'},
+                {'value': '3', 'label': 'принудительные меры медицинского характера'},
+                {'value': '4', 'label': 'направлено по подсудности'},
+                {'value': '5', 'label': 'направлено по подведомственности прокурору, в орган следствия, дознания'},
+                {'value': '6', 'label': 'возвращено прокурору в порядке ст. 237 УПК РФ'},
+                {'value': '7', 'label': 'возвращено в связи с отказом в удовлетворении ходатайства о прекращении в порядке ст. 446.2 УПК РФ'},
+                {'value': '8', 'label': 'роспуск коллегии присяжных'},
+            ],
+            
+            # Состав суда
+            'composition_court': [
+                {'value': '1', 'label': 'единолично судьей'},
+                {'value': '2', 'label': 'коллегией судей'},
+                {'value': '3', 'label': 'с участием присяжных заседателей'},
+            ],
+        }
+        
         return choices_data
 
 

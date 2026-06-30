@@ -1,0 +1,392 @@
+/* CaseDetailView.module.css - полная версия */
+.container {
+  min-height: 100vh;
+  background: #f0f4f8;
+  padding: 80px 24px 40px calc(6.3cm + 24px);
+}
+
+.header {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #4299e1;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2d3748;
+}
+
+/* Быстрые действия - вкладки */
+.quickActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.quickAction {
+  background: #f1f5f9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quickAction:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.quickAction.active {
+  background: #1e3c5c;
+  color: white;
+}
+
+.quickActionCount {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.quickAction.active .quickActionCount {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Основной контент */
+.content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Основная информация */
+.summaryContent {
+  max-width: 800px;
+}
+
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.infoRow {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.label {
+  width: 200px;
+  color: #718096;
+  font-size: 14px;
+}
+
+.value {
+  flex: 1;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.lastActivity {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: right;
+}
+
+/* Стороны по делу */
+.sidesContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidesContent h3 {
+  font-size: 1rem;
+  color: #475569;
+  margin: 0 0 12px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sideCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.sideName {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.sideRole {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Решения по делу */
+.decisionsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.decisionCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 3px solid #48bb78;
+}
+
+.decisionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.decisionDate {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.downloadButton {
+  background: #e2e8f0;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.downloadButton:hover {
+  background: #cbd5e1;
+}
+
+.decisionResult {
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.decisionMeta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Ходатайства */
+.petitionsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.petitionCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 3px solid #f59e0b;
+}
+
+.petitionHeader {
+  margin-bottom: 8px;
+}
+
+.petitionDate {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.petitionTypes {
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.petitionPetitioner {
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.petitionDecision {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Исполнения */
+.executionsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.executionCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 3px solid #8b5cf6;
+}
+
+.executionDate {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.executionInfo {
+  font-size: 13px;
+  color: #475569;
+}
+
+/* Движение дела */
+.movementsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.movementCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 3px solid #06b6d4;
+}
+
+.movementDate {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.movementTime, .movementResult {
+  font-size: 13px;
+  color: #475569;
+}
+
+/* Гражданские иски */
+.civilClaimsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.claimCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 3px solid #ec489a;
+}
+
+.claimAmount {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.claimPlaintiff, .claimResult, .claimDate {
+  font-size: 13px;
+  color: #475569;
+}
+
+/* Пустые состояния */
+.noData {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Примечание */
+.note {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fefcbf;
+  border-radius: 12px;
+  color: #975a16;
+  font-size: 13px;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 80px;
+  background: white;
+  border-radius: 16px;
+}
+
+.loading {
+  color: #718096;
+}
+
+.error {
+  color: #e53e3e;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .container {
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+  
+  .infoRow {
+    flex-direction: column;
+  }
+  
+  .label {
+    width: auto;
+    margin-bottom: 4px;
+  }
+  
+  .quickActions {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  
+  .decisionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

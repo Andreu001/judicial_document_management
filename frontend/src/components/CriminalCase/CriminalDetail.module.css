@@ -1290,3 +1290,267 @@
   background-color: #c6f6d5;
   color: #276749;
 }
+
+/* Стили для сворачиваемого блока */
+.toggleRareFieldsButton {
+  background: none;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  padding: 4px 12px;
+  margin-left: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--primary-color, #007bff);
+  transition: all 0.2s;
+}
+
+.toggleRareFieldsButton:hover {
+  background: var(--primary-color, #007bff);
+  color: white;
+  border-color: var(--primary-color, #007bff);
+}
+
+.rareFieldsBlock {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-light, #f8f9fa);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary-color, #007bff);
+}
+
+.subsectionTitleSmall {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0 8px 0;
+  color: var(--text-secondary, #666);
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border-color, #ddd);
+}
+
+.subsectionTitleSmall:first-of-type {
+  margin-top: 0;
+}
+
+/* ========== СТИЛИ ДЛЯ АВТОМАТИЗИРОВАННОГО ПОМОЩНИКА ========== */
+
+.currentStageCard {
+  background: linear-gradient(135deg, #2c3e50 0%, #1a2a3a 100%);
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+  text-align: center;
+}
+
+.stageName {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.stageCode {
+  font-size: 12px;
+  opacity: 0.8;
+  font-family: monospace;
+}
+
+.progressContainer {
+  margin-bottom: 20px;
+}
+
+.progressBarWrapper {
+  background-color: #e9ecef;
+  border-radius: 10px;
+  height: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressBar {
+  background: linear-gradient(90deg, #28a745, #20c997);
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.progressStats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6c757d;
+}
+
+.checklistContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.checklistItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.checklistItem:last-child {
+  border-bottom: none;
+}
+
+.checklistTitle {
+  flex: 2;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+.requiredBadge {
+  background: #dc3545;
+  color: white;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+.checklistStatus {
+  flex: 1;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.checklistMark {
+  width: 30px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.actionCard {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.actionCard:hover {
+  border-color: #2c3e50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.actionTitle {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.actionDescription {
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.actionHint {
+  font-size: 11px;
+  color: #c47a2e;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.historyList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.historyItem {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-left: 3px solid #2c3e50;
+}
+
+.historyDate {
+  font-size: 10px;
+  color: #8ba0ae;
+  margin-bottom: 4px;
+}
+
+.historyAction {
+  font-weight: 600;
+  font-size: 13px;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.historyAuthor {
+  font-size: 11px;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.historyDescription {
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #dee2e6;
+}
+
+.modalInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.modalLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.modalDateInput {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modalDateInput:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.modalBody {
+  margin-bottom: 20px;
+}
+
+.conditionalFields {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.subsectionTitleSmall {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #495057;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #dee2e6;
+}

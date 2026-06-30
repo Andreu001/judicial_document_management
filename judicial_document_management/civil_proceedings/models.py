@@ -298,6 +298,10 @@ class CivilProceedings(models.Model):
         verbose_name="Производство по делу приостанавливалось",
         default=False, null=True, blank=True
     )
+    suspension_reason = models.DateField(
+        verbose_name="Основание приостановления",
+        null=True, blank=True
+    )
     suspension_date = models.DateField(
         verbose_name="Дата приостановления",
         null=True, blank=True

@@ -3,8 +3,8 @@ from .models import (
     CriminalProceedings, Defendant, CriminalDecision,
     CriminalRuling, CriminalCaseMovement, ReferringAuthority,
     LawyerCriminal, CriminalSidesCaseInCase, PetitionCriminal,
-    CriminalExecution, CriminalDecisions, CriminalAppeal,
-    CriminalCivilClaim, CriminalExpertiseType
+    CriminalExecution, CriminalDecisions, CriminalCivilClaim,
+    CriminalExpertiseType
 )
 from .models_appeal_cassation import (
     CriminalAppealInstance, CriminalCassationInstance,
@@ -55,7 +55,8 @@ class CriminalCaseMovementInline(admin.TabularInline):
     """Inline для движения дела"""
     model = CriminalCaseMovement
     extra = 0
-    fields = ['first_hearing_date', 'preliminary_hearing_result', 'hearing_postponed_reason', 'suspension_reason']
+    # Уберите first_hearing_date и preliminary_hearing_result - их нет в модели
+    fields = ['suspension_reason', 'suspension_date', 'resumption_date']
 
 
 class CriminalExecutionInline(admin.TabularInline):
@@ -63,22 +64,6 @@ class CriminalExecutionInline(admin.TabularInline):
     model = CriminalExecution
     extra = 0
     fields = ['sentence_execution_date', 'execution_sent_date', 'execution_sent_to', 'execution_result']
-
-
-class CriminalAppealInstanceInline(admin.TabularInline):
-    """Inline для апелляционного рассмотрения"""
-    model = CriminalAppealInstance
-    extra = 0
-    fields = ['appeal_date', 'appeal_type', 'appeal_result', 'court_consideration_date']
-    readonly_fields = ['id']
-
-
-class CriminalCassationInstanceInline(admin.TabularInline):
-    """Inline для кассационного рассмотрения"""
-    model = CriminalCassationInstance
-    extra = 0
-    fields = ['instance_type', 'cassation_date', 'cassation_result', 'consideration_date']
-    readonly_fields = ['id']
 
 
 class CriminalCivilClaimInline(admin.TabularInline):
@@ -105,8 +90,6 @@ class CriminalProceedingsAdmin(admin.ModelAdmin):
         CriminalDecisionInline,
         CriminalCaseMovementInline,
         CriminalExecutionInline,
-        CriminalAppealInstanceInline,
-        CriminalCassationInstanceInline,
         CriminalCivilClaimInline
     ]
     
@@ -132,15 +115,13 @@ class CriminalProceedingsAdmin(admin.ModelAdmin):
             'fields': (
                 'preliminary_hearing_result', 'first_hearing_date',
                 'hearing_compliance', 'postponement_reason_code',
-                'postponement_reason_text', 'postponement_count',
-                'suspension_reason_code', 'suspension_reason_text',
-                'suspension_duration_days'
+                'postponement_reason_text', 'postponement_count'
             ),
             'classes': ('collapse',)
         }),
         ('Результаты рассмотрения', {
             'fields': (
-                'case_result', 'case_result_detailed', 'total_duration_days',
+                'case_result', 'total_duration_days',
                 'case_duration_category', 'consideration_duration_days',
                 'consideration_duration_category'
             ),
@@ -151,7 +132,7 @@ class CriminalProceedingsAdmin(admin.ModelAdmin):
                 'participation_prosecutor', 'participation_translator',
                 'participation_expert', 'participation_specialist',
                 'absence_defendant', 'absence_lawyer', 'absence_pmmh_person',
-                'closed_hearing', 'vks_technology', 'audio_recording', 'video_recording'
+                'closed_hearing',
             ),
             'classes': ('collapse',)
         }),
@@ -163,6 +144,15 @@ class CriminalProceedingsAdmin(admin.ModelAdmin):
             'fields': (
                 'sentence_date', 'sentence_result', 'sentence_effective_date',
                 'sentence_execution_date', 'execution_sent_date', 'execution_sent_to'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Приостановление производства', {
+            'fields': (
+                'date_suspension_case',
+                'suspension_reason_code',
+                'suspension_reason_text',
+                'suspension_duration_days',
             ),
             'classes': ('collapse',)
         }),
@@ -279,13 +269,13 @@ class CriminalDecisionAdmin(admin.ModelAdmin):
 @admin.register(CriminalCaseMovement)
 class CriminalCaseMovementAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'criminal_proceedings_link', 'first_hearing_date',
-        'preliminary_hearing_result', 'hearing_postponed_reason'
+        'id', 'criminal_proceedings',
+        'business_movement',
     ]
-    list_filter = ['preliminary_hearing_result', 'hearing_compliance']
+
     search_fields = ['criminal_proceedings__case_number_criminal']
     readonly_fields = ['criminal_proceedings']
-    
+
     def criminal_proceedings_link(self, obj):
         return obj.criminal_proceedings.case_number_criminal if obj.criminal_proceedings else '-'
     criminal_proceedings_link.short_description = 'Номер дела'
@@ -299,36 +289,6 @@ class CriminalExecutionAdmin(admin.ModelAdmin):
     ]
     list_filter = ['execution_sent_document']
     search_fields = ['criminal_proceedings__case_number_criminal']
-    readonly_fields = ['criminal_proceedings']
-    
-    def criminal_proceedings_link(self, obj):
-        return obj.criminal_proceedings.case_number_criminal if obj.criminal_proceedings else '-'
-    criminal_proceedings_link.short_description = 'Номер дела'
-
-
-@admin.register(CriminalAppealInstance)
-class CriminalAppealInstanceAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'criminal_proceedings_link', 'appeal_date', 'appeal_type',
-        'appeal_result', 'court_consideration_date'
-    ]
-    list_filter = ['appeal_type', 'appeal_result', 'court_composition']
-    search_fields = ['criminal_proceedings__case_number_criminal', 'appeal_applicant']
-    readonly_fields = ['criminal_proceedings']
-    
-    def criminal_proceedings_link(self, obj):
-        return obj.criminal_proceedings.case_number_criminal if obj.criminal_proceedings else '-'
-    criminal_proceedings_link.short_description = 'Номер дела'
-
-
-@admin.register(CriminalCassationInstance)
-class CriminalCassationInstanceAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'criminal_proceedings_link', 'instance_type', 'cassation_date',
-        'cassation_result', 'consideration_date'
-    ]
-    list_filter = ['instance_type', 'cassation_type', 'cassation_result']
-    search_fields = ['criminal_proceedings__case_number_criminal', 'cassation_applicant']
     readonly_fields = ['criminal_proceedings']
     
     def criminal_proceedings_link(self, obj):
@@ -477,12 +437,6 @@ class CriminalDecisionsAdmin(admin.ModelAdmin):
     search_fields = ['name', 'code']
 
 
-@admin.register(CriminalAppeal)
-class CriminalAppealAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'code']
-    search_fields = ['name', 'code']
-
-
 @admin.register(CriminalExpertiseType)
 class CriminalExpertiseTypeAdmin(admin.ModelAdmin):
     list_display = ['id', 'code', 'name']
@@ -546,6 +500,7 @@ class CriminalRulingAdmin(admin.ModelAdmin):
     list_display = ['id', 'criminal_proceedings_link', 'title', 'ruling_type', 'is_draft', 'created_at']
     list_filter = ['ruling_type', 'is_draft']
     search_fields = ['criminal_proceedings__case_number_criminal', 'title']
+    readonly_fields = ['created_at', 'updated_at']
     
     def criminal_proceedings_link(self, obj):
         return obj.criminal_proceedings.case_number_criminal if obj.criminal_proceedings else '-'

@@ -4,7 +4,6 @@ import styles from './PetitionDetail.module.css';
 import PetitionService from '../../API/PetitionService';
 import KasCaseService from '../../API/KasCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
-import CivilCaseService from '../../API/CivilCaseService';
 import OtherMaterialService from '../../API/OtherMaterialService';
 
 const PetitionDetail = () => {

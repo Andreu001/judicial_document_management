@@ -638,7 +638,26 @@ const sortCards = useCallback((cards, sortBy) => {
       ) : (
         <>
           {cardsError && <div style={{ color: 'red', textAlign: 'center', marginTop: 20 }}>Ошибка: {cardsError}</div>}
-          <CardList remove={removeCard} cards={paginatedCards} title='Список карточек' />
+          {paginatedCards.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '60px 20px',
+              fontSize: '18px',
+              color: '#64748b',
+              background: '#f8fafc',
+              borderRadius: '12px',
+              marginTop: '20px',
+              marginBottom: '20px',
+              marginRight: '24px',
+              position: 'relative',
+              top: '48px'
+            }}>
+              <h3 style={{ margin: '0 0 8px 0', color: '#1e293b' }}>Карточки не найдены</h3>
+              <p style={{ margin: 0, color: '#64748b' }}>Попробуйте изменить параметры поиска или фильтрации</p>
+            </div>
+          ) : (
+            <CardList remove={removeCard} cards={paginatedCards} title='Список карточек' />
+          )}
         </>
       )}
 

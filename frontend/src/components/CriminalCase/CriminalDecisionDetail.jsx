@@ -1,3 +1,5 @@
+// CriminalDecisionDetail.jsx - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
@@ -12,11 +14,12 @@ const CriminalDecisionDetail = () => {
   const isCreateMode = location.pathname.includes('/create');
   const [decisionData, setDecisionData] = useState(null);
   const [isEditing, setIsEditing] = useState(isCreateMode);
-  const [activeTab, setActiveTab] = useState('appeal'); // appeal, cassation, civil
+  const [activeTab, setActiveTab] = useState('appeal');
   const [loading, setLoading] = useState(!isCreateMode);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [defendants, setDefendants] = useState([]);
+  const [allSides, setAllSides] = useState([]);
+  const [appealStatuses, setAppealStatuses] = useState([]);
   
   // Данные для апелляции
   const [appealData, setAppealData] = useState(null);
@@ -60,25 +63,6 @@ const CriminalDecisionDetail = () => {
     notes: ''
   });
   
-  // Данные для гражданского иска
-  const [civilData, setCivilData] = useState(null);
-  const [civilForm, setCivilForm] = useState({
-    victim: '',
-    plaintiff_name: '',
-    defendant_name: '',
-    claim_amount: '',
-    theft_damage_amount: '',
-    other_damage_amount: '',
-    moral_damage_amount: '',
-    moral_damage_article: '',
-    state_duty_amount: '',
-    result: '',
-    awarded_amount: '',
-    decision_date: '',
-    execution_date: '',
-    execution_notes: ''
-  });
-  
   // Справочники
   const [appealOptions, setAppealOptions] = useState({
     appeal_present: [],
@@ -92,17 +76,12 @@ const CriminalDecisionDetail = () => {
     cassation_result: [],
     supervisory_result: []
   });
-  const [civilOptions, setCivilOptions] = useState({
-    result: []
-  });
-  const [appealStatuses, setAppealStatuses] = useState([]);
 
   useEffect(() => {
     if (isCreateMode) {
       loadOptions();
-      if (proceedingId) {
-        loadDefendants(proceedingId);
-      }
+      loadAllSides();
+      loadAppealStatuses();
       setLoading(false);
     } else {
       fetchAllData();
@@ -113,32 +92,43 @@ const CriminalDecisionDetail = () => {
     try {
       setLoading(true);
       
-      // Загружаем апелляционные данные
       const appealResponse = await CriminalCaseService.getAppealInstances(proceedingId);
       if (appealResponse && appealResponse.length > 0) {
         const mainAppeal = appealResponse[0];
         setAppealData(mainAppeal);
-        setAppealForm(mainAppeal);
+        // Если есть сохраненный заявитель, преобразуем его в составной формат
+        const formattedAppeal = { ...mainAppeal };
+        if (mainAppeal.appeal_applicant) {
+          // Ищем сторону по ID и типу
+          const foundSide = allSides.find(side => side.id === mainAppeal.appeal_applicant);
+          if (foundSide) {
+            formattedAppeal.appeal_applicant = `${foundSide.type}-${foundSide.id}`;
+          } else {
+            formattedAppeal.appeal_applicant = '';
+          }
+        }
+        setAppealForm(formattedAppeal);
       }
       
-      // Загружаем кассационные данные
       const cassationResponse = await CriminalCaseService.getCassationInstances(proceedingId);
       if (cassationResponse && cassationResponse.length > 0) {
         const mainCassation = cassationResponse[0];
         setCassationData(mainCassation);
-        setCassationForm(mainCassation);
-      }
-      
-      // Загружаем гражданские иски
-      const civilResponse = await CriminalCaseService.getCivilClaims(proceedingId);
-      if (civilResponse && civilResponse.length > 0) {
-        const mainCivil = civilResponse[0];
-        setCivilData(mainCivil);
-        setCivilForm(mainCivil);
+        // Преобразуем cassation_applicant в составной формат
+        const formattedCassation = { ...mainCassation };
+        if (mainCassation.cassation_applicant) {
+          const foundSide = allSides.find(side => side.id === mainCassation.cassation_applicant);
+          if (foundSide) {
+            formattedCassation.cassation_applicant = `${foundSide.type}-${foundSide.id}`;
+          } else {
+            formattedCassation.cassation_applicant = '';
+          }
+        }
+        setCassationForm(formattedCassation);
       }
       
       await loadOptions();
-      await loadDefendants(proceedingId);
+      await loadAllSides();
       await loadAppealStatuses();
       setLoading(false);
     } catch (err) {
@@ -148,23 +138,60 @@ const CriminalDecisionDetail = () => {
     }
   };
 
-  const loadDefendants = async (proceedingId) => {
+  const loadAllSides = async () => {
     try {
-      const defendantsResponse = await CriminalCaseService.getDefendants(proceedingId);
-      setDefendants(defendantsResponse);
+      const sides = await CriminalCaseService.getAllSides(proceedingId);
+      console.log('Loaded sides:', sides);
+      setAllSides(sides);
     } catch (error) {
-      console.error('Ошибка загрузки обвиняемых:', error);
-      setDefendants([]);
+      console.error('Ошибка загрузки сторон:', error);
+      setAllSides([]);
     }
   };
 
   const loadAppealStatuses = async () => {
     try {
       const statuses = await CriminalCaseService.getAppealApplicantStatuses();
+      console.log('Loaded statuses:', statuses);
       setAppealStatuses(statuses);
     } catch (error) {
       console.error('Ошибка загрузки статусов:', error);
+      setAppealStatuses([]);
     }
+  };
+
+  // Функция для поиска ID статуса по названию
+  const findStatusIdByName = (statusName) => {
+    if (!statusName) return null;
+    const status = appealStatuses.find(s => 
+      s.name?.toLowerCase() === statusName.toLowerCase() ||
+      s.name?.toLowerCase().includes(statusName.toLowerCase())
+    );
+    return status?.id || null;
+  };
+
+  // Функция для получения статуса по названию роли
+  const getStatusForRole = (roleName, sideType) => {
+    // Сопоставляем типы сторон с возможными статусами
+    const roleToStatusMap = {
+      'Подсудимый': 'Осужденный',
+      'Обвиняемый': 'Осужденный',
+      'Адвокат': 'Защитник',
+      'Прокурор': 'Государственный обвинитель',
+      'Потерпевший': 'Потерпевший',
+      'Гражданский истец': 'Гражданский истец',
+      'Гражданский ответчик': 'Гражданский ответчик'
+    };
+    
+    // Ищем в маппинге
+    for (const [key, value] of Object.entries(roleToStatusMap)) {
+      if (roleName?.toLowerCase().includes(key.toLowerCase())) {
+        return findStatusIdByName(value);
+      }
+    }
+    
+    // Если не нашли, пытаемся найти напрямую по названию роли
+    return findStatusIdByName(roleName);
   };
 
   const loadOptions = async () => {
@@ -232,16 +259,6 @@ const CriminalDecisionDetail = () => {
         ]
       });
       
-      setCivilOptions({
-        result: [
-          { value: '1', label: 'удовлетворен полностью' },
-          { value: '2', label: 'удовлетворен частично' },
-          { value: '3', label: 'оставлен без рассмотрения' },
-          { value: '4', label: 'отказано в удовлетворении' },
-          { value: '5', label: 'производство прекращено' }
-        ]
-      });
-      
     } catch (error) {
       console.error('Ошибка загрузки опций:', error);
     }
@@ -255,6 +272,51 @@ const CriminalDecisionDetail = () => {
     }));
   };
 
+  const handleAppealApplicantChange = (e) => {
+    const compositeValue = e.target.value;
+    
+    if (!compositeValue) {
+      setAppealForm(prev => ({
+        ...prev,
+        appeal_applicant: '',
+        appeal_applicant_status: ''
+      }));
+      return;
+    }
+    
+    // Разбираем составное значение
+    const parts = compositeValue.split('-');
+    const type = parts[0];
+    const parsedId = parseInt(parts[1], 10);
+    
+    // Находим выбранную сторону
+    const selectedSide = allSides.find(side => 
+      side.type === type && side.id === parsedId
+    );
+    
+    if (selectedSide) {
+      // Получаем роль для определения статуса
+      const roleName = selectedSide.role || selectedSide.type || 
+                      (selectedSide.sides_case_defendant_name) || 
+                      (selectedSide.sides_case_criminal_detail?.sides_case) ||
+                      'Участник процесса';
+      
+      const statusId = getStatusForRole(roleName, selectedSide.type);
+      
+      setAppealForm(prev => ({
+        ...prev,
+        appeal_applicant: compositeValue,
+        appeal_applicant_status: statusId || ''
+      }));
+    } else {
+      setAppealForm(prev => ({
+        ...prev,
+        appeal_applicant: '',
+        appeal_applicant_status: ''
+      }));
+    }
+  };
+
   const handleCassationChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCassationForm(prev => ({
@@ -263,12 +325,49 @@ const CriminalDecisionDetail = () => {
     }));
   };
 
-  const handleCivilChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setCivilForm(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  const handleCassationApplicantChange = (e) => {
+    const compositeValue = e.target.value;
+    
+    if (!compositeValue) {
+      setCassationForm(prev => ({
+        ...prev,
+        cassation_applicant: '',
+        cassation_applicant_status: ''
+      }));
+      return;
+    }
+    
+    // Разбираем составное значение
+    const parts = compositeValue.split('-');
+    const type = parts[0];
+    const parsedId = parseInt(parts[1], 10);
+    
+    // Находим выбранную сторону
+    const selectedSide = allSides.find(side => 
+      side.type === type && side.id === parsedId
+    );
+    
+    if (selectedSide) {
+      // Получаем роль для определения статуса
+      const roleName = selectedSide.role || selectedSide.type || 
+                      (selectedSide.sides_case_defendant_name) || 
+                      (selectedSide.sides_case_criminal_detail?.sides_case) ||
+                      'Участник процесса';
+      
+      const statusId = getStatusForRole(roleName, selectedSide.type);
+      
+      setCassationForm(prev => ({
+        ...prev,
+        cassation_applicant: compositeValue,
+        cassation_applicant_status: statusId || ''
+      }));
+    } else {
+      setCassationForm(prev => ({
+        ...prev,
+        cassation_applicant: '',
+        cassation_applicant_status: ''
+      }));
+    }
   };
 
   const handleDateChange = (setter, name, dateString) => {
@@ -282,21 +381,41 @@ const CriminalDecisionDetail = () => {
     try {
       setSaving(true);
       const dataToSend = { ...appealForm };
+      
       Object.keys(dataToSend).forEach(key => {
         if (dataToSend[key] === '' || dataToSend[key] === null || dataToSend[key] === undefined) {
           delete dataToSend[key];
         }
       });
       
+      // Преобразуем appeal_applicant из составного значения в число
+      if (dataToSend.appeal_applicant && typeof dataToSend.appeal_applicant === 'string') {
+        const parts = dataToSend.appeal_applicant.split('-');
+        dataToSend.appeal_applicant = parseInt(parts[1], 10);
+      }
+      
+      // Преобразуем appeal_applicant_status в число (ID статуса)
+      if (dataToSend.appeal_applicant_status) {
+        dataToSend.appeal_applicant_status = parseInt(dataToSend.appeal_applicant_status, 10);
+      }
+      
+      console.log('Sending appeal data:', dataToSend);
+      
       if (appealData) {
         await CriminalCaseService.updateAppealInstance(proceedingId, appealData.id, dataToSend);
+        // Обновляем сохраненные данные
+        const updatedAppeal = { ...appealData, ...dataToSend };
+        setAppealData(updatedAppeal);
       } else {
-        await CriminalCaseService.createAppealInstance(proceedingId, dataToSend);
+        const response = await CriminalCaseService.createAppealInstance(proceedingId, dataToSend);
+        setAppealData(response);
       }
       setSaving(false);
+      alert('Апелляция успешно сохранена');
     } catch (err) {
       console.error('Ошибка сохранения апелляции:', err);
-      setError('Не удалось сохранить данные апелляции');
+      console.error('Error response:', err.response?.data);
+      setError(`Не удалось сохранить данные апелляции: ${JSON.stringify(err.response?.data)}`);
       setSaving(false);
     }
   };
@@ -305,44 +424,42 @@ const CriminalDecisionDetail = () => {
     try {
       setSaving(true);
       const dataToSend = { ...cassationForm };
+      
       Object.keys(dataToSend).forEach(key => {
         if (dataToSend[key] === '' || dataToSend[key] === null || dataToSend[key] === undefined) {
           delete dataToSend[key];
         }
       });
+      
+      // Преобразуем cassation_applicant из составного значения в число
+      if (dataToSend.cassation_applicant && typeof dataToSend.cassation_applicant === 'string') {
+        const parts = dataToSend.cassation_applicant.split('-');
+        dataToSend.cassation_applicant = parseInt(parts[1], 10);
+      }
+      
+      if (dataToSend.cassation_filed !== undefined) {
+        dataToSend.cassation_filed = dataToSend.cassation_filed === true || dataToSend.cassation_filed === 'true';
+      }
+      if (dataToSend.supervisory_request !== undefined) {
+        dataToSend.supervisory_request = dataToSend.supervisory_request === true || dataToSend.supervisory_request === 'true';
+      }
+      
+      console.log('Sending cassation data:', dataToSend);
       
       if (cassationData) {
         await CriminalCaseService.updateCassationInstance(proceedingId, cassationData.id, dataToSend);
+        const updatedCassation = { ...cassationData, ...dataToSend };
+        setCassationData(updatedCassation);
       } else {
-        await CriminalCaseService.createCassationInstance(proceedingId, dataToSend);
+        const response = await CriminalCaseService.createCassationInstance(proceedingId, dataToSend);
+        setCassationData(response);
       }
       setSaving(false);
+      alert('Кассация успешно сохранена');
     } catch (err) {
       console.error('Ошибка сохранения кассации:', err);
-      setError('Не удалось сохранить данные кассации');
-      setSaving(false);
-    }
-  };
-
-  const handleSaveCivil = async () => {
-    try {
-      setSaving(true);
-      const dataToSend = { ...civilForm };
-      Object.keys(dataToSend).forEach(key => {
-        if (dataToSend[key] === '' || dataToSend[key] === null || dataToSend[key] === undefined) {
-          delete dataToSend[key];
-        }
-      });
-      
-      if (civilData) {
-        await CriminalCaseService.updateCivilClaim(proceedingId, civilData.id, dataToSend);
-      } else {
-        await CriminalCaseService.createCivilClaim(proceedingId, dataToSend);
-      }
-      setSaving(false);
-    } catch (err) {
-      console.error('Ошибка сохранения гражданского иска:', err);
-      setError('Не удалось сохранить данные гражданского иска');
+      console.error('Error response:', err.response?.data);
+      setError(`Не удалось сохранить данные кассации: ${JSON.stringify(err.response?.data)}`);
       setSaving(false);
     }
   };
@@ -358,6 +475,12 @@ const CriminalDecisionDetail = () => {
 
   const getOptionLabel = (optionsArray, value) => {
     return optionsArray.find(opt => opt.value === value)?.label || 'Не указано';
+  };
+
+  const getStatusName = (statusId) => {
+    if (!statusId) return 'Не указано';
+    const status = appealStatuses.find(s => s.id === statusId);
+    return status?.name || 'Не указано';
   };
 
   if (loading) {
@@ -376,7 +499,7 @@ const CriminalDecisionDetail = () => {
             ← Назад
           </button>
           <h1 className={styles.title}>
-            Решения по уголовному делу
+            Пересмотр решений по уголовному делу
           </h1>
         </div>
         
@@ -411,7 +534,6 @@ const CriminalDecisionDetail = () => {
               {/* Вкладка Апелляции */}
               {activeTab === 'appeal' && (
                 <div className={styles.tabContent}>
-                  {/* Кнопка сохранения */}
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                     <button 
                       onClick={handleSaveAppeal}
@@ -423,7 +545,6 @@ const CriminalDecisionDetail = () => {
                   </div>
 
                   <div className={styles.tabGrid}>
-                    {/* Блок: Обжалование приговора */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Обжалование приговора</h3>
                       
@@ -469,33 +590,42 @@ const CriminalDecisionDetail = () => {
                       </div>
 
                       <div className={styles.field}>
-                        <label>ФИО заявителя апелляции</label>
-                        <input
-                          type="text"
+                        <label>Заявитель апелляции</label>
+                        <select
                           name="appeal_applicant"
                           value={appealForm.appeal_applicant || ''}
-                          onChange={handleAppealChange}
-                          className={styles.input}
-                        />
+                          onChange={handleAppealApplicantChange}
+                          className={styles.select}
+                        >
+                          <option value="">Выберите заявителя</option>
+                          {allSides.map(side => {
+                            const displayRole = side.role || side.type || 
+                              (side.sides_case_defendant_name) || 
+                              (side.sides_case_criminal_detail?.sides_case) ||
+                              'Участник';
+                            const compositeValue = `${side.type}-${side.id}`;
+                            return (
+                              <option key={compositeValue} value={compositeValue}>
+                                {side.name} ({displayRole})
+                              </option>
+                            );
+                          })}
+                        </select>
                       </div>
 
                       <div className={styles.field}>
                         <label>Процессуальное положение заявителя</label>
-                        <select
-                          name="appeal_applicant_status"
-                          value={appealForm.appeal_applicant_status || ''}
-                          onChange={handleAppealChange}
-                          className={styles.select}
-                        >
-                          <option value="">Выберите</option>
-                          {appealStatuses.map(status => (
-                            <option key={status.id} value={status.id}>{status.name}</option>
-                          ))}
-                        </select>
+                        <input
+                          type="text"
+                          value={getStatusName(appealForm.appeal_applicant_status)}
+                          className={styles.input}
+                          readOnly
+                          disabled
+                          style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                        />
                       </div>
                     </div>
 
-                    {/* Блок: Направление в суд II инстанции */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Направление в суд II инстанции</h3>
                       
@@ -544,7 +674,6 @@ const CriminalDecisionDetail = () => {
                       </div>
                     </div>
 
-                    {/* Блок: Рассмотрение во II инстанции */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Рассмотрение во II инстанции</h3>
                       
@@ -641,7 +770,6 @@ const CriminalDecisionDetail = () => {
               {/* Вкладка Кассации */}
               {activeTab === 'cassation' && (
                 <div className={styles.tabContent}>
-                  {/* Кнопка сохранения */}
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                     <button 
                       onClick={handleSaveCassation}
@@ -653,7 +781,6 @@ const CriminalDecisionDetail = () => {
                   </div>
 
                   <div className={styles.tabGrid}>
-                    {/* Блок: Основные сведения */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Основные сведения</h3>
                       
@@ -712,17 +839,41 @@ const CriminalDecisionDetail = () => {
 
                       <div className={styles.field}>
                         <label>Заявитель кассационной жалобы</label>
-                        <input
-                          type="text"
+                        <select
                           name="cassation_applicant"
                           value={cassationForm.cassation_applicant || ''}
-                          onChange={handleCassationChange}
+                          onChange={handleCassationApplicantChange}
+                          className={styles.select}
+                        >
+                          <option value="">Выберите заявителя</option>
+                          {allSides.map(side => {
+                            const displayRole = side.role || side.type || 
+                              (side.sides_case_defendant_name) || 
+                              (side.sides_case_criminal_detail?.sides_case) ||
+                              'Участник';
+                            const compositeValue = `${side.type}-${side.id}`;
+                            return (
+                              <option key={compositeValue} value={compositeValue}>
+                                {side.name} ({displayRole})
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Процессуальное положение заявителя</label>
+                        <input
+                          type="text"
+                          value={getStatusName(cassationForm.cassation_applicant_status)}
                           className={styles.input}
+                          readOnly
+                          disabled
+                          style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
                       </div>
                     </div>
 
-                    {/* Блок: Направление дела в кассацию */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Направление дела в кассацию</h3>
                       
@@ -760,7 +911,6 @@ const CriminalDecisionDetail = () => {
                       </div>
                     </div>
 
-                    {/* Блок: Рассмотрение в кассации */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Рассмотрение в кассации</h3>
                       
@@ -824,42 +974,6 @@ const CriminalDecisionDetail = () => {
                       </div>
                     </div>
 
-                    {/* Блок: Надзорное производство (для второй кассации/надзора) */}
-                    {cassationForm.instance_type !== 'cassation_first' && (
-                      <div className={styles.fieldGroup}>
-                        <h3 className={styles.subsectionTitle}>Надзорное производство</h3>
-                        
-                        <div className={styles.field}>
-                          <label>Подано заявление о пересмотре в порядке надзора</label>
-                          <select
-                            name="supervisory_request"
-                            value={cassationForm.supervisory_request}
-                            onChange={handleCassationChange}
-                            className={styles.select}
-                          >
-                            <option value="false">Нет</option>
-                            <option value="true">Да</option>
-                          </select>
-                        </div>
-
-                        <div className={styles.field}>
-                          <label>Результат надзорного рассмотрения</label>
-                          <select
-                            name="supervisory_result"
-                            value={cassationForm.supervisory_result || ''}
-                            onChange={handleCassationChange}
-                            className={styles.select}
-                          >
-                            <option value="">Выберите</option>
-                            {cassationOptions.supervisory_result.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Блок: Примечания */}
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Примечания</h3>
                       
@@ -885,19 +999,24 @@ const CriminalDecisionDetail = () => {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Стороны по делу</h2>
             
-            {defendants.length > 0 ? (
+            {allSides.length > 0 ? (
               <div className={styles.defendantsList}>
-                {defendants.map(defendant => (
-                  <div key={defendant.id} className={styles.defendantItem}>
-                    <h4>{defendant.full_name_criminal}</h4>
-                    <p>Статус: {defendant.sides_case_defendant_name || 'Подсудимый'}</p>
-                    <p>Адрес: {defendant.address || 'Не указан'}</p>
-                    <p>Дата рождения: {defendant.birth_date ? formatDate(defendant.birth_date) : 'Не указана'}</p>
-                  </div>
-                ))}
+                {allSides.map(side => {
+                  const displayRole = side.role || side.type || 
+                    (side.sides_case_defendant_name) || 
+                    (side.sides_case_criminal_detail?.sides_case) ||
+                    'Участник';
+                  return (
+                    <div key={`${side.type}-${side.id}`} className={styles.defendantItem}>
+                      <h4>{side.name}</h4>
+                      <p>Статус: {displayRole}</p>
+                      {side.details && <p>{side.details}</p>}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <p className={styles.noData}>Обвиняемые не добавлены</p>
+              <p className={styles.noData}>Стороны не добавлены</p>
             )}
           </div>
         </div>

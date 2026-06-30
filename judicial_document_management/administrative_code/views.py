@@ -9,7 +9,8 @@ from .models import (
     AdministrativeSidesCaseInCase, AdministrativeLawyer,
     AdministrativeCaseMovement, AdministrativePetition, ReferringAuthorityAdmin,
     AdministrativeAppeal, AdministrativeCassation, PostponementReasonAdmin,
-    SuspensionReasonAdmin, AdministrativeSubject
+    SuspensionReasonAdmin, AdministrativeSubject, CaseOrderAdmin,
+    AdministrativeCategory, ExecutionStageAdmin
 )
 from .serializers import (
     AdministrativeProceedingsSerializer, ArchivedAdministrativeProceedingsSerializer,
@@ -19,7 +20,9 @@ from .serializers import (
     ReferringAuthorityAdminSerializer, AdministrativeDecisionOptionsSerializer,
     AdministrativeAppealSerializer, AdministrativeCassationSerializer,
     PostponementReasonAdminSerializer, SuspensionReasonAdminSerializer,
-    AdministrativeSubjectSerializer
+    AdministrativeSubjectSerializer, AdministrativeSecurityMeasure,
+    AdministrativeSecurityMeasureSerializer, ExecutionStageAdminSerializer,
+    AdministrativeCategorySerializer, CaseOrderAdminSerializer
 )
 from django.contrib.contenttypes.models import ContentType
 from case_documents.models import CaseDocument, DocumentTemplate
@@ -28,6 +31,44 @@ from case_documents.serializers import (
     CaseDocumentDetailSerializer,
     DocumentTemplateSerializer
 )
+
+
+class CaseOrderAdminViewSet(viewsets.ModelViewSet):
+    queryset = CaseOrderAdmin.objects.all()
+    serializer_class = CaseOrderAdminSerializer
+
+class AdministrativeCategoryViewSet(viewsets.ModelViewSet):
+    queryset = AdministrativeCategory.objects.all()
+    serializer_class = AdministrativeCategorySerializer
+
+class ExecutionStageAdminViewSet(viewsets.ModelViewSet):
+    queryset = ExecutionStageAdmin.objects.all()
+    serializer_class = ExecutionStageAdminSerializer
+
+class AdministrativeSecurityMeasureViewSet(viewsets.ModelViewSet):
+    """Меры обеспечения производства по делу об АП"""
+    serializer_class = AdministrativeSecurityMeasureSerializer
+    
+    def get_queryset(self):
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            return AdministrativeSecurityMeasure.objects.filter(
+                administrative_proceedings_id=admin_proceedings_id
+            )
+        return AdministrativeSecurityMeasure.objects.none()
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        admin_proceedings_id = self.kwargs.get('administrative_proceedings')
+        if admin_proceedings_id:
+            context['administrative_proceedings'] = get_object_or_404(
+                AdministrativeProceedings, pk=admin_proceedings_id
+            )
+        return context
+    
+    def perform_create(self, serializer):
+        administrative_proceedings = self.get_serializer_context().get('administrative_proceedings')
+        serializer.save(administrative_proceedings=administrative_proceedings)
 
 
 class AdministrativeProceedingsViewSet(viewsets.ModelViewSet):
@@ -200,6 +241,62 @@ class AdministrativeProceedingsViewSet(viewsets.ModelViewSet):
                 {'detail': message},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=True, methods=['get'], url_path='notification-status')
+    def notification_status(self, request, pk=None):
+        """
+        Получить статус уведомлений по делу (для отображения значка в карточке).
+        """
+        from notifications.activity_service import CaseActivityService
+        
+        admin_case = self.get_object()
+        user = request.user
+        
+        # Только для судей и админов
+        if user.role not in ['judge', 'admin']:
+            return Response({'error': 'Доступно только для судей'}, status=403)
+        
+        # Проверяем, что судья - председательствующий (или админ)
+        if user.role != 'admin':
+            if admin_case.presiding_judge_id != user.id:
+                return Response({'error': 'Вы не являетесь председательствующим по этому делу'}, status=403)
+        
+        # ИСПРАВЛЕНО: передаем case_type = 'administrative' (как ожидает _get_case_object)
+        # Это самый важный момент!
+        status_data = CaseActivityService.get_case_notification_status(admin_case, user)
+        return Response(status_data)
+
+
+    @action(detail=True, methods=['post'], url_path='mark-notifications-read')
+    def mark_notifications_read(self, request, pk=None):
+        """
+        Отметить уведомления по делу как прочитанные.
+        """
+        from notifications.activity_service import CaseActivityService
+        
+        admin_case = self.get_object()
+        user = request.user
+        
+        if user.role not in ['judge', 'admin']:
+            return Response({'error': 'Доступно только для судей'}, status=403)
+        
+        if user.role != 'admin':
+            if admin_case.presiding_judge_id != user.id:
+                return Response({'error': 'Вы не являетесь председательствующим по этому делу'}, status=403)
+        
+        activity_ids = request.data.get('activity_ids', [])
+        
+        count = CaseActivityService.mark_activities_as_read(
+            case=admin_case,
+            judge=user,
+            activity_ids=activity_ids if activity_ids else None
+        )
+        
+        return Response({
+            'message': f'Отмечено {count} уведомлений как прочитанные',
+            'marked_count': count
+        })
+
 
 class AdministrativeDecisionViewSet(viewsets.ModelViewSet):
     serializer_class = AdministrativeDecisionSerializer
@@ -524,3 +621,51 @@ class AdministrativeSubjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         administrative_proceedings = self.get_serializer_context().get('administrative_proceedings')
         serializer.save(administrative_proceedings=administrative_proceedings)
+
+
+@api_view(['GET'])
+def case_order_options(request):
+    """Порядок поступления дела"""
+    options = CaseOrderAdmin.objects.all()
+    serializer = CaseOrderAdminSerializer(options, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def case_category_options(request):
+    """Категория дела"""
+    options = AdministrativeCategory.objects.all()
+    serializer = AdministrativeCategorySerializer(options, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def execution_stage_options(request):
+    """Стадии исполнения"""
+    options = ExecutionStageAdmin.objects.all()
+    serializer = ExecutionStageAdminSerializer(options, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def term_compliance_options(request):
+    """Соблюдение сроков"""
+    options = [
+        {'value': '1', 'label': 'С соблюдением'},
+        {'value': '2', 'label': 'С нарушением'},
+    ]
+    return Response(options)
+
+
+@api_view(['GET'])
+def offense_area_options(request):
+    """Получить список областей правонарушения"""
+    options = [
+        {'value': 'administrative', 'label': 'Административное правонарушение'},
+        {'value': 'tax', 'label': 'Налоговое правонарушение'},
+        {'value': 'customs', 'label': 'Таможенное правонарушение'},
+        {'value': 'traffic', 'label': 'Нарушение ПДД'},
+        {'value': 'environmental', 'label': 'Экологическое правонарушение'},
+        {'value': 'labor', 'label': 'Нарушение трудового законодательства'},
+        {'value': 'housing', 'label': 'Нарушение жилищного законодательства'},
+        {'value': 'business', 'label': 'Нарушение в сфере предпринимательской деятельности'},
+        {'value': 'other', 'label': 'Иное'},
+    ]
+    return Response(options)

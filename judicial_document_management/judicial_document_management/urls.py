@@ -25,7 +25,11 @@ urlpatterns = [
     path('other-materials/', include('other_materials.urls')),
     path('case-management/', include('case_management.urls')),
     path('statistics/', include('statistics_app.urls')),
-    path('citizen/', include('citizen_access.urls')),
+    path('side_case/', include('side_case_access.urls')),
+    path('judge-assistant/', include('judge_assistant.urls')),
+    path('legal-codes/', include('legal_codes.urls')),
+    path('api/court-registry/', include('court_registry.urls')),
+    path('api/communication/', include('communication.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Добавьте для обслуживания медиа-файлов в режиме разработки

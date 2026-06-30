@@ -1,4 +1,3 @@
-// src/API/NotificationService.js
 import baseService from './baseService';
 
 class NotificationService {
@@ -22,7 +21,6 @@ class NotificationService {
     }
   }
 
-  // АЛИАС для обратной совместимости
   static async getStats() {
     return this.getNotificationStats();
   }
@@ -57,7 +55,6 @@ class NotificationService {
     }
   }
 
-  // ИСПРАВЛЕНО: Добавлен static
   static async deleteNotification(id) {
     try {
       const response = await baseService.delete(`/notifications/notifications/${id}/`);
@@ -108,6 +105,72 @@ class NotificationService {
       return response.data;
     } catch (error) {
       console.error('Error fetching notifications for case:', error);
+      throw error;
+    }
+  }
+
+  // ========== НОВЫЕ МЕТОДЫ ДЛЯ АКТИВНОСТЕЙ ПО ДЕЛУ ==========
+  
+  /**
+   * Получить статус уведомлений по делу (для отображения в карточке)
+   * @param {string} caseType - тип дела: criminal, civil, admin, kas
+   * @param {number} caseId - ID дела
+   * @returns {Promise<Object>} - статус с количеством непрочитанных
+   */
+  static async getCaseNotificationStatus(caseType, caseId) {
+    try {
+      let url = '';
+      switch (caseType) {
+        case 'criminal':
+          url = `/criminal_proceedings/criminal-proceedings/${caseId}/notification-status/`;
+          break;
+        case 'civil':
+          url = `/civil_proceedings/civil-proceedings/${caseId}/notification-status/`;
+          break;
+        case 'admin':
+          url = `/administrative_code/administrative-proceedings/${caseId}/notification-status/`;
+          break;
+        case 'kas':
+          url = `/administrative_proceedings/kas-proceedings/${caseId}/notification-status/`;
+          break;
+        default:
+          return { has_unread: false, total_unread: 0 };
+      }
+      
+      const response = await baseService.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching case notification status:', error);
+      return { has_unread: false, total_unread: 0 };
+    }
+  }
+
+  static async markCaseActivityAsRead(caseType, caseId, activityType, objectId) {
+    try {
+      // caseType должен быть 'administrative', 'criminal', 'civil', 'kas'
+      const response = await baseService.post('/notifications/case-activities/mark-read/', {
+        case_type: caseType,
+        case_id: caseId,
+        activity_type: activityType,
+        object_id: objectId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error marking activity as read:', error);
+      throw error;
+    }
+  }
+
+  static async markAllCaseActivitiesAsRead(caseType, caseId, activityType = null) {
+    try {
+      const response = await baseService.post('/notifications/case-activities/mark-all-case-activities-read/', {
+        case_type: caseType,
+        case_id: caseId,
+        activity_type: activityType
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error marking all case activities as read:', error);
       throw error;
     }
   }

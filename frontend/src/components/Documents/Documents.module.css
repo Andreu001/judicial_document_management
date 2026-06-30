@@ -5,7 +5,6 @@
   padding-left: 260px;
 }
 
-
 .header {
   display: flex;
   justify-content: space-between;
@@ -168,6 +167,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   max-width: 900px;
   margin: 0 auto;
+  margin-left: 0;
 }
 
 .formContainer h2 {
@@ -324,6 +324,23 @@
   gap: 16px;
 }
 
+.metaGrid div {
+  display: flex;
+  flex-direction: column;
+}
+
+.metaGrid label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.metaGrid span {
+  font-size: 14px;
+  color: #2c3e50;
+  margin-top: 4px;
+}
+
 .documentContent {
   margin-bottom: 32px;
 }
@@ -440,6 +457,10 @@
 
 /* ===== Адаптивность ===== */
 @media (max-width: 768px) {
+  .container {
+    padding-left: 20px;
+  }
+  
   .header {
     flex-direction: column;
     gap: 12px;
@@ -517,15 +538,6 @@
 }
 
 /* Стили для кнопок в детальном просмотре */
-.detailActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding-top: 20px;
-  border-top: 1px solid #e9ecef;
-}
-
 .detailActions .editButton,
 .detailActions .signButton,
 .detailActions .deleteButton {
@@ -945,4 +957,320 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ===== Документы сторон ===== */
+.partyDocumentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.partyDocumentCard {
+  background: white;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-left: 4px solid #a0aec0;
+}
+
+.partyDocumentCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.partyDocumentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.partyDocumentType {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a5568;
+  background: #edf2f7;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.partyDocumentStatus {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.partyDocumentTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.partyDocumentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: #718096;
+  margin-bottom: 8px;
+}
+
+.partyDocumentDescription {
+  font-size: 13px;
+  color: #4a5568;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.partyDocumentDecision {
+  font-size: 13px;
+  color: #2c3e50;
+  background: #f0fff4;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border-left: 3px solid #38a169;
+}
+
+.partyDocumentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.downloadButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.downloadButton:hover {
+  background-color: #2d3748;
+}
+
+.registerButton {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.registerButton:hover {
+  background-color: #138496;
+}
+
+.acceptButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.acceptButton:hover {
+  background-color: #218838;
+}
+
+.rejectButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rejectButton:hover {
+  background-color: #c82333;
+}
+
+.returnButton {
+  background-color: #fd7e14;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.returnButton:hover {
+  background-color: #e06c03;
+}
+
+.attachButton {
+  background-color: #20c997;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.attachButton:hover {
+  background-color: #1ba87e;
+}
+
+.filterBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filterButton {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+  background: #edf2f7;
+  border-color: #a0aec0;
+}
+
+.activeFilter {
+  background: #2c3e50;
+  color: white;
+  border-color: #2c3e50;
+}
+
+.historySection {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.historySection h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historyItem {
+  background: #f8f9fa;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 3px solid #a0aec0;
+}
+
+.historyStatus {
+  font-weight: 600;
+  font-size: 13px;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.historyMeta {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: #718096;
+  margin-bottom: 6px;
+}
+
+.historyComment {
+  font-size: 12px;
+  color: #4a5568;
+  font-style: italic;
+}
+
+.fileInput {
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+/* Адаптивность для всего контейнера с учетом навбара */
+@media (max-width: 1200px) {
+  .container {
+    padding-left: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding-left: 20px;
+  }
+}
+/* Добавьте в Documents.module.css */
+
+.acceptButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.acceptButton:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.acceptButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.unreadCard {
+  border-left: 3px solid #ffc107;
+  background-color: #fff9e6;
+  transition: background-color 0.2s ease;
+}
+
+.unreadCard:hover {
+  background-color: #fff5d9;
+}
+
+.newBadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  background-color: #ffc107;
+  color: #333;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 10px;
+  text-transform: uppercase;
 }

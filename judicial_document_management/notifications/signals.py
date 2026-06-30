@@ -1,15 +1,17 @@
-# notifications/signals.py
+# notifications/signals.py - ПОЛНОСТЬЮ ПЕРЕПИСАННЫЙ
+
 from django.apps import apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 import logging
-from case_registry.models import Correspondence
-from .models import Notification
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+# Хранилище обработанных уведомлений для защиты от дублей
+_processed_notifications = set()
 
 
 def get_presiding_judge_from_proceeding(proceeding):
@@ -36,123 +38,74 @@ def get_presiding_judge_from_proceeding(proceeding):
     return None
 
 
-# Используем простой флаг в памяти (для продакшена лучше использовать кэш)
-_processed_notifications = set()
+# ========== СИГНАЛЫ ДЛЯ КОРРЕСПОНДЕНЦИИ ==========
 
-@receiver(post_save, sender=Correspondence)
+@receiver(post_save, sender='case_registry.Correspondence')
 def create_correspondence_notification(sender, instance, created, **kwargs):
     """
-    Создает уведомление при создании новой корреспонденции,
-    если она привязана к делу
+    Создает уведомление при создании новой корреспонденции.
+    ПРОПУСКАЕТ корреспонденцию, созданную автоматически из PartyDocument.
     """
-    # Уникальный ключ для этого сигнала
-    signal_key = f"correspondence_notification_{instance.id}"
-    
-    # Если этот сигнал уже обрабатывался, пропускаем
-    if signal_key in _processed_notifications:
-        logger.info(f"Сигнал для корреспонденции {instance.id} уже обработан, пропускаем")
+    # Пропускаем, если это корреспонденция от PartyDocument (автоматическая)
+    if instance.notes and "PartyDocument ID:" in instance.notes:
+        logger.info(f"Пропускаем уведомление для корреспонденции {instance.id} - создана автоматически")
         return
     
-    logger.info(f"=== Сработал сигнал create_correspondence_notification ===")
-    logger.info(f"Создан: {created}, ID корреспонденции: {instance.id}")
-    logger.info(f"Тип: {instance.correspondence_type}, Документ: {instance.document_type}")
+    if not created:
+        return
     
-    # ДЛЯ НОВЫХ ЗАПИСЕЙ - нужно подождать, пока завершится транзакция
-    if created:
-        logger.info("Это НОВАЯ запись. Используем значения напрямую из объекта")
-        # Для новых записей значения уже должны быть установлены
-        pass
+    signal_key = f"correspondence_notification_{instance.id}"
+    if signal_key in _processed_notifications:
+        return
+    _processed_notifications.add(signal_key)
     
-    # Логируем все поля
-    logger.info(f"criminal_case_id: {instance.criminal_case_id}")
-    logger.info(f"civil_case_id: {instance.civil_case_id}")
-    logger.info(f"admin_case_id: {instance.admin_case_id}")
-    logger.info(f"kas_case_id: {instance.kas_case_id}")
-    
-    # Определяем, к какому делу привязана корреспонденция
+    # Определяем дело и судью
     proceeding = None
     proceeding_type = None
     user = None
     proceeding_number = None
     
-    # Проверяем все возможные типы дел
     if instance.criminal_case_id:
-        logger.info(f"Найдена связь с уголовным делом ID: {instance.criminal_case_id}")
         try:
             CriminalProceedings = apps.get_model('criminal_proceedings', 'CriminalProceedings')
             proceeding = CriminalProceedings.objects.get(id=instance.criminal_case_id)
             proceeding_type = 'criminal'
             proceeding_number = proceeding.case_number_criminal
-            logger.info(f"Уголовное дело найдено: {proceeding.case_number_criminal}")
-            
-            # Получаем судью
             user = get_presiding_judge_from_proceeding(proceeding)
-            if user:
-                logger.info(f"Найден судья: {user.username} (ID: {user.id})")
-            else:
-                logger.warning(f"Судья не найден для уголовного дела {proceeding.id}")
-                
         except Exception as e:
-            logger.error(f"Ошибка получения уголовного дела: {e}", exc_info=True)
+            logger.error(f"Ошибка: {e}")
     
     elif instance.civil_case_id:
-        logger.info(f"Найдена связь с гражданским делом ID: {instance.civil_case_id}")
         try:
             CivilProceedings = apps.get_model('civil_proceedings', 'CivilProceedings')
             proceeding = CivilProceedings.objects.get(id=instance.civil_case_id)
             proceeding_type = 'civil'
             proceeding_number = proceeding.case_number_civil
-            logger.info(f"Гражданское дело найдено: {proceeding.case_number_civil}")
-            
             user = get_presiding_judge_from_proceeding(proceeding)
-            if user:
-                logger.info(f"Найден судья: {user.username} (ID: {user.id})")
-            else:
-                logger.warning(f"Судья не найден для гражданского дела {proceeding.id}")
-                
         except Exception as e:
-            logger.error(f"Ошибка получения гражданского дела: {e}", exc_info=True)
+            logger.error(f"Ошибка: {e}")
     
     elif instance.admin_case_id:
-        logger.info(f"Найдена связь с делом об АП ID: {instance.admin_case_id}")
         try:
             AdministrativeProceedings = apps.get_model('administrative_code', 'AdministrativeProceedings')
             proceeding = AdministrativeProceedings.objects.get(id=instance.admin_case_id)
             proceeding_type = 'admin'
             proceeding_number = proceeding.case_number_admin
-            logger.info(f"Дело об АП найдено: {proceeding.case_number_admin}")
-            
             user = get_presiding_judge_from_proceeding(proceeding)
-            if user:
-                logger.info(f"Найден судья: {user.username} (ID: {user.id})")
-            else:
-                logger.warning(f"Судья не найден для дела об АП {proceeding.id}")
-                
         except Exception as e:
-            logger.error(f"Ошибка получения дела об АП: {e}", exc_info=True)
+            logger.error(f"Ошибка: {e}")
     
     elif instance.kas_case_id:
-        logger.info(f"Найдена связь с делом по КАС ID: {instance.kas_case_id}")
         try:
             KasProceedings = apps.get_model('administrative_proceedings', 'KasProceedings')
             proceeding = KasProceedings.objects.get(id=instance.kas_case_id)
             proceeding_type = 'kas'
             proceeding_number = proceeding.case_number_kas
-            logger.info(f"Дело по КАС найдено: {proceeding.case_number_kas}")
-            
             user = get_presiding_judge_from_proceeding(proceeding)
-            if user:
-                logger.info(f"Найден судья: {user.username} (ID: {user.id})")
-            else:
-                logger.warning(f"Судья не найден для дела по КАС {proceeding.id}")
-                
         except Exception as e:
-            logger.error(f"Ошибка получения дела по КАС: {e}", exc_info=True)
+            logger.error(f"Ошибка: {e}")
     
-    # Если есть судья и дело, создаем уведомление
     if user and proceeding:
-        logger.info(f"Создаем уведомление для судьи {user.username}")
-        
         if instance.correspondence_type == 'incoming':
             title = f"📥 Новая входящая корреспонденция"
             message = f"По делу №{proceeding_number} поступил документ: {instance.document_type}"
@@ -174,9 +127,7 @@ def create_correspondence_notification(sender, instance, created, **kwargs):
         if instance.summary:
             message += f"\nКраткое содержание: {instance.summary[:100]}..."
         
-        logger.info(f"Создаем уведомление:")
-        logger.info(f"  - Заголовок: {title}")
-        logger.info(f"  - Сообщение: {message}")
+        from .models import Notification
         
         notification_kwargs = {
             'user': user,
@@ -197,102 +148,156 @@ def create_correspondence_notification(sender, instance, created, **kwargs):
             notification_kwargs['kas_proceeding'] = proceeding
         
         try:
-            notification = Notification.objects.create(**notification_kwargs)
-            logger.info(f"✅ Уведомление создано успешно! ID: {notification.id}")
-            
-            # Помечаем, что этот сигнал обработан
-            _processed_notifications.add(signal_key)
-            
+            Notification.objects.create(**notification_kwargs)
+            logger.info(f"Уведомление создано для корреспонденции {instance.id}")
         except Exception as e:
-            logger.error(f"❌ Ошибка создания уведомления: {e}", exc_info=True)
-    else:
-        logger.warning("Не удалось создать уведомление:")
-        if not proceeding:
-            logger.warning("  - Дело не найдено")
-        if not user:
-            logger.warning("  - Судья не найден")
+            logger.error(f"Ошибка создания уведомления: {e}")
 
 
-@receiver(post_save, sender=Correspondence)
-def notify_on_important_documents(sender, instance, created, **kwargs):
-    """Отдельный обработчик для особо важных документов"""
-    # Уникальный ключ для этого сигнала
-    signal_key = f"important_document_{instance.id}"
-    
-    # Если этот сигнал уже обрабатывался, пропускаем
-    if signal_key in _processed_notifications:
-        logger.info(f"Сигнал important для корреспонденции {instance.id} уже обработан, пропускаем")
-        return
-    
-    logger.info(f"=== Сработал сигнал notify_on_important_documents ===")
+@receiver(post_save, sender='case_registry.Correspondence')
+def create_activity_for_correspondence(sender, instance, created, **kwargs):
+    """
+    Создает активность при создании новой корреспонденции.
+    """
+    from .activity_service import CaseActivityService
     
     if not created:
-        logger.info("Пропускаем, так как это не новая запись")
         return
     
-    important_types = ['Жалоба', 'Ходатайство', 'Заявление', 'Представление']
+    # Пропускаем автоматическую корреспонденцию от PartyDocument
+    if instance.notes and "PartyDocument ID:" in instance.notes:
+        return
     
-    if instance.document_type in important_types:
-        logger.info(f"Документ {instance.document_type} в списке важных")
-        
-        # Находим пользователя и дело
-        user = None
-        proceeding = None
-        proceeding_number = None
-        
-        if instance.criminal_case_id:
-            try:
-                CriminalProceedings = apps.get_model('criminal_proceedings', 'CriminalProceedings')
-                proceeding = CriminalProceedings.objects.get(id=instance.criminal_case_id)
-                user = get_presiding_judge_from_proceeding(proceeding)
-                proceeding_number = proceeding.case_number_criminal
-            except Exception as e:
-                logger.error(f"Ошибка: {e}")
-        
-        elif instance.civil_case_id:
-            try:
-                CivilProceedings = apps.get_model('civil_proceedings', 'CivilProceedings')
-                proceeding = CivilProceedings.objects.get(id=instance.civil_case_id)
-                user = get_presiding_judge_from_proceeding(proceeding)
-                proceeding_number = proceeding.case_number_civil
-            except Exception as e:
-                logger.error(f"Ошибка: {e}")
-        
-        elif instance.admin_case_id:
-            try:
-                AdministrativeProceedings = apps.get_model('administrative_code', 'AdministrativeProceedings')
-                proceeding = AdministrativeProceedings.objects.get(id=instance.admin_case_id)
-                user = get_presiding_judge_from_proceeding(proceeding)
-                proceeding_number = proceeding.case_number_admin
-            except Exception as e:
-                logger.error(f"Ошибка: {e}")
-        
-        elif instance.kas_case_id:
-            try:
-                KasProceedings = apps.get_model('administrative_proceedings', 'KasProceedings')
-                proceeding = KasProceedings.objects.get(id=instance.kas_case_id)
-                user = get_presiding_judge_from_proceeding(proceeding)
-                proceeding_number = proceeding.case_number_kas
-            except Exception as e:
-                logger.error(f"Ошибка: {e}")
-        
-        if user and proceeding:
-            deadline = timezone.now() + timezone.timedelta(days=3)
-            
-            try:
-                notification = Notification.objects.create(
-                    user=user,
-                    title=f"⚠️ ВАЖНО: {instance.document_type} по делу №{proceeding_number}",
-                    message=f"Требуется рассмотреть {instance.document_type.lower()}: {instance.summary[:200]}",
-                    priority='high',
-                    correspondence=instance,
-                    deadline=deadline,
-                    notification_type=f'{instance.correspondence_type}_correspondence'
-                )
-                logger.info(f"✅ Дополнительное уведомление создано! ID: {notification.id}")
-                
-                # Помечаем, что этот сигнал обработан
-                _processed_notifications.add(signal_key)
-                
-            except Exception as e:
-                logger.error(f"❌ Ошибка: {e}", exc_info=True)
+    # Определяем дело
+    case = None
+    if instance.criminal_case_id:
+        from criminal_proceedings.models import CriminalProceedings
+        case = CriminalProceedings.objects.filter(id=instance.criminal_case_id).first()
+    elif instance.civil_case_id:
+        from civil_proceedings.models import CivilProceedings
+        case = CivilProceedings.objects.filter(id=instance.civil_case_id).first()
+    elif instance.admin_case_id:
+        from administrative_code.models import AdministrativeProceedings
+        case = AdministrativeProceedings.objects.filter(id=instance.admin_case_id).first()
+    elif instance.kas_case_id:
+        from administrative_proceedings.models import KasProceedings
+        case = KasProceedings.objects.filter(id=instance.kas_case_id).first()
+    
+    if not case:
+        return
+    
+    corr_type = "Входящая" if instance.correspondence_type == 'incoming' else "Исходящая"
+    title = f"{corr_type} корреспонденция"
+    description = f"{instance.document_type}\nОт: {instance.sender or instance.recipient}"
+    if instance.summary:
+        description += f"\n{instance.summary[:200]}"
+    
+    CaseActivityService.create_activity(
+        case=case,
+        activity_type='new_correspondence',
+        title=title,
+        description=description,
+        related_object=instance,
+        link=f"/correspondence/{instance.id}/",
+        auto_notify=False  # Не создаем дублирующее уведомление
+    )
+
+
+# ========== СИГНАЛ ДЛЯ ДОКУМЕНТОВ СТОРОН (ТОЛЬКО ОДИН!) ==========
+
+@receiver(post_save, sender='case_documents.PartyDocument')
+def create_activity_for_party_document(sender, instance, created, **kwargs):
+    """
+    Создает активность ПРИ СОЗДАНИИ нового документа от стороны.
+    ТОЛЬКО ОДИН РАЗ - ПРИ СОЗДАНИИ!
+    """
+    from .activity_service import CaseActivityService
+    
+    # ТОЛЬКО ПРИ СОЗДАНИИ НОВОГО ДОКУМЕНТА
+    if not created:
+        return
+    
+    # Получаем дело
+    case = instance.case
+    if not case:
+        logger.warning(f"Документ {instance.id} не привязан к делу")
+        return
+    
+    # Проверяем, нет ли уже активности (защита от дублей)
+    from django.contrib.contenttypes.models import ContentType
+    from .models import CaseActivity
+    
+    case_ct = ContentType.objects.get_for_model(case)
+    doc_ct = ContentType.objects.get_for_model(instance)
+    
+    existing = CaseActivity.objects.filter(
+        case_content_type=case_ct,
+        case_object_id=case.id,
+        related_content_type=doc_ct,
+        related_object_id=instance.id,
+        activity_type='new_party_document'
+    ).exists()
+    
+    if existing:
+        logger.info(f"Активность для документа {instance.id} уже существует, пропускаем")
+        return
+    
+    # Формируем заголовок и описание
+    doc_type_display = instance.get_document_type_display()
+    title = f"Новый документ от стороны: {doc_type_display}"
+    description = f"{instance.title}\nПодатель: {instance.submitter_name}"
+    
+    # Формируем ссылку
+    model_name = case._meta.model_name
+    if model_name == 'administrativeproceedings':
+        link = f"/admin-proceedings/{case.id}/party-documents/{instance.id}/"
+    elif model_name == 'criminalproceedings':
+        link = f"/criminal-proceedings/{case.id}/party-documents/{instance.id}/"
+    elif model_name == 'civilproceedings':
+        link = f"/civil-proceedings/{case.id}/party-documents/{instance.id}/"
+    else:
+        link = f"/kas-proceedings/{case.id}/party-documents/{instance.id}/"
+    
+    # Создаем активность
+    try:
+        CaseActivityService.create_activity(
+            case=case,
+            activity_type='new_party_document',
+            title=title,
+            description=description,
+            related_object=instance,
+            link=link,
+            auto_notify=True
+        )
+        logger.info(f"Активность создана для документа {instance.id}")
+    except Exception as e:
+        logger.error(f"Ошибка создания активности: {e}")
+
+
+# ========== СИГНАЛЫ ДЛЯ ХОДАТАЙСТВ ==========
+
+def create_activity_for_petition(case, petition, petitioner, case_type):
+    """
+    Универсальная функция для создания активности по ходатайству.
+    Вызывается из соответствующих приложений.
+    """
+    from .activity_service import CaseActivityService
+    
+    title = "Новое ходатайство"
+    description = f"{petition.notation[:200] if hasattr(petition, 'notation') else 'Ходатайство по делу'}"
+    
+    if hasattr(petition, 'petitions_incase'):
+        petitions_names = [p.petitions for p in petition.petitions_incase.petitions_name.all()]
+        if petitions_names:
+            title = f"Новое ходатайство: {', '.join(petitions_names)}"
+            description = petition.petitions_incase.notation
+    
+    CaseActivityService.create_activity(
+        case=case,
+        activity_type='new_petition',
+        title=title,
+        description=description,
+        related_object=petition,
+        link=f"/petitions/{petition.id}/",
+        auto_notify=True
+    )
