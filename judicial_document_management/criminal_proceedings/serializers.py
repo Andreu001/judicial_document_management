@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from users.models import User
 from django.contrib.contenttypes.models import ContentType
-from business_card.models import SidesCase, SidesCaseInCase, Lawyer, Petitions, PetitionsInCase, Decisions
+from business_card.models import (
+    SidesCase, SidesCaseInCase, Lawyer, Petitions,
+    PetitionsInCase, Decisions, BusinessMovement
+)
 from .models import (CriminalProceedings,
     Defendant, CriminalDecision, CriminalRuling, CriminalCaseMovement,
     CriminalDecisions, CriminalAppeal, ReferringAuthority, LawyerCriminal,

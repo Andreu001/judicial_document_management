@@ -349,36 +349,36 @@ class CaseNotificationSummary(models.Model):
             case_number = case.case_number_civil
         elif hasattr(case, 'case_number_kas'):
             case_number = case.case_number_kas
-        
+
         return case_number or f"Дело #{case.id}"
-    
+
     def update_summary(self):
         """Обновить сводку из активностей"""
         from django.contrib.contenttypes.models import ContentType
-        
+
         # Получаем все непрочитанные активности по этому делу для этого судьи
         # Примечание: нужно знать, какие активности относятся к судье
         # Пока просто считаем все непрочитанные по делу
-        
+
         unread_activities = CaseActivity.objects.filter(
             case_content_type=self.case_content_type,
             case_object_id=self.case_object_id,
             is_read_by_judge=False
         )
-        
+
         self.unread_party_documents = unread_activities.filter(
             activity_type='new_party_document'
         ).count()
-        
+
         self.unread_petitions = unread_activities.filter(
             activity_type='new_petition'
         ).count()
-        
+
         self.unread_correspondence = unread_activities.filter(
             activity_type='new_correspondence'
         ).count()
-        
+
         self.total_unread = unread_activities.count()
         self.save()
-        
+
         return self.total_unread

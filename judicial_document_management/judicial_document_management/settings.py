@@ -1,6 +1,9 @@
 from pathlib import Path
 import os
 
+os.environ['OMP_NUM_THREADS'] = '4'
+os.environ['MKL_NUM_THREADS'] = '4'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -60,6 +63,8 @@ INSTALLED_APPS = [
     'court_registry',
     'communication',
     'channels',
+    'case_distribution.apps.CaseDistributionConfig',
+    'audio_transcription',
 ]
 
 ASGI_APPLICATION = 'judicial_document_management.asgi.application'
@@ -103,8 +108,30 @@ TEMPLATES = [
     },
 ]
 
+# Настройки Celery для Windows
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 минут
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 минут
+
+CELERY_WORKER_POOL = 'solo'  # Windows не поддерживает prefork
+CELERY_WORKER_CONCURRENCY = 1  # Для Windows лучше 1
+
 WSGI_APPLICATION = 'judicial_document_management.wsgi.application'
 
+# Настройки для нашего модуля
+WHISPER_MODEL_SIZE = 'small'  # 'small' - лучший баланс качества русского и скорости
+WHISPER_DEVICE = 'cpu'        # Если есть видеокарта NVIDIA, поставь 'cuda'
+WHISPER_COMPUTE_TYPE = 'int8' # Оптимизация для CPU
+
+# Увеличиваем лимит загрузки файлов (аудио могут быть весомыми)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -139,20 +166,17 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'ru'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+    BASE_DIR / 'static' / 'admin_custom',
+]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 LOGIN_URL = 'users:login'
@@ -267,7 +291,9 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 # Поддерживаемые форматы файлов
 ALLOWED_UPLOAD_EXTENSIONS = ['.pdf', '.doc', '.docx']
 
-# Настройки логирования
+# Добавьте в конец settings.py
+
+# Настройки логирования для отслеживания прогресса
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -289,12 +315,17 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'notifications.log',
+            'filename': 'audio_transcription.log',
             'formatter': 'verbose',
             'level': 'DEBUG',
         },
     },
     'loggers': {
+        'audio_transcription': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
         'notifications': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
@@ -382,3 +413,22 @@ SOCIAL_AUTH_PIPELINE = (
 EXTERNAL_USER_MODEL = 'side_case_access.ExternalUser'
 
 SOCIAL_AUTH_USER_MODEL = 'side_case_access.ExternalUser'
+
+ADMIN_SITE_HEADER = "Судебная система - Администрирование"
+ADMIN_SITE_TITLE = "Панель управления"
+ADMIN_INDEX_TITLE = "Добро пожаловать в систему управления"
+
+
+LANGUAGE_CODE = 'ru-ru'  # Изменено с 'ru' на 'ru-ru'
+TIME_ZONE = 'Europe/Moscow'  # Изменено с 'UTC' на 'Europe/Moscow'
+USE_I18N = True
+USE_TZ = True
+
+# Для отображения дат в русском формате
+USE_L10N = True
+
+# Настройка форматов дат
+DATE_FORMAT = 'd.m.Y'
+DATETIME_FORMAT = 'd.m.Y H:i'
+SHORT_DATE_FORMAT = 'd.m.Y'
+SHORT_DATETIME_FORMAT = 'd.m.Y H:i'

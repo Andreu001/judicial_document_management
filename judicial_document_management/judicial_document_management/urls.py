@@ -2,11 +2,12 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from .admin_config_1 import admin_site
+
 
 
 urlpatterns = [
-    # path('', include('djoser.urls')),
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls), # Измените admin_site.urls на admin.site.urls или наоборот
     path('business_card/', include('business_card.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
@@ -30,8 +31,11 @@ urlpatterns = [
     path('legal-codes/', include('legal_codes.urls')),
     path('api/court-registry/', include('court_registry.urls')),
     path('api/communication/', include('communication.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('case-distribution/', include('case_distribution.urls')),
+    path('audio-transcription/', include('audio_transcription.urls')),
+]
 
-# Добавьте для обслуживания медиа-файлов в режиме разработки
+# Обслуживание статических файлов в режиме разработки
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

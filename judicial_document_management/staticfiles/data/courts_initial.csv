@@ -1,0 +1,117 @@
+code,name,region_code,level_code
+ALT_OBL,Алтайский краевой суд,22,subject_level
+ALT_ALEYSK,Алейский городской суд Алтайского края,22,city_district
+ALT_ALTAY,Алтайский районный суд Алтайского края,22,city_district
+ALT_BAEV,Баевский районный суд Алтайского края,22,city_district
+ALT_BELOK,Белокурихинский городской суд Алтайского края,22,city_district
+ALT_BIYSK_G,Бийский городской суд Алтайского края,22,city_district
+ALT_BIYSK_R,Бийский районный суд Алтайского края,22,city_district
+ALT_BLAG,Благовещенский районный суд Алтайского края,22,city_district
+ALT_BURL,Бурлинский районный суд Алтайского края,22,city_district
+ALT_BYSTR,Быстроистокский районный суд Алтайского края,22,city_district
+ALT_VOLCH,Волчихинский районный суд Алтайского края,22,city_district
+ALT_EGOR,Егорьевский районный суд Алтайского края,22,city_district
+ALT_BARNAUL_ZHEL,Железнодорожный районный суд г. Барнаула Алтайского края,22,city_district
+ALT_ZAVYAL,Завьяловский районный суд Алтайского края,22,city_district
+ALT_ZALES,Залесовский районный суд Алтайского края,22,city_district
+ALT_ZARINSK_G,Заринский городской суд Алтайского края,22,city_district
+ALT_ZARINSK_R,Заринский районный суд Алтайского края,22,city_district
+ALT_ZMEIN,Змеиногорский городской суд Алтайского края,22,city_district
+ALT_ZONAL,Зональный районный суд Алтайского края,22,city_district
+ALT_BARNAUL_IND,Индустриальный районный суд г. Барнаула Алтайского края,22,city_district
+ALT_KALMAN,Калманский районный суд Алтайского края,22,city_district
+ALT_KAMEN,Каменский городской суд Алтайского края,22,city_district
+ALT_KLYUCH,Ключевский районный суд Алтайского края,22,city_district
+ALT_KOSIKH,Косихинский районный суд Алтайского края,22,city_district
+ALT_KRASNOG,Красногорский районный суд Алтайского края,22,city_district
+ALT_KRASNOSH,Краснощековский районный суд Алтайского края,22,city_district
+ALT_KRUTIKH,Крутихинский районный суд Алтайского края,22,city_district
+ALT_KULUND,Кулундинский районный суд Алтайского края,22,city_district
+ALT_KURYIN,Курьинский районный суд Алтайского края,22,city_district
+ALT_KYTMAN,Кытмановский районный суд Алтайского края,22,city_district
+ALT_BARNAUL_LEN,Ленинский районный суд г. Барнаула Алтайского края,22,city_district
+ALT_LOKTEV,Локтевский районный суд Алтайского края,22,city_district
+ALT_MAMONT,Мамонтовский районный суд Алтайского края,22,city_district
+ALT_MIKHAIL,Михайловский районный суд Алтайского края,22,city_district
+ALT_NOVOALT,Новоалтайский городской суд Алтайского края,22,city_district
+ALT_BARNAUL_OKT,Октябрьский районный суд г. Барнаула Алтайского края,22,city_district
+ALT_PAVL,Павловский районный суд Алтайского края,22,city_district
+ALT_PANKR,Панкрушихинский районный суд Алтайского края,22,city_district
+ALT_PETROP,Петропавловский районный суд Алтайского края,22,city_district
+ALT_POSPEL,Поспелихинский районный суд Алтайского края,22,city_district
+ALT_NEM_NAT,Районный суд Немецкого национального района Алтайского края,22,city_district
+ALT_REBRIKH,Ребрихинский районный суд Алтайского края,22,city_district
+ALT_RODIN,Родинский районный суд Алтайского края,22,city_district
+ALT_ROMAN,Романовский районный суд Алтайского края,22,city_district
+ALT_RUBTSOV_G,Рубцовский городской суд Алтайского края,22,city_district
+ALT_RUBTSOV_R,Рубцовский районный суд Алтайского края,22,city_district
+ALT_SLAVGOR,Славгородский городской суд Алтайского края,22,city_district
+ALT_SMOLEN,Смоленский районный суд Алтайского края,22,city_district
+ALT_SOVET,Советский районный суд Алтайского края,22,city_district
+ALT_SOLONESH,Солонешенский районный суд Алтайского края,22,city_district
+ALT_SOLTON,Солтонский районный суд Алтайского края,22,city_district
+ALT_TABUN,Табунский районный суд Алтайского края,22,city_district
+ALT_TALMEN,Тальменский районный суд Алтайского края,22,city_district
+ALT_TOGUL,Тогульский районный суд Алтайского края,22,city_district
+ALT_TOPCHIKH,Топчихинский районный суд Алтайского края,22,city_district
+ALT_TRETIAK,Третьяковский районный суд Алтайского края,22,city_district
+ALT_TROITS,Троицкий районный суд Алтайского края,22,city_district
+ALT_TYUMEN,Тюменцевский районный суд Алтайского края,22,city_district
+ALT_UGLOV,Угловский районный суд Алтайского края,22,city_district
+ALT_UST_KALM,Усть-Калманский районный суд Алтайского края,22,city_district
+ALT_UST_PRIST,Усть-Пристанский районный суд Алтайского края,22,city_district
+ALT_KHABAR,Хабарский районный суд Алтайского края,22,city_district
+ALT_TSELLIN,Целинный районный суд Алтайского края,22,city_district
+ALT_BARNAUL_TSENTR,Центральный районный суд г. Барнаула Алтайского края,22,city_district
+ALT_CHARYSH,Чарышский районный суд Алтайского края,22,city_district
+ALT_SHELAB,Шелаболихинский районный суд Алтайского края,22,city_district
+ALT_SHIPUN,Шипуновский районный суд Алтайского края,22,city_district
+ALT_YAROV,Яровской районный суд Алтайского края,22,city_district
+AMU_OBL,Амурский областной суд,28,subject_level
+AMU_ARKHAR,Архаринский районный суд Амурской области,28,city_district
+AMU_BELOG,Белогорский городской суд Амурской области,28,city_district
+AMU_BLAG_G,Благовещенский городской суд Амурской области,28,city_district
+AMU_BLAG_R,Благовещенский районный суд Амурской области,28,city_district
+AMU_BUREY,Бурейский районный суд Амурской области,28,city_district
+AMU_ZAVIT,Завитинский районный суд Амурской области,28,city_district
+AMU_ZEYA,Зейский районный суд Амурской области,28,city_district
+AMU_IVANOV,Ивановский районный суд Амурской области,28,city_district
+AMU_KONST,Константиновский районный суд Амурской области,28,city_district
+AMU_MAGDAG,Магдагачинский районный суд Амурской области,28,city_district
+AMU_MAZAN,Мазановский районный суд Амурской области,28,city_district
+AMU_MIKHAIL,Михайловский районный суд Амурской области,28,city_district
+AMU_OKT,Октябрьский районный суд Амурской области,28,city_district
+AMU_RAICHIKH,Райчихинский городской суд Амурской области,28,city_district
+AMU_ROMNEN,Ромненский районный суд Амурской области,28,city_district
+AMU_SVOBOD_G,Свободненский городской суд Амурской области,28,city_district
+AMU_SELEM,Селемджинский районный суд Амурской области,28,city_district
+AMU_SERYSHEV,Серышевский районный суд Амурской области,28,city_district
+AMU_SKOVOR,Сковородинский районный суд Амурской области,28,city_district
+AMU_TAMBOV,Тамбовский районный суд Амурской области,28,city_district
+AMU_TYNDA,Тындинский районный суд Амурской области,28,city_district
+AMU_SHIMAN,Шимановский районный суд Амурской области,28,city_district
+CRIM_OBL,Верховный суд Республики Крым,91,subject_level
+CRIM_ALUSHT,Алуштинский городской суд Республики Крым,91,city_district
+CRIM_ARMYANS,Армянский городской суд Республики Крым,91,city_district
+CRIM_BAKHCH,Бахчисарайский районный суд Республики Крым,91,city_district
+CRIM_BELOG,Белогорский районный суд Республики Крым,91,city_district
+CRIM_DZHANK,Джанкойский районный суд Республики Крым,91,city_district
+CRIM_EVPAT,Евпаторийский городской суд Республики Крым,91,city_district
+CRIM_SIMF_ZHEL,Железнодорожный районный суд г. Симферополя Республики Крым,91,city_district
+CRIM_KERCH,Керченский городской суд Республики Крым,91,city_district
+CRIM_SIMF_KIEV,Киевский районный суд г. Симферополя Республики Крым,91,city_district
+CRIM_KIROV,Кировский районный суд Республики Крым,91,city_district
+CRIM_KRASNOGV,Красногвардейский районный суд Республики Крым,91,city_district
+CRIM_KRASNOPER,Красноперекопский районный суд Республики Крым,91,city_district
+CRIM_LENIN,Ленинский районный суд Республики Крым,91,city_district
+CRIM_NIZHNEG,Нижнегорский районный суд Республики Крым,91,city_district
+CRIM_PERVOM,Первомайский районный суд Республики Крым,91,city_district
+CRIM_RAZDOL,Раздольненский районный суд Республики Крым,91,city_district
+CRIM_SAK_R,Сакский районный суд Республики Крым,91,city_district
+CRIM_SIMF_R,Симферопольский районный суд Республики Крым,91,city_district
+CRIM_SOVET,Советский районный суд Республики Крым,91,city_district
+CRIM_SUDAK,Судакский городской суд Республики Крым,91,city_district
+CRIM_FEODOS,Феодосийский городской суд Республики Крым,91,city_district
+CRIM_SIMF_TSENTR,Центральный районный суд г. Симферополя Республики Крым,91,city_district
+CRIM_CHERNOM,Черноморский районный суд Республики Крым,91,city_district
+CRIM_YALTA,Ялтинский городской суд Республики Крым,91,city_district

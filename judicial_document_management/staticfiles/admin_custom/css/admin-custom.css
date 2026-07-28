@@ -1,0 +1,1467 @@
+/* ========================================
+   АДМИН-ПАНЕЛЬ В СТИЛЕ ВАШЕГО ПРОЕКТА
+   ======================================== */
+
+/* ========================================
+   ПЕРЕМЕННЫЕ - ЦВЕТОВЫЕ СХЕМЫ
+   ======================================== */
+:root {
+    /* Основные цвета (из вашего проекта) */
+    --primary: #1e3c5c;
+    --primary-light: #2c4a6e;
+    --primary-dark: #152a42;
+    --secondary: #4a5568;
+    --accent: #3182ce;
+    --success: #2f855a;
+    --danger: #c53030;
+    --warning: #c05621;
+    
+    /* Фоны и границы */
+    --bg-light: #f8fafc;
+    --bg-white: #ffffff;
+    --border-color: #e5e9f0;
+    --border-hover: #cbd5e0;
+    
+    /* Текст */
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    
+    /* Тени */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-hover: 0 8px 24px rgba(30, 60, 92, 0.15);
+    
+    /* Скругления */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    
+    /* Анимации */
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Шрифты */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    /* Размеры */
+    --header-height: 64px;
+    --sidebar-width: 280px;
+}
+
+/* ========================================
+   ОБЩИЕ СТИЛИ
+   ======================================== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg-light) !important;
+    font-family: var(--font-family) !important;
+    color: var(--text-dark) !important;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* Сглаживание шрифтов */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   ШАПКА (HEADER)
+   ======================================== */
+#header {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%) !important;
+    padding: 0 32px !important;
+    height: var(--header-height) !important;
+    box-shadow: var(--shadow-md) !important;
+    border-bottom: none !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+}
+
+#header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+#header h1 {
+    font-weight: 600 !important;
+    font-size: 20px !important;
+    letter-spacing: 0.3px !important;
+    color: white !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#header h1 a {
+    color: white !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    transition: opacity 0.2s !important;
+}
+
+#header h1 a:hover {
+    opacity: 0.85 !important;
+}
+
+#header h1 a i {
+    font-size: 24px !important;
+    background: rgba(255,255,255,0.15);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+#header h1 a:hover i {
+    background: rgba(255,255,255,0.25);
+    transform: scale(1.05);
+}
+
+/* Пользовательские инструменты */
+#user-tools {
+    color: rgba(255,255,255,0.85) !important;
+    font-size: 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+}
+
+#user-tools a {
+    color: rgba(255,255,255,0.85) !important;
+    text-decoration: none !important;
+    padding: 6px 12px !important;
+    border-radius: var(--radius-sm) !important;
+    transition: var(--transition) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 13px !important;
+}
+
+#user-tools a:hover {
+    background: rgba(255,255,255,0.12) !important;
+    color: white !important;
+}
+
+#user-tools .user-greeting {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 12px !important;
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: var(--radius-xl) !important;
+}
+
+#user-tools .user-greeting i {
+    font-size: 18px !important;
+}
+
+/* ========================================
+   НАВИГАЦИОННАЯ ЦЕПОЧКА (BREADCRUMBS)
+   ======================================== */
+div.breadcrumbs {
+    background: white !important;
+    padding: 12px 32px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    font-size: 13px !important;
+}
+
+div.breadcrumbs a {
+    color: var(--primary) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    transition: color 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+div.breadcrumbs a:hover {
+    color: var(--primary-light) !important;
+    text-decoration: underline !important;
+}
+
+div.breadcrumbs .breadcrumb-separator {
+    color: var(--text-light) !important;
+    font-weight: 300 !important;
+}
+
+div.breadcrumbs .current {
+    color: var(--text-dark) !important;
+    font-weight: 500 !important;
+}
+
+/* ========================================
+   ОСНОВНАЯ ОБЛАСТЬ
+   ======================================== */
+#content {
+    padding: 24px 32px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+}
+
+#content-main {
+    max-width: 100% !important;
+}
+
+/* ========================================
+   БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ (САЙДБАР)
+   ======================================== */
+#nav-sidebar {
+    background: white !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden !important;
+    margin-top: 20px !important;
+    transition: var(--transition) !important;
+}
+
+#nav-sidebar:hover {
+    box-shadow: var(--shadow-lg) !important;
+}
+
+#nav-sidebar .module {
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+#nav-sidebar .module h2 {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+    color: white !important;
+    padding: 14px 20px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    margin: 0 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+#nav-sidebar .module h2 i {
+    font-size: 18px !important;
+    opacity: 0.8 !important;
+}
+
+#nav-sidebar .module caption {
+    background: var(--bg-light) !important;
+    color: var(--text-muted) !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+#nav-sidebar .module a {
+    padding: 10px 20px !important;
+    color: var(--text-dark) !important;
+    font-size: 14px !important;
+    transition: var(--transition) !important;
+    border-left: 3px solid transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-decoration: none !important;
+}
+
+#nav-sidebar .module a i {
+    font-size: 16px !important;
+    color: var(--text-muted) !important;
+    width: 20px !important;
+    text-align: center !important;
+    transition: var(--transition) !important;
+}
+
+#nav-sidebar .module a:hover {
+    background: var(--bg-light) !important;
+    border-left-color: var(--primary) !important;
+    padding-left: 24px !important;
+}
+
+#nav-sidebar .module a:hover i {
+    color: var(--primary) !important;
+}
+
+#nav-sidebar .module a.section {
+    font-weight: 500 !important;
+    color: var(--primary) !important;
+}
+
+#nav-sidebar .module a.section i {
+    color: var(--primary) !important;
+}
+
+/* ========================================
+   ГЛАВНАЯ СТРАНИЦА (DASHBOARD)
+   ======================================== */
+.dashboard #content {
+    padding: 24px 32px !important;
+}
+
+.dashboard .module {
+    background: white !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden !important;
+    margin-bottom: 24px !important;
+    transition: var(--transition) !important;
+}
+
+.dashboard .module:hover {
+    box-shadow: var(--shadow-hover) !important;
+    transform: translateY(-2px) !important;
+}
+
+.dashboard .module h2 {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+    color: white !important;
+    padding: 14px 24px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    margin: 0 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.dashboard .module h2 i {
+    font-size: 18px !important;
+    opacity: 0.8 !important;
+}
+
+.dashboard .module .row {
+    padding: 12px 24px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: background 0.2s ease !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.dashboard .module .row:hover {
+    background: var(--bg-light) !important;
+}
+
+.dashboard .module .row:last-child {
+    border-bottom: none !important;
+}
+
+.dashboard .module .row a {
+    color: var(--primary) !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    transition: color 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.dashboard .module .row a i {
+    font-size: 14px !important;
+    opacity: 0.6 !important;
+    transition: var(--transition) !important;
+}
+
+.dashboard .module .row a:hover {
+    color: var(--primary-light) !important;
+}
+
+.dashboard .module .row a:hover i {
+    opacity: 1 !important;
+    transform: translateX(2px) !important;
+}
+
+.dashboard .module .row .count {
+    background: var(--bg-light) !important;
+    padding: 2px 12px !important;
+    border-radius: var(--radius-xl) !important;
+    font-size: 12px !important;
+    color: var(--text-muted) !important;
+    font-weight: 600 !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* ========================================
+   СПИСКИ МОДЕЛЕЙ (CHANGELIST)
+   ======================================== */
+#changelist {
+    background: white !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden !important;
+}
+
+#changelist #toolbar {
+    padding: 16px 24px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    background: var(--bg-light) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    align-items: center !important;
+}
+
+#changelist #toolbar form {
+    display: flex !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    flex: 1 !important;
+}
+
+#changelist #toolbar form label {
+    font-weight: 500 !important;
+    color: var(--text-dark) !important;
+    font-size: 13px !important;
+}
+
+#changelist #toolbar form input[type="text"] {
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 8px 14px !important;
+    font-size: 14px !important;
+    background: white !important;
+    min-width: 300px !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    font-family: var(--font-family) !important;
+}
+
+#changelist #toolbar form input[type="text"]:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(30, 60, 92, 0.1) !important;
+    outline: none !important;
+}
+
+#changelist #toolbar form input[type="submit"] {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 20px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+    font-size: 14px !important;
+    font-family: var(--font-family) !important;
+}
+
+#changelist #toolbar form input[type="submit"]:hover {
+    background: var(--primary-light) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* --- ТАБЛИЦА --- */
+#changelist table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+#changelist table thead th {
+    background: var(--bg-light) !important;
+    color: var(--text-dark) !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    padding: 14px 16px !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    border-top: none !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    text-align: left !important;
+}
+
+#changelist table thead th a {
+    color: var(--text-dark) !important;
+    text-decoration: none !important;
+}
+
+#changelist table thead th a:hover {
+    color: var(--primary) !important;
+}
+
+#changelist table tbody td {
+    padding: 14px 16px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    font-size: 14px !important;
+    color: var(--text-dark) !important;
+    vertical-align: middle !important;
+    line-height: 1.5 !important;
+}
+
+#changelist table tbody tr {
+    transition: background 0.2s ease !important;
+}
+
+#changelist table tbody tr:hover {
+    background: var(--bg-light) !important;
+}
+
+#changelist table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+#changelist table tbody td a {
+    color: var(--primary) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    transition: color 0.2s !important;
+}
+
+#changelist table tbody td a:hover {
+    color: var(--primary-light) !important;
+    text-decoration: underline !important;
+}
+
+#changelist table .action-checkbox {
+    width: 40px !important;
+    text-align: center !important;
+}
+
+#changelist table .action-checkbox input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    cursor: pointer !important;
+    accent-color: var(--primary) !important;
+}
+
+/* --- ФИЛЬТРЫ --- */
+#changelist-filter {
+    background: white !important;
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    padding: 0 !important;
+    margin-left: 20px !important;
+    min-width: 220px !important;
+    overflow: hidden !important;
+}
+
+#changelist-filter h2 {
+    background: var(--primary) !important;
+    color: white !important;
+    padding: 12px 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    margin: 0 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#changelist-filter h2 i {
+    font-size: 14px !important;
+}
+
+#changelist-filter h3 {
+    padding: 10px 16px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--text-dark) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    margin: 0 !important;
+    background: var(--bg-light) !important;
+}
+
+#changelist-filter ul {
+    padding: 4px 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+}
+
+#changelist-filter ul li {
+    padding: 6px 16px !important;
+    font-size: 13px !important;
+    transition: background 0.2s !important;
+}
+
+#changelist-filter ul li:hover {
+    background: var(--bg-light) !important;
+}
+
+#changelist-filter ul li a {
+    color: var(--text-dark) !important;
+    text-decoration: none !important;
+    display: block !important;
+}
+
+#changelist-filter ul li a:hover {
+    color: var(--primary) !important;
+}
+
+#changelist-filter ul li.selected {
+    background: var(--bg-light) !important;
+    border-left: 3px solid var(--primary) !important;
+}
+
+#changelist-filter ul li.selected a {
+    color: var(--primary) !important;
+    font-weight: 600 !important;
+}
+
+/* ========================================
+   ФОРМЫ РЕДАКТИРОВАНИЯ
+   ======================================== */
+.change-form .form-row {
+    padding: 16px 24px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+}
+
+.change-form .form-row:last-child {
+    border-bottom: none !important;
+}
+
+.change-form .form-row label {
+    font-weight: 600 !important;
+    color: var(--text-dark) !important;
+    font-size: 13px !important;
+    min-width: 180px !important;
+    padding-top: 8px !important;
+}
+
+.change-form .form-row label.required:after {
+    content: " *" !important;
+    color: var(--danger) !important;
+}
+
+.change-form .form-row .field-box {
+    flex: 1 !important;
+}
+
+.change-form .form-row input[type="text"],
+.change-form .form-row input[type="number"],
+.change-form .form-row input[type="email"],
+.change-form .form-row input[type="url"],
+.change-form .form-row input[type="date"],
+.change-form .form-row input[type="datetime-local"],
+.change-form .form-row textarea,
+.change-form .form-row select {
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    background: white !important;
+    width: 100% !important;
+    max-width: 500px !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    font-family: var(--font-family) !important;
+    color: var(--text-dark) !important;
+}
+
+.change-form .form-row input:focus,
+.change-form .form-row textarea:focus,
+.change-form .form-row select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(30, 60, 92, 0.1) !important;
+    outline: none !important;
+}
+
+.change-form .form-row textarea {
+    max-width: 100% !important;
+    min-height: 100px !important;
+    line-height: 1.6 !important;
+    resize: vertical !important;
+}
+
+.change-form .form-row select[multiple] {
+    min-height: 150px !important;
+}
+
+.change-form .form-row .help {
+    color: var(--text-muted) !important;
+    font-size: 12px !important;
+    margin-top: 4px !important;
+    display: block !important;
+}
+
+/* --- Инлайн-формы --- */
+.inline-group {
+    background: white !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid var(--border-color) !important;
+    margin-bottom: 24px !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.inline-group .inline-related {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.inline-group .inline-related:last-child {
+    border-bottom: none !important;
+}
+
+.inline-group .inline-related h3 {
+    background: var(--bg-light) !important;
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--text-dark) !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.inline-group .inline-related .form-row {
+    padding: 12px 20px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.inline-group .inline-related .form-row:last-child {
+    border-bottom: none !important;
+}
+
+.inline-group .add-row {
+    padding: 12px 20px !important;
+    background: var(--bg-light) !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+.inline-group .add-row a {
+    color: var(--primary) !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 12px !important;
+    border-radius: var(--radius-sm) !important;
+    transition: var(--transition) !important;
+}
+
+.inline-group .add-row a:hover {
+    background: var(--bg-light) !important;
+}
+
+/* ========================================
+   КНОПКИ ДЕЙСТВИЙ (SUBMIT ROW)
+   ======================================== */
+.submit-row {
+    background: var(--bg-light) !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+    padding: 16px 24px !important;
+    border-top: 1px solid var(--border-color) !important;
+    display: flex !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+}
+
+.submit-row input[type="submit"],
+.submit-row input[type="button"],
+.submit-row button {
+    padding: 10px 28px !important;
+    border-radius: var(--radius-sm) !important;
+    border: none !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+    font-family: var(--font-family) !important;
+}
+
+.submit-row input[name="_save"],
+.submit-row input.default {
+    background: var(--success) !important;
+    color: white !important;
+}
+
+.submit-row input[name="_save"]:hover,
+.submit-row input.default:hover {
+    background: #276749 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(47, 133, 90, 0.3) !important;
+}
+
+.submit-row input[name="_addanother"] {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+.submit-row input[name="_addanother"]:hover {
+    background: var(--primary-light) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(30, 60, 92, 0.3) !important;
+}
+
+.submit-row input[name="_continue"] {
+    background: var(--secondary) !important;
+    color: white !important;
+}
+
+.submit-row input[name="_continue"]:hover {
+    background: #2d3748 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(74, 85, 104, 0.3) !important;
+}
+
+.submit-row a.closelink {
+    background: var(--danger) !important;
+    color: white !important;
+    padding: 10px 28px !important;
+    border-radius: var(--radius-sm) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    transition: var(--transition) !important;
+}
+
+.submit-row a.closelink:hover {
+    background: #9b2c2c !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.3) !important;
+}
+
+.submit-row .deletelink {
+    background: var(--danger) !important;
+    color: white !important;
+    padding: 10px 28px !important;
+    border-radius: var(--radius-sm) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    transition: var(--transition) !important;
+    margin-left: auto !important;
+}
+
+.submit-row .deletelink:hover {
+    background: #9b2c2c !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.3) !important;
+}
+
+/* ========================================
+   ДЕЙСТВИЯ НАД СПИСКОМ
+   ======================================== */
+.actions {
+    padding: 14px 20px !important;
+    background: var(--bg-light) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    align-items: center !important;
+}
+
+.actions select {
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    background: white !important;
+    min-width: 200px !important;
+    font-family: var(--font-family) !important;
+}
+
+.actions select:focus {
+    border-color: var(--primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(30, 60, 92, 0.1) !important;
+}
+
+.actions input[type="submit"] {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 20px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    transition: var(--transition) !important;
+    font-family: var(--font-family) !important;
+}
+
+.actions input[type="submit"]:hover {
+    background: var(--primary-light) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* ========================================
+   ПАГИНАЦИЯ
+   ======================================== */
+.paginator {
+    background: var(--bg-light) !important;
+    padding: 14px 20px !important;
+    border-top: 1px solid var(--border-color) !important;
+    font-size: 14px !important;
+    color: var(--text-muted) !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    align-items: center !important;
+}
+
+.paginator a {
+    color: var(--primary) !important;
+    text-decoration: none !important;
+    padding: 4px 12px !important;
+    border-radius: var(--radius-sm) !important;
+    transition: background 0.2s !important;
+}
+
+.paginator a:hover {
+    background: var(--bg-light) !important;
+}
+
+.paginator .this-page {
+    background: var(--primary) !important;
+    color: white !important;
+    padding: 4px 14px !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 600 !important;
+}
+
+.paginator .end {
+    color: var(--text-light) !important;
+}
+
+/* ========================================
+   УВЕДОМЛЕНИЯ (MESSAGES)
+   ======================================== */
+.messagelist {
+    margin: 0 0 20px 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+.messagelist li {
+    padding: 12px 20px !important;
+    border-radius: var(--radius-sm) !important;
+    margin-bottom: 8px !important;
+    font-size: 14px !important;
+    border-left: 4px solid transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.messagelist li i {
+    font-size: 18px !important;
+}
+
+.messagelist li.success {
+    background: #f0fdf4 !important;
+    border-color: var(--success) !important;
+    color: #166534 !important;
+}
+
+.messagelist li.success i {
+    color: var(--success) !important;
+}
+
+.messagelist li.warning {
+    background: #fffbeb !important;
+    border-color: var(--warning) !important;
+    color: #92400e !important;
+}
+
+.messagelist li.warning i {
+    color: var(--warning) !important;
+}
+
+.messagelist li.error {
+    background: #fef2f2 !important;
+    border-color: var(--danger) !important;
+    color: #991b1b !important;
+}
+
+.messagelist li.error i {
+    color: var(--danger) !important;
+}
+
+.messagelist li.info {
+    background: #eff6ff !important;
+    border-color: var(--accent) !important;
+    color: #1e40af !important;
+}
+
+.messagelist li.info i {
+    color: var(--accent) !important;
+}
+
+/* ========================================
+   ОБЪЕКТЫ В СПИСКАХ (OBJECT-TOOLS)
+   ======================================== */
+.object-tools {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+}
+
+.object-tools a {
+    background: var(--primary) !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: var(--radius-sm) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    transition: var(--transition) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.object-tools a:hover {
+    background: var(--primary-light) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+.object-tools a.addlink {
+    background: var(--success) !important;
+}
+
+.object-tools a.addlink:hover {
+    background: #276749 !important;
+}
+
+/* ========================================
+   АДАПТИВНОСТЬ
+   ======================================== */
+@media (max-width: 1200px) {
+    #header {
+        padding: 0 20px !important;
+    }
+    
+    #content {
+        padding: 16px 20px !important;
+    }
+    
+    .dashboard #content {
+        padding: 16px 20px !important;
+    }
+    
+    div.breadcrumbs {
+        padding: 10px 20px !important;
+    }
+}
+
+@media (max-width: 992px) {
+    #changelist-filter {
+        margin-left: 0 !important;
+        margin-top: 16px !important;
+        width: 100% !important;
+    }
+    
+    #changelist #toolbar form input[type="text"] {
+        min-width: 200px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #header {
+        padding: 0 16px !important;
+        height: auto !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 12px 16px !important;
+    }
+    
+    #header h1 {
+        font-size: 16px !important;
+    }
+    
+    #user-tools {
+        font-size: 12px !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+    
+    #user-tools a {
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+    }
+    
+    #content {
+        padding: 12px 16px !important;
+    }
+    
+    .dashboard #content {
+        padding: 12px 16px !important;
+    }
+    
+    div.breadcrumbs {
+        padding: 8px 16px !important;
+        font-size: 12px !important;
+    }
+    
+    #changelist #toolbar {
+        padding: 12px 16px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    #changelist #toolbar form {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    
+    #changelist #toolbar form input[type="text"] {
+        min-width: 100% !important;
+    }
+    
+    .change-form .form-row {
+        padding: 12px 16px !important;
+        flex-direction: column !important;
+    }
+    
+    .change-form .form-row label {
+        min-width: 100% !important;
+        padding-top: 0 !important;
+    }
+    
+    .change-form .form-row input[type="text"],
+    .change-form .form-row input[type="number"],
+    .change-form .form-row input[type="email"],
+    .change-form .form-row input[type="url"],
+    .change-form .form-row textarea,
+    .change-form .form-row select {
+        max-width: 100% !important;
+    }
+    
+    .submit-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .submit-row input[type="submit"],
+    .submit-row input[type="button"],
+    .submit-row button,
+    .submit-row a.closelink,
+    .submit-row .deletelink {
+        width: 100% !important;
+        text-align: center !important;
+        margin-left: 0 !important;
+    }
+    
+    #changelist table {
+        font-size: 13px !important;
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    #changelist table thead th,
+    #changelist table tbody td {
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+    }
+    
+    .dashboard .module .row {
+        padding: 10px 16px !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        align-items: flex-start !important;
+    }
+    
+    .object-tools {
+        flex-wrap: wrap !important;
+    }
+    
+    .object-tools a {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #header h1 {
+        font-size: 14px !important;
+    }
+    
+    #user-tools {
+        font-size: 11px !important;
+    }
+    
+    .dashboard .module h2 {
+        font-size: 13px !important;
+        padding: 10px 16px !important;
+    }
+    
+    .actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .actions select {
+        min-width: 100% !important;
+    }
+    
+    .actions input[type="submit"] {
+        width: 100% !important;
+    }
+}
+
+/* ========================================
+   КАСТОМНЫЙ СКРОЛЛБАР
+   ======================================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-light);
+}
+
+/* ========================================
+   АНИМАЦИИ
+   ======================================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.fade-in {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* ========================================
+   ДОПОЛНИТЕЛЬНЫЕ УЛУЧШЕНИЯ
+   ======================================== */
+.help,
+.help-tooltip {
+    color: var(--text-muted) !important;
+    font-size: 12px !important;
+    margin-top: 4px !important;
+}
+
+.required label {
+    font-weight: 600 !important;
+}
+
+.required label:after {
+    content: " *" !important;
+    color: var(--danger) !important;
+}
+
+/* Стили для полей с ошибками */
+.errorlist {
+    color: var(--danger) !important;
+    list-style: none !important;
+    padding: 4px 0 !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+}
+
+.errorlist li {
+    padding: 4px 0 !important;
+}
+
+/* Стили для кнопки "Показать все" в фильтрах */
+#changelist-filter ul li a:not([href]) {
+    color: var(--text-light) !important;
+    cursor: default !important;
+}
+
+/* Стили для временных меток */
+.datetime {
+    font-size: 13px !important;
+    color: var(--text-muted) !important;
+}
+
+/* Стили для чекбоксов */
+input[type="checkbox"] {
+    accent-color: var(--primary) !important;
+    cursor: pointer !important;
+}
+
+/* Стили для радиокнопок */
+input[type="radio"] {
+    accent-color: var(--primary) !important;
+    cursor: pointer !important;
+}
+
+/* Стили для выпадающих списков с множественным выбором */
+select[multiple] option:checked {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+/* Стили для автодополнения */
+.select2-container--default .select2-selection--single {
+    border-color: var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    height: 42px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 42px !important;
+    padding-left: 14px !important;
+    color: var(--text-dark) !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 42px !important;
+}
+
+.select2-container--default .select2-selection--multiple {
+    border-color: var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 4px 8px !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: white !important;
+    opacity: 0.7 !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    opacity: 1 !important;
+}
+
+/* Стили для календаря и часов */
+.calendar,
+.clock {
+    border-color: var(--border-color) !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.calendar td a {
+    color: var(--primary) !important;
+}
+
+.calendar td a:hover {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+/* Стили для кнопки "Сохранить" в редакторе */
+#content .submit-row .default {
+    background: var(--success) !important;
+}
+
+#content .submit-row .default:hover {
+    background: #276749 !important;
+}
+
+/* ========================================
+   СТИЛИ ДЛЯ ТАБЛИЦЫ С ОБЪЕКТАМИ
+   ======================================== */
+#result_list .field-__str__ a {
+    font-weight: 500 !important;
+}
+
+#result_list .field-__str__ a i {
+    margin-right: 6px !important;
+    opacity: 0.5 !important;
+}
+
+/* Стили для статусов */
+.status-badge {
+    display: inline-block !important;
+    padding: 2px 12px !important;
+    border-radius: var(--radius-xl) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+.status-badge.active {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+}
+
+.status-badge.completed {
+    background: #eff6ff !important;
+    color: #1e40af !important;
+}
+
+.status-badge.execution {
+    background: #fffbeb !important;
+    color: #92400e !important;
+}
+
+.status-badge.archived {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}

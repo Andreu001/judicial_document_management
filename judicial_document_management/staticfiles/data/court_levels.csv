@@ -1,0 +1,7 @@
+code,name,hierarchy_level
+magistrate,Мировой суд,0
+city_district,Районный/городской суд,1
+subject_level,Суд уровня субъекта РФ,2
+appeal,Апелляционный суд,3
+cassation,Кассационный суд,4
+supreme,Верховный Суд РФ,5

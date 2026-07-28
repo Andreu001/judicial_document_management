@@ -16,8 +16,8 @@ class ProgressActionType(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название действия")
     code = models.CharField(max_length=50, unique=True, verbose_name="Код")
     case_category = models.CharField(
-        max_length=20, 
-        blank=True, 
+        max_length=20,
+        blank=True,
         null=True,
         choices=[
             ('criminal', 'Уголовное дело'),

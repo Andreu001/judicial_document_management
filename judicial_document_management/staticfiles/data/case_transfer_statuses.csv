@@ -1,0 +1,8 @@
+code,name,is_terminal
+draft,Черновик,False
+sent,Отправлено,False
+received,Получено,False
+accepted,Принято,False
+rejected,Отклонено,True
+completed,Завершено,True
+returned,Возвращено,False
