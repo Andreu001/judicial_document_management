@@ -3,8 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import baseService from '../../API/baseService';
 import styles from './JudgeAssistant.module.css';
+import AppointmentWizard from './AppointmentWizard/AppointmentWizard';
 
 const JudgeAssistant = ({ proceedingId }) => {
+  const [showAppointmentWizard, setShowAppointmentWizard] = useState(false);
+  const [caseData, setCaseData] = useState(null);
+
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,6 +53,27 @@ const JudgeAssistant = ({ proceedingId }) => {
     } finally {
       setRefreshing(false);
     }
+  };
+
+    useEffect(() => {
+    if (proceedingId) {
+      loadCaseDataForWizard();
+    }
+  }, [proceedingId]);
+
+  const loadCaseDataForWizard = async () => {
+    try {
+      const CriminalCaseService = (await import('../../API/CriminalCaseService')).default;
+      const data = await CriminalCaseService.getCriminalProceedingById(proceedingId);
+      setCaseData(data);
+    } catch (error) {
+      console.error('Error loading case data for wizard:', error);
+    }
+  };
+
+  const handleAppointmentSuccess = () => {
+    // Обновляем анализ после назначки
+    refreshAnalysis();
   };
 
   // Создание заметки
@@ -166,6 +191,18 @@ const JudgeAssistant = ({ proceedingId }) => {
 
   return (
     <div className={styles.container}>
+            {/* Добавляем кнопку "Сделать назначку" */}
+      <div className={styles.appointmentButtonContainer}>
+        <button 
+          className={styles.appointmentButton}
+          onClick={() => setShowAppointmentWizard(true)}
+        >
+          ⚖️ Сделать назначку
+        </button>
+        <span className={styles.appointmentHint}>
+          Назначить предварительное слушание или судебное заседание
+        </span>
+      </div>
       {/* Верхняя панель с текущим этапом */}
       <div className={styles.currentStageCard}>
         <div className={styles.stageHeader}>
@@ -447,6 +484,15 @@ const JudgeAssistant = ({ proceedingId }) => {
           </div>
         </div>
       </div>
+            {/* Мастер назначки */}
+      <AppointmentWizard
+        isOpen={showAppointmentWizard}
+        onClose={() => setShowAppointmentWizard(false)}
+        caseId={proceedingId}
+        caseNumber={caseData?.case_number_criminal}
+        onSuccess={handleAppointmentSuccess}
+      />
+
     </div>
   );
 };

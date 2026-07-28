@@ -571,3 +571,45 @@
     font-size: 18px;
   }
 }
+
+.appointmentButtonContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f0f7fc 0%, #e8f4f8 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #d0e4f0;
+}
+
+.appointmentButton {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #2c6e9e 0%, #1a4a6e 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(44, 110, 158, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appointmentButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(44, 110, 158, 0.4);
+}
+
+.appointmentButton:active {
+  transform: translateY(0);
+}
+
+.appointmentHint {
+  font-size: 13px;
+  color: #5a6f7e;
+  font-style: italic;
+}

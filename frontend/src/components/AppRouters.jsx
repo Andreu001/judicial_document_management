@@ -75,6 +75,7 @@ import MessengerRegistration from '../components/CourtRegistry/Messenger/Messeng
 import AuditLog from '../components/CourtRegistry/Audit/AuditLog';
 
 import Messenger from './Messenger/MessengerApp';
+import CaseDistributionPage from '../components/CaseDistribution/CaseDistributionPage';
 
 // Компонент для защиты маршрутов только для сотрудников суда
 const JudgeRoute = ({ children }) => {
@@ -126,6 +127,13 @@ const AppRouter = () => {
             <Messenger onClose={() => window.history.back()} />
           </JudgeRoute>
         } />
+
+        <Route path="case-distribution" element={
+          <JudgeRoute>
+            <CaseDistributionPage />
+          </JudgeRoute>
+        } />
+
         {/* ================================================================= */}
         {/* Реестр судов — Court Registry */}
         {/* ================================================================= */}

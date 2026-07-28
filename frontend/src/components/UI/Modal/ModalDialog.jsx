@@ -8,7 +8,7 @@ const ModalDialog = ({
   onConfirm, 
   title, 
   message, 
-  type = 'confirm', // 'confirm', 'prompt', 'info', 'error'
+  type = 'confirm',
   confirmText = 'Подтвердить',
   cancelText = 'Отмена',
   inputPlaceholder = '',
@@ -34,6 +34,8 @@ const ModalDialog = ({
     }
     onClose();
   };
+
+  const modalClass = `${styles.modal} ${type === 'error' ? styles.errorModal : ''} ${type === 'success' ? styles.successModal : ''} ${type === 'warning' ? styles.warningModal : ''}`;
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {

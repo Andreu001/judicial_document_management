@@ -20,6 +20,7 @@ import ConfirmDialog from '../../pages/ConfirmDialog';
 import ProgressLog from '../CaseManagement/ProgressLog';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 import JudgeAssistant from './JudgeAssistant';
+import AudioTranscriptionTab from './AudioTranscriptionTab';
 
 const CriminalDetail = () => {
   const { id } = useParams();
@@ -30,7 +31,7 @@ const CriminalDetail = () => {
   const [otherSides, setOtherSides] = useState([]);
   const [decisions, setDecisions] = useState([]);
   const [executions, setExecutions] = useState([]);
-  const [movements, setMovements] = useState([]);  // <-- ДОБАВИТЬ
+  const [movements, setMovements] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ const CriminalDetail = () => {
     sides: true,
     decisions: true,
     executions: true,
-    movements: true,  // <-- ДОБАВИТЬ
+    movements: true,
     nextActions: false
   });
 
@@ -293,8 +294,8 @@ const CriminalDetail = () => {
           
           await fetchReferringAuthorities();
           await fetchJudges();
-          await fetchCaseMovements();  // <-- ДОБАВИТЬ
-          await fetchDecisionsList();  // <-- ДОБАВИТЬ
+          await fetchCaseMovements();
+          await fetchDecisionsList();
         } else {
           setError('Уголовное дело не найдено');
         }
@@ -484,6 +485,7 @@ const CriminalDetail = () => {
               <button className={`${styles.tab} ${activeTab === 'expertise' ? styles.activeTab : ''}`} onClick={() => setActiveTab('expertise')}>Экспертизы и соединение</button>
               <button className={`${styles.tab} ${activeTab === 'private' ? styles.activeTab : ''}`} onClick={() => setActiveTab('private')}>Частные определения и даты</button>
               <button className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`} onClick={() => setActiveTab('additional')}>Дополнительно</button>
+              <button className={`${styles.tab} ${activeTab === 'audio' ? styles.activeTab : ''}`} onClick={() => setActiveTab('audio')}>🎤 Аудио-протокол</button>
             </div>
             <div className={styles.tabContentWrapper}>
               {activeTab === 'basic' && <BasicInfoTab isEditing={isEditing && !isArchived} formData={formData} options={options} criminalData={criminalData} caseMovement={caseMovement} handleDateChange={handleDateChange} formatDate={formatDate} handleInputChange={handleInputChange} handleFieldChange={handleFieldChange} getOptionLabel={getOptionLabel} formatBoolean={formatBoolean} referringAuthorities={referringAuthorities} judges={judges} showRareFields={showRareFields} setShowRareFields={setShowRareFields} showRepeatCaseDetails={() => formData.repeat_case === true}
@@ -508,6 +510,12 @@ const CriminalDetail = () => {
               {activeTab === 'confiscation' && <ConfiscationAndFinesTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleFieldChange={handleFieldChange} formatBoolean={formatBoolean} handleDateChange={handleDateChange} formatDate={formatDate} />}
               {activeTab === 'expertise' && <ExpertiseAndJoiningTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleDateChange={handleDateChange} formatDate={formatDate} />}
               {activeTab === 'private' && <PrivateRulingsAndDatesTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleDateChange={handleDateChange} formatDate={formatDate} criminalData={criminalData} />}
+              {activeTab === 'additional' && <AdditionalTab isEditing={isEditing} formData={formData} handleInputChange={handleInputChange} criminalData={criminalData} handleDateChange={handleDateChange} formatDate={formatDate} formatBoolean={formatBoolean} isArchived={isArchived} />}
+              {activeTab === 'private' && <PrivateRulingsAndDatesTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleDateChange={handleDateChange} formatDate={formatDate} criminalData={criminalData} />}
+              
+              {/* НОВАЯ ВКЛАДКА АУДИО */}
+              {activeTab === 'audio' && <AudioTranscriptionTab caseId={id} />}
+              
               {activeTab === 'additional' && <AdditionalTab isEditing={isEditing} formData={formData} handleInputChange={handleInputChange} criminalData={criminalData} handleDateChange={handleDateChange} formatDate={formatDate} formatBoolean={formatBoolean} isArchived={isArchived} />}
             </div>
           </div>

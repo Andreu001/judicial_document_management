@@ -185,24 +185,40 @@ const DefendantDetail = () => {
     try {
       setSaving(true);
 
-      // Преобразуем массивы пунктов в строки для API
-      const articleClausesStr = Array.isArray(selectedArticleClauses) 
-        ? selectedArticleClauses.join(',') 
+      const articleClausesStr = Array.isArray(selectedArticleClauses)
+        ? selectedArticleClauses.join(',')
         : (selectedArticleClauses || '');
-      
-      const convictionClausesStr = Array.isArray(selectedConvictionArticleClauses) 
-        ? selectedConvictionArticleClauses.join(',') 
+
+      const convictionClausesStr = Array.isArray(selectedConvictionArticleClauses)
+        ? selectedConvictionArticleClauses.join(',')
         : (selectedConvictionArticleClauses || '');
 
+      // Преобразуем пустые строки в null для полей дат и числовых полей
+      const sanitizedData = { ...formData };
+      
+      // Список полей, которые должны быть null вместо пустой строки
+      const dateFields = ['birth_date', 'restraint_date', 'restraint_change_date'];
+      const numberFields = ['property_damage', 'moral_damage', 'maximum_penalty_article'];
+      
+      dateFields.forEach(field => {
+        if (sanitizedData[field] === '') {
+          sanitizedData[field] = null;
+        }
+      });
+      
+      numberFields.forEach(field => {
+        if (sanitizedData[field] === '') {
+          sanitizedData[field] = null;
+        }
+      });
+
       const dataToSend = {
-        ...formData,
+        ...sanitizedData,
         sides_case_defendant_input: selectedSideId ? parseInt(selectedSideId, 10) : null,
-        full_name_criminal: formData.full_name_criminal || '',
-        // Статья обвинения - ВАЖНО: явно передаем null если нет значения
+        full_name_criminal: sanitizedData.full_name_criminal || '',
         article: selectedArticleId ? Number(selectedArticleId) : null,
         article_part: selectedArticlePart || null,
         article_clauses: articleClausesStr || null,
-        // Статья по приговору
         conviction_article: selectedConvictionArticleId ? Number(selectedConvictionArticleId) : null,
         conviction_article_part: selectedConvictionArticlePart || null,
         conviction_article_clauses: convictionClausesStr || null
@@ -221,10 +237,12 @@ const DefendantDetail = () => {
       delete dataToSend.criminal_proceedings;
       delete dataToSend.created_at;
       delete dataToSend.updated_at;
+
+      // Очищаем данные от undefined и пустых строк
+      const cleanData = CriminalCaseService.cleanData(dataToSend);
       
-      const cleanData = {};
+      // Явно добавляем поля, которые могут быть null
       Object.keys(dataToSend).forEach(key => {
-        // Явно разрешаем null для статей
         if (dataToSend[key] !== undefined) {
           cleanData[key] = dataToSend[key];
         }
@@ -248,7 +266,7 @@ const DefendantDetail = () => {
       } else {
         await CriminalCaseService.updateDefendant(proceedingId, id, cleanData);
         setIsEditing(false);
-        await loadDefendantDetails(); // Перезагружаем данные после сохранения
+        await loadDefendantDetails();
       }
       
       setSaving(false);

@@ -1,0 +1,267 @@
+/* KoapArticleSelector.module.css */
+
+.articleSelector {
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: #dc3545;
+  margin-left: 4px;
+}
+
+.subLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+
+.selectContainer {
+  position: relative;
+  width: 100%;
+}
+
+.selectedValue {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  min-height: 42px;
+}
+
+.selectedValue:hover:not(.disabled) {
+  border-color: #86b7fe;
+}
+
+.selectedValue.disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  color: #6c757d;
+}
+
+.selectedText {
+  color: #2c3e50;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholderText {
+  color: #a0aec0;
+  flex: 1;
+}
+
+.rightButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #c53030;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.clearButton:hover {
+  background-color: #fed7d7;
+  color: #9b2c2c;
+}
+
+.arrow {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  margin-top: 4px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.searchContainer {
+  padding: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.dropdownList {
+  overflow-y: auto;
+  max-height: 250px;
+}
+
+.dropdownItem {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #f1f3f5;
+  transition: background-color 0.2s ease;
+}
+
+.dropdownItem:hover {
+  background-color: #e9ecef;
+}
+
+.dropdownItem.selected {
+  background-color: #e7f1ff;
+}
+
+.articleNumber {
+  font-weight: 600;
+  font-size: 13px;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.articleTitle {
+  font-size: 11px;
+  color: #6c757d;
+}
+
+.loadingItem, .emptyItem {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.clausesSelector {
+  margin-top: 8px;
+}
+
+.clausesGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.clauseCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 10px;
+  background-color: white;
+  border-radius: 20px;
+  border: 1px solid #ced4da;
+  transition: all 0.2s ease;
+}
+
+.clauseCheckbox:hover {
+  background-color: #e9ecef;
+  border-color: #86b7fe;
+}
+
+.clauseCheckbox input {
+  margin: 0;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.clauseLabel {
+  font-size: 13px;
+  color: #495057;
+}
+
+.selectedClausesInfo {
+  font-size: 12px;
+  color: #28a745;
+  margin: 4px 0;
+  padding: 4px 8px;
+  background-color: #e6f4ea;
+  border-radius: 4px;
+}
+
+.clausesInput {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.clausesInput:focus {
+  outline: none;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}

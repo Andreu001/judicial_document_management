@@ -172,3 +172,20 @@
     width: 100%;
   }
 }
+
+.successModal {
+  border-top: 4px solid #38a169;
+}
+
+.warningModal {
+  border-top: 4px solid #d69e2e;
+}
+
+.successButton {
+  background: #38a169;
+  color: white;
+}
+
+.successButton:hover {
+  background: #2f855a;
+}

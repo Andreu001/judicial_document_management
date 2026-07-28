@@ -1,10 +1,11 @@
-// MovementDetail.jsx - ПОЛНОСТЬЮ ЗАМЕНИТЕ ФАЙЛ
+// MovementDetail.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import MovementService from '../../API/MovementService';
 import KasCaseService from '../../API/KasCaseService';
 import OtherMaterialService from '../../API/OtherMaterialService';
+import CriminalCaseService from '../../API/CriminalCaseService';
 import styles from './MovementDetail.module.css';
 
 const MovementDetail = () => {
@@ -15,7 +16,8 @@ const MovementDetail = () => {
   // Определяем тип дела по URL
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
                    location.pathname.includes('/kas-proceedings/') ? 'kas' :
-                   location.pathname.includes('/other-materials/') ? 'other' : 'civil';
+                   location.pathname.includes('/other-materials/') ? 'other' :
+                   location.pathname.includes('/criminal-proceedings/') ? 'criminal' : 'civil';
   
   // Для other-materials используем materialId вместо proceedingId
   const effectiveProceedingId = caseType === 'other' ? materialId : proceedingId;
@@ -54,7 +56,10 @@ const MovementDetail = () => {
       
       let movement;
       
-      if (caseType === 'kas') {
+      if (caseType === 'criminal') {
+        // Для уголовных дел используем CriminalCaseService
+        movement = await CriminalCaseService.getCaseMovementById(effectiveProceedingId, movementId);
+      } else if (caseType === 'kas') {
         movement = await KasCaseService.getMovementById(effectiveProceedingId, movementId);
       } else if (caseType === 'other') {
         movement = await OtherMaterialService.getMovementById(effectiveProceedingId, movementId);
@@ -95,7 +100,14 @@ const MovementDetail = () => {
 
   const loadDecisions = async () => {
     try {
-      const response = await MovementService.getDecisionCases();
+      // Для уголовных дел используем другой эндпоинт для решений
+      let response;
+      if (caseType === 'criminal') {
+        // Используем тот же эндпоинт, но для уголовных дел
+        response = await MovementService.getDecisionCases();
+      } else {
+        response = await MovementService.getDecisionCases();
+      }
       setDecisions(response.data || []);
     } catch (error) {
       console.error('Ошибка загрузки решений:', error);
@@ -161,7 +173,10 @@ const MovementDetail = () => {
       console.log('Proceeding ID:', effectiveProceedingId);
 
       if (isEditMode) {
-        if (caseType === 'kas') {
+        if (caseType === 'criminal') {
+          // Для уголовных дел используем CriminalCaseService
+          await CriminalCaseService.updateCaseMovement(effectiveProceedingId, movementId, movementData);
+        } else if (caseType === 'kas') {
           await KasCaseService.updateMovement(effectiveProceedingId, movementId, movementData);
         } else if (caseType === 'other') {
           await OtherMaterialService.updateMovement(effectiveProceedingId, movementId, movementData);
@@ -169,7 +184,10 @@ const MovementDetail = () => {
           await MovementService.updateMovement(effectiveProceedingId, movementId, movementData, caseType);
         }
       } else {
-        if (caseType === 'kas') {
+        if (caseType === 'criminal') {
+          // Для уголовных дел используем CriminalCaseService
+          await CriminalCaseService.createCaseMovement(effectiveProceedingId, movementData);
+        } else if (caseType === 'kas') {
           await KasCaseService.createMovement(effectiveProceedingId, movementData);
         } else if (caseType === 'other') {
           await OtherMaterialService.createMovement(effectiveProceedingId, movementData);
@@ -264,6 +282,9 @@ const MovementDetail = () => {
       case 'other':
         caseTypeText = '(иные материалы)';
         break;
+      case 'criminal':
+        caseTypeText = '(уголовное дело)';
+        break;
       default:
         caseTypeText = '(гражданское)';
     }
@@ -311,6 +332,9 @@ const MovementDetail = () => {
           )}
           {caseType === 'other' && (
             <span className={styles.caseTypeBadge}>Иные материалы</span>
+          )}
+          {caseType === 'criminal' && (
+            <span className={styles.caseTypeBadge}>Уголовное дело</span>
           )}
         </div>
         
@@ -511,7 +535,8 @@ const MovementDetail = () => {
                       <span className={styles.valueReadonly}>
                         {caseType === 'admin' ? 'Административное правонарушение' :
                          caseType === 'kas' ? 'Административное дело (КАС РФ)' :
-                         caseType === 'other' ? 'Иные материалы' : 'Гражданское'}
+                         caseType === 'other' ? 'Иные материалы' :
+                         caseType === 'criminal' ? 'Уголовное' : 'Гражданское'}
                       </span>
                     </div>
                   </div>

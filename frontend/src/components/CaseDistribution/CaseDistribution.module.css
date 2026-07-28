@@ -1,0 +1,1325 @@
+/* src/components/CaseDistribution/CaseDistribution.module.css */
+
+/* ========== ОСНОВНЫЕ СТИЛИ ========== */
+.container {
+  padding: 20px 24px 20px 26px;
+  background: #f5f7fa;
+  min-height: 100vh;
+  font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+}
+
+/* ========== ЗАГОЛОВОК ========== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a2b3c;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.autoDistributeButton {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #2e86ab, #1f5e7a);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.autoDistributeButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 134, 171, 0.3);
+}
+
+.autoDistributeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.logButton {
+  padding: 10px 20px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logButton:hover {
+  background: #2d3748;
+}
+
+.settingsButton {
+  padding: 10px 20px;
+  background: #f7fafc;
+  color: #2d3748;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settingsButton:hover {
+  background: #edf2f7;
+}
+
+/* ========== СТАТИСТИКА ========== */
+.statsBar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statItem {
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.statValue {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.statLabel {
+  display: block;
+  font-size: 13px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+/* ========== ВКЛАДКИ ========== */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: #f7fafc;
+}
+
+.activeTab {
+  background: #1a2b3c;
+  color: white;
+}
+
+.activeTab:hover {
+  background: #2d3748;
+}
+
+/* ========== ТАБЛИЦЫ ========== */
+.tableWrapper {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table thead {
+  background: #f7fafc;
+}
+
+.table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #2d3748;
+}
+
+.table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.caseRow {
+  cursor: pointer;
+}
+
+.caseNumber {
+  font-weight: 500;
+  color: #2e86ab;
+  cursor: pointer;
+}
+
+.caseNumber:hover {
+  text-decoration: underline;
+}
+
+.loadingRow, .emptyRow {
+  text-align: center;
+  padding: 40px 0;
+  color: #a0aec0;
+}
+
+/* ========== БЭЙДЖИ ========== */
+.caseTypeBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.complexityBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+.actionTypeBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+/* ========== ФИЛЬТРЫ ========== */
+.filtersBar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2e86ab;
+  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.1);
+}
+
+.filterSelect {
+  padding: 8px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  min-width: 150px;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #2e86ab;
+}
+
+.filterInput {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.filterButton {
+  padding: 8px 20px;
+  background: #2e86ab;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterButton:hover {
+  background: #1f5e7a;
+}
+
+.distributeButton {
+  padding: 8px 20px;
+  background: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.distributeButton:hover:not(:disabled) {
+  background: #2f855a;
+}
+
+.distributeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.casesCount {
+  color: #718096;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ========== КНОПКИ ДЕЙСТВИЙ ========== */
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.assignButton {
+  padding: 4px 12px;
+  background: #38a169;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assignButton:hover {
+  background: #2f855a;
+}
+
+.reassignButton {
+  padding: 4px 12px;
+  background: #ecc94b;
+  color: #2d3748;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reassignButton:hover {
+  background: #d69e2e;
+}
+
+.viewButton {
+  padding: 4px 12px;
+  background: #718096;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewButton:hover {
+  background: #4a5568;
+}
+
+.editButton {
+  padding: 4px 12px;
+  background: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton:hover {
+  background: #3182ce;
+}
+
+.deleteButton {
+  padding: 4px 12px;
+  background: #fc8181;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background: #c53030;
+}
+
+/* ========== СЛОЖНОСТЬ ========== */
+.complexityControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.complexityValue {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.complexityButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #a0aec0;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.complexityButton:hover {
+  color: #2e86ab;
+}
+
+.complexityDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.complexityLabel {
+  font-size: 12px;
+  color: #718096;
+}
+
+.complexitySlider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2e86ab;
+  cursor: pointer;
+}
+
+.sliderValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2b3c;
+  min-width: 30px;
+  text-align: center;
+}
+
+.complexityHint {
+  font-size: 13px;
+  color: #4a5568;
+  margin-top: 4px;
+}
+
+.complexityExamples {
+  margin-top: 4px;
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.complexityFilters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.complexityFilterInput {
+  width: 80px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.bulkComplexityButton {
+  padding: 8px 20px;
+  background: #9f7aea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bulkComplexityButton:hover {
+  background: #805ad5;
+}
+
+.complexityLegend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.legendColor {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+/* ========== СУДЬЯ ========== */
+.judgeAssigned {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.noJudge {
+  color: #fc8181;
+  font-style: italic;
+}
+
+/* ========== МОДАЛЬНЫЕ ОКНА ========== */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modalLarge {
+  max-width: 700px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.confirmButton {
+  padding: 10px 28px;
+  background: linear-gradient(135deg, #2e86ab, #1f5e7a);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(46, 134, 171, 0.3);
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 10px 28px;
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #cbd5e0;
+}
+
+/* ========== ПОЛЯ ФОРМ ========== */
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 4px;
+}
+
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: #2e86ab;
+  box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.1);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.field small {
+  display: block;
+  color: #a0aec0;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.multiSelect {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+/* ========== ПРАВИЛА ========== */
+.ruleManagement, .collegiumManagement, .judgeAvailability, .complexitySettings {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ruleHeader, .collegiumHeader, .statsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ruleHeader h2, .collegiumHeader h2, .statsHeader h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2b3c;
+}
+
+.addButton {
+  padding: 8px 20px;
+  background: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  background: #2f855a;
+}
+
+.ruleList, .collegiumList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ruleCard, .collegiumCard {
+  background: #f7fafc;
+  border-radius: 10px;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.ruleCardHeader, .collegiumCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ruleName, .collegiumName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2b3c;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ruleStatus, .collegiumStatus {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ruleStatus.active, .collegiumStatus.active {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.ruleStatus.inactive, .collegiumStatus.inactive {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+.ruleDetails, .collegiumDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ruleDetail, .collegiumDetail {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.detailLabel {
+  color: #718096;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.detailValue {
+  color: #2d3748;
+}
+
+.ruleDescription, .collegiumDescription {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.collegiumJudges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.judgeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.removeJudgeButton {
+  background: none;
+  border: none;
+  color: #fc8181;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 2px;
+}
+
+.removeJudgeButton:hover {
+  color: #c53030;
+}
+
+.addJudgeButton {
+  padding: 4px 12px;
+  background: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addJudgeButton:hover {
+  background: #3182ce;
+}
+
+.ruleActions, .collegiumActions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ========== ДОСТУПНОСТЬ ========== */
+.availabilityList {
+  margin-top: 16px;
+}
+
+.judgeLoadSection {
+  margin-top: 24px;
+}
+
+.judgeLoadSection h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2b3c;
+  margin-bottom: 16px;
+}
+
+.judgeLoadGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.judgeLoadCard {
+  background: #f7fafc;
+  border-radius: 10px;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.judgeLoadHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.judgeName {
+  font-weight: 600;
+  color: #1a2b3c;
+}
+
+.judgeCases {
+  font-size: 13px;
+  color: #718096;
+}
+
+.judgeLoadBar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.judgeLoadFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.judgeLoadDetails {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #718096;
+}
+
+.judgeAvailabilityNote {
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: #fefcbf;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #975a16;
+}
+
+/* ========== ЖУРНАЛ ========== */
+.logView {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.logHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.logHeader h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2b3c;
+}
+
+.exportButton {
+  padding: 8px 20px;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exportButton:hover {
+  background: #2d3748;
+}
+
+.logFilters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.commentCell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========== ПАГИНАЦИЯ ========== */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.pagination button {
+  padding: 6px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #f7fafc;
+  border-color: #2e86ab;
+}
+
+.pagination button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ========== СОСТОЯНИЯ ========== */
+.loadingState {
+  text-align: center;
+  padding: 40px 0;
+  color: #a0aec0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 0;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* ========== СТАТИСТИКА ========== */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: #f7fafc;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.statCardValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.statCardLabel {
+  font-size: 13px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+.statsControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.yearInput {
+  width: 80px;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.refreshButton {
+  padding: 6px 16px;
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.refreshButton:hover {
+  background: #cbd5e0;
+}
+
+.caseTypeSection {
+  margin-top: 24px;
+}
+
+.caseTypeSection h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2b3c;
+  margin-bottom: 12px;
+}
+
+.caseTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.caseTypeCard {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+}
+
+.caseTypeName {
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.caseTypeCount {
+  font-weight: 600;
+  color: #1a2b3c;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 1200px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .statsBar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .headerActions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .statsBar {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .filtersBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .searchInput, .filterSelect {
+    width: 100%;
+  }
+  
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modalContent {
+    padding: 20px;
+    width: 95%;
+  }
+  
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .judgeLoadGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .tableWrapper {
+    overflow-x: auto;
+  }
+  
+  .table {
+    font-size: 12px;
+  }
+  
+  .table th, .table td {
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+  
+  .table td:last-child {
+    white-space: normal;
+  }
+}
+
+
+.distributeSelectedButton {
+  padding: 8px 20px;
+  background: #9f7aea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.distributeSelectedButton:hover:not(:disabled) {
+  background: #805ad5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(159, 122, 234, 0.3);
+}
+
+.distributeSelectedButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* Расширенный поиск */
+.advancedSearch {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.advancedSearchRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.advancedSearchRow .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+}
+
+.advancedSearchRow .field label {
+  font-size: 12px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+/* Опции распределения */
+.distributeOptions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+}
+
+.distributeOptionGroup {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.distributeOptionGroup label {
+  font-size: 13px;
+  color: #4a5568;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Заголовок журнала */
+.logHeaderActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Отключенные вкладки */
+.disabledTab {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

@@ -148,6 +148,13 @@ const Header = ({ filter, setFilter, onSearch }) => {
           >
             {showMessenger ? 'Скрыть чаты' : 'Мессенджер'}
           </button>
+
+          <button 
+            className={`${styles.navButton}`}
+            onClick={() => navigate('/case-distribution')}
+          >
+            Распределение дел
+          </button>
         </div>
 
         <div className={styles.actions}>
