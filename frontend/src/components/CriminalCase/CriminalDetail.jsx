@@ -21,6 +21,7 @@ import ProgressLog from '../CaseManagement/ProgressLog';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 import JudgeAssistant from './JudgeAssistant';
 import AudioTranscriptionTab from './AudioTranscriptionTab';
+import AIAssistant from '../AIAssistant/AIAssistant';
 
 const CriminalDetail = () => {
   const { id } = useParams();
@@ -66,6 +67,7 @@ const CriminalDetail = () => {
     result_court_session: '',
     reason_deposition: ''
   });
+  const [showAI, setShowAI] = useState(false);
 
   // Состояния для сворачивания редко используемых полей в BasicInfoTab
   const [showRareFields, setShowRareFields] = useState(false);
@@ -456,6 +458,13 @@ const CriminalDetail = () => {
           </h1>
         </div>
         <div className={styles.headerRight}>
+              <button 
+                onClick={() => setShowAI(true)} 
+                className={styles.aiButton}
+                disabled={isArchived}
+              >
+                🤖 AI Анализ
+              </button>
           {isArchived ? (
             <button onClick={handleUnarchive} className={styles.unarchiveButton}>Вернуть из архива</button>
           ) : (
@@ -794,7 +803,26 @@ const CriminalDetail = () => {
         </div>
       )}
 
-      <ConfirmDialog isOpen={confirmDialog.isOpen} title={confirmDialog.title} message={confirmDialog.message} onConfirm={confirmDialog.onConfirm} onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))} />
+      <ConfirmDialog 
+          isOpen={confirmDialog.isOpen} 
+          title={confirmDialog.title} 
+          message={confirmDialog.message} 
+          onConfirm={confirmDialog.onConfirm} 
+          onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))} 
+        />
+
+        {/* 👇 ДОБАВЬТЕ ЭТО МОДАЛЬНОЕ ОКНО С AI */}
+        {showAI && (
+          <div className={styles.modalOverlay} onClick={() => setShowAI(false)}>
+            <div className={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>
+              <AIAssistant 
+                caseId={parseInt(id)} 
+                caseType="criminal"
+                onClose={() => setShowAI(false)}
+              />
+            </div>
+          </div>
+        )}
     </div>
   );
 };

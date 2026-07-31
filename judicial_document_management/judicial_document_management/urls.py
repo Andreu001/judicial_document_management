@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/communication/', include('communication.urls')),
     path('case-distribution/', include('case_distribution.urls')),
     path('audio-transcription/', include('audio_transcription.urls')),
+    path('api/ai/', include('ai_assistant.urls')),
 ]
 
 # Обслуживание статических файлов в режиме разработки

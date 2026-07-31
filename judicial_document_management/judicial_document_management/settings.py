@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'channels',
     'case_distribution.apps.CaseDistributionConfig',
     'audio_transcription',
+    'ai_assistant',
 ]
 
 ASGI_APPLICATION = 'judicial_document_management.asgi.application'
@@ -133,6 +134,32 @@ WHISPER_COMPUTE_TYPE = 'int8' # Оптимизация для CPU
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
+
+SAIGA_MODEL_PATH = './models/saiga-7b'
+
+# Настройки для AI
+AI_MODEL_SETTINGS = {
+    'max_length': 2048,      # Максимальная длина ответа
+    'temperature': 0.7,      # Креативность (0.0 - 1.0)
+    'top_p': 0.9,            # Top-p sampling
+    'top_k': 40,             # Top-k sampling
+    'repetition_penalty': 1.1,  # Штраф за повторения
+}
+
+# Включить/выключить AI
+AI_ASSISTANT_ENABLED = True
+
+# Для граждан
+AI_CITIZEN_ACCESS = True
+AI_RESTRICTED_FIELDS = [
+    'judge_notes',
+    'internal_notes',
+    'secret_info',
+    # добавьте другие поля, которые нельзя показывать гражданам
+]
+
+# Если модель не загружается, используйте заглушку
+AI_USE_FALLBACK = True
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
