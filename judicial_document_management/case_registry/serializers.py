@@ -289,3 +289,61 @@ class CorrespondenceUpdateSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+
+
+class ClaimSubmissionSerializer(serializers.Serializer):
+    """Сериализатор для подачи искового заявления с автоматическим созданием дела"""
+    
+    # Информация о деле - делаем необязательным
+    case_type = serializers.CharField(required=False, default='civil', allow_blank=True)
+    case_id = serializers.IntegerField(required=False, allow_null=True)
+    case_number = serializers.CharField(required=False, allow_blank=True)
+    
+    # Текст искового заявления
+    claim_text = serializers.CharField(required=False, allow_blank=True)
+    claim_amount = serializers.DecimalField(max_digits=15, decimal_places=2, default=0)
+    claim_subject = serializers.CharField()
+    claim_requirements = serializers.CharField()
+    
+    # Информация об истце
+    plaintiff_name = serializers.CharField()
+    plaintiff_address = serializers.CharField()
+    plaintiff_phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    plaintiff_email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
+    plaintiff_passport_series = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    plaintiff_passport_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    plaintiff_birth_date = serializers.DateField(required=False, allow_null=True)
+    plaintiff_birth_place = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
+    # Информация об ответчике
+    defendant_name = serializers.CharField()
+    defendant_address = serializers.CharField()
+    defendant_phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    defendant_email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
+    
+    # Третьи лица
+    third_persons = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list
+    )
+    
+    # Прилагаемые документы
+    attached_documents = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list
+    )
+    uploaded_document_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        default=list
+    )
+    
+    # Информация о подаче
+    submission_date = serializers.DateField()
+    signer_info = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    additional_notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
+    # Внешний пользователь (заполняется автоматически из request)
+    external_user_id = serializers.IntegerField(required=False, allow_null=True)

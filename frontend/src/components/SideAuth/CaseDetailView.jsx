@@ -1,4 +1,6 @@
 // src/components/SideAuth/CaseDetailView.jsx
+// Полностью переработанная версия - строгий судебный стиль
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CriminalCaseService from '../../API/CriminalCaseService';
@@ -13,13 +15,12 @@ const CaseDetailView = () => {
   const { caseType, caseId } = useParams();
   const navigate = useNavigate();
   
-  // Основные данные дела
   const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [caseNumber, setCaseNumber] = useState('');
+  const [courtName, setCourtName] = useState('');
   
-  // Связанные данные (как в карточках)
   const [sides, setSides] = useState([]);
   const [lawyers, setLawyers] = useState([]);
   const [decisions, setDecisions] = useState([]);
@@ -29,19 +30,10 @@ const CaseDetailView = () => {
   const [civilClaims, setCivilClaims] = useState([]);
   const [defendants, setDefendants] = useState([]);
   const [otherSides, setOtherSides] = useState([]);
+  const [audioTranscriptions, setAudioTranscriptions] = useState([]);
   
   const [activeTab, setActiveTab] = useState('summary');
-  const [judges, setJudges] = useState([]);
-  const [quickStats, setQuickStats] = useState({
-    sides: 0, lawyers: 0, decisions: 0, executions: 0,
-    movements: 0, petitions: 0, defendants: 0, otherSides: 0, allSides: 0
-  });
 
-  useEffect(() => {
-    loadCaseData();
-  }, [caseType, caseId]);
-
-  // Нормализация типа дела для API
   const normalizeCaseType = (type) => {
     const typeMap = {
       'criminal': 'criminal',
@@ -56,47 +48,54 @@ const CaseDetailView = () => {
     return typeMap[type] || type;
   };
 
+  useEffect(() => {
+    loadCaseData();
+  }, [caseType, caseId]);
+
   const loadCaseData = async () => {
     setLoading(true);
     try {
       const normalizedType = normalizeCaseType(caseType);
       let data = null;
+      let court = null;
       
-      // Загружаем основное дело и связанные данные
       switch (normalizedType) {
         case 'criminal':
           data = await CriminalCaseService.getCriminalProceedingById(caseId);
           if (data) {
             setCaseNumber(data.case_number_criminal);
-            // Загружаем связанные данные как в CriminalBusinessCard
-            const defendantsData = await CriminalCaseService.getDefendants(caseId);
-            setDefendants(defendantsData);
-            const lawyersData = await CriminalCaseService.getLawyers(caseId);
-            setLawyers(lawyersData);
-            const otherSidesData = await CriminalCaseService.getSides(caseId);
-            setOtherSides(otherSidesData);
-            const decisionsData = await CriminalCaseService.getDecisions(caseId);
-            setDecisions(decisionsData);
-            const executionsData = await CriminalCaseService.getExecutions(caseId);
-            setExecutions(executionsData);
-            const movementsData = await CriminalCaseService.getCaseMovements(caseId);
-            setMovements(movementsData);
-            const petitionsData = await CriminalCaseService.getPetitions(caseId);
-            setPetitions(petitionsData);
-            const civilClaimsData = await CriminalCaseService.getCivilClaims(caseId);
-            setCivilClaims(civilClaimsData);
+            if (data.presiding_judge) {
+              try {
+                const judgeInfo = await baseService.get(`/users/users/${data.presiding_judge}/`);
+                if (judgeInfo.data?.court_employee) {
+                  court = judgeInfo.data.court_employee.department?.court;
+                  setCourtName(court?.name_short || court?.name || '');
+                }
+              } catch (e) {
+                console.warn('Could not fetch judge info:', e);
+              }
+            }
             
-            setQuickStats({
-              defendants: defendantsData.length,
-              lawyers: lawyersData.length,
-              otherSides: otherSidesData.length,
-              allSides: defendantsData.length + lawyersData.length + otherSidesData.length,
-              decisions: decisionsData.length,
-              executions: executionsData.length,
-              movements: movementsData.length,
-              petitions: petitionsData.length,
-              civilClaims: civilClaimsData.length
-            });
+            const [defendantsData, lawyersData, otherSidesData, decisionsData, 
+                   executionsData, movementsData, petitionsData, civilClaimsData] = await Promise.all([
+              CriminalCaseService.getDefendants(caseId),
+              CriminalCaseService.getLawyers(caseId),
+              CriminalCaseService.getSides(caseId),
+              CriminalCaseService.getDecisions(caseId),
+              CriminalCaseService.getExecutions(caseId),
+              CriminalCaseService.getCaseMovements(caseId),
+              CriminalCaseService.getPetitions(caseId),
+              CriminalCaseService.getCivilClaims(caseId)
+            ]);
+            
+            setDefendants(defendantsData || []);
+            setLawyers(lawyersData || []);
+            setOtherSides(otherSidesData || []);
+            setDecisions(decisionsData || []);
+            setExecutions(executionsData || []);
+            setMovements(movementsData || []);
+            setPetitions(petitionsData || []);
+            setCivilClaims(civilClaimsData || []);
           }
           break;
           
@@ -104,27 +103,33 @@ const CaseDetailView = () => {
           data = await CivilCaseService.getCivilProceedingById(caseId);
           if (data) {
             setCaseNumber(data.case_number_civil);
-            const sidesData = await CivilCaseService.getSides(caseId);
-            setSides(sidesData);
-            const lawyersData = await CivilCaseService.getLawyers(caseId);
-            setLawyers(lawyersData);
-            const decisionsData = await CivilCaseService.getDecisions(caseId);
-            setDecisions(decisionsData);
-            const executionsData = await CivilCaseService.getExecutions(caseId);
-            setExecutions(executionsData);
-            const movementsData = await CivilCaseService.getMovements(caseId);
-            setMovements(movementsData);
-            const petitionsData = await CivilCaseService.getPetitions?.(caseId) || [];
-            setPetitions(petitionsData);
+            if (data.presiding_judge) {
+              try {
+                const judgeInfo = await baseService.get(`/users/users/${data.presiding_judge}/`);
+                if (judgeInfo.data?.court_employee) {
+                  court = judgeInfo.data.court_employee.department?.court;
+                  setCourtName(court?.name_short || court?.name || '');
+                }
+              } catch (e) {
+                console.warn('Could not fetch judge info:', e);
+              }
+            }
             
-            setQuickStats({
-              sides: sidesData.length,
-              lawyers: lawyersData.length,
-              decisions: decisionsData.length,
-              executions: executionsData.length,
-              movements: movementsData.length,
-              petitions: petitionsData.length
-            });
+            const [sidesData, lawyersData, decisionsData, executionsData, movementsData, petitionsData] = await Promise.all([
+              CivilCaseService.getSides(caseId),
+              CivilCaseService.getLawyers(caseId),
+              CivilCaseService.getDecisions(caseId),
+              CivilCaseService.getExecutions(caseId),
+              CivilCaseService.getMovements(caseId),
+              CivilCaseService.getPetitions?.(caseId) || []
+            ]);
+            
+            setSides(sidesData || []);
+            setLawyers(lawyersData || []);
+            setDecisions(decisionsData || []);
+            setExecutions(executionsData || []);
+            setMovements(movementsData || []);
+            setPetitions(petitionsData || []);
           }
           break;
           
@@ -132,27 +137,33 @@ const CaseDetailView = () => {
           data = await AdministrativeCaseService.getAdministrativeProceedingById(caseId);
           if (data) {
             setCaseNumber(data.case_number_admin);
-            const sidesData = await AdministrativeCaseService.getSides(caseId);
-            setSides(sidesData);
-            const lawyersData = await AdministrativeCaseService.getLawyers(caseId);
-            setLawyers(lawyersData);
-            const decisionsData = await AdministrativeCaseService.getDecisions(caseId);
-            setDecisions(decisionsData);
-            const executionsData = await AdministrativeCaseService.getExecutions(caseId);
-            setExecutions(executionsData);
-            const movementsData = await AdministrativeCaseService.getMovements(caseId);
-            setMovements(movementsData);
-            const petitionsData = await AdministrativeCaseService.getPetitions(caseId);
-            setPetitions(petitionsData);
+            if (data.presiding_judge) {
+              try {
+                const judgeInfo = await baseService.get(`/users/users/${data.presiding_judge}/`);
+                if (judgeInfo.data?.court_employee) {
+                  court = judgeInfo.data.court_employee.department?.court;
+                  setCourtName(court?.name_short || court?.name || '');
+                }
+              } catch (e) {
+                console.warn('Could not fetch judge info:', e);
+              }
+            }
             
-            setQuickStats({
-              sides: sidesData.length,
-              lawyers: lawyersData.length,
-              decisions: decisionsData.length,
-              executions: executionsData.length,
-              movements: movementsData.length,
-              petitions: petitionsData.length
-            });
+            const [sidesData, lawyersData, decisionsData, executionsData, movementsData, petitionsData] = await Promise.all([
+              AdministrativeCaseService.getSides(caseId),
+              AdministrativeCaseService.getLawyers(caseId),
+              AdministrativeCaseService.getDecisions(caseId),
+              AdministrativeCaseService.getExecutions(caseId),
+              AdministrativeCaseService.getMovements(caseId),
+              AdministrativeCaseService.getPetitions(caseId)
+            ]);
+            
+            setSides(sidesData || []);
+            setLawyers(lawyersData || []);
+            setDecisions(decisionsData || []);
+            setExecutions(executionsData || []);
+            setMovements(movementsData || []);
+            setPetitions(petitionsData || []);
           }
           break;
           
@@ -160,27 +171,33 @@ const CaseDetailView = () => {
           data = await KasCaseService.getKasProceedingById(caseId);
           if (data) {
             setCaseNumber(data.case_number_kas);
-            const sidesData = await KasCaseService.getSides(caseId);
-            setSides(sidesData);
-            const lawyersData = await KasCaseService.getLawyers(caseId);
-            setLawyers(lawyersData);
-            const decisionsData = await KasCaseService.getDecisions(caseId);
-            setDecisions(decisionsData);
-            const executionsData = await KasCaseService.getExecutions(caseId);
-            setExecutions(executionsData);
-            const movementsData = await KasCaseService.getMovements(caseId);
-            setMovements(movementsData);
-            const petitionsData = await KasCaseService.getPetitions(caseId);
-            setPetitions(petitionsData);
+            if (data.presiding_judge) {
+              try {
+                const judgeInfo = await baseService.get(`/users/users/${data.presiding_judge}/`);
+                if (judgeInfo.data?.court_employee) {
+                  court = judgeInfo.data.court_employee.department?.court;
+                  setCourtName(court?.name_short || court?.name || '');
+                }
+              } catch (e) {
+                console.warn('Could not fetch judge info:', e);
+              }
+            }
             
-            setQuickStats({
-              sides: sidesData.length,
-              lawyers: lawyersData.length,
-              decisions: decisionsData.length,
-              executions: executionsData.length,
-              movements: movementsData.length,
-              petitions: petitionsData.length
-            });
+            const [sidesData, lawyersData, decisionsData, executionsData, movementsData, petitionsData] = await Promise.all([
+              KasCaseService.getSides(caseId),
+              KasCaseService.getLawyers(caseId),
+              KasCaseService.getDecisions(caseId),
+              KasCaseService.getExecutions(caseId),
+              KasCaseService.getMovements(caseId),
+              KasCaseService.getPetitions(caseId)
+            ]);
+            
+            setSides(sidesData || []);
+            setLawyers(lawyersData || []);
+            setDecisions(decisionsData || []);
+            setExecutions(executionsData || []);
+            setMovements(movementsData || []);
+            setPetitions(petitionsData || []);
           }
           break;
           
@@ -189,6 +206,17 @@ const CaseDetailView = () => {
       }
       
       setCaseData(data);
+      
+      // Загружаем аудио-протоколы
+      if (data) {
+        try {
+          const audioList = await SideCaseService.getAudioTranscriptions(normalizedType, caseId);
+          setAudioTranscriptions(audioList || []);
+        } catch (e) {
+          console.warn('Could not load audio:', e);
+        }
+      }
+      
     } catch (err) {
       console.error('Error loading case:', err);
       setError('Ошибка загрузки дела');
@@ -197,7 +225,6 @@ const CaseDetailView = () => {
     }
   };
 
-  // Скачивание решения по делу
   const handleDownloadDecision = async (decisionId, title) => {
     try {
       const normalizedType = normalizeCaseType(caseType);
@@ -235,6 +262,26 @@ const CaseDetailView = () => {
     }
   };
 
+  const handleDownloadAudio = async (transcriptionId, filename) => {
+    try {
+      const response = await baseService.get(
+        `/side_case/audio-transcriptions/${transcriptionId}/download/`,
+        { responseType: 'blob' }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename || `audio_protocol_${transcriptionId}.wav`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading audio:', error);
+      alert('Ошибка при скачивании аудио-протокола');
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('ru-RU');
@@ -256,10 +303,12 @@ const CaseDetailView = () => {
 
   const getStatusText = (status) => {
     const statusMap = {
-      'pending': 'На рассмотрении',
+      'pending': 'В производстве',
       'in_progress': 'В производстве',
+      'active': 'В производстве',
       'completed': 'Завершено',
       'archived': 'В архиве',
+      'archive': 'В архиве',
       'suspended': 'Приостановлено'
     };
     return statusMap[status] || status || 'Не указан';
@@ -270,7 +319,7 @@ const CaseDetailView = () => {
     const names = {
       criminal: 'Уголовное дело',
       civil: 'Гражданское дело',
-      administrative: 'Дело об административном правонарушении (КоАП РФ)',
+      administrative: 'Дело об административном правонарушении',
       kas: 'Административное дело (КАС РФ)'
     };
     return names[normalizedType] || 'Дело';
@@ -278,38 +327,57 @@ const CaseDetailView = () => {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Загрузка дела...</div>
+      <div className={styles.pageContainer}>
+        <div className={styles.loadingState}>
+          <div className={styles.spinner}></div>
+          <p>Загрузка дела...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !caseData) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>{error || 'Дело не найдено'}</div>
-        <button onClick={() => navigate('/my-cases')} className={styles.backButton}>
-          Вернуться к моим делам
-        </button>
+      <div className={styles.pageContainer}>
+        <div className={styles.pageHeader}>
+          <button onClick={() => navigate('/my-cases')} className={styles.btnBack}>
+            ← Назад к моим делам
+          </button>
+        </div>
+        <div className={styles.alertError}>{error || 'Дело не найдено'}</div>
       </div>
     );
   }
 
   const normalizedType = normalizeCaseType(caseType);
+  const allSidesCount = defendants.length + lawyers.length + otherSides.length;
+  const totalSides = normalizedType === 'criminal' ? allSidesCount : sides.length + lawyers.length;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <button onClick={() => navigate('/my-cases')} className={styles.backButton}>
-          ← Назад к моим делам
-        </button>
-        <h1>{getCaseTypeName()} №{caseNumber}</h1>
+    <div className={styles.pageContainer}>
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderTop}>
+          <div>
+            <button onClick={() => navigate('/my-cases')} className={styles.btnBack}>
+              ← Назад к моим делам
+            </button>
+            <h1>{getCaseTypeName()} № {caseNumber}</h1>
+            {courtName && (
+              <div className={styles.courtInfo}>Суд: {courtName}</div>
+            )}
+          </div>
+          <div className={styles.headerStatus}>
+            <span className={`${styles.badge} ${styles['badge' + (caseData.status || 'pending')]}`}>
+              {getStatusText(caseData.status)}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Быстрые действия (вкладки как в карточках) */}
-      <div className={styles.quickActions}>
+      {/* Вкладки */}
+      <div className={styles.tabsContainer}>
         <button 
-          className={`${styles.quickAction} ${activeTab === 'summary' ? styles.active : ''}`}
+          className={`${styles.tabButton} ${activeTab === 'summary' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('summary')}
         >
           Основное
@@ -317,359 +385,441 @@ const CaseDetailView = () => {
         
         {(normalizedType === 'criminal' || sides.length > 0 || lawyers.length > 0) && (
           <button 
-            className={`${styles.quickAction} ${activeTab === 'sides' ? styles.active : ''}`}
+            className={`${styles.tabButton} ${activeTab === 'sides' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('sides')}
           >
-            <span className={styles.quickActionCount}>
-              {normalizedType === 'criminal' ? quickStats.allSides : quickStats.sides + quickStats.lawyers}
-            </span>
-            Стороны
+            Стороны <span className={styles.tabCount}>{totalSides}</span>
           </button>
         )}
         
         {decisions.length > 0 && (
           <button 
-            className={`${styles.quickAction} ${activeTab === 'decisions' ? styles.active : ''}`}
+            className={`${styles.tabButton} ${activeTab === 'decisions' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('decisions')}
           >
-            <span className={styles.quickActionCount}>{decisions.length}</span>
-            Решения
+            Решения <span className={styles.tabCount}>{decisions.length}</span>
           </button>
         )}
         
         {executions.length > 0 && (
           <button 
-            className={`${styles.quickAction} ${activeTab === 'executions' ? styles.active : ''}`}
+            className={`${styles.tabButton} ${activeTab === 'executions' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('executions')}
           >
-            <span className={styles.quickActionCount}>{executions.length}</span>
-            Исполнения
+            Исполнения <span className={styles.tabCount}>{executions.length}</span>
           </button>
         )}
         
         {movements.length > 0 && (
           <button 
-            className={`${styles.quickAction} ${activeTab === 'movements' ? styles.active : ''}`}
+            className={`${styles.tabButton} ${activeTab === 'movements' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('movements')}
           >
-            <span className={styles.quickActionCount}>{movements.length}</span>
-            Движение
+            Движение <span className={styles.tabCount}>{movements.length}</span>
           </button>
         )}
         
         {petitions.length > 0 && (
           <button 
-            className={`${styles.quickAction} ${activeTab === 'petitions' ? styles.active : ''}`}
+            className={`${styles.tabButton} ${activeTab === 'petitions' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('petitions')}
           >
-            <span className={styles.quickActionCount}>{petitions.length}</span>
-            Ходатайства
+            Ходатайства <span className={styles.tabCount}>{petitions.length}</span>
           </button>
         )}
         
         {civilClaims.length > 0 && normalizedType === 'criminal' && (
           <button 
-            className={`${styles.quickAction} ${activeTab === 'civilClaims' ? styles.active : ''}`}
+            className={`${styles.tabButton} ${activeTab === 'civilClaims' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('civilClaims')}
           >
-            <span className={styles.quickActionCount}>{civilClaims.length}</span>
-            Иски
+            Иски <span className={styles.tabCount}>{civilClaims.length}</span>
+          </button>
+        )}
+        
+        {audioTranscriptions.length > 0 && (
+          <button 
+            className={`${styles.tabButton} ${activeTab === 'audio' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('audio')}
+          >
+            Аудио <span className={styles.tabCount}>{audioTranscriptions.length}</span>
           </button>
         )}
       </div>
 
-      <div className={styles.content}>
-        {/* Вкладка: Основная информация */}
-        {activeTab === 'summary' && (
-          <div className={styles.summaryContent}>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>Номер дела:</span>
-                <span className={styles.value}>{caseNumber}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>Статус:</span>
-                <span className={styles.value}>{getStatusText(caseData.status)}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>Судья:</span>
-                <span className={styles.value}>
-                  {caseData.presiding_judge_full_name || caseData.judge?.full_name || 'Не назначен'}
-                </span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>Дата поступления:</span>
-                <span className={styles.value}>{formatDate(caseData.incoming_date)}</span>
-              </div>
-              {caseData.case_name && (
+      {/* Содержимое вкладок */}
+      <div className={styles.card}>
+        <div className={styles.cardBody}>
+          {/* Основное */}
+          {activeTab === 'summary' && (
+            <div className={styles.summaryContent}>
+              <div className={styles.infoGrid}>
                 <div className={styles.infoRow}>
-                  <span className={styles.label}>Наименование дела:</span>
-                  <span className={styles.value}>{caseData.case_name}</span>
+                  <span className={styles.infoLabel}>Номер дела</span>
+                  <span className={styles.infoValue}>{caseNumber}</span>
                 </div>
-              )}
-              {caseData.article_criminal && (
                 <div className={styles.infoRow}>
-                  <span className={styles.label}>Статья УК РФ:</span>
-                  <span className={styles.value}>{caseData.article_criminal}</span>
+                  <span className={styles.infoLabel}>Статус</span>
+                  <span className={styles.infoValue}>{getStatusText(caseData.status)}</span>
                 </div>
-              )}
-              {caseData.offense_description && (
                 <div className={styles.infoRow}>
-                  <span className={styles.label}>Описание правонарушения:</span>
-                  <span className={styles.value}>{caseData.offense_description}</span>
+                  <span className={styles.infoLabel}>Суд</span>
+                  <span className={styles.infoValue}>{courtName || 'Не указан'}</span>
                 </div>
-              )}
-              {caseData.claim_amount > 0 && (
                 <div className={styles.infoRow}>
-                  <span className={styles.label}>Цена иска:</span>
-                  <span className={styles.value}>{formatCurrency(caseData.claim_amount)}</span>
-                </div>
-              )}
-            </div>
-            <div className={styles.lastActivity}>
-              Обновлено: {formatDateTime(caseData.updated_at)}
-            </div>
-          </div>
-        )}
-
-        {/* Вкладка: Стороны по делу */}
-        {activeTab === 'sides' && (
-          <div className={styles.sidesContent}>
-            {normalizedType === 'criminal' ? (
-              <>
-                {defendants.length > 0 && (
-                  <>
-                    <h3>Подсудимые/Обвиняемые</h3>
-                    {defendants.map(d => (
-                      <div key={d.id} className={styles.sideCard}>
-                        <div className={styles.sideName}>{d.full_name_criminal || d.full_name}</div>
-                        <div className={styles.sideRole}>Подсудимый</div>
-                      </div>
-                    ))}
-                  </>
-                )}
-                {lawyers.length > 0 && (
-                  <>
-                    <h3>Адвокаты</h3>
-                    {lawyers.map(l => (
-                      <div key={l.id} className={styles.sideCard}>
-                        <div className={styles.sideName}>
-                          {l.lawyer_detail?.law_firm_name || 'Адвокат'}
-                        </div>
-                        <div className={styles.sideRole}>Защитник</div>
-                      </div>
-                    ))}
-                  </>
-                )}
-                {otherSides.length > 0 && (
-                  <>
-                    <h3>Другие стороны</h3>
-                    {otherSides.map(s => (
-                      <div key={s.id} className={styles.sideCard}>
-                        <div className={styles.sideName}>
-                          {s.criminal_side_case_detail?.name || 'Сторона'}
-                        </div>
-                        <div className={styles.sideRole}>
-                          {s.sides_case_criminal_detail?.sides_case || 'Сторона'}
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                {sides.map(s => (
-                  <div key={s.id} className={styles.sideCard}>
-                    <div className={styles.sideName}>
-                      {s.sides_case_incase_detail?.name || 'Сторона'}
-                    </div>
-                    <div className={styles.sideRole}>
-                      {s.sides_case_role_detail?.name || 'Сторона'}
-                    </div>
-                  </div>
-                ))}
-                {lawyers.map(l => (
-                  <div key={l.id} className={styles.sideCard}>
-                    <div className={styles.sideName}>
-                      {l.lawyer_detail?.law_firm_name || 'Представитель'}
-                    </div>
-                    <div className={styles.sideRole}>Представитель</div>
-                  </div>
-                ))}
-              </>
-            )}
-            {quickStats.allSides === 0 && quickStats.sides === 0 && quickStats.lawyers === 0 && (
-              <p className={styles.noData}>Нет данных о сторонах</p>
-            )}
-          </div>
-        )}
-
-        {/* Вкладка: Решения по делу */}
-        {activeTab === 'decisions' && (
-          <div className={styles.decisionsContent}>
-            {decisions.map(decision => (
-              <div key={decision.id} className={styles.decisionCard}>
-                <div className={styles.decisionHeader}>
-                  <span className={styles.decisionDate}>
-                    {formatDate(decision.decision_date || decision.court_consideration_date)}
+                  <span className={styles.infoLabel}>Судья</span>
+                  <span className={styles.infoValue}>
+                    {caseData.presiding_judge_full_name || caseData.judge?.full_name || 'Не назначен'}
                   </span>
-                  <button 
-                    className={styles.downloadButton}
-                    onClick={() => handleDownloadDecision(decision.id, `Решение_${caseNumber}`)}
-                  >
-                    📄 Скачать решение
-                  </button>
                 </div>
-                <div className={styles.decisionResult}>
-                  <strong>Результат:</strong> {decision.outcome || decision.case_result || 'Решение вынесено'}
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Дата поступления</span>
+                  <span className={styles.infoValue}>{formatDate(caseData.incoming_date)}</span>
                 </div>
-                {decision.decision_effective_date && (
-                  <div className={styles.decisionMeta}>
-                    Вступило в силу: {formatDate(decision.decision_effective_date)}
+                {caseData.case_name && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Наименование дела</span>
+                    <span className={styles.infoValue}>{caseData.case_name}</span>
                   </div>
                 )}
-                {decision.fine_amount > 0 && (
-                  <div className={styles.decisionMeta}>
-                    Штраф: {formatCurrency(decision.fine_amount)}
+                {caseData.article_criminal && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Статья УК РФ</span>
+                    <span className={styles.infoValue}>{caseData.article_criminal}</span>
+                  </div>
+                )}
+                {caseData.offense_description && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Описание правонарушения</span>
+                    <span className={styles.infoValue}>{caseData.offense_description}</span>
+                  </div>
+                )}
+                {caseData.claim_amount > 0 && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Цена иска</span>
+                    <span className={styles.infoValue}>{formatCurrency(caseData.claim_amount)}</span>
                   </div>
                 )}
               </div>
-            ))}
-            {decisions.length === 0 && (
-              <p className={styles.noData}>Нет решений по делу</p>
-            )}
-          </div>
-        )}
+              <div className={styles.lastActivity}>
+                Обновлено: {formatDateTime(caseData.updated_at)}
+              </div>
+            </div>
+          )}
 
-        {/* Вкладка: Ходатайства */}
-        {activeTab === 'petitions' && (
-          <div className={styles.petitionsContent}>
-            {petitions.map(petition => {
-              const petitionDetail = petition.petitions_incase_detail || {};
-              return (
-                <div key={petition.id} className={styles.petitionCard}>
-                  <div className={styles.petitionHeader}>
-                    <span className={styles.petitionDate}>
-                      {formatDate(petitionDetail.date_application)}
+          {/* Стороны */}
+          {activeTab === 'sides' && (
+            <div className={styles.sidesContent}>
+              {normalizedType === 'criminal' ? (
+                <>
+                  {defendants.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionSubtitle}>Подсудимые</h3>
+                      {defendants.map(d => (
+                        <div key={d.id} className={styles.sideCard}>
+                          <div className={styles.sideName}>{d.full_name_criminal || d.full_name}</div>
+                          <div className={styles.sideRole}>Подсудимый</div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {lawyers.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionSubtitle}>Адвокаты</h3>
+                      {lawyers.map(l => (
+                        <div key={l.id} className={styles.sideCard}>
+                          <div className={styles.sideName}>
+                            {l.lawyer_detail?.law_firm_name || 'Адвокат'}
+                          </div>
+                          <div className={styles.sideRole}>Защитник</div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {otherSides.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionSubtitle}>Другие стороны</h3>
+                      {otherSides.map(s => (
+                        <div key={s.id} className={styles.sideCard}>
+                          <div className={styles.sideName}>
+                            {s.criminal_side_case_detail?.name || 'Сторона'}
+                          </div>
+                          <div className={styles.sideRole}>
+                            {s.sides_case_criminal_detail?.sides_case || 'Сторона'}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {sides.map(s => (
+                    <div key={s.id} className={styles.sideCard}>
+                      <div className={styles.sideName}>
+                        {s.sides_case_incase_detail?.name || 'Сторона'}
+                      </div>
+                      <div className={styles.sideRole}>
+                        {s.sides_case_role_detail?.name || 'Сторона'}
+                      </div>
+                    </div>
+                  ))}
+                  {lawyers.map(l => (
+                    <div key={l.id} className={styles.sideCard}>
+                      <div className={styles.sideName}>
+                        {l.lawyer_detail?.law_firm_name || 'Представитель'}
+                      </div>
+                      <div className={styles.sideRole}>Представитель</div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {totalSides === 0 && (
+                <div className={styles.emptyState}>
+                  <p>Нет данных о сторонах</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Решения */}
+          {activeTab === 'decisions' && (
+            <div className={styles.decisionsContent}>
+              {decisions.map(decision => (
+                <div key={decision.id} className={styles.decisionCard}>
+                  <div className={styles.decisionHeader}>
+                    <span className={styles.decisionDate}>
+                      {formatDate(decision.decision_date || decision.court_consideration_date)}
                     </span>
+                    <button 
+                      className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSm}`}
+                      onClick={() => handleDownloadDecision(decision.id, `Решение_${caseNumber}`)}
+                    >
+                      Скачать решение
+                    </button>
                   </div>
-                  {petitionDetail.petitions_name?.length > 0 && (
-                    <div className={styles.petitionTypes}>
-                      Тип: {petitionDetail.petitions_name.map(p => p.name).join(', ')}
+                  <div className={styles.decisionResult}>
+                    <span className={styles.decisionResultLabel}>Результат</span>
+                    {decision.outcome || decision.case_result || 'Решение вынесено'}
+                  </div>
+                  {decision.decision_effective_date && (
+                    <div className={styles.decisionMeta}>
+                      Вступило в силу: {formatDate(decision.decision_effective_date)}
                     </div>
                   )}
-                  {petition.petitioner_info && (
-                    <div className={styles.petitionPetitioner}>
-                      Заявитель: {petition.petitioner_info.name || petition.petitioner_info}
-                    </div>
-                  )}
-                  {petitionDetail.date_decision && (
-                    <div className={styles.petitionDecision}>
-                      Решение от: {formatDate(petitionDetail.date_decision)}
-                      {petitionDetail.decision_rendered?.name_case && 
-                        ` — ${petitionDetail.decision_rendered.name_case}`
-                      }
+                  {decision.fine_amount > 0 && (
+                    <div className={styles.decisionMeta}>
+                      Штраф: {formatCurrency(decision.fine_amount)}
                     </div>
                   )}
                 </div>
-              );
-            })}
-            {petitions.length === 0 && (
-              <p className={styles.noData}>Нет ходатайств по делу</p>
-            )}
-          </div>
-        )}
+              ))}
+              {decisions.length === 0 && (
+                <div className={styles.emptyState}>
+                  <p>Нет решений по делу</p>
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Вкладка: Исполнения */}
-        {activeTab === 'executions' && (
-          <div className={styles.executionsContent}>
-            {executions.map(execution => (
-              <div key={execution.id} className={styles.executionCard}>
-                <div className={styles.executionDate}>
-                  {formatDate(execution.execution_date || execution.execution_sent_date || execution.writ_execution_date)}
-                </div>
-                <div className={styles.executionInfo}>
-                  {execution.execution_sent_to && (
-                    <div>Направлено: {execution.execution_sent_to}</div>
-                  )}
-                  {execution.execution_result && (
-                    <div>Результат: {execution.execution_result}</div>
-                  )}
-                  {execution.fine_paid && (
-                    <div>Штраф уплачен: {execution.fine_paid_date ? formatDate(execution.fine_paid_date) : 'Да'}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-            {executions.length === 0 && (
-              <p className={styles.noData}>Нет данных об исполнении</p>
-            )}
-          </div>
-        )}
-
-        {/* Вкладка: Движение дела */}
-        {activeTab === 'movements' && (
-          <div className={styles.movementsContent}>
-            {movements.map(movement => {
-              const movementData = movement.business_movement_detail || movement;
-              return (
-                <div key={movement.id} className={styles.movementCard}>
-                  <div className={styles.movementDate}>
-                    {formatDate(movementData.date_meeting)}
+          {/* Исполнения */}
+          {activeTab === 'executions' && (
+            <div className={styles.executionsContent}>
+              {executions.map(execution => (
+                <div key={execution.id} className={styles.executionCard}>
+                  <div className={styles.executionDate}>
+                    {formatDate(execution.execution_date || execution.execution_sent_date || execution.writ_execution_date)}
                   </div>
-                  {movementData.meeting_time && (
-                    <div className={styles.movementTime}>
-                      Время: {movementData.meeting_time.slice(0, 5)}
+                  <div className={styles.executionInfo}>
+                    {execution.execution_sent_to && (
+                      <div>Направлено: {execution.execution_sent_to}</div>
+                    )}
+                    {execution.execution_result && (
+                      <div>Результат: {execution.execution_result}</div>
+                    )}
+                    {execution.fine_paid && (
+                      <div>Штраф уплачен: {execution.fine_paid_date ? formatDate(execution.fine_paid_date) : 'Да'}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {executions.length === 0 && (
+                <div className={styles.emptyState}>
+                  <p>Нет данных об исполнении</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Движение дела */}
+          {activeTab === 'movements' && (
+            <div className={styles.movementsContent}>
+              {movements.map(movement => {
+                const movementData = movement.business_movement_detail || movement;
+                return (
+                  <div key={movement.id} className={styles.movementCard}>
+                    <div className={styles.movementDate}>
+                      {formatDate(movementData.date_meeting)}
+                    </div>
+                    {movementData.meeting_time && (
+                      <div className={styles.movementTime}>
+                        Время: {movementData.meeting_time.slice(0, 5)}
+                      </div>
+                    )}
+                    {movementData.result_court_session && (
+                      <div className={styles.movementResult}>
+                        Результат: {movementData.result_court_session}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {movements.length === 0 && (
+                <div className={styles.emptyState}>
+                  <p>Нет данных о движении дела</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Ходатайства */}
+          {activeTab === 'petitions' && (
+            <div className={styles.petitionsContent}>
+              {petitions.map(petition => {
+                const detail = petition.petitions_incase_detail || {};
+                const isResolved = !!detail.date_decision;
+                const decisionText = detail.decision_rendered?.name_case || 'Рассмотрено';
+                
+                return (
+                  <div key={petition.id} className={styles.petitionCard}>
+                    <div className={styles.petitionHeader}>
+                      <span className={styles.petitionDate}>
+                        {formatDate(detail.date_application)}
+                      </span>
+                      <span className={isResolved ? styles.petitionStatusResolved : styles.petitionStatusPending}>
+                        {isResolved ? 'Рассмотрено' : 'На рассмотрении'}
+                      </span>
+                    </div>
+                    <div className={styles.petitionBody}>
+                      <div className={styles.petitionField}>
+                        <span className={styles.petitionFieldLabel}>Тип</span>
+                        <span className={styles.petitionFieldValue}>
+                          {detail.petitions_name?.map(p => p.name || p.petitions).join(', ') || '—'}
+                        </span>
+                      </div>
+                      <div className={styles.petitionField}>
+                        <span className={styles.petitionFieldLabel}>Заявитель</span>
+                        <span className={styles.petitionFieldValue}>
+                          {petition.petitioner_info?.name || petition.petitioner_info || 'Не указан'}
+                        </span>
+                      </div>
+                      {detail.notation && (
+                        <div className={styles.petitionText}>
+                          {detail.notation}
+                        </div>
+                      )}
+                      {isResolved && (
+                        <div className={styles.petitionDecision}>
+                          <span className={styles.petitionDecisionLabel}>Решение суда</span>
+                          <span className={styles.petitionDecisionText}>
+                            {decisionText}
+                            {detail.date_decision && (
+                              <span className={styles.petitionDecisionDate}>
+                                от {formatDate(detail.date_decision)}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {petitions.length === 0 && (
+                <div className={styles.emptyState}>
+                  <p>Нет ходатайств по делу</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Гражданские иски */}
+          {activeTab === 'civilClaims' && normalizedType === 'criminal' && (
+            <div className={styles.claimsContent}>
+              {civilClaims.map(claim => (
+                <div key={claim.id} className={styles.claimCard}>
+                  <div className={styles.claimAmount}>
+                    {claim.claim_amount ? `${claim.claim_amount.toLocaleString()} руб.` : 'Гражданский иск'}
+                  </div>
+                  <div className={styles.claimPlaintiff}>
+                    Истец: {claim.plaintiff_name || 'Не указан'}
+                  </div>
+                  {claim.result && (
+                    <div className={styles.claimResult}>
+                      Результат: {claim.result_display || claim.result}
                     </div>
                   )}
-                  {movementData.result_court_session && (
-                    <div className={styles.movementResult}>
-                      Результат: {movementData.result_court_session}
+                  {claim.decision_date && (
+                    <div className={styles.claimDate}>
+                      Решение от: {formatDate(claim.decision_date)}
                     </div>
                   )}
                 </div>
-              );
-            })}
-            {movements.length === 0 && (
-              <p className={styles.noData}>Нет данных о движении дела</p>
-            )}
-          </div>
-        )}
+              ))}
+              {civilClaims.length === 0 && (
+                <div className={styles.emptyState}>
+                  <p>Нет гражданских исков</p>
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Вкладка: Гражданские иски (только для уголовных дел) */}
-        {activeTab === 'civilClaims' && normalizedType === 'criminal' && (
-          <div className={styles.civilClaimsContent}>
-            {civilClaims.map(claim => (
-              <div key={claim.id} className={styles.claimCard}>
-                <div className={styles.claimAmount}>
-                  {claim.claim_amount ? `${claim.claim_amount.toLocaleString()} руб.` : 'Гражданский иск'}
+          {/* Аудио-протоколы */}
+          {activeTab === 'audio' && (
+            <div className={styles.audioContent}>
+              <h3 className={styles.sectionSubtitle}>Аудио-протоколы заседаний</h3>
+              {audioTranscriptions.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <p>Аудио-протоколы к данному делу не прикреплены</p>
                 </div>
-                <div className={styles.claimPlaintiff}>
-                  Истец: {claim.plaintiff_name || 'Не указан'}
+              ) : (
+                <div className={styles.audioList}>
+                  {audioTranscriptions.map(audio => (
+                    <div key={audio.id} className={styles.audioCard}>
+                      <div className={styles.audioInfo}>
+                        <span className={styles.audioDate}>
+                          {formatDate(audio.created_at)}
+                        </span>
+                        {audio.duration_seconds && (
+                          <span className={styles.audioDuration}>
+                            Длительность: {Math.floor(audio.duration_seconds / 60)} мин {audio.duration_seconds % 60} сек
+                          </span>
+                        )}
+                        <span className={audio.status === 'completed' ? styles.audioStatusCompleted : styles.audioStatusProcessing}>
+                          {audio.status === 'completed' ? 'Готово' : 'Обработка...'}
+                        </span>
+                      </div>
+                      <button 
+                        className={`${styles.btn} ${styles.btnSecondary} ${styles.btnSm}`}
+                        onClick={() => handleDownloadAudio(
+                          audio.id, 
+                          `audio_protocol_${caseNumber}_${new Date(audio.created_at).toISOString().slice(0,10)}.wav`
+                        )}
+                        disabled={audio.status !== 'completed'}
+                      >
+                        Скачать аудио
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                {claim.result && (
-                  <div className={styles.claimResult}>
-                    Результат: {claim.result_display || claim.result}
-                  </div>
-                )}
-                {claim.decision_date && (
-                  <div className={styles.claimDate}>
-                    Решение от: {formatDate(claim.decision_date)}
-                  </div>
-                )}
-              </div>
-            ))}
-            {civilClaims.length === 0 && (
-              <p className={styles.noData}>Нет гражданских исков</p>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className={styles.note}>
-        <p>📌 Это страница предназначена только для просмотра. 
-           Для подачи ходатайств или загрузки документов вернитесь в личный кабинет.</p>
+      <div className={styles.noteBox}>
+        <p>Страница предназначена только для просмотра. Для подачи ходатайств или загрузки документов вернитесь в личный кабинет.</p>
       </div>
     </div>
   );

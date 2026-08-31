@@ -1,3 +1,5 @@
+// PetitionDetail.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import styles from './PetitionDetail.module.css';
@@ -5,6 +7,7 @@ import PetitionService from '../../API/PetitionService';
 import KasCaseService from '../../API/KasCaseService';
 import CriminalCaseService from '../../API/CriminalCaseService';
 import OtherMaterialService from '../../API/OtherMaterialService';
+import baseService from '../../API/baseService';
 
 const PetitionDetail = () => {
   const { proceedingId, petitionId, materialId } = useParams();
@@ -173,14 +176,28 @@ const PetitionDetail = () => {
             const petitionDetail = petition.petitions_incase_detail || {};
             const petitionerInfo = petition.petitioner_info || {};
             
+            // Определяем тип заявителя для select
+            let petitionerType = '';
+            let petitionerId = '';
+            
+            if (petitionerInfo.type && petitionerInfo.id) {
+              petitionerType = petitionerInfo.type;
+              petitionerId = petitionerInfo.id;
+            } else if (petition.petitioner_type && petition.petitioner_id) {
+              petitionerType = petition.petitioner_type;
+              petitionerId = petition.petitioner_id;
+            }
+            
             setFormData({
               petitions_name: petitionDetail.petitions_name?.[0]?.id || '',
-              petitioner_type: petitionerInfo.type || '',
-              petitioner_id: petitionerInfo.id || '',
+              petitioner_type: petitionerType,
+              petitioner_id: petitionerId,
               date_application: petitionDetail.date_application || '',
               decision_rendered: petitionDetail.decision_rendered?.id || petitionDetail.decision_rendered || '',
               date_decision: petitionDetail.date_decision || '',
-              notation: petitionDetail.notation || ''
+              notation: petitionDetail.notation || '',
+              // Сохраняем информацию о заявителе для отображения
+              petitioner_info: petitionerInfo
             });
           } catch (err) {
             console.error('Ошибка загрузки ходатайства:', err);
@@ -194,7 +211,8 @@ const PetitionDetail = () => {
             date_application: new Date().toISOString().split('T')[0],
             decision_rendered: '',
             date_decision: '',
-            notation: ''
+            notation: '',
+            petitioner_info: {}
           });
           setIsEditing(true);
         }
@@ -231,100 +249,150 @@ const PetitionDetail = () => {
     
     const [type, id] = value.split(':');
     
+    // Находим информацию о заявителе
+    const petitioner = petitioners.find(p => `${p.type}:${p.id}` === value);
+    
     setFormData(prev => ({
       ...prev,
       petitioner_type: type,
-      petitioner_id: id ? parseInt(id, 10) : ''
+      petitioner_id: id ? parseInt(id, 10) : '',
+      // Сохраняем полную информацию о заявителе
+      petitioner_info: petitioner ? {
+        name: petitioner.name,
+        role: petitioner.role,
+        type: petitioner.type,
+        id: petitioner.id,
+        source: 'court'
+      } : {}
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      
-      if (!formData.petitions_name) {
-        alert('Выберите тип ходатайства');
-        setSaving(false);
-        return;
-      }
-      
-      if (!formData.petitioner_type || !formData.petitioner_id) {
-        alert('Выберите заявителя');
-        setSaving(false);
-        return;
-      }
-      
-      if (!formData.date_application) {
-        alert('Укажите дату подачи ходатайства');
-        setSaving(false);
-        return;
-      }
-      
-      const dataToSend = {
-        petitions_name: formData.petitions_name ? [parseInt(formData.petitions_name)] : [],
-        petitioner_type: formData.petitioner_type,
-        petitioner_id: formData.petitioner_id,
-        date_application: formData.date_application,
-        decision_rendered: formData.decision_rendered ? parseInt(formData.decision_rendered) : null,
-        date_decision: formData.date_decision || null,
-        notation: formData.notation || ''
-      };
-      
-      console.log('Отправляемые данные:', dataToSend);
-      console.log('Тип дела:', caseType);
-      console.log('Proceeding ID:', effectiveProceedingId);
-      
-      if (isCreateMode) {
-        if (caseType === 'kas') {
-          await KasCaseService.createPetition(effectiveProceedingId, dataToSend);
-        } else if (caseType === 'criminal') {
-          await CriminalCaseService.createPetition(effectiveProceedingId, dataToSend);
-        } else if (caseType === 'other') {
-          await OtherMaterialService.createPetition(effectiveProceedingId, dataToSend);
-        } else {
-          await PetitionService.createPetition(effectiveProceedingId, dataToSend, caseType);
-        }
-        navigate(-1);
-      } else {
-        if (caseType === 'kas') {
-          await KasCaseService.updatePetition(effectiveProceedingId, petitionId, dataToSend);
-        } else if (caseType === 'criminal') {
-          await CriminalCaseService.updatePetition(effectiveProceedingId, petitionId, dataToSend);
-        } else if (caseType === 'other') {
-          await OtherMaterialService.updatePetition(effectiveProceedingId, petitionId, dataToSend);
-        } else {
-          await PetitionService.updatePetition(effectiveProceedingId, petitionId, dataToSend, caseType);
-        }
-        navigate(-1);
-      }
-      
-    } catch (err) {
-      console.error('Ошибка сохранения:', err);
-      
-      if (err.response) {
-        let errorMessage = 'Не удалось сохранить данные: ';
-        if (err.response.data) {
-          if (typeof err.response.data === 'object') {
-            const errors = Object.entries(err.response.data)
-              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-              .join('; ');
-            errorMessage += errors;
-          } else {
-            errorMessage += err.response.data;
-          }
-        } else {
-          errorMessage += err.response.status;
-        }
-        setError(errorMessage);
-      } else if (err.request) {
-        setError('Не удалось получить ответ от сервера');
-      } else {
-        setError(`Не удалось сохранить данные: ${err.message}`);
-      }
-    } finally {
+const handleSave = async () => {
+  try {
+    setSaving(true);
+    
+    if (!formData.petitions_name) {
+      alert('Выберите тип ходатайства');
       setSaving(false);
+      return;
     }
-  };
+    
+    if (!formData.petitioner_type || !formData.petitioner_id) {
+      alert('Выберите заявителя');
+      setSaving(false);
+      return;
+    }
+    
+    if (!formData.date_application) {
+      alert('Укажите дату подачи ходатайства');
+      setSaving(false);
+      return;
+    }
+    
+    // ПРАВИЛЬНЫЙ ФОРМАТ - только те поля, которые есть в модели
+    const dataToSend = {
+      petitions_name: [parseInt(formData.petitions_name)],
+      date_application: formData.date_application,
+      notation: formData.notation || '',
+      // petitioner_type и petitioner_id - для связи с заявителем
+      petitioner_type: formData.petitioner_type,
+      petitioner_id: parseInt(formData.petitioner_id),
+      // petitioner_info - JSON объект
+      petitioner_info: {
+        name: formData.petitioner_info?.name || '',
+        role: formData.petitioner_info?.role || '',
+        type: formData.petitioner_type,
+        id: parseInt(formData.petitioner_id),
+        source: 'court'
+      }
+    };
+    
+    // ДОБАВЛЯЕМ decision_rendered ТОЛЬКО ЕСЛИ ОН ВЫБРАН
+    if (formData.decision_rendered && formData.decision_rendered !== '') {
+      dataToSend.decision_rendered = parseInt(formData.decision_rendered);
+    }
+    
+    // ДОБАВЛЯЕМ date_decision ТОЛЬКО ЕСЛИ ОН УКАЗАН
+    if (formData.date_decision && formData.date_decision !== '') {
+      dataToSend.date_decision = formData.date_decision;
+    }
+    
+    console.log('Отправляемые данные:', JSON.stringify(dataToSend, null, 2));
+    console.log('Тип дела:', caseType);
+    console.log('Proceeding ID:', effectiveProceedingId);
+    
+    let result;
+    
+    if (isCreateMode) {
+      // Создание
+      if (caseType === 'kas') {
+        result = await KasCaseService.createPetition(effectiveProceedingId, dataToSend);
+      } else if (caseType === 'criminal') {
+        result = await CriminalCaseService.createPetition(effectiveProceedingId, dataToSend);
+      } else if (caseType === 'other') {
+        result = await OtherMaterialService.createPetition(effectiveProceedingId, dataToSend);
+      } else {
+        result = await PetitionService.createPetition(effectiveProceedingId, dataToSend, caseType);
+      }
+      console.log('Создано ходатайство:', result);
+      navigate(-1);
+    } else {
+      // Обновление - используем только заполненные поля (PATCH)
+      // Удаляем поля с пустыми значениями
+      const patchData = { ...dataToSend };
+      Object.keys(patchData).forEach(key => {
+        if (patchData[key] === null || patchData[key] === undefined || patchData[key] === '') {
+          delete patchData[key];
+        }
+        // Если это массив и он пустой
+        if (Array.isArray(patchData[key]) && patchData[key].length === 0) {
+          delete patchData[key];
+        }
+      });
+      
+      console.log('PATCH данные:', JSON.stringify(patchData, null, 2));
+      
+      if (caseType === 'kas') {
+        result = await KasCaseService.updatePetition(effectiveProceedingId, petitionId, patchData);
+      } else if (caseType === 'criminal') {
+        result = await CriminalCaseService.updatePetition(effectiveProceedingId, petitionId, patchData);
+      } else if (caseType === 'other') {
+        result = await OtherMaterialService.updatePetition(effectiveProceedingId, petitionId, patchData);
+      } else {
+        result = await PetitionService.updatePetition(effectiveProceedingId, petitionId, patchData, caseType);
+      }
+      console.log('Обновлено ходатайство:', result);
+      navigate(-1);
+    }
+    
+  } catch (err) {
+    console.error('Ошибка сохранения:', err);
+    console.error('Ответ сервера:', err.response?.data);
+    
+    if (err.response) {
+      let errorMessage = 'Не удалось сохранить данные: ';
+      if (err.response.data) {
+        if (typeof err.response.data === 'object') {
+          const errors = Object.entries(err.response.data)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ');
+          errorMessage += errors;
+        } else {
+          errorMessage += err.response.data;
+        }
+      } else {
+        errorMessage += err.response.status;
+      }
+      setError(errorMessage);
+    } else if (err.request) {
+      setError('Не удалось получить ответ от сервера');
+    } else {
+      setError(`Не удалось сохранить данные: ${err.message}`);
+    }
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleCancel = () => {
     if (isCreateMode) {
@@ -335,14 +403,26 @@ const PetitionDetail = () => {
         const petitionDetail = petitionData.petitions_incase_detail || {};
         const petitionerInfo = petitionData.petitioner_info || {};
         
+        let petitionerType = '';
+        let petitionerId = '';
+        
+        if (petitionerInfo.type && petitionerInfo.id) {
+          petitionerType = petitionerInfo.type;
+          petitionerId = petitionerInfo.id;
+        } else if (petitionData.petitioner_type && petitionData.petitioner_id) {
+          petitionerType = petitionData.petitioner_type;
+          petitionerId = petitionData.petitioner_id;
+        }
+        
         setFormData({
           petitions_name: petitionDetail.petitions_name?.[0]?.id || '',
-          petitioner_type: petitionerInfo.type || '',
-          petitioner_id: petitionerInfo.id || '',
+          petitioner_type: petitionerType,
+          petitioner_id: petitionerId,
           date_application: petitionDetail.date_application || '',
           decision_rendered: petitionDetail.decision_rendered?.id || petitionDetail.decision_rendered || '',
           date_decision: petitionDetail.date_decision || '',
-          notation: petitionDetail.notation || ''
+          notation: petitionDetail.notation || '',
+          petitioner_info: petitionerInfo
         });
       }
     }
@@ -385,9 +465,30 @@ const PetitionDetail = () => {
   };
 
   const getPetitionerName = () => {
-    const petitionerInfo = petitionData?.petitioner_info;
-    if (!petitionerInfo) return 'Не указан';
-    return `${petitionerInfo.name} (${petitionerInfo.role})`;
+    const petitionerInfo = petitionData?.petitioner_info || petitionData?.petitions_incase_detail?.petitioner_info;
+    
+    if (!petitionerInfo) {
+      // Если нет в petitioner_info, пробуем через petitioner_type/petitioner_id
+      if (petitionData?.petitioner_type && petitionData?.petitioner_id) {
+        const petitioner = petitioners.find(p => 
+          p.type === petitionData.petitioner_type && p.id === petitionData.petitioner_id
+        );
+        if (petitioner) {
+          return `${petitioner.name} (${petitioner.role})`;
+        }
+        return `${petitionData.petitioner_type}:${petitionData.petitioner_id}`;
+      }
+      return 'Не указан';
+    }
+    
+    if (typeof petitionerInfo === 'object') {
+      const name = petitionerInfo.name || petitionerInfo.full_name || 'Не указан';
+      const role = petitionerInfo.side_name || petitionerInfo.role || '';
+      const source = petitionerInfo.source === 'side_user' ? '(личный кабинет)' : '';
+      return `${name} ${role} ${source}`.trim();
+    }
+    
+    return String(petitionerInfo);
   };
 
   const getDecisionName = () => {
@@ -418,6 +519,14 @@ const PetitionDetail = () => {
     }
     
     return `${action} ${caseTypeText}`;
+  };
+
+  // Получение значения для поля заявителя в select
+  const getPetitionerSelectValue = () => {
+    if (formData.petitioner_type && formData.petitioner_id) {
+      return `${formData.petitioner_type}:${formData.petitioner_id}`;
+    }
+    return '';
   };
 
   if (loading) {
@@ -557,8 +666,7 @@ const PetitionDetail = () => {
                         {(isEditing || isCreateMode) ? (
                           <select
                             name="petitioner"
-                            value={formData.petitioner_type && formData.petitioner_id ? 
-                                   `${formData.petitioner_type}:${formData.petitioner_id}` : ''}
+                            value={getPetitionerSelectValue()}
                             onChange={handlePetitionerChange}
                             className={styles.select}
                             required

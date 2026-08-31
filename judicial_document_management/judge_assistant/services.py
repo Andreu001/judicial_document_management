@@ -1,40 +1,105 @@
 # judge_assistant/services.py
 """
-Сервис анализа уголовного дела для автоматизированного помощника судьи.
+Сервис анализа дел для автоматизированного помощника судьи.
+Поддерживает все типы дел: уголовные, гражданские, административные (КАС) и об административных правонарушениях.
 """
 
 from datetime import date, timedelta
 from django.utils import timezone
-from django.db.models import Q, Count
-from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 
 from .upc_knowledge import (
-    UPCPage, DEADLINES, STAGE_INFO, JUDGE_DECISION_TO_STAGE,
-    get_current_stage, get_stage_deadline, SUPREME_COURT_LINKS_BY_STAGE
+    UPCPage, DEADLINES as UPC_DEADLINES, STAGE_INFO as UPC_STAGE_INFO,
+    JUDGE_DECISION_TO_STAGE as UPC_JUDGE_DECISION_TO_STAGE,
+    get_current_stage as get_upc_stage,
+    get_stage_deadline as get_upc_deadline,
+    SUPREME_COURT_LINKS_BY_STAGE as UPC_LINKS
+)
+
+from .gp_knowledge import (
+    GPPage, DEADLINES as GP_DEADLINES, STAGE_INFO as GP_STAGE_INFO,
+    get_current_stage as get_gp_stage,
+    get_stage_deadline as get_gp_deadline,
+    SUPREME_COURT_LINKS_BY_STAGE as GP_LINKS
+)
+
+from .kas_knowledge import (
+    KASPage, DEADLINES as KAS_DEADLINES, STAGE_INFO as KAS_STAGE_INFO,
+    get_current_stage as get_kas_stage,
+    get_stage_deadline as get_kas_deadline,
+    SUPREME_COURT_LINKS_BY_STAGE as KAS_LINKS
+)
+
+from .koap_knowledge import (
+    KOAPPage, DEADLINES as KOAP_DEADLINES, STAGE_INFO as KOAP_STAGE_INFO,
+    get_current_stage as get_koap_stage,
+    get_stage_deadline as get_koap_deadline,
+    SUPREME_COURT_LINKS_BY_STAGE as KOAP_LINKS
 )
 
 
 class CaseAnalyzerService:
     """
-    Сервис для анализа уголовного дела и генерации подсказок.
+    Сервис для анализа дела и генерации подсказок.
+    Поддерживает все типы судопроизводства.
     """
 
-    def __init__(self, case):
+    def __init__(self, case, case_type='criminal'):
         self.case = case
-        self.current_stage = get_current_stage(case)
-        self.stage_info = STAGE_INFO.get(self.current_stage, {})
+        self.case_type = case_type
+        self._init_knowledge()
+        self.current_stage = self._get_current_stage()
+
+    def _init_knowledge(self):
+        """Инициализация соответствующих модулей знаний в зависимости от типа дела."""
+        if self.case_type == 'criminal':
+            self.page_enum = UPCPage
+            self.deadlines = UPC_DEADLINES
+            self.stage_info = UPC_STAGE_INFO
+            self.get_stage = get_upc_stage
+            self.get_deadline = get_upc_deadline
+            self.links = UPC_LINKS
+        elif self.case_type == 'civil':
+            self.page_enum = GPPage
+            self.deadlines = GP_DEADLINES
+            self.stage_info = GP_STAGE_INFO
+            self.get_stage = get_gp_stage
+            self.get_deadline = get_gp_deadline
+            self.links = GP_LINKS
+        elif self.case_type == 'kas':
+            self.page_enum = KASPage
+            self.deadlines = KAS_DEADLINES
+            self.stage_info = KAS_STAGE_INFO
+            self.get_stage = get_kas_stage
+            self.get_deadline = get_kas_deadline
+            self.links = KAS_LINKS
+        elif self.case_type == 'coap':
+            self.page_enum = KOAPPage
+            self.deadlines = KOAP_DEADLINES
+            self.stage_info = KOAP_STAGE_INFO
+            self.get_stage = get_koap_stage
+            self.get_deadline = get_koap_deadline
+            self.links = KOAP_LINKS
+        else:
+            raise ValueError(f"Unsupported case type: {self.case_type}")
+
+    def _get_current_stage(self):
+        """Определяет текущий этап дела."""
+        return self.get_stage(self.case)
 
     def analyze(self):
         """
         Главный метод анализа дела.
         Возвращает словарь с результатами анализа.
         """
+        stage_info = self.stage_info.get(self.current_stage, {})
+        
         return {
             'current_stage': {
                 'code': self.current_stage.value,
-                'name': self.stage_info.get('name', 'Неизвестный этап'),
-                'chapters': self.stage_info.get('chapters', []),
-                'description': self.stage_info.get('description', ''),
+                'name': stage_info.get('name', 'Неизвестный этап'),
+                'chapters': stage_info.get('chapters', []),
+                'description': stage_info.get('description', ''),
             },
             'deadline_violations': self._check_deadlines(),
             'pending_petitions': self._check_pending_petitions(),
@@ -47,97 +112,139 @@ class CaseAnalyzerService:
 
     def _check_deadlines(self):
         """
-        Проверяет соблюдение сроков по Главе 17 УПК РФ.
+        Проверяет соблюдение процессуальных сроков.
         Возвращает список нарушений.
         """
         violations = []
         today = timezone.now().date()
 
-        # 1. Срок принятия решения по поступившему делу (ст. 227 УПК)
-        if self.case.incoming_date and not self.case.judge_decision:
+        # Общие проверки для всех типов дел
+        if hasattr(self.case, 'incoming_date') and self.case.incoming_date:
             days_passed = (today - self.case.incoming_date).days
-            deadline = DEADLINES.get('decision_on_case', 14)
-            if days_passed > deadline:
-                violations.append({
-                    'type': 'decision_on_case',
-                    'title': 'Нарушение срока принятия решения по делу (ст. 227 УПК)',
-                    'deadline_days': deadline,
-                    'actual_days': days_passed,
-                    'description': f'Решение по поступившему делу должно быть принято в течение {deadline} суток. Прошло {days_passed} суток.',
-                    'severity': 'high',
-                })
-
-        # 2. Срок назначения судебного заседания (ст. 233, 241.1 УПК)
-        # Используем judge_acceptance_date или incoming_date как дату решения
-        if self.case.judge_decision and self.case.judge_decision in ['3', '4']:
-            # Решение о назначении судебного заседания
-            judge_decision_date = self.case.judge_acceptance_date or self.case.incoming_date
-            if judge_decision_date and not self.case.consideration_date:
-                days_passed = (today - judge_decision_date).days
-                deadline = get_stage_deadline(self.current_stage, self.case) or 14
-                if days_passed > deadline:
+            deadline = 30  # разумный срок по умолчанию
+            
+            if self.case_type == 'criminal':
+                deadline = self.deadlines.get('decision_on_case', 14)
+                if days_passed > deadline and not getattr(self.case, 'judge_decision', None):
                     violations.append({
-                        'type': 'trial_start',
-                        'title': 'Нарушение срока начала судебного разбирательства',
+                        'type': 'decision_on_case',
+                        'title': 'Нарушение срока принятия решения по делу',
                         'deadline_days': deadline,
                         'actual_days': days_passed,
-                        'description': f'Судебное заседание должно начаться в течение {deadline} суток. Прошло {days_passed} суток.',
+                        'description': f'Решение по поступившему делу должно быть принято в течение {deadline} суток. Прошло {days_passed} суток.',
+                        'severity': 'high',
+                    })
+            
+            elif self.case_type == 'civil' or self.case_type == 'kas':
+                deadline = self.deadlines.get('decision_on_case', 5)
+                if days_passed > deadline:
+                    violations.append({
+                        'type': 'decision_on_case',
+                        'title': 'Нарушение срока принятия решения по делу',
+                        'deadline_days': deadline,
+                        'actual_days': days_passed,
+                        'description': f'Решение по поступившему делу должно быть принято в течение {deadline} суток. Прошло {days_passed} суток.',
                         'severity': 'high',
                     })
 
-        # 3. Срок рассмотрения дела (общий) - используем consideration_date
-        if self.case.consideration_date and not self.case.sentence_date:
-            days_passed = (today - self.case.consideration_date).days
-            reasonable_days = 90
-            if days_passed > reasonable_days:
+        # Проверка сроков рассмотрения
+        if hasattr(self.case, 'hearing_date') and self.case.hearing_date:
+            days_from_hearing = (today - self.case.hearing_date).days
+            if days_from_hearing > 30 and not self._is_case_completed():
                 violations.append({
                     'type': 'consideration',
                     'title': 'Превышение разумного срока рассмотрения дела',
-                    'deadline_days': reasonable_days,
-                    'actual_days': days_passed,
-                    'description': f'С момента назначения рассмотрения прошло {days_passed} дней, что превышает разумный срок.',
+                    'deadline_days': 30,
+                    'actual_days': days_from_hearing,
+                    'description': f'С момента назначения рассмотрения прошло {days_from_hearing} дней, что превышает разумный срок.',
                     'severity': 'medium',
                 })
 
-        # 4. Срок обращения приговора к исполнению (ст. 390, 393 УПК)
-        if self.case.sentence_effective_date:
-            days_passed = (today - self.case.sentence_effective_date).days
-            deadline = DEADLINES.get('execution', 15)
-            if days_passed > deadline and not self.case.sentence_execution_date:
-                violations.append({
-                    'type': 'execution',
-                    'title': 'Нарушение срока обращения приговора к исполнению (ст. 390, 393 УПК)',
-                    'deadline_days': deadline,
-                    'actual_days': days_passed,
-                    'description': f'Приговор должен быть обращен к исполнению в течение {deadline} суток. Прошло {days_passed} суток.',
-                    'severity': 'high',
-                })
-
         return violations
+
+    def _is_case_completed(self):
+        """Проверяет, завершено ли дело."""
+        if self.case_type == 'criminal':
+            return bool(getattr(self.case, 'sentence_date', None))
+        elif self.case_type == 'civil':
+            return hasattr(self.case, 'civil_decisions') and self.case.civil_decisions.exists()
+        elif self.case_type == 'kas':
+            return hasattr(self.case, 'kas_decisions') and self.case.kas_decisions.exists()
+        elif self.case_type == 'coap':
+            return hasattr(self.case, 'admin_decisions') and self.case.admin_decisions.exists()
+        return False
 
     def _check_pending_petitions(self):
         """
         Проверяет нерассмотренные ходатайства.
         """
-        from criminal_proceedings.models import PetitionCriminal
-
-        # Ходатайства, по которым нет решения
-        pending = PetitionCriminal.objects.filter(
-            criminal_proceedings=self.case,
-            petitions_incase__date_decision__isnull=True
-        )
-        
         result = []
-        for petition in pending:
-            petitioner_info = petition.petitioner_info
-            result.append({
-                'id': petition.id,
-                'petitioner': petitioner_info.get('name') if petitioner_info else 'Неизвестно',
-                'petitioner_type': petition.get_petitioner_type_display() if petition.petitioner_type else 'Не указан',
-                'date_application': petition.petitions_incase.date_application if petition.petitions_incase else None,
-                'description': f'Ходатайство ожидает рассмотрения (подано {petition.petitions_incase.date_application})' if petition.petitions_incase and petition.petitions_incase.date_application else 'Ходатайство ожидает рассмотрения',
-            })
         
+        if self.case_type == 'criminal':
+            from criminal_proceedings.models import PetitionCriminal
+            pending = PetitionCriminal.objects.filter(
+                criminal_proceedings=self.case,
+                petitions_incase__date_decision__isnull=True
+            )
+            for petition in pending:
+                petitioner_info = petition.petitioner_info
+                result.append({
+                    'id': petition.id,
+                    'petitioner': petitioner_info.get('name') if petitioner_info else 'Неизвестно',
+                    'petitioner_type': petition.get_petitioner_type_display() if petition.petitioner_type else 'Не указан',
+                    'date_application': petition.petitions_incase.date_application if petition.petitions_incase else None,
+                    'description': f'Ходатайство ожидает рассмотрения',
+                })
+        
+        elif self.case_type == 'civil':
+            from civil_proceedings.models import CivilPetition
+            pending = CivilPetition.objects.filter(
+                civil_proceedings=self.case,
+                petitions_incase__date_decision__isnull=True
+            )
+            for petition in pending:
+                petitioner_info = petition.petitioner_info
+                result.append({
+                    'id': petition.id,
+                    'petitioner': petitioner_info.get('name') if petitioner_info else 'Неизвестно',
+                    'petitioner_type': petitioner_info.get('type_label') if petitioner_info else 'Не указан',
+                    'date_application': petition.petitions_incase.date_application if petition.petitions_incase else None,
+                    'description': f'Ходатайство ожидает рассмотрения',
+                })
+        
+        elif self.case_type == 'kas':
+            # ← ИСПРАВЛЕНО: правильный импорт из kas_proceedings
+            from administrative_proceedings.models import KasPetition
+            pending = KasPetition.objects.filter(
+                kas_proceedings=self.case,  # ← правильное имя поля
+                petitions_incase__date_decision__isnull=True
+            )
+            for petition in pending:
+                petitioner_info = petition.petitioner_info
+                result.append({
+                    'id': petition.id,
+                    'petitioner': petitioner_info.get('name') if petitioner_info else 'Неизвестно',
+                    'petitioner_type': petitioner_info.get('type_label') if petitioner_info else 'Не указан',
+                    'date_application': petition.petitions_incase.date_application if petition.petitions_incase else None,
+                    'description': f'Ходатайство ожидает рассмотрения',
+                })
+        
+        elif self.case_type == 'coap':
+            from administrative_code.models import AdministrativePetition
+            pending = AdministrativePetition.objects.filter(
+                administrative_proceedings=self.case,  # ← правильное имя поля
+                petitions_incase__date_decision__isnull=True
+            )
+            for petition in pending:
+                petitioner_info = petition.petitioner_info
+                result.append({
+                    'id': petition.id,
+                    'petitioner': petitioner_info.get('name') if petitioner_info else 'Неизвестно',
+                    'petitioner_type': petitioner_info.get('type_label') if petitioner_info else 'Не указан',
+                    'date_application': petition.petitions_incase.date_application if petition.petitions_incase else None,
+                    'description': f'Ходатайство ожидает рассмотрения',
+                })
+
         return {
             'count': len(result),
             'items': result,
@@ -145,87 +252,25 @@ class CaseAnalyzerService:
 
     def _check_unnotified_participants(self):
         """
-        Проверяет, все ли участники уведомлены о судебном заседании.
+        Проверяет, все ли участники уведомлены о заседании.
         """
-        from case_management.models import Notification, NotificationStatus
-        from criminal_proceedings.models import Defendant, CriminalSidesCaseInCase, LawyerCriminal
-
         result = []
         
-        # Если еще нет даты рассмотрения, не проверяем
-        hearing_date = self.case.consideration_date
+        hearing_date = getattr(self.case, 'hearing_date', None)
         if not hearing_date:
             return {'count': 0, 'items': []}
 
-        # Получаем всех участников
-        participants = []
+        participants = self._get_participants()
         
-        # Обвиняемые (исправлено: используем Defendant, а не defendants через related_name)
-        try:
-            defendants = Defendant.objects.filter(criminal_proceedings=self.case)
-        except AttributeError:
-            defendants = []
-        for defendant in defendants:
-            participants.append({
-                'id': defendant.id,
-                'type': 'defendant',
-                'type_label': 'Обвиняемый',
-                'name': defendant.full_name_criminal,
-            })
-        
-        # Стороны
-        try:
-            sides = self.case.criminal_sides.all()
-        except AttributeError:
-            sides = []
-        for side in sides:
-            if side.criminal_side_case:
-                participants.append({
-                    'id': side.id,
-                    'type': 'side',
-                    'type_label': 'Сторона',
-                    'name': side.criminal_side_case.name or 'Неизвестно',
-                })
-        
-        # Адвокаты
-        try:
-            lawyers = self.case.criminal_lawyers.all()
-        except AttributeError:
-            lawyers = []
-        for lawyer in lawyers:
-            if lawyer.lawyer:
-                participants.append({
-                    'id': lawyer.id,
-                    'type': 'lawyer',
-                    'type_label': 'Адвокат',
-                    'name': lawyer.lawyer.law_firm_name or 'Неизвестно',
-                })
-
-        # Проверяем, кто не уведомлен
-        try:
-            case_ct = ContentType.objects.get_for_model(self.case)
-        except Exception:
-            case_ct = None
-
         for participant in participants:
-            # Ищем уведомления на эту дату
-            if case_ct:
-                notifications = Notification.objects.filter(
-                    case_content_type=case_ct,
-                    case_object_id=self.case.id,
-                    hearing_date=hearing_date,
-                    participant_object_id=participant['id']
-                )
-            else:
-                notifications = []
-            
-            if not notifications.exists():
+            # Проверяем наличие уведомлений
+            if not self._has_notification(participant, hearing_date):
                 result.append({
-                    'id': participant['id'],
-                    'type': participant['type'],
-                    'type_label': participant['type_label'],
-                    'name': participant['name'],
-                    'suggestion': f'Необходимо уведомить {participant["name"]} о заседании {hearing_date}',
+                    'id': participant.get('id'),
+                    'type': participant.get('type'),
+                    'type_label': participant.get('type_label', 'Участник'),
+                    'name': participant.get('name', 'Неизвестно'),
+                    'suggestion': f'Необходимо уведомить {participant.get("name")} о заседании {hearing_date}',
                 })
 
         return {
@@ -233,14 +278,94 @@ class CaseAnalyzerService:
             'items': result,
         }
 
+    def _get_participants(self):
+        """Получает список участников в зависимости от типа дела."""
+        participants = []
+        
+        if self.case_type == 'criminal':
+            from criminal_proceedings.models import Defendant
+            try:
+                defendants = Defendant.objects.filter(criminal_proceedings=self.case)
+                for d in defendants:
+                    participants.append({
+                        'id': d.id,
+                        'type': 'defendant',
+                        'type_label': 'Обвиняемый',
+                        'name': d.full_name_criminal,
+                    })
+            except Exception:
+                pass
+        
+        elif self.case_type == 'civil':
+            from civil_proceedings.models import CivilSidesCaseInCase
+            try:
+                sides = CivilSidesCaseInCase.objects.filter(civil_proceedings=self.case)
+                for s in sides:
+                    participants.append({
+                        'id': s.id,
+                        'type': 'side',
+                        'type_label': 'Сторона',
+                        'name': getattr(s.sides_case_incase, 'name', 'Неизвестно'),
+                    })
+            except Exception:
+                pass
+        
+        elif self.case_type == 'kas':
+            # ← ИСПРАВЛЕНО: правильный импорт из administrative_proceedings
+            from administrative_proceedings.models import KasSidesCaseInCase
+            try:
+                sides = KasSidesCaseInCase.objects.filter(kas_proceedings=self.case)
+                for s in sides:
+                    participants.append({
+                        'id': s.id,
+                        'type': 'side',
+                        'type_label': 'Сторона',
+                        'name': getattr(s.sides_case_incase, 'name', 'Неизвестно'),
+                    })
+            except Exception:
+                pass
+        
+        elif self.case_type == 'coap':
+            from administrative_code.models import AdministrativeSidesCaseInCase
+            try:
+                sides = AdministrativeSidesCaseInCase.objects.filter(administrative_proceedings=self.case)
+                for s in sides:
+                    participants.append({
+                        'id': s.id,
+                        'type': 'side',
+                        'type_label': 'Сторона',
+                        'name': getattr(s.sides_case_incase, 'name', 'Неизвестно'),
+                    })
+            except Exception:
+                pass
+
+        return participants
+
+    def _has_notification(self, participant, hearing_date):
+        """Проверяет наличие уведомления для участника."""
+        from case_management.models import Notification
+        from django.contrib.contenttypes.models import ContentType
+        
+        try:
+            ct = ContentType.objects.get_for_model(self.case)
+            exists = Notification.objects.filter(
+                case_content_type=ct,
+                case_object_id=self.case.id,
+                hearing_date=hearing_date,
+                participant_object_id=participant.get('id')
+            ).exists()
+            return exists
+        except Exception:
+            return False
+
     def _get_recommended_actions(self):
         """
-        Возвращает список рекомендуемых действий на основе УПК.
+        Возвращает список рекомендуемых действий.
         """
         actions = []
-
-        # Рекомендации из STAGE_INFO
-        required_actions = self.stage_info.get('required_actions', [])
+        stage_info = self.stage_info.get(self.current_stage, {})
+        
+        required_actions = stage_info.get('required_actions', [])
         for action_info in required_actions:
             action = {
                 'title': action_info['action'],
@@ -251,115 +376,122 @@ class CaseAnalyzerService:
                 action['deadline_days'] = action_info['deadline']
             actions.append(action)
 
-        # Особые рекомендации для конкретных этапов
-        if self.current_stage == UPCPage.CASE_RECEIVED:
+        # Дополнительные рекомендации для конкретных типов дел
+        if self.case_type == 'criminal':
+            actions.extend(self._get_criminal_actions())
+        elif self.case_type == 'civil':
+            actions.extend(self._get_civil_actions())
+        elif self.case_type == 'kas':
+            actions.extend(self._get_kas_actions())
+        elif self.case_type == 'coap':
+            actions.extend(self._get_administrative_actions())
+
+        return actions
+
+    def _get_criminal_actions(self):
+        """Дополнительные рекомендации для уголовных дел."""
+        actions = []
+        stage = self.current_stage
+        
+        if stage == UPCPage.CASE_RECEIVED:
             actions.append({
                 'title': 'Проверить подсудность дела (ст. 31-34 УПК РФ)',
                 'priority': 'high',
             })
-            actions.append({
-                'title': 'Проверить наличие оснований для возврата дела прокурору (ст. 237 УПК РФ)',
-                'priority': 'high',
-            })
-
-        elif self.current_stage == UPCPage.PRELIMINARY_HEARING:
+        elif stage == UPCPage.PRELIMINARY_HEARING:
             actions.append({
                 'title': 'Проверить ходатайство об исключении доказательств (ст. 235 УПК РФ)',
                 'priority': 'high',
             })
+        elif stage == UPCPage.TRIAL_GENERAL:
             actions.append({
-                'title': 'Рассмотреть вопрос о возврате дела прокурору (ст. 237 УПК РФ)',
+                'title': 'Исследовать доказательства, заслушать стороны (ст. 273-291 УПК)',
+                'priority': 'high',
+            })
+        
+        return actions
+
+    def _get_civil_actions(self):
+        """Дополнительные рекомендации для гражданских дел."""
+        actions = []
+        stage = self.current_stage
+        
+        if stage == GPPage.CASE_RECEIVED:
+            actions.append({
+                'title': 'Проверить подсудность дела (ст. 23-27 ГПК РФ)',
                 'priority': 'high',
             })
             actions.append({
-                'title': 'Рассмотреть вопрос о приостановлении или прекращении дела',
+                'title': 'Проверить наличие оснований для возврата или оставления без движения',
+                'priority': 'high',
+            })
+        elif stage == GPPage.PREPARATION:
+            actions.append({
+                'title': 'Провести собеседование со сторонами (ст. 150 ГПК)',
                 'priority': 'medium',
             })
-
-        elif self.current_stage in [UPCPage.TRIAL_GENERAL, UPCPage.TRIAL_SCHEDULED]:
-            # Проверка на несовершеннолетнего (исправлено)
-            try:
-                has_minor = self.case.defendants.filter(is_minor=True).exists()
-            except (AttributeError, Exception):
-                has_minor = False
-            if has_minor:
-                actions.append({
-                    'title': 'Учесть особенности по делам несовершеннолетних (Глава 50 УПК РФ)',
-                    'priority': 'high',
-                    'details': 'Обязательное участие законного представителя, педагога/психолога',
-                })
-            
-            # Проверка на меру пресечения
-            try:
-                has_custody = self.case.defendants.filter(restraint_measure='7').exists()
-            except (AttributeError, Exception):
-                has_custody = False
-            if has_custody:
-                actions.append({
-                    'title': 'Проверить сроки содержания под стражей (ст. 109-110 УПК РФ)',
-                    'priority': 'high',
-                })
-
-        elif self.current_stage == UPCPage.TRIAL_SPECIAL_CHAPTER_40:
+        elif stage == GPPage.TRIAL:
             actions.append({
-                'title': 'Проверить добровольность согласия обвиняемого с обвинением (ст. 314 УПК)',
-                'priority': 'critical',
-            })
-            actions.append({
-                'title': 'Разъяснить последствия особого порядка (ст. 315 УПК)',
-                'priority': 'critical',
-            })
-            actions.append({
-                'title': 'Убедиться, что наказание не превышает 2/3 максимального срока (ст. 316 УПК)',
+                'title': 'Исследовать доказательства (ст. 175-189 ГПК)',
                 'priority': 'high',
             })
+        
+        return actions
 
-        elif self.current_stage == UPCPage.TRIAL_SPECIAL_CHAPTER_401:
+    def _get_kas_actions(self):
+        """Дополнительные рекомендации для дел КАС."""
+        actions = []
+        stage = self.current_stage
+        
+        if stage == KASPage.CASE_RECEIVED:
             actions.append({
-                'title': 'Проверить выполнение условий досудебного соглашения (ст. 317.1-317.5 УПК)',
-                'priority': 'critical',
-            })
-            actions.append({
-                'title': 'Постановить приговор с учетом условий соглашения (ст. 317.7 УПК)',
+                'title': 'Проверить подсудность дела (ст. 17-22 КАС РФ)',
                 'priority': 'high',
             })
-
-        elif self.current_stage == UPCPage.VERDICT:
+        elif stage == KASPage.PREPARATION:
             actions.append({
-                'title': 'Постановить приговор в совещательной комнате (ст. 296-298 УПК)',
-                'priority': 'critical',
-            })
-            actions.append({
-                'title': 'Разъяснить порядок и срок обжалования (ст. 310 УПК)',
-                'priority': 'high',
-            })
-
-        # Проверка на отложенные заседания (используем suspension_duration_days или similar)
-        # В вашей модели может быть другое поле для отложений
-        postponement_count = getattr(self.case, 'postponement_count', 0) or 0
-        if postponement_count > 0:
-            actions.append({
-                'title': f'Анализ причин отложения (было {postponement_count} отложений) - ст. 253-254 УПК',
+                'title': 'Истребовать доказательства (ст. 135-136 КАС)',
                 'priority': 'medium',
             })
+        
+        return actions
 
+    def _get_administrative_actions(self):
+        """Дополнительные рекомендации для дел об АП."""
+        actions = []
+        stage = self.current_stage
+        
+        if stage == KOAPPage.CASE_RECEIVED:
+            actions.append({
+                'title': 'Проверить правильность составления протокола об АП',
+                'priority': 'high',
+            })
+            actions.append({
+                'title': 'Проверить подсудность дела (ст. 23.1 КоАП РФ)',
+                'priority': 'high',
+            })
+        elif stage == KOAPPage.PREPARATION:
+            actions.append({
+                'title': 'Вызвать лиц, участвующих в деле (ст. 29.4 КоАП)',
+                'priority': 'high',
+            })
+        
         return actions
 
     def _get_useful_links(self):
         """
-        Возвращает полезные ссылки (Пленумы ВС РФ, Обзоры) для текущего этапа.
+        Возвращает полезные ссылки для текущего этапа.
         """
-        from .models import SupremeCourtDocumentRef
-        
         links = []
         
         # Предустановленные ссылки
-        preset_links = SUPREME_COURT_LINKS_BY_STAGE.get(self.current_stage, [])
+        preset_links = self.links.get(self.current_stage, [])
         for link in preset_links:
             links.append(link)
         
-        # Ссылки из базы SupremeCourtDocumentRef (можно добавлять через админку)
+        # Ссылки из базы SupremeCourtDocumentRef
         try:
+            from .models import SupremeCourtDocumentRef
             db_links = SupremeCourtDocumentRef.objects.filter(
                 applicable_stages=self.current_stage.value,
                 is_active=True
@@ -373,98 +505,110 @@ class CaseAnalyzerService:
                 })
         except Exception:
             pass
-        
-        # Дополнительные ссылки по категориям дел
-        try:
-            has_minor = self.case.defendants.filter(is_minor=True).exists()
-        except (AttributeError, Exception):
-            has_minor = False
-        if has_minor:
-            links.append({
-                'title': 'Постановление Пленума ВС РФ от 01.02.2011 № 1 "О судебной практике применения законодательства, регламентирующего особенности уголовной ответственности и наказания несовершеннолетних"',
-                'url': 'https://vsrf.ru/documents/own/8411/',
-                'description': 'Особенности рассмотрения дел в отношении несовершеннолетних',
-            })
-        
+
         return links
 
     def _get_next_stage_hint(self):
         """
         Подсказка о следующем этапе.
         """
-        next_stages = {
-            UPCPage.CASE_RECEIVED: 'Примите одно из решений по ст. 227 УПК РФ',
-            UPCPage.JUDGE_DECISION: 'Назначьте судебное заседание или предварительное слушание',
-            UPCPage.PRELIMINARY_HEARING: 'Проведите предварительное слушание и примите решение',
-            UPCPage.TRIAL_SCHEDULED: 'Проведите судебное заседание',
-            UPCPage.TRIAL_GENERAL: 'Исследуйте доказательства, заслушайте стороны, постановите приговор',
-            UPCPage.TRIAL_SPECIAL_CHAPTER_40: 'Постановите приговор в особом порядке',
-            UPCPage.TRIAL_SPECIAL_CHAPTER_401: 'Постановите приговор с учетом условий соглашения',
-            UPCPage.VERDICT: 'Направьте копии приговора участникам, разъясните порядок обжалования',
-            UPCPage.TERMINATION: 'Направьте копии постановления участникам',
-            UPCPage.EXECUTION: 'Обратите приговор к исполнению',
-            UPCPage.APPEAL: 'Направьте дело в суд апелляционной инстанции',
-        }
-        return next_stages.get(self.current_stage, 'Продолжайте рассмотрение дела')
+        stage_hints = {}
+        
+        if self.case_type == 'criminal':
+            stage_hints = {
+                UPCPage.CASE_RECEIVED: 'Примите одно из решений по ст. 227 УПК РФ',
+                UPCPage.JUDGE_DECISION: 'Назначьте судебное заседание или предварительное слушание',
+                UPCPage.PRELIMINARY_HEARING: 'Проведите предварительное слушание и примите решение',
+                UPCPage.TRIAL_SCHEDULED: 'Проведите судебное заседание',
+                UPCPage.TRIAL_GENERAL: 'Исследуйте доказательства, заслушайте стороны, постановите приговор',
+                UPCPage.VERDICT: 'Направьте копии приговора участникам, разъясните порядок обжалования',
+            }
+        elif self.case_type == 'civil':
+            stage_hints = {
+                GPPage.CASE_RECEIVED: 'Примите одно из решений по ст. 133 ГПК РФ',
+                GPPage.JUDGE_DECISION: 'Назначьте подготовку дела к судебному разбирательству',
+                GPPage.PREPARATION: 'Проведите подготовку дела, определите обстоятельства, имеющие значение',
+                GPPage.PRELIMINARY_HEARING: 'Разрешите ходатайства сторон, определите предмет доказывания',
+                GPPage.TRIAL: 'Исследуйте доказательства, заслушайте стороны, вынесите решение',
+                GPPage.VERDICT: 'Изготовьте решение в окончательной форме, разъясните порядок обжалования',
+            }
+        elif self.case_type == 'kas':
+            stage_hints = {
+                KASPage.CASE_RECEIVED: 'Примите решение по поступившему делу (ст. 126 КАС РФ)',
+                KASPage.PREPARATION: 'Проведите подготовку дела к судебному разбирательству',
+                KASPage.PRELIMINARY_HEARING: 'Разрешите вопросы, связанные с подготовкой дела',
+                KASPage.TRIAL: 'Исследуйте доказательства, вынесите решение',
+                KASPage.VERDICT: 'Изготовьте решение, разъясните порядок обжалования',
+            }
+        elif self.case_type == 'coap':
+            stage_hints = {
+                KOAPPage.CASE_RECEIVED: 'Подготовьтесь к рассмотрению дела (ст. 29.1 КоАП)',
+                KOAPPage.PREPARATION: 'Вызовите лиц, участвующих в деле, назначьте дату рассмотрения',
+                KOAPPage.TRIAL: 'Рассмотрите дело, вынесите постановление',
+                KOAPPage.DECISION: 'Разъясните порядок и срок обжалования постановления',
+            }
+
+        return stage_hints.get(self.current_stage, 'Продолжайте рассмотрение дела')
 
     def _get_statistics(self):
         """
         Собирает статистику по делу.
         """
-        from criminal_proceedings.models import PetitionCriminal
-        
         # Расчет продолжительности
         total_days = 0
-        if self.case.incoming_date:
-            end_date = self.case.archived_date or self.case.sentence_effective_date or date.today()
+        if hasattr(self.case, 'incoming_date') and self.case.incoming_date:
+            end_date = getattr(self.case, 'archived_date', None) or date.today()
             total_days = (end_date - self.case.incoming_date).days
-        
+
         # Количество ходатайств
-        try:
-            total_petitions = PetitionCriminal.objects.filter(criminal_proceedings=self.case).count()
-            resolved_petitions = PetitionCriminal.objects.filter(
-                criminal_proceedings=self.case,
-                petitions_incase__date_decision__isnull=False
-            ).count()
-        except Exception:
-            total_petitions = 0
-            resolved_petitions = 0
+        total_petitions = 0
+        resolved_petitions = 0
         
-        # Количество судебных заседаний - используем case_to_office_date как маркер?
-        # Или считаем движения дела
-        hearing_count = 0
-        
-        # Используем признак того, что было хотя бы одно заседание
-        if self.case.consideration_date:
-            hearing_count = 1
-        
-        # Если есть отложения (suspension_duration_days может указывать на приостановление)
-        if self.case.date_suspension_case:
-            hearing_count += 1
-        
-        try:
-            defendants_count = self.case.defendants.count()
-        except (AttributeError, Exception):
-            defendants_count = 0
-        
-        try:
-            has_minor = self.case.defendants.filter(is_minor=True).exists()
-        except (AttributeError, Exception):
-            has_minor = False
-        
-        try:
-            has_custody = self.case.defendants.filter(restraint_measure='7').exists()
-        except (AttributeError, Exception):
-            has_custody = False
-        
+        if self.case_type == 'criminal':
+            from criminal_proceedings.models import PetitionCriminal
+            try:
+                total_petitions = PetitionCriminal.objects.filter(criminal_proceedings=self.case).count()
+                resolved_petitions = PetitionCriminal.objects.filter(
+                    criminal_proceedings=self.case,
+                    petitions_incase__date_decision__isnull=False
+                ).count()
+            except Exception:
+                pass
+        elif self.case_type == 'civil':
+            from civil_proceedings.models import CivilPetition
+            try:
+                total_petitions = CivilPetition.objects.filter(civil_proceedings=self.case).count()
+                resolved_petitions = CivilPetition.objects.filter(
+                    civil_proceedings=self.case,
+                    petitions_incase__date_decision__isnull=False
+                ).count()
+            except Exception:
+                pass
+        elif self.case_type == 'kas':
+            from administrative_proceedings.models import KasPetition
+            try:
+                total_petitions = KasPetition.objects.filter(kas_proceedings=self.case).count()
+                resolved_petitions = KasPetition.objects.filter(
+                    kas_proceedings=self.case,
+                    petitions_incase__date_decision__isnull=False
+                ).count()
+            except Exception:
+                pass
+        elif self.case_type == 'coap':
+            from administrative_code.models import AdministrativePetition
+            try:
+                total_petitions = AdministrativePetition.objects.filter(administrative_proceedings=self.case).count()
+                resolved_petitions = AdministrativePetition.objects.filter(
+                    administrative_proceedings=self.case,
+                    petitions_incase__date_decision__isnull=False
+                ).count()
+            except Exception:
+                pass
+
         return {
             'total_days_in_progress': total_days,
             'postponement_count': getattr(self.case, 'postponement_count', 0) or 0,
             'total_petitions': total_petitions,
             'resolved_petitions': resolved_petitions,
             'pending_petitions': total_petitions - resolved_petitions,
-            'hearing_count': hearing_count,
-            'defendants_count': defendants_count,
-            'has_minor': has_minor,
-            'has_custody': has_custody,
         }

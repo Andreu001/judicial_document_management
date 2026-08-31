@@ -387,9 +387,13 @@ class CourtViewSet(viewsets.ModelViewSet):
 # Отделы суда (упрощенные)
 # =============================================================================
 
+# court_registry/views.py
+
+# court_registry/views.py
+
 class CourtDepartmentViewSet(viewsets.ModelViewSet):
     """Управление отделами текущего суда"""
-    queryset = CourtDepartment.objects.select_related('court')
+    queryset = CourtDepartment.objects.select_related('court').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['court', 'is_active']
@@ -408,12 +412,8 @@ class CourtDepartmentViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        # Ограничиваем только текущим судом
-        court = Court.objects.first()
-        if court:
-            qs = qs.filter(court=court)
-        return qs
+        # ВОЗВРАЩАЕМ ВСЕ ОТДЕЛЫ БЕЗ ЛЮБОЙ ФИЛЬТРАЦИИ
+        return super().get_queryset()
 
     def perform_create(self, serializer):
         court = Court.objects.first()
@@ -430,17 +430,6 @@ class CourtDepartmentViewSet(viewsets.ModelViewSet):
             )
         else:
             instance = serializer.save()
-
-    @action(detail=True, methods=['get'])
-    def employees(self, request, pk=None):
-        """Сотрудники отдела"""
-        department = self.get_object()
-        employees = department.employees.filter(is_active=True)
-        serializer = CourtEmployeeListSerializer(
-            employees, many=True, context={'request': request}
-        )
-        return Response(serializer.data)
-
 
 # =============================================================================
 # Сотрудники суда (упрощенные)

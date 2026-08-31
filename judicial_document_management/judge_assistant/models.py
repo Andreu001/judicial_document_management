@@ -5,7 +5,16 @@ from django.conf import settings
 class JudgeNote(models.Model):
     """
     Заметки судьи по делу.
+    Универсальная модель для всех типов дел.
     """
+    
+    CASE_TYPE_CHOICES = [
+        ('criminal', 'Уголовное дело'),
+        ('civil', 'Гражданское дело'),
+        ('kas', 'Административное дело (КАС)'),
+        ('coap', 'Дело об административном правонарушении'),
+    ]
+
     NOTE_TYPE_CHOICES = [
         ('general', 'Общая заметка'),
         ('reminder', 'Напоминание'),
@@ -13,13 +22,27 @@ class JudgeNote(models.Model):
         ('link', 'Ссылка на практику/статью'),
     ]
 
+    # Поля для связи с разными типами дел
+    case_type = models.CharField(
+        max_length=20,
+        choices=CASE_TYPE_CHOICES,
+        default='criminal',
+        verbose_name='Тип дела'
+    )
+    case_id = models.PositiveIntegerField(
+        verbose_name='ID дела'
+    )
+
     # Связь с уголовным делом
     criminal_proceedings = models.ForeignKey(
         'criminal_proceedings.CriminalProceedings',
         on_delete=models.CASCADE,
         related_name='judge_notes',
-        verbose_name='Уголовное дело'
+        verbose_name='Уголовное дело',
+        null=True,
+        blank=True
     )
+    
 
     note_type = models.CharField(
         max_length=20,
@@ -70,6 +93,9 @@ class JudgeNote(models.Model):
         verbose_name = 'Заметка судьи'
         verbose_name_plural = 'Заметки судьи'
         ordering = ['-importance', '-created_at']
+        indexes = [
+            models.Index(fields=['case_type', 'case_id']),
+        ]
 
     def __str__(self):
         return f'{self.get_note_type_display()}: {self.title}'
@@ -80,6 +106,23 @@ class CaseAdviceCache(models.Model):
     Кэш результатов анализа дела (для ускорения работы).
     Обновляется при изменении данных по делу или по требованию.
     """
+    
+    CASE_TYPE_CHOICES = [
+        ('criminal', 'Уголовное дело'),
+        ('civil', 'Гражданское дело'),
+        ('kas', 'Административное дело (КАС)'),
+        ('administrative', 'Дело об административном правонарушении'),
+    ]
+
+    case_type = models.CharField(
+        max_length=20,
+        choices=CASE_TYPE_CHOICES,
+        default='criminal',
+        verbose_name='Тип дела'
+    )
+    case_id = models.PositiveIntegerField(
+        verbose_name='ID дела'
+    )
     criminal_proceedings = models.OneToOneField(
         'criminal_proceedings.CriminalProceedings',
         on_delete=models.CASCADE,
@@ -114,6 +157,7 @@ class CaseAdviceCache(models.Model):
     class Meta:
         verbose_name = 'Кэш советов по делу'
         verbose_name_plural = 'Кэши советов по делам'
+        unique_together = ['case_type', 'case_id']
 
     def __str__(self):
         return f'Советы по делу {self.criminal_proceedings.case_number_criminal}'

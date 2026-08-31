@@ -1,4 +1,4 @@
-// src/components/SideAuth/SidePetitionForm.jsx
+// src/components/SideAuth/SidePetitionForm.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import SideCaseService from '../../API/SideCaseService';
@@ -111,6 +111,17 @@ const SidePetitionForm = () => {
       // Формируем список заявителей
       const petitionersList = [];
       
+      // Добавляем текущего пользователя
+      if (user) {
+        petitionersList.push({
+          id: 'current_user',
+          name: user.full_name || user.email || 'Я (текущий пользователь)',
+          role: 'Заявитель',
+          type: 'external_user',
+          isCurrentUser: true
+        });
+      }
+      
       sidesData.forEach(side => {
         let sideDetail = {};
         let name = '';
@@ -126,11 +137,18 @@ const SidePetitionForm = () => {
           role = side.sides_case_role_detail?.name || 'Сторона';
         }
         
+        // Проверяем, совпадает ли сторона с пользователем
+        const isUserSide = user && (
+          name.toLowerCase().includes(user.full_name?.toLowerCase() || '') ||
+          (sideDetail.email && sideDetail.email.toLowerCase() === user.email?.toLowerCase())
+        );
+        
         petitionersList.push({
           id: side.id,
           name: name,
           role: role,
-          type: 'side'
+          type: 'side',
+          isUserSide: isUserSide
         });
       });
       
@@ -161,6 +179,17 @@ const SidePetitionForm = () => {
       });
       
       setPetitioners(petitionersList);
+      
+      // Автоматически выбираем сторону, совпадающую с пользователем
+      const userSide = petitionersList.find(p => p.isUserSide);
+      if (userSide) {
+        const selectValue = `side:${userSide.id}`;
+        setSelectedPetitioner(selectValue);
+        setFormData(prev => ({
+          ...prev,
+          petitioner_info: `${userSide.name} (${userSide.role})`
+        }));
+      }
       
     } catch (err) {
       console.error('Error loading data:', err);
@@ -223,7 +252,10 @@ const SidePetitionForm = () => {
     
     if (value && value !== 'other') {
       const [type, id] = value.split(':');
-      const petitioner = petitioners.find(p => `${p.type}:${p.id}` === value);
+      const petitioner = petitioners.find(p => {
+        if (p.isCurrentUser) return p.id === 'current_user';
+        return `${p.type}:${p.id}` === value;
+      });
       if (petitioner) {
         setFormData(prev => ({
           ...prev,
@@ -257,63 +289,142 @@ const SidePetitionForm = () => {
 
     try {
       const normalizedType = normalizeCaseType(caseType);
-      
-      // Получаем выбранный тип ходатайства
       const selectedTypeId = parseInt(formData.petition_type);
-      const selectedType = petitionTypes.find(t => t.id === selectedTypeId);
-      const petitionTypeName = selectedType?.name || selectedType?.petitions || 'Ходатайство';
       
-      // Формируем текст ходатайства
-      const fullPetitionText = `Тип ходатайства: ${petitionTypeName}
-
-Дата подачи: ${formData.petition_date}
-
-Заявитель: ${formData.petitioner_info}
-
-Содержание ходатайства:
-${formData.notes || 'Не указано'}
-
----
-Данное ходатайство подано через личный кабинет участника процесса.
-Автор: ${user?.full_name || user?.email || 'Участник процесса'}
-Email: ${user?.email || 'Не указан'}`;
-
-      // Формируем данные для API - ОБЯЗАТЕЛЬНО с petitions_name
-      const petitionApiData = {
-        petitions_name: [selectedTypeId],  // Массив ID типов ходатайств
+      // Определяем petitioner_type и petitioner_id
+      let petitionerType = '';
+      let petitionerId = null;
+      
+      if (selectedPetitioner && selectedPetitioner !== 'other') {
+        const [type, id] = selectedPetitioner.split(':');
+        
+        const typeMapping = {
+          'civil': { 'side': 'civil_sides', 'lawyer': 'civil_lawyer', 'external_user': 'civil_sides' },
+          'criminal': { 'side': 'criminal_side', 'lawyer': 'criminal_lawyer', 'external_user': 'criminal_side' },
+          'administrative': { 'side': 'admin_sides', 'lawyer': 'admin_lawyer', 'external_user': 'admin_sides' },
+          'kas': { 'side': 'kas_sides', 'lawyer': 'kas_lawyer', 'external_user': 'kas_sides' }
+        };
+        
+        const typeMap = typeMapping[normalizedType] || typeMapping['civil'];
+        
+        if (type === 'external_user' && id === 'current_user') {
+          petitionerType = typeMap['external_user'] || 'civil_sides';
+          petitionerId = null;
+        } else {
+          petitionerType = typeMap[type] || type;
+          petitionerId = parseInt(id);
+        }
+      } else {
+        const typeMap = { 'civil': 'civil_sides', 'criminal': 'criminal_side', 'administrative': 'admin_sides', 'kas': 'kas_sides' };
+        petitionerType = typeMap[normalizedType] || 'civil_sides';
+        petitionerId = null;
+      }
+      
+      // ====== ПРОБУЕМ РАЗНЫЕ ФОРМАТЫ ======
+      // Формируем базовые данные для PetitionsInCase
+      const baseData = {
         date_application: formData.petition_date,
-        notation: fullPetitionText,
+        notation: formData.notes || '',
         petitioner_info: {
           name: formData.petitioner_info,
           source: 'side_user',
-          user_email: user?.email,
-          user_id: user?.id
+          user_email: user?.email || '',
+          user_id: user?.id || null,
+          user_full_name: user?.full_name || '',
+          side_name: sideName || '',
+          petition_date: formData.petition_date,
+          petitioner_type: petitionerType,
+          petitioner_id: petitionerId,
         }
       };
-
+      
       let result;
       
-      console.log('Sending petition data:', petitionApiData);
-      console.log('To case type:', normalizedType);
-      console.log('Case ID:', caseId);
+      // ====== ПОПЫТКА 1: petitions_name как МАССИВ ID ======
+      let petitionData = {
+        ...baseData,
+        petitions_name: [selectedTypeId],
+        petitioner_type: petitionerType,
+        petitioner_id: petitionerId,
+      };
       
-      // Отправляем ходатайство в зависимости от типа дела
-      switch (normalizedType) {
-        case 'criminal':
-          result = await CriminalCaseService.createPetition(caseId, petitionApiData);
-          break;
-        case 'civil':
-          result = await baseService.post(`/civil_proceedings/civil-proceedings/${caseId}/petitions/`, petitionApiData);
+      // ====== ПОПЫТКА 2: petitions_name как ОДИН ID ======
+      let petitionData2 = {
+        ...baseData,
+        petitions_name: selectedTypeId,
+        petitioner_type: petitionerType,
+        petitioner_id: petitionerId,
+      };
+      
+      // ====== ПОПЫТКА 3: petitions_name как МАССИВ ОБЪЕКТОВ ======
+      let petitionData3 = {
+        ...baseData,
+        petitions_name: [{ id: selectedTypeId }],
+        petitioner_type: petitionerType,
+        petitioner_id: petitionerId,
+      };
+      
+      // ====== ПОПЫТКА 4: petitions_name как строка с ID ======
+      let petitionData4 = {
+        ...baseData,
+        petitions_name: String(selectedTypeId),
+        petitioner_type: petitionerType,
+        petitioner_id: petitionerId,
+      };
+      
+      console.log('=== Trying to create petition ===');
+      console.log('Format 1 (array of IDs):', JSON.stringify(petitionData, null, 2));
+      
+      try {
+        // Пробуем формат 1
+        result = await baseService.post(
+          `/civil_proceedings/civil-proceedings/${caseId}/petitions/`,
+          petitionData
+        );
+        result = result.data;
+        console.log('✅ Format 1 (array) worked!');
+      } catch (err1) {
+        console.log('❌ Format 1 failed:', err1.response?.data);
+        
+        try {
+          // Пробуем формат 2 (один ID)
+          console.log('Format 2 (single ID):', JSON.stringify(petitionData2, null, 2));
+          result = await baseService.post(
+            `/civil_proceedings/civil-proceedings/${caseId}/petitions/`,
+            petitionData2
+          );
           result = result.data;
-          break;
-        case 'administrative':
-          result = await AdministrativeCaseService.createPetition(caseId, petitionApiData);
-          break;
-        case 'kas':
-          result = await KasCaseService.createPetition(caseId, petitionApiData);
-          break;
-        default:
-          throw new Error(`Неизвестный тип дела: ${caseType}`);
+          console.log('✅ Format 2 (single ID) worked!');
+        } catch (err2) {
+          console.log('❌ Format 2 failed:', err2.response?.data);
+          
+          try {
+            // Пробуем формат 3 (массив объектов)
+            console.log('Format 3 (array of objects):', JSON.stringify(petitionData3, null, 2));
+            result = await baseService.post(
+              `/civil_proceedings/civil-proceedings/${caseId}/petitions/`,
+              petitionData3
+            );
+            result = result.data;
+            console.log('✅ Format 3 (objects) worked!');
+          } catch (err3) {
+            console.log('❌ Format 3 failed:', err3.response?.data);
+            
+            try {
+              // Пробуем формат 4 (строка)
+              console.log('Format 4 (string):', JSON.stringify(petitionData4, null, 2));
+              result = await baseService.post(
+                `/civil_proceedings/civil-proceedings/${caseId}/petitions/`,
+                petitionData4
+              );
+              result = result.data;
+              console.log('✅ Format 4 (string) worked!');
+            } catch (err4) {
+              console.log('❌ All formats failed');
+              throw err4;
+            }
+          }
+        }
       }
       
       console.log('Petition created successfully:', result);
@@ -324,8 +435,10 @@ Email: ${user?.email || 'Не указан'}`;
       }, 2000);
       
     } catch (err) {
-      console.error('Error creating petition:', err);
-      console.error('Error response:', err.response?.data);
+      console.error('=== Error creating petition ===');
+      console.error('Error:', err);
+      console.error('Response status:', err.response?.status);
+      console.error('Response data:', err.response?.data);
       
       let errorMessage = 'Ошибка при подаче ходатайства';
       if (err.response?.data) {
@@ -424,7 +537,7 @@ Email: ${user?.email || 'Не указан'}`;
 
           {petitioners.length > 0 && (
             <div className={styles.formGroup}>
-              <label htmlFor="petitioner_select">Выбрать из списка участников</label>
+              <label htmlFor="petitioner_select">Выбрать заявителя</label>
               <select
                 id="petitioner_select"
                 value={selectedPetitioner}
@@ -432,12 +545,21 @@ Email: ${user?.email || 'Не указан'}`;
                 className={styles.select}
                 disabled={submitting || success}
               >
-                <option value="">-- Выберите из списка --</option>
-                {petitioners.map(p => (
-                  <option key={`${p.type}-${p.id}`} value={`${p.type}:${p.id}`}>
-                    {p.name} ({p.role})
-                  </option>
-                ))}
+                <option value="">-- Выберите заявителя --</option>
+                {petitioners.map(p => {
+                  let value;
+                  if (p.isCurrentUser) {
+                    value = 'external_user:current_user';
+                  } else {
+                    value = `${p.type}:${p.id}`;
+                  }
+                  const label = p.isCurrentUser ? `${p.name} (я)` : `${p.name} (${p.role})`;
+                  return (
+                    <option key={p.isCurrentUser ? 'current_user' : `${p.type}-${p.id}`} value={value}>
+                      {label} {p.isUserSide ? '✓' : ''}
+                    </option>
+                  );
+                })}
                 <option value="other">-- Другое (ввести вручную) --</option>
               </select>
               <p className={styles.hint}>Выберите себя из списка или заполните вручную ниже</p>
@@ -482,14 +604,7 @@ Email: ${user?.email || 'Не указан'}`;
               rows={10}
               className={styles.textarea}
               disabled={submitting || success}
-              placeholder="Опишите содержание ходатайства подробно...
-
-Пример:
-- Какие документы вы хотите приобщить?
-- Каких свидетелей вызвать?
-- Какие обстоятельства требуют проверки?
-- Какое экспертное исследование необходимо?
-- Иные основания для удовлетворения ходатайства"
+              placeholder="Опишите содержание ходатайства подробно..."
             />
           </div>
         </div>

@@ -10,8 +10,21 @@ logger = logging.getLogger(__name__)
 
 class CaseRegistryManager:
     """
-    Менеджер для работы с регистрацией дел
+    Менеджер для работы с регистрацией дел (ОПТИМИЗИРОВАННАЯ ВЕРСИЯ)
     """
+
+    # Кэш для индексов (чтобы не ходить в БД при каждом создании)
+    _index_cache = {}
+
+    def _get_index(self, index_code):
+        """Получение индекса с кэшированием"""
+        if index_code not in self._index_cache:
+            from .models import RegistryIndex
+            try:
+                self._index_cache[index_code] = RegistryIndex.objects.get(index=index_code)
+            except RegistryIndex.DoesNotExist:
+                raise ValueError(f"Индекс {index_code} не найден")
+        return self._index_cache[index_code]
 
     @transaction.atomic
     def register_case(self, index_code, description=None, case_number=None, 
@@ -19,60 +32,59 @@ class CaseRegistryManager:
                     criminal_proceedings_id=None, civil_proceedings_id=None,
                     kas_proceedings_id=None, administrative_proceedings_id=None):
         """
-        Регистрация нового дела
+        Регистрация нового дела (ОПТИМИЗИРОВАННАЯ)
         """
-        from .models import RegistryIndex
+        # 1. Получаем индекс из кэша (без запроса к БД, если уже есть)
+        index = self._get_index(index_code)
         
-        try:
-            index = RegistryIndex.objects.get(index=index_code)
-        except RegistryIndex.DoesNotExist:
-            raise ValueError(f"Индекс {index_code} не найден или не активен")
-        
-        # Получаем или создаем счетчик
-        counter, created = RegistryCounter.objects.get_or_create(
+        # 2. Получаем или создаем счетчик (с блокировкой для избежания гонок)
+        counter, created = RegistryCounter.objects.select_for_update().get_or_create(
             index=index,
             defaults={'current_number': 0}
         )
         
-        # Если номер не передан, используем следующий из счетчика
+        # 3. Определяем номер дела
         if case_number is None:
+            # Генерируем новый номер
             case_number = counter.current_number + 1
-            # Увеличиваем счетчик
             counter.current_number = case_number
             counter.total_registered += 1
-            counter.save()
+            # Сохраняем счетчик (один запрос)
+            counter.save(update_fields=['current_number', 'total_registered'])
             logger.info(f"Сгенерирован новый номер {case_number} для индекса {index_code}")
         else:
-            # Если номер передан явно, проверяем, что он не занят
-            existing_case = RegisteredCase.objects.filter(
+            # Проверяем, что номер не занят (один запрос)
+            if RegisteredCase.objects.filter(
                 index=index,
                 case_number=case_number,
                 status__in=['active', 'completed', 'archived']
-            ).exists()
-            
-            if existing_case:
+            ).exists():
                 raise ValueError(f"Номер {case_number} уже используется для индекса {index_code}")
             
-            # Если номер больше текущего, обновляем счетчик
+            # Обновляем счетчик, если номер больше текущего
             if case_number > counter.current_number:
                 logger.info(f"Обновляем счетчик для индекса {index_code}: {counter.current_number} -> {case_number}")
                 counter.current_number = case_number
                 counter.total_registered += 1
-                counter.save()
-            else:
-                # Если номер меньше текущего, но свободен - используем его
-                logger.info(f"Используем существующий номер {case_number} для индекса {index_code} (текущий счетчик: {counter.current_number})")
+                counter.save(update_fields=['current_number', 'total_registered'])
         
-        # Используем переданную дату или текущую
+        # 4. Определяем дату регистрации
         if registration_date is None:
             registration_date = timezone.now().date()
         
         current_year = registration_date.year
         
-        # Создаем объект дела
-        case = RegisteredCase(
+        # 5. Создаем объект дела (один запрос)
+        full_number = f"{index_code}-{case_number}/{current_year}"
+        
+        # Проверяем уникальность полного номера (один запрос)
+        if RegisteredCase.objects.filter(full_number=full_number).exists():
+            raise ValueError(f"Дело с номером {full_number} уже существует")
+        
+        case = RegisteredCase.objects.create(
             index=index,
             case_number=case_number,
+            full_number=full_number,
             description=description,
             business_card_id=business_card_id,
             criminal_proceedings_id=criminal_proceedings_id,
@@ -81,16 +93,6 @@ class CaseRegistryManager:
             administrative_proceedings_id=administrative_proceedings_id,
             registration_date=registration_date
         )
-        
-        # Явно устанавливаем full_number перед сохранением
-        case.full_number = f"{index_code}-{case_number}/{current_year}"
-        
-        # Проверяем уникальность
-        if RegisteredCase.objects.filter(full_number=case.full_number).exists():
-            raise ValueError(f"Дело с номером {case.full_number} уже существует")
-        
-        # Сохраняем объект
-        case.save()
         
         logger.info(f"Зарегистрировано новое дело: {case.full_number}")
         return case
@@ -111,7 +113,7 @@ class CaseRegistryManager:
         # Помечаем дело как удаленное
         case.status = 'deleted'
         case.deleted_at = timezone.now()
-        case.save()
+        case.save(update_fields=['status', 'deleted_at'])
         
         # Автоматически откатываем нумерацию, если это последнее зарегистрированное дело
         self._rollback_numbering_if_needed(case.index, case.case_number, reason)
@@ -127,8 +129,8 @@ class CaseRegistryManager:
         from .models import RegistryIndex
         
         try:
-            index = RegistryIndex.objects.get(index=index_code)
-            counter = RegistryCounter.objects.get(index=index)
+            index = self._get_index(index_code)
+            counter = RegistryCounter.objects.select_for_update().get(index=index)
         except (RegistryIndex.DoesNotExist, RegistryCounter.DoesNotExist):
             raise ValueError(f"Счетчик для индекса {index_code} не найден")
         
@@ -158,7 +160,7 @@ class CaseRegistryManager:
         
         # Обновляем счетчик
         counter.current_number = new_current_number
-        counter.save()
+        counter.save(update_fields=['current_number'])
         
         logger.info(f"Нумерация для индекса {index_code} скорректирована: {old_number} -> {new_current_number}")
         return adjustment
@@ -186,24 +188,23 @@ class CaseRegistryManager:
             )
             
             counter.current_number = new_number
-            counter.save()
+            counter.save(update_fields=['current_number'])
             
             logger.info(f"Автоматический откат нумерации для индекса {index.index}: {case_number} -> {new_number}")
     
     def get_next_number(self, index_code):
         """
-        Получение следующего номера для указанного индекса
+        Получение следующего номера для указанного индекса (БЫСТРО)
         """
         from .models import RegistryIndex
         
         try:
-            index = RegistryIndex.objects.get(index=index_code)
+            index = self._get_index(index_code)
             counter, created = RegistryCounter.objects.get_or_create(
                 index=index,
                 defaults={'current_number': 0}
             )
-            
-            # ВАЖНО: Возвращаем следующий номер (текущий + 1)
+            # Возвращаем следующий номер (текущий + 1)
             return counter.current_number + 1
             
         except RegistryIndex.DoesNotExist:

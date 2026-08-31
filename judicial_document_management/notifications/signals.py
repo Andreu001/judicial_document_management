@@ -1,5 +1,3 @@
-# notifications/signals.py - ПОЛНОСТЬЮ ПЕРЕПИСАННЫЙ
-
 from django.apps import apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -42,11 +40,7 @@ def get_presiding_judge_from_proceeding(proceeding):
 
 @receiver(post_save, sender='case_registry.Correspondence')
 def create_correspondence_notification(sender, instance, created, **kwargs):
-    """
-    Создает уведомление при создании новой корреспонденции.
-    ПРОПУСКАЕТ корреспонденцию, созданную автоматически из PartyDocument.
-    """
-    # Пропускаем, если это корреспонденция от PartyDocument (автоматическая)
+    """Создает уведомление при создании новой корреспонденции."""
     if instance.notes and "PartyDocument ID:" in instance.notes:
         logger.info(f"Пропускаем уведомление для корреспонденции {instance.id} - создана автоматически")
         return
@@ -59,7 +53,6 @@ def create_correspondence_notification(sender, instance, created, **kwargs):
         return
     _processed_notifications.add(signal_key)
     
-    # Определяем дело и судью
     proceeding = None
     proceeding_type = None
     user = None
@@ -156,19 +149,15 @@ def create_correspondence_notification(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender='case_registry.Correspondence')
 def create_activity_for_correspondence(sender, instance, created, **kwargs):
-    """
-    Создает активность при создании новой корреспонденции.
-    """
+    """Создает активность при создании новой корреспонденции."""
     from .activity_service import CaseActivityService
     
     if not created:
         return
     
-    # Пропускаем автоматическую корреспонденцию от PartyDocument
     if instance.notes and "PartyDocument ID:" in instance.notes:
         return
     
-    # Определяем дело
     case = None
     if instance.criminal_case_id:
         from criminal_proceedings.models import CriminalProceedings
@@ -199,33 +188,26 @@ def create_activity_for_correspondence(sender, instance, created, **kwargs):
         description=description,
         related_object=instance,
         link=f"/correspondence/{instance.id}/",
-        auto_notify=False  # Не создаем дублирующее уведомление
+        auto_notify=False
     )
 
 
-# ========== СИГНАЛ ДЛЯ ДОКУМЕНТОВ СТОРОН (ТОЛЬКО ОДИН!) ==========
+# ========== СИГНАЛ ДЛЯ ДОКУМЕНТОВ СТОРОН ==========
 
 @receiver(post_save, sender='case_documents.PartyDocument')
 def create_activity_for_party_document(sender, instance, created, **kwargs):
-    """
-    Создает активность ПРИ СОЗДАНИИ нового документа от стороны.
-    ТОЛЬКО ОДИН РАЗ - ПРИ СОЗДАНИИ!
-    """
+    """Создает активность при создании нового документа от стороны."""
     from .activity_service import CaseActivityService
+    from django.contrib.contenttypes.models import ContentType
+    from .models import CaseActivity
     
-    # ТОЛЬКО ПРИ СОЗДАНИИ НОВОГО ДОКУМЕНТА
     if not created:
         return
     
-    # Получаем дело
     case = instance.case
     if not case:
         logger.warning(f"Документ {instance.id} не привязан к делу")
         return
-    
-    # Проверяем, нет ли уже активности (защита от дублей)
-    from django.contrib.contenttypes.models import ContentType
-    from .models import CaseActivity
     
     case_ct = ContentType.objects.get_for_model(case)
     doc_ct = ContentType.objects.get_for_model(instance)
@@ -242,12 +224,10 @@ def create_activity_for_party_document(sender, instance, created, **kwargs):
         logger.info(f"Активность для документа {instance.id} уже существует, пропускаем")
         return
     
-    # Формируем заголовок и описание
     doc_type_display = instance.get_document_type_display()
     title = f"Новый документ от стороны: {doc_type_display}"
     description = f"{instance.title}\nПодатель: {instance.submitter_name}"
     
-    # Формируем ссылку
     model_name = case._meta.model_name
     if model_name == 'administrativeproceedings':
         link = f"/admin-proceedings/{case.id}/party-documents/{instance.id}/"
@@ -258,7 +238,6 @@ def create_activity_for_party_document(sender, instance, created, **kwargs):
     else:
         link = f"/kas-proceedings/{case.id}/party-documents/{instance.id}/"
     
-    # Создаем активность
     try:
         CaseActivityService.create_activity(
             case=case,
@@ -274,30 +253,229 @@ def create_activity_for_party_document(sender, instance, created, **kwargs):
         logger.error(f"Ошибка создания активности: {e}")
 
 
-# ========== СИГНАЛЫ ДЛЯ ХОДАТАЙСТВ ==========
+# ========== СИГНАЛ ДЛЯ СОЗДАНИЯ УВЕДОМЛЕНИЯ ПРИ СОЗДАНИИ ХОДАТАЙСТВА ==========
+# ========== ВАЖНО: используем сигнал на модели CivilPetition, а не PetitionsInCase ==========
 
-def create_activity_for_petition(case, petition, petitioner, case_type):
+@receiver(post_save, sender='civil_proceedings.CivilPetition')
+def create_activity_for_civil_petition(sender, instance, created, **kwargs):
     """
-    Универсальная функция для создания активности по ходатайству.
-    Вызывается из соответствующих приложений.
+    Создает активность и уведомление при создании нового ходатайства в гражданском деле.
     """
     from .activity_service import CaseActivityService
     
-    title = "Новое ходатайство"
-    description = f"{petition.notation[:200] if hasattr(petition, 'notation') else 'Ходатайство по делу'}"
+    if not created:
+        return
     
-    if hasattr(petition, 'petitions_incase'):
-        petitions_names = [p.petitions for p in petition.petitions_incase.petitions_name.all()]
-        if petitions_names:
-            title = f"Новое ходатайство: {', '.join(petitions_names)}"
-            description = petition.petitions_incase.notation
+    case = instance.civil_proceedings
+    if not case:
+        logger.warning(f"Нет дела для ходатайства {instance.id}")
+        return
     
-    CaseActivityService.create_activity(
-        case=case,
-        activity_type='new_petition',
-        title=title,
-        description=description,
-        related_object=petition,
-        link=f"/petitions/{petition.id}/",
-        auto_notify=True
-    )
+    petitions_incase = instance.petitions_incase
+    if not petitions_incase:
+        logger.warning(f"Нет PetitionsInCase для ходатайства {instance.id}")
+        return
+    
+    # Получаем информацию о заявителе
+    petitioner_info = getattr(petitions_incase, 'petitioner_info', {})
+    petitioner_name = petitioner_info.get('name', 'Неизвестный участник') if isinstance(petitioner_info, dict) else str(petitioner_info)
+    
+    # Получаем типы ходатайств
+    petitions_names = [p.petitions for p in petitions_incase.petitions_name.all()] if hasattr(petitions_incase, 'petitions_name') else []
+    petition_type_str = ', '.join(petitions_names) if petitions_names else 'Ходатайство'
+    
+    title = f"📄 Новое ходатайство: {petition_type_str}"
+    description = f"Заявитель: {petitioner_name}\n{petitions_incase.notation[:200] if petitions_incase.notation else ''}"
+    
+    link = f"/petitions/{petitions_incase.id}/"
+    
+    try:
+        activity = CaseActivityService.create_activity(
+            case=case,
+            activity_type='new_petition',
+            title=title,
+            description=description,
+            related_object=petitions_incase,
+            link=link,
+            auto_notify=True
+        )
+        logger.info(f"✅ Активность #{activity.id} и уведомление созданы для ходатайства {instance.id} по гражданскому делу {case}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания активности для ходатайства {instance.id}: {e}")
+
+
+@receiver(post_save, sender='criminal_proceedings.PetitionCriminal')
+def create_activity_for_criminal_petition(sender, instance, created, **kwargs):
+    """
+    Создает активность и уведомление при создании нового ходатайства в уголовном деле.
+    """
+    from .activity_service import CaseActivityService
+    
+    if not created:
+        return
+    
+    case = instance.criminal_proceedings
+    if not case:
+        logger.warning(f"Нет дела для ходатайства {instance.id}")
+        return
+    
+    petitions_incase = instance.petitions_incase
+    if not petitions_incase:
+        logger.warning(f"Нет PetitionsInCase для ходатайства {instance.id}")
+        return
+    
+    petitioner_info = getattr(petitions_incase, 'petitioner_info', {})
+    petitioner_name = petitioner_info.get('name', 'Неизвестный участник') if isinstance(petitioner_info, dict) else str(petitioner_info)
+    
+    petitions_names = [p.petitions for p in petitions_incase.petitions_name.all()] if hasattr(petitions_incase, 'petitions_name') else []
+    petition_type_str = ', '.join(petitions_names) if petitions_names else 'Ходатайство'
+    
+    title = f"📄 Новое ходатайство: {petition_type_str}"
+    description = f"Заявитель: {petitioner_name}\n{petitions_incase.notation[:200] if petitions_incase.notation else ''}"
+    
+    link = f"/petitions/{petitions_incase.id}/"
+    
+    try:
+        activity = CaseActivityService.create_activity(
+            case=case,
+            activity_type='new_petition',
+            title=title,
+            description=description,
+            related_object=petitions_incase,
+            link=link,
+            auto_notify=True
+        )
+        logger.info(f"✅ Активность #{activity.id} и уведомление созданы для ходатайства {instance.id} по уголовному делу {case}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания активности для ходатайства {instance.id}: {e}")
+
+
+@receiver(post_save, sender='administrative_code.AdministrativePetition')
+def create_activity_for_admin_petition(sender, instance, created, **kwargs):
+    """
+    Создает активность и уведомление при создании нового ходатайства в деле об АП (КоАП).
+    """
+    from .activity_service import CaseActivityService
+    
+    if not created:
+        return
+    
+    case = instance.administrative_proceedings
+    if not case:
+        logger.warning(f"Нет дела для ходатайства {instance.id}")
+        return
+    
+    petitions_incase = instance.petitions_incase
+    if not petitions_incase:
+        logger.warning(f"Нет PetitionsInCase для ходатайства {instance.id}")
+        return
+    
+    petitioner_info = getattr(petitions_incase, 'petitioner_info', {})
+    petitioner_name = petitioner_info.get('name', 'Неизвестный участник') if isinstance(petitioner_info, dict) else str(petitioner_info)
+    
+    petitions_names = [p.petitions for p in petitions_incase.petitions_name.all()] if hasattr(petitions_incase, 'petitions_name') else []
+    petition_type_str = ', '.join(petitions_names) if petitions_names else 'Ходатайство'
+    
+    title = f"📄 Новое ходатайство: {petition_type_str}"
+    description = f"Заявитель: {petitioner_name}\n{petitions_incase.notation[:200] if petitions_incase.notation else ''}"
+    
+    link = f"/petitions/{petitions_incase.id}/"
+    
+    try:
+        activity = CaseActivityService.create_activity(
+            case=case,
+            activity_type='new_petition',
+            title=title,
+            description=description,
+            related_object=petitions_incase,
+            link=link,
+            auto_notify=True
+        )
+        logger.info(f"✅ Активность #{activity.id} и уведомление созданы для ходатайства {instance.id} по делу об АП {case}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания активности для ходатайства {instance.id}: {e}")
+
+
+@receiver(post_save, sender='administrative_proceedings.KasPetition')
+def create_activity_for_kas_petition(sender, instance, created, **kwargs):
+    """
+    Создает активность и уведомление при создании нового ходатайства в деле КАС.
+    """
+    from .activity_service import CaseActivityService
+    
+    if not created:
+        return
+    
+    case = instance.kas_proceedings
+    if not case:
+        logger.warning(f"Нет дела для ходатайства {instance.id}")
+        return
+    
+    petitions_incase = instance.petitions_incase
+    if not petitions_incase:
+        logger.warning(f"Нет PetitionsInCase для ходатайства {instance.id}")
+        return
+    
+    petitioner_info = getattr(petitions_incase, 'petitioner_info', {})
+    petitioner_name = petitioner_info.get('name', 'Неизвестный участник') if isinstance(petitioner_info, dict) else str(petitioner_info)
+    
+    petitions_names = [p.petitions for p in petitions_incase.petitions_name.all()] if hasattr(petitions_incase, 'petitions_name') else []
+    petition_type_str = ', '.join(petitions_names) if petitions_names else 'Ходатайство'
+    
+    title = f"📄 Новое ходатайство: {petition_type_str}"
+    description = f"Заявитель: {petitioner_name}\n{petitions_incase.notation[:200] if petitions_incase.notation else ''}"
+    
+    link = f"/petitions/{petitions_incase.id}/"
+    
+    try:
+        activity = CaseActivityService.create_activity(
+            case=case,
+            activity_type='new_petition',
+            title=title,
+            description=description,
+            related_object=petitions_incase,
+            link=link,
+            auto_notify=True
+        )
+        logger.info(f"✅ Активность #{activity.id} и уведомление созданы для ходатайства {instance.id} по делу КАС {case}")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания активности для ходатайства {instance.id}: {e}")
+
+
+# ========== СИГНАЛ ДЛЯ УВЕДОМЛЕНИЯ СТОРОНЫ О РЕШЕНИИ ПО ХОДАТАЙСТВУ ==========
+
+@receiver(post_save, sender='business_card.PetitionsInCase')
+def notify_party_on_petition_decision(sender, instance, created, **kwargs):
+    """
+    Уведомляет сторону о решении по ходатайству.
+    """
+    from .activity_service import PartyResponseService
+    from side_case_access.models import ExternalUser
+    
+    if created:
+        return
+    
+    if not instance.date_decision:
+        return
+    
+    petitioner_info = getattr(instance, 'petitioner_info', {})
+    if not isinstance(petitioner_info, dict):
+        return
+    
+    external_user = None
+    user_email = petitioner_info.get('user_email')
+    
+    if user_email:
+        try:
+            external_user = ExternalUser.objects.get(email=user_email, is_active=True)
+        except ExternalUser.DoesNotExist:
+            pass
+    
+    if external_user:
+        decision_text = instance.decision_rendered.name_case if instance.decision_rendered else 'Рассмотрено'
+        PartyResponseService.notify_party_petition_resolved(
+            petition=instance,
+            external_user=external_user,
+            decision=f"Решение от {instance.date_decision.strftime('%d.%m.%Y')}: {decision_text}"
+        )
+        logger.info(f"Уведомление отправлено участнику {external_user.full_name} о решении по ходатайству {instance.id}")

@@ -1,6 +1,9 @@
 # ai_assistant/admin.py
 from django.contrib import admin
-from .models import AIConfiguration, AISession, AIMessage, AICaseAnalysis
+from .models import (
+    AIConfiguration, AISession, AIMessage,
+    AICaseAnalysis,  ChatMessage, UploadedFile, ChatSession
+    )
 
 
 @admin.register(AIConfiguration)
@@ -41,3 +44,29 @@ class AICaseAnalysisAdmin(admin.ModelAdmin):
     list_display = ['id', 'analysis_type', 'case_object_id', 'created_at', 'compliance_score']
     list_filter = ['analysis_type', 'created_at']
     search_fields = ['case_object_id']
+
+
+@admin.register(ChatSession)
+class ChatSessionAdmin(admin.ModelAdmin):
+    list_display = ['title', 'user', 'session_type', 'message_count', 'created_at', 'is_active']
+    list_filter = ['session_type', 'is_active', 'is_archived']
+    search_fields = ['title', 'user__username']
+    readonly_fields = ['message_count', 'last_message_at']
+
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ['session', 'role', 'content_preview', 'created_at']
+    list_filter = ['role']
+    search_fields = ['content']
+    
+    def content_preview(self, obj):
+        return obj.content[:100] + '...' if len(obj.content) > 100 else obj.content
+    content_preview.short_description = 'Содержание'
+
+
+@admin.register(UploadedFile)
+class UploadedFileAdmin(admin.ModelAdmin):
+    list_display = ['file_name', 'file_type', 'file_size', 'uploaded_at', 'processed']
+    list_filter = ['file_type', 'processed']
+    search_fields = ['file_name']

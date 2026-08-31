@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SideCaseService from '../../API/SideCaseService';
+import baseService from '../../API/baseService';
 import styles from './CaseViewOnly.module.css';
 
 const DocumentsViewPage = () => {
@@ -69,20 +70,42 @@ const DocumentsViewPage = () => {
   };
 
   const handleDownload = async (decisionId) => {
-    try {
-      await SideCaseService.downloadDocument(decisionId, `Решение_${caseNumber}`);
-    } catch (error) {
-      console.error('Error downloading decision:', error);
-      let errorMsg = 'Ошибка при скачивании решения';
-      if (error.response?.status === 404) {
-        errorMsg = 'Файл решения не найден на сервере';
-      } else if (error.response?.status === 403) {
-        errorMsg = 'У вас нет доступа к этому решению';
-      } else if (error.message) {
-        errorMsg = error.message;
+      try {
+          // Используем тот же эндпоинт что и в карточке документа
+          const response = await baseService.get(
+              `/case-documents/documents/${decisionId}/download-signed/`,
+              { responseType: 'blob' }
+          );
+          
+          const contentDisposition = response.headers['content-disposition'] || '';
+          let filename = `Решение_${caseNumber || 'case'}.pdf`;
+          
+          // Пробуем извлечь имя файла из Content-Disposition
+          const match = contentDisposition.match(/filename="(.+)"/);
+          if (match && match[1]) {
+              filename = match[1];
+          }
+          
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', filename);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(url);
+      } catch (error) {
+          console.error('Error downloading decision:', error);
+          let errorMsg = 'Ошибка при скачивании решения';
+          if (error.response?.status === 404) {
+              errorMsg = 'Файл решения не найден на сервере';
+          } else if (error.response?.status === 403) {
+              errorMsg = 'У вас нет доступа к этому решению';
+          } else if (error.message) {
+              errorMsg = error.message;
+          }
+          alert(errorMsg);
       }
-      alert(errorMsg);
-    }
   };
 
   const handlePrint = (doc) => {

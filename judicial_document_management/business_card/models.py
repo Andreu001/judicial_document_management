@@ -395,6 +395,12 @@ class PetitionsInCase(models.Model):
         verbose_name='Дата решения по ходатайству',
         null=True,
     )
+    petitioner_info = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Информация о заявителе',
+        help_text='Хранит информацию о том, кто подал ходатайство (ФИО, email, роль и т.д.)'
+    )
     notation = models.TextField(
         max_length=300,
         verbose_name='примечания',

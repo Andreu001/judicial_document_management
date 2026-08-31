@@ -394,11 +394,12 @@ def _get_case_object(case_type, case_id):
     from administrative_proceedings.models import KasProceedings
     
     case_mapping = {
-        'administrative': AdministrativeProceedings,  # ЭТО УЖЕ ЕСТЬ
+        'administrative': AdministrativeProceedings,
+        'administrativeproceedings': AdministrativeProceedings,
         'criminal': CriminalProceedings,
         'civil': CivilProceedings,
         'kas': KasProceedings,
-        'admin': AdministrativeProceedings,  # ДОБАВЬТЕ ЭТУ СТРОКУ!
+        'admin': AdministrativeProceedings,
     }
     
     if case_type not in case_mapping:

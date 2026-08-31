@@ -1,102 +1,533 @@
-/* CaseViewOnly.module.css */
-.container {
-  min-height: 100vh;
-  background: #f0f4f8;
-  padding: 80px 24px 40px calc(6.3cm + 24px);
+/* CaseViewOnly.module.css - переработанный строгий деловой стиль */
+
+* {
+  box-sizing: border-box;
 }
 
+.container {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 80px 24px 40px calc(6.3cm + 24px);
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ---- Шапка ---- */
 .header {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px 24px;
   margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.header h1 {
+  margin: 4px 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+  letter-spacing: -0.3px;
 }
 
 .backButton {
   background: none;
   border: none;
-  color: #1e3c5c;
+  color: #2b6cb0;
   cursor: pointer;
   font-size: 14px;
-  margin-bottom: 16px;
+  font-weight: 500;
+  padding: 0;
+  transition: color 0.2s;
 }
 
 .backButton:hover {
+  color: #1a4f7a;
   text-decoration: underline;
 }
 
 .caseNumber {
   font-size: 14px;
   color: #4a5568;
-  margin-top: 8px;
+  margin: 4px 0 0 0;
 }
 
+.caseTypeLabel {
+  font-size: 13px;
+  color: #718096;
+  margin: 4px 0 0 0;
+  padding: 2px 10px;
+  background: #edf2f7;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+/* ---- Контент ---- */
 .content {
-  background: white;
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.section {
-  margin-bottom: 24px;
+/* ---- Пустое состояние ---- */
+.noData {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+  font-size: 15px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+  background: #fafbfc;
 }
 
-.section h2 {
-  font-size: 1.2rem;
-  color: #2d3748;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.infoGrid {
+/* ---- Список ходатайств ---- */
+.petitionsList {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+}
+
+.petitionCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.petitionCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.petitionHeader {
+  background: #f7fafc;
+  padding: 14px 20px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.petitionMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
-.infoRow {
-  display: flex;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f4f8;
-}
-
-.label {
-  width: 180px;
-  color: #718096;
-  font-size: 14px;
-}
-
-.value {
-  flex: 1;
-  color: #2d3748;
+.petitionDate {
+  font-size: 13px;
+  color: #4a5568;
   font-weight: 500;
 }
 
-.note {
-  margin-top: 24px;
-  padding: 16px;
-  background: #fefcbf;
-  border-radius: 8px;
-  color: #975a16;
-  font-size: 13px;
+.statusResolved {
+  font-size: 12px;
+  font-weight: 600;
+  color: #276749;
+  background: #c6f6d5;
+  padding: 4px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
+.statusPending {
+  font-size: 12px;
+  font-weight: 600;
+  color: #975a16;
+  background: #fefcbf;
+  padding: 4px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.petitionBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.petitionType,
+.petitionPetitioner,
+.petitionText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.value {
+  font-size: 14px;
+  color: #2d3748;
+  line-height: 1.5;
+}
+
+.petitionText p {
+  margin: 0;
+  font-size: 14px;
+  color: #2d3748;
+  line-height: 1.6;
+  padding: 10px 14px;
+  background: #f7fafc;
+  border-radius: 6px;
+  border-left: 3px solid #cbd5e0;
+}
+
+/* ---- Решение суда ---- */
+.petitionDecision {
+  margin: 0 20px 20px 20px;
+  padding: 16px 20px;
+  background: #f0f7ff;
+  border-radius: 6px;
+  border-left: 4px solid #2b6cb0;
+}
+
+.decisionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.decisionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b6cb0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.decisionDate {
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.decisionText {
+  margin: 0;
+  font-size: 15px;
+  color: #1a202c;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ---- Примечание ---- */
+.note {
+  margin-top: 24px;
+  padding: 14px 20px;
+  background: #f7fafc;
+  border-radius: 6px;
+  color: #4a5568;
+  font-size: 13px;
+  border: 1px solid #edf2f7;
+}
+
+.note p {
+  margin: 0;
+}
+
+/* ---- Загрузка и ошибки ---- */
 .loading {
   text-align: center;
-  padding: 60px;
+  padding: 80px 20px;
   font-size: 16px;
   color: #718096;
 }
 
 .error {
   text-align: center;
-  padding: 60px;
-  color: #e53e3e;
-  font-size: 16px;
+  padding: 60px 20px;
+  color: #c53030;
+  font-size: 15px;
 }
 
-/* ========== АДАПТИВНОСТЬ - ИСПРАВЛЕНО ========== */
+/* ============================================================ */
+/* ---- ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ СТРАНИЦ (CaseViewOnly) ---- */
+/* ============================================================ */
+
+/* Основная информация дела */
+.section {
+  margin-bottom: 28px;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoRow {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid #f7fafc;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.label {
+  width: 180px;
+  font-size: 13px;
+  color: #718096;
+  flex-shrink: 0;
+}
+
+.value {
+  flex: 1;
+  font-size: 14px;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* ---- Решения по делу ---- */
+.decisionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.decisionCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  border-left: 4px solid #2b6cb0;
+  transition: box-shadow 0.2s;
+}
+
+.decisionCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.decisionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.decisionDate {
+  font-size: 13px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.decisionResult {
+  font-size: 14px;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+
+.decisionResult strong {
+  color: #1a202c;
+}
+
+.decisionMeta {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+.decisionActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf2f7;
+  flex-wrap: wrap;
+}
+
+/* ---- Кнопки ---- */
+.downloadBtn {
+  background: #2b6cb0;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  transition: background 0.2s;
+}
+
+.downloadBtn:hover {
+  background: #1a4f7a;
+}
+
+.printBtn {
+  background: #4a5568;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  transition: background 0.2s;
+}
+
+.printBtn:hover {
+  background: #2d3748;
+}
+
+.pdfBtn {
+  background: #c53030;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  transition: background 0.2s;
+}
+
+.pdfBtn:hover {
+  background: #9b2c2c;
+}
+
+.downloadBtnSmall {
+  background: #2b6cb0;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  transition: background 0.2s;
+}
+
+.downloadBtnSmall:hover {
+  background: #1a4f7a;
+}
+
+/* ---- Статусы для документов ---- */
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+  letter-spacing: 0.2px;
+}
+
+.statusPending {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.statusRegistered {
+  background: #bee3f8;
+  color: #2b6cb0;
+}
+
+.statusUnderReview {
+  background: #e9d8fd;
+  color: #6b46c0;
+}
+
+.statusAccepted {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.statusAttached {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.statusRejected {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+.statusReturned {
+  background: #feebc8;
+  color: #9c4221;
+}
+
+.statusUnknown {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+/* ---- Таблицы документов ---- */
+.documentsList {
+  overflow-x: auto;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.historyTable thead th {
+  text-align: left;
+  padding: 10px 14px;
+  background: #f7fafc;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.historyTable tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #edf2f7;
+  color: #2d3748;
+}
+
+.historyTable tbody tr:hover {
+  background: #f7fafc;
+}
+
+.historyTitleCell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyHint {
+  font-size: 13px;
+  color: #a0aec0;
+  margin-top: 4px;
+}
+
+/* ============================================================ */
+/* ---- АДАПТИВНОСТЬ ---- */
+/* ============================================================ */
+
 @media (max-width: 1200px) {
   .container {
     padding: 80px 20px 40px calc(6.3cm + 20px);
@@ -114,13 +545,62 @@
     padding: 80px 16px 40px calc(6.3cm + 16px);
   }
   
+  .header h1 {
+    font-size: 1.2rem;
+  }
+  
   .infoRow {
     flex-direction: column;
+    padding: 8px 0;
   }
   
   .label {
     width: auto;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+  }
+  
+  .petitionMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .decisionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .decisionActions {
+    flex-direction: column;
+  }
+  
+  .decisionActions button {
+    width: 100%;
+  }
+  
+  .historyTable {
+    font-size: 12px;
+  }
+  
+  .historyTable thead th,
+  .historyTable tbody td {
+    padding: 6px 10px;
+  }
+  
+  .historyTitleCell {
+    max-width: 120px;
+  }
+  
+  .petitionCard {
+    border-radius: 6px;
+  }
+  
+  .petitionBody {
+    padding: 16px;
+  }
+  
+  .petitionDecision {
+    margin: 0 16px 16px 16px;
+    padding: 14px 16px;
   }
 }
 
@@ -128,204 +608,127 @@
   .container {
     padding: 70px 12px 30px calc(6.3cm + 12px);
   }
+  
+  .header {
+    padding: 16px;
+  }
+  
+  .content {
+    padding: 16px;
+  }
 }
 
-/* Добавьте в конец файла CaseViewOnly.module.css */
-
-.decisionsList {
+/* Аудио-протоколы */
+.audioList {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.decisionCard {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 20px;
-  border-left: 3px solid #48bb78;
-  transition: all 0.2s;
-}
-
-.decisionCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.decisionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
   gap: 12px;
 }
 
-.decisionDate {
-  font-size: 13px;
-  color: #64748b;
-}
-
-.downloadBtn {
-  background: #1e3c5c;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s;
-}
-
-.downloadBtn:hover {
-  background: #2c5282;
-}
-
-.decisionResult {
-  font-size: 14px;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-
-.decisionMeta {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.decisionActions {
+.audioCard {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
+}
+
+.audioInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.printBtn {
-  background: #4a5568;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s;
+.audioDate {
+  font-size: 0.85rem;
+  color: #4a5568;
 }
 
-.printBtn:hover {
-  background: #2d3748;
-}
-
-.pdfBtn {
-  background: #c53030;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s;
-}
-
-.pdfBtn:hover {
-  background: #9b2c2c;
-}
-
-.wordBtn {
-  background: #2c3e50;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s;
-}
-
-.wordBtn:hover {
-  background: #1e2a36;
-}
-
-.noData {
-  text-align: center;
-  padding: 40px;
-  color: #94a3b8;
-  font-style: italic;
-}
-/* Добавьте в конец файла CaseViewOnly.module.css */
-
-.caseTypeLabel {
-  font-size: 13px;
+.audioDuration {
+  font-size: 0.8rem;
   color: #718096;
-  margin-top: 4px;
-  padding: 4px 8px;
-  background: #f0f4f8;
-  display: inline-block;
-  border-radius: 4px;
 }
 
-.decisionMeta {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 8px;
-  padding-left: 8px;
-  border-left: 2px solid #e2e8f0;
+.audioSpeakers {
+  font-size: 0.8rem;
+  color: #4299e1;
+  background: #ebf8ff;
+  padding: 2px 10px;
+  border-radius: 3px;
 }
 
-.decisionActions {
+.audioStatus {
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.audioStatusCompleted {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.audioStatusProcessing {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.audioStatusError {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+.audioStatusCancelled {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.audioActions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-.printBtn {
-  background: #4a5568;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s;
+.audioProcessingHint,
+.audioPendingHint,
+.audioCancelledHint {
+  font-size: 0.75rem;
+  color: #718096;
 }
 
-.printBtn:hover {
-  background: #2d3748;
-}
-
-.downloadBtn {
-  background: #1e3c5c;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s;
-}
-
-.downloadBtn:hover {
-  background: #2c5282;
+.audioErrorHint {
+  font-size: 0.75rem;
+  color: #c53030;
+  max-width: 300px;
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {
-  .decisionHeader {
+  .audioCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .audioInfo {
     flex-direction: column;
     align-items: flex-start;
+    gap: 4px;
   }
   
-  .decisionActions {
-    flex-wrap: wrap;
+  .audioActions {
+    flex-direction: column;
+    align-items: stretch;
   }
   
-  .decisionActions button {
-    flex: 1 1 calc(50% - 4px);
-    text-align: center;
+  .audioActions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }

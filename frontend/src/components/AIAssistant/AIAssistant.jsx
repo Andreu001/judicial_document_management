@@ -37,10 +37,10 @@ const AIAssistant = ({ caseId, caseType, onClose }) => {
 
   const getContentType = (type) => {
     const types = {
-      criminal: 'criminal_proceedings.criminalproceedings',
-      civil: 'civil_proceedings.civilproceedings',
-      coap: 'administrative_code.administrativeproceedings',
-      kas: 'administrative_proceedings.kasproceedings',
+      criminal: 'criminal_proceedings.CriminalProceedings',
+      civil: 'civil_proceedings.CivilProceedings',
+      coap: 'administrative_code.AdministrativeProceedings',
+      kas: 'administrative_proceedings.KasProceedings',
     };
     return types[type] || null;
   };

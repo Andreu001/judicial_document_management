@@ -32,8 +32,6 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -134,3 +132,103 @@ dmypy.json
 
 # .idea
 .idea
+
+# ML Models
+**/models/
+**/models/saiga-7b/
+**/models/*.bin
+**/models/*.safetensors
+**/models/*.pth
+**/models/*.h5
+**/models/*.ckpt
+*.bin
+*.safetensors
+*.pth
+*.h5
+*.ckpt
+
+# Redis dump
+dump.rdb
+
+
+# Media files
+media/
+uploads/
+static/media/
+**/media/
+
+# Static files
+staticfiles/
+static/
+**/static/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite3-journal
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+*.tmp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Dump files
+*.dump
+*.sql
+dump.rdb
+
+# Python compiled
+*.pyc
+*.pyo
+*.pyd
+
+# Secret files
+*.pem
+*.key
+*.crt
+*.p12
+.secrets/
+secrets/
+config/secrets/
+credentials/
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Coverage
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Project specific
+*.pid
+.python-version
+.venv/
+venv/
+ENV/
+env/

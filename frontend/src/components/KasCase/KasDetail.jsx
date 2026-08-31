@@ -11,6 +11,9 @@ import {
 } from './KasTabComponents';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 import ProgressLog from '../CaseManagement/ProgressLog';
+import AudioTranscriptionTab from '../AudioTranscription/AudioTranscriptionTab';
+import AIAssistant from '../AIAssistant/AIAssistant';
+import JudgeAssistantKas from './JudgeAssistantKas';
 
 const KasDetail = () => {
   const { id } = useParams();
@@ -43,6 +46,7 @@ const KasDetail = () => {
   const [judges, setJudges] = useState([]);
   const [collapsedNotifications, setCollapsedNotifications] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
+  const [showAI, setShowAI] = useState(false);
 
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -356,19 +360,26 @@ const KasDetail = () => {
         </div>
         
         <div className={styles.headerRight}>
+            <button 
+              onClick={() => setShowAI(true)} 
+              className={styles.aiButton}
+              disabled={isArchived}
+            >
+              AI Анализ
+            </button>
           {isArchived ? (
             <button 
               onClick={handleUnarchive}
               className={styles.unarchiveButton}
             >
-              📤 Вернуть из архива
+              Вернуть из архива
             </button>
           ) : (
             <button 
               onClick={handleArchive}
               className={styles.archiveButton}
             >
-              📁 Сдать в архив
+              Сдать в архив
             </button>
           )}
           
@@ -414,6 +425,12 @@ const KasDetail = () => {
                 Основные сведения
               </button>
               <button 
+                className={`${styles.tab} ${activeTab === 'assistant' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('assistant')}
+              >
+                Автоматизированный помощник
+              </button>
+              <button 
                 className={`${styles.tab} ${activeTab === 'movement' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
                 onClick={() => !(isArchived && isEditing) && setActiveTab('movement')}
                 disabled={isArchived && isEditing}
@@ -434,6 +451,12 @@ const KasDetail = () => {
                 onClick={() => setActiveTab('additional')}
               >
                 Дополнительно
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'audio' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('audio')}
+              >
+                Аудио-протокол
               </button>
             </div>
             <div className={styles.tabContentWrapper}>
@@ -489,6 +512,14 @@ const KasDetail = () => {
                   isArchived={isArchived}
                   getOptionLabel={getOptionLabel}
                 />
+              )}
+              {activeTab === 'audio' && (
+                <AudioTranscriptionTab caseId={id} caseType="kas" />
+              )}
+              {activeTab === 'assistant' && (
+                <div className={styles.tabContent}>
+                  <JudgeAssistantKas proceedingId={id} caseType="kas" />
+                </div>
               )}
             </div>
           </div>
@@ -733,6 +764,17 @@ const KasDetail = () => {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
+      {showAI && (
+        <div className={styles.modalOverlay} onClick={() => setShowAI(false)}>
+          <div className={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>
+            <AIAssistant 
+              caseId={parseInt(id)} 
+              caseType="kas"
+              onClose={() => setShowAI(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

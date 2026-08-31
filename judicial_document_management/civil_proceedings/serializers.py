@@ -589,7 +589,7 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         petitions_name_ids = validated_data.pop('petitions_name', None)
         date_application = validated_data.pop('date_application', None)
-        decision_rendered_id = validated_data.pop('decision_rendered', None)
+        decision_rendered_value = validated_data.pop('decision_rendered', None)
         date_decision = validated_data.pop('date_decision', None)
         notation = validated_data.pop('notation', None)
         petitioner_type = validated_data.pop('petitioner_type', None)
@@ -605,12 +605,27 @@ class CivilPetitionSerializer(serializers.ModelSerializer):
             if notation is not None:
                 petitions_incase.notation = notation
             
-            if decision_rendered_id is not None:
-                if decision_rendered_id:
-                    try:
-                        decision = Decisions.objects.get(id=decision_rendered_id)
-                        petitions_incase.decision_rendered = decision
-                    except Decisions.DoesNotExist:
+            # ========== ИСПРАВЛЕНИЕ: ПРОВЕРЯЕМ ТИП ==========
+            if decision_rendered_value is not None:
+                if decision_rendered_value:
+                    # Если это число (ID) - ищем в БД
+                    if isinstance(decision_rendered_value, int):
+                        try:
+                            decision = Decisions.objects.get(id=decision_rendered_value)
+                            petitions_incase.decision_rendered = decision
+                        except Decisions.DoesNotExist:
+                            petitions_incase.decision_rendered = None
+                    # Если это уже объект Decisions - используем его
+                    elif isinstance(decision_rendered_value, Decisions):
+                        petitions_incase.decision_rendered = decision_rendered_value
+                    # Если это строка - пробуем преобразовать в int
+                    elif isinstance(decision_rendered_value, str):
+                        try:
+                            decision = Decisions.objects.get(id=int(decision_rendered_value))
+                            petitions_incase.decision_rendered = decision
+                        except (ValueError, Decisions.DoesNotExist):
+                            petitions_incase.decision_rendered = None
+                    else:
                         petitions_incase.decision_rendered = None
                 else:
                     petitions_incase.decision_rendered = None

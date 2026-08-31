@@ -1,9 +1,10 @@
-// Обновленный Archive.jsx - с поддержкой КАС
+// Archive.jsx - с поддержкой КАС и Прочих материалов
 import React, { useState, useEffect } from 'react';
 import CriminalCaseService from '../API/CriminalCaseService';
 import CivilCaseService from '../API/CivilCaseService';
 import AdministrativeCaseService from '../API/AdministrativeCaseService';
-import KasCaseService from '../API/KasCaseService'; // Добавляем импорт
+import KasCaseService from '../API/KasCaseService';
+import OtherMaterialService from '../API/OtherMaterialService';
 import styles from './Archive.module.css';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from './ConfirmDialog';
@@ -20,7 +21,7 @@ const Archive = () => {
         case_to_archive_date: ''
     });
     const [updating, setUpdating] = useState(false);
-    const [activeFilter, setActiveFilter] = useState('all'); // all, criminal, civil, administrative, kas
+    const [activeFilter, setActiveFilter] = useState('all');
     const navigate = useNavigate();
     const [confirmDialog, setConfirmDialog] = useState({
         isOpen: false,
@@ -38,11 +39,12 @@ const Archive = () => {
             setLoading(true);
             
             // Загружаем все категории
-            const [criminalData, civilData, administrativeData, kasData] = await Promise.all([
+            const [criminalData, civilData, administrativeData, kasData, otherData] = await Promise.all([
                 CriminalCaseService.getArchivedProceedings().catch(() => []),
                 CivilCaseService.getArchivedProceedings().catch(() => []),
                 AdministrativeCaseService.getArchivedProceedings().catch(() => []),
-                KasCaseService.getArchivedProceedings().catch(() => []) // Добавляем загрузку КАС
+                KasCaseService.getArchivedProceedings().catch(() => []),
+                OtherMaterialService.getArchivedMaterials().catch(() => [])
             ]);
 
             // Преобразуем данные
@@ -80,7 +82,7 @@ const Archive = () => {
                     archiveNotes: item.archive_notes || '',
                     specialNotes: item.special_notes || ''
                 })),
-                ...kasData.map(item => ({ // Добавляем преобразование для КАС
+                ...kasData.map(item => ({
                     ...item,
                     category: 'kas',
                     caseNumber: item.case_number_kas || 'б/н',
@@ -90,6 +92,19 @@ const Archive = () => {
                     incomingDate: item.incoming_date,
                     archiveNotes: item.archive_notes || '',
                     specialNotes: item.special_notes || ''
+                })),
+                ...otherData.map(item => ({
+                    ...item,
+                    category: 'other',
+                    caseNumber: item.registration_number || 'б/н',
+                    caseInfo: item.material_type?.name || item.title?.slice(0, 50) || '—',
+                    result: item.outcome_display || item.status_display || '—',
+                    archivedDate: item.archived_date || item.case_to_archive_date,
+                    incomingDate: item.registration_date || item.incoming_date,
+                    archiveNotes: item.archive_notes || '',
+                    specialNotes: item.special_notes || '',
+                    // Сохраняем оригинальные данные для обновления
+                    _original: item
                 }))
             ];
 
@@ -140,25 +155,37 @@ const Archive = () => {
         try {
             setUpdating(true);
             
-            const service = {
-                criminal: CriminalCaseService,
-                civil: CivilCaseService,
-                administrative: AdministrativeCaseService,
-                kas: KasCaseService // Добавляем сервис для КАС
-            }[proceeding.category];
+            let result;
+            
+            // Для разных категорий используем разные сервисы
+            if (proceeding.category === 'other') {
+                // Для прочих материалов используем OtherMaterialService
+                result = await OtherMaterialService.updateOtherMaterial(proceeding.id, {
+                    archive_notes: editData.archive_notes,
+                    special_notes: editData.special_notes,
+                    archived_date: editData.case_to_archive_date || null
+                });
+            } else {
+                const service = {
+                    criminal: CriminalCaseService,
+                    civil: CivilCaseService,
+                    administrative: AdministrativeCaseService,
+                    kas: KasCaseService
+                }[proceeding.category];
 
-            const updateMethod = {
-                criminal: 'updateCriminalProceedings',
-                civil: 'updateCivilProceedings',
-                administrative: 'updateAdministrativeProceedings',
-                kas: 'updateKasProceedings' // Добавляем метод для КАС
-            }[proceeding.category];
+                const updateMethod = {
+                    criminal: 'updateCriminalProceedings',
+                    civil: 'updateCivilProceedings',
+                    administrative: 'updateAdministrativeProceedings',
+                    kas: 'updateKasProceedings'
+                }[proceeding.category];
 
-            await service[updateMethod](proceeding.id, {
-                archive_notes: editData.archive_notes,
-                special_notes: editData.special_notes,
-                case_to_archive_date: editData.case_to_archive_date
-            });
+                result = await service[updateMethod](proceeding.id, {
+                    archive_notes: editData.archive_notes,
+                    special_notes: editData.special_notes,
+                    case_to_archive_date: editData.case_to_archive_date
+                });
+            }
 
             // Обновляем локальное состояние
             setArchivedProceedings(prev => 
@@ -176,7 +203,7 @@ const Archive = () => {
 
             setEditingId(null);
         } catch (err) {
-            alert('Ошибка сохранения: ' + err.message);
+            alert('Ошибка сохранения: ' + (err.response?.data?.detail || err.message));
         } finally {
             setUpdating(false);
         }
@@ -194,21 +221,25 @@ const Archive = () => {
             message: `Вернуть дело №${proceeding.caseNumber} из архива?`,
             onConfirm: async () => {
                 try {
-                    const service = {
-                        criminal: CriminalCaseService,
-                        civil: CivilCaseService,
-                        administrative: AdministrativeCaseService,
-                        kas: KasCaseService // Добавляем сервис для КАС
-                    }[proceeding.category];
+                    if (proceeding.category === 'other') {
+                        await OtherMaterialService.unarchiveOtherMaterial(proceeding.id);
+                    } else {
+                        const service = {
+                            criminal: CriminalCaseService,
+                            civil: CivilCaseService,
+                            administrative: AdministrativeCaseService,
+                            kas: KasCaseService
+                        }[proceeding.category];
 
-                    const unarchiveMethod = {
-                        criminal: 'unarchiveCriminalProceeding',
-                        civil: 'unarchiveCivilProceeding',
-                        administrative: 'unarchiveAdministrativeProceeding',
-                        kas: 'unarchiveKasProceeding' // Добавляем метод для КАС
-                    }[proceeding.category];
+                        const unarchiveMethod = {
+                            criminal: 'unarchiveCriminalProceeding',
+                            civil: 'unarchiveCivilProceeding',
+                            administrative: 'unarchiveAdministrativeProceeding',
+                            kas: 'unarchiveKasProceeding'
+                        }[proceeding.category];
 
-                    await service[unarchiveMethod](proceeding.id);
+                        await service[unarchiveMethod](proceeding.id);
+                    }
                     
                     // Удаляем из списка
                     setArchivedProceedings(prev => 
@@ -227,7 +258,8 @@ const Archive = () => {
             criminal: '/criminal-proceedings/',
             civil: '/civil-proceedings/',
             administrative: '/admin-proceedings/',
-            kas: '/kas-proceedings/' // Добавляем маршрут для КАС
+            kas: '/kas-proceedings/',
+            other: '/other-materials/'
         };
         navigate(`${routes[proceeding.category]}${proceeding.id}`);
     };
@@ -266,7 +298,8 @@ const Archive = () => {
         criminal: archivedProceedings.filter(p => p.category === 'criminal').length,
         civil: archivedProceedings.filter(p => p.category === 'civil').length,
         administrative: archivedProceedings.filter(p => p.category === 'administrative').length,
-        kas: archivedProceedings.filter(p => p.category === 'kas').length // Добавляем статистику для КАС
+        kas: archivedProceedings.filter(p => p.category === 'kas').length,
+        other: archivedProceedings.filter(p => p.category === 'other').length
     };
 
     const getCategoryLabel = (category) => {
@@ -274,7 +307,8 @@ const Archive = () => {
             criminal: 'Уголовное',
             civil: 'Гражданское',
             administrative: 'Административное (КоАП)',
-            kas: 'Административное (КАС)'
+            kas: 'Административное (КАС)',
+            other: 'Прочие материалы'
         };
         return labels[category] || category;
     };
@@ -284,7 +318,8 @@ const Archive = () => {
             criminal: 'Уг',
             civil: 'Гр',
             administrative: 'АП',
-            kas: 'КАС'
+            kas: 'КАС',
+            other: 'Пр'
         };
         return labels[category] || category;
     };
@@ -333,6 +368,12 @@ const Archive = () => {
                 >
                     Адм. (КАС) ({counts.kas})
                 </button>
+                <button 
+                    className={`${styles.statBadge} ${activeFilter === 'other' ? styles.active : ''}`}
+                    onClick={() => setActiveFilter('other')}
+                >
+                    Прочие материалы ({counts.other})
+                </button>
             </div>
 
             {filteredProceedings.length === 0 ? (
@@ -366,14 +407,16 @@ const Archive = () => {
                                             criminal: styles.criminalCard,
                                             civil: styles.civilCard,
                                             administrative: styles.adminCard,
-                                            kas: styles.kasCard
+                                            kas: styles.kasCard,
+                                            other: styles.otherCard
                                         }[proceeding.category];
 
                                         const headerClass = {
                                             criminal: styles.criminalHeader,
                                             civil: styles.civilHeader,
                                             administrative: styles.adminHeader,
-                                            kas: styles.kasHeader
+                                            kas: styles.kasHeader,
+                                            other: styles.otherHeader
                                         }[proceeding.category];
 
                                         return (
@@ -408,7 +451,8 @@ const Archive = () => {
                                                             {proceeding.category === 'criminal' ? 'Статья:' :
                                                              proceeding.category === 'civil' ? 'Категория:' :
                                                              proceeding.category === 'administrative' ? 'Статья:' :
-                                                             'Категория:'}
+                                                             proceeding.category === 'kas' ? 'Категория:' :
+                                                             'Наименование:'}
                                                         </span>
                                                         <span className={styles.infoValue}>
                                                             {proceeding.caseInfo}
@@ -436,6 +480,7 @@ const Archive = () => {
                                                                     }))}
                                                                     rows={2}
                                                                     disabled={updating}
+                                                                    placeholder="Введите архивные примечания..."
                                                                 />
                                                             </div>
                                                             <div className={styles.editField}>
@@ -451,6 +496,7 @@ const Archive = () => {
                                                                     }))}
                                                                     rows={2}
                                                                     disabled={updating}
+                                                                    placeholder="Введите особые примечания..."
                                                                 />
                                                             </div>
                                                             <div className={styles.editField}>
@@ -487,35 +533,45 @@ const Archive = () => {
                                                         </div>
                                                     ) : (
                                                         <>
-                                                            {(proceeding.archiveNotes || proceeding.specialNotes) && (
-                                                                <div className={styles.notesSection}>
-                                                                    {proceeding.archiveNotes && (
-                                                                        <div className={styles.notesItem}>
-                                                                            <span className={styles.notesLabel}>
-                                                                                Архивные:
-                                                                            </span>
-                                                                            <span className={styles.notesText}>
-                                                                                {proceeding.archiveNotes}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                    {proceeding.specialNotes && (
-                                                                        <div className={styles.notesItem}>
-                                                                            <span className={styles.notesLabel}>
-                                                                                Особые:
-                                                                            </span>
-                                                                            <span className={styles.notesText}>
-                                                                                {proceeding.specialNotes}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            {/* Показываем примечания, даже если они есть */}
+                                                            <div className={styles.notesSection}>
+                                                                {proceeding.archiveNotes && (
+                                                                    <div className={styles.notesItem}>
+                                                                        <span className={styles.notesLabel}>
+                                                                            Архивные:
+                                                                        </span>
+                                                                        <span className={styles.notesText}>
+                                                                            {proceeding.archiveNotes}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {proceeding.specialNotes && (
+                                                                    <div className={styles.notesItem}>
+                                                                        <span className={styles.notesLabel}>
+                                                                            Особые:
+                                                                        </span>
+                                                                        <span className={styles.notesText}>
+                                                                            {proceeding.specialNotes}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {/* Если нет примечаний, показываем подсказку */}
+                                                                {!proceeding.archiveNotes && !proceeding.specialNotes && (
+                                                                    <div className={styles.notesItem}>
+                                                                        <span className={styles.notesLabel}>
+                                                                            Примечания:
+                                                                        </span>
+                                                                        <span className={styles.notesText} style={{ color: '#aaa', fontStyle: 'italic' }}>
+                                                                            нет
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                             <button 
                                                                 className={styles.editNotesBtn}
                                                                 onClick={() => handleEdit(proceeding)}
                                                             >
-                                                                ✎ Редактировать примечания
+                                                                ✎ {proceeding.archiveNotes || proceeding.specialNotes ? 'Редактировать примечания' : 'Добавить примечания'}
                                                             </button>
                                                         </>
                                                     )}

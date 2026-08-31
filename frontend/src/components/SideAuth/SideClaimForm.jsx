@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import baseService from '../../API/baseService';
+import SideCaseService from '../../API/SideCaseService';
 import styles from './SideClaimForm.module.css';
 
 const SideClaimForm = () => {
@@ -10,100 +11,79 @@ const SideClaimForm = () => {
   const navigate = useNavigate();
   const { caseNumber, sideName, defendantName } = location.state || {};
   
+  // ===== ОСНОВНЫЕ ДАННЫЕ ФОРМЫ =====
   const [formData, setFormData] = useState({
-    // Ст. 131 ГПК РФ - обязательные реквизиты
+    // Информация о суде (заполняется автоматически из выбора)
     court_name: '',
+    court_id: '',
+    region_id: '',
+    
+    // Сведения об истце
     plaintiff_info: {
       full_name: '',
       address: '',
       phone: '',
       email: '',
-      passport_series: '',
-      passport_number: '',
       birth_date: '',
-      place_of_birth: '',
     },
+    
+    // Сведения об ответчике
     defendant_info: {
       full_name: '',
       address: '',
       phone: '',
       email: '',
-      inn: '',
-      ogrn: '', // для юрлиц
     },
-    third_persons: [], // третьи лица
+    
+    // Третьи лица
+    third_persons: [],
     
     // Суть иска
-    claim_subject: '', // предмет иска
-    claim_amount: '', // цена иска в рублях
+    claim_subject: '',
+    claim_amount: '',
     
     // Обстоятельства дела
-    rights_violation: '', // нарушение прав истца
-    circumstances: '', // обстоятельства, на которых основан иск
-    evidence: '', // доказательства
+    circumstances: '',
     
     // Требования истца
-    claims: '', // конкретные требования
+    claims: '',
     
-    // Досудебный порядок
-    pre_trial_compliance: false,
-    pre_trial_details: '',
-    
-    // Цена иска - расчет
-    claim_calculation: '',
-    
-    // Дополнительно
-    attached_documents: [], // список прилагаемых документов
+    // Прилагаемые документы
+    attached_documents: [],
     additional_notes: '',
     
     // Информация о подателе
-    signer_info: '', // подпись/представитель
+    signer_info: '',
     submission_date: new Date().toISOString().split('T')[0],
   });
   
-  const [availableDocuments, setAvailableDocuments] = useState([]);
+  // ===== СОСТОЯНИЯ ДЛЯ РЕГИОНОВ И СУДОВ =====
+  const [regions, setRegions] = useState([]);
+  const [courtsByRegion, setCourtsByRegion] = useState([]);
+  const [selectedRegionId, setSelectedRegionId] = useState('');
+  const [selectedCourtId, setSelectedCourtId] = useState('');
+  const [loadingRegions, setLoadingRegions] = useState(false);
+  const [loadingCourts, setLoadingCourts] = useState(false);
+  
+  // ===== ОСТАЛЬНЫЕ СОСТОЯНИЯ =====
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [caseInfo, setCaseInfo] = useState(null);
   const [user, setUser] = useState(null);
   const [thirdPersonInput, setThirdPersonInput] = useState('');
-  
-  const [documentFiles, setDocumentFiles] = useState([]); // Файлы для загрузки
+  const [documentFiles, setDocumentFiles] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
 
+  // ===== ЗАГРУЗКА ДАННЫХ ПРИ МОНТИРОВАНИИ =====
   useEffect(() => {
-    loadData();
     loadUserInfo();
-  }, [caseType, caseId]);
+    loadRegions();
+  }, []);
 
-  const loadData = async () => {
+  // ===== ЗАГРУЗКА ИНФОРМАЦИИ О ПОЛЬЗОВАТЕЛЕ =====
+  const loadUserInfo = async () => {
     try {
-      // Загружаем информацию о деле
-      let caseData = null;
-      const normalizedType = normalizeCaseType(caseType);
-      
-      switch (normalizedType) {
-        case 'criminal':
-          const criminalData = await import('../../API/CriminalCaseService').then(m => m.default.getCriminalProceedingById(caseId));
-          caseData = criminalData;
-          break;
-        case 'civil':
-          const civilData = await import('../../API/CivilCaseService').then(m => m.default.getCivilProceedingById(caseId));
-          caseData = civilData;
-          break;
-        case 'kas':
-          const kasData = await import('../../API/KasCaseService').then(m => m.default.getKasProceedingById(caseId));
-          caseData = kasData;
-          break;
-        default:
-          break;
-      }
-      
-      setCaseInfo(caseData);
-      
-      // Предзаполняем информацию об истце из профиля
-      const userData = await import('../../API/SideCaseService').then(m => m.default.getProfile());
+      const userData = await SideCaseService.getProfile();
       setUser(userData);
       
       setFormData(prev => ({
@@ -116,22 +96,70 @@ const SideClaimForm = () => {
         },
         signer_info: userData.full_name || '',
       }));
-      
-    } catch (err) {
-      console.error('Error loading data:', err);
-    }
-  };
-
-  const loadUserInfo = async () => {
-    try {
-      const sideService = await import('../../API/SideCaseService');
-      const userData = await sideService.default.getProfile();
-      setUser(userData);
     } catch (err) {
       console.error('Error loading user:', err);
     }
   };
 
+  // ===== ЗАГРУЗКА СПИСКА РЕГИОНОВ =====
+  const loadRegions = async () => {
+    try {
+      setLoadingRegions(true);
+      const data = await SideCaseService.getRegions();
+      setRegions(data);
+    } catch (error) {
+      console.error('Error loading regions:', error);
+    } finally {
+      setLoadingRegions(false);
+    }
+  };
+
+  // ===== ЗАГРУЗКА СУДОВ ПО РЕГИОНУ =====
+  const loadCourtsByRegion = async (regionId) => {
+    if (!regionId) {
+      setCourtsByRegion([]);
+      setSelectedCourtId('');
+      setFormData(prev => ({ ...prev, court_name: '', court_id: '' }));
+      return;
+    }
+    
+    try {
+      setLoadingCourts(true);
+      const data = await SideCaseService.getCourtsByRegion(regionId);
+      setCourtsByRegion(data);
+      setSelectedCourtId('');
+      setFormData(prev => ({ ...prev, court_name: '', court_id: '' }));
+    } catch (error) {
+      console.error('Error loading courts:', error);
+      setCourtsByRegion([]);
+    } finally {
+      setLoadingCourts(false);
+    }
+  };
+
+  // ===== ОБРАБОТЧИК СМЕНЫ РЕГИОНА =====
+  const handleRegionChange = (e) => {
+    const regionId = e.target.value;
+    setSelectedRegionId(regionId);
+    loadCourtsByRegion(regionId);
+  };
+
+  // ===== ОБРАБОТЧИК СМЕНЫ СУДА =====
+  const handleCourtChange = (e) => {
+    const courtId = e.target.value;
+    setSelectedCourtId(courtId);
+    
+    // Находим выбранный суд и сохраняем его данные
+    const selectedCourt = courtsByRegion.find(c => c.id === parseInt(courtId));
+    setFormData(prev => ({
+      ...prev,
+      court_name: selectedCourt ? selectedCourt.name : '',
+      court_id: courtId,
+      region_id: selectedRegionId,
+    }));
+  };
+
+  // ===== НОРМАЛИЗАЦИЯ ТИПА ДЕЛА =====
   const normalizeCaseType = (type) => {
     const typeMap = {
       'criminal': 'criminal',
@@ -141,9 +169,10 @@ const SideClaimForm = () => {
       'coap': 'administrative',
       'admin': 'administrative'
     };
-    return typeMap[type] || type;
+    return typeMap[type] || 'civil';
   };
 
+  // ===== ОБРАБОТЧИК ИЗМЕНЕНИЯ ПОЛЕЙ =====
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -163,6 +192,7 @@ const SideClaimForm = () => {
     }
   };
 
+  // ===== ТРЕТЬИ ЛИЦА =====
   const addThirdPerson = () => {
     if (thirdPersonInput.trim()) {
       setFormData(prev => ({
@@ -180,8 +210,8 @@ const SideClaimForm = () => {
     }));
   };
 
+  // ===== ПРИЛОЖЕННЫЕ ДОКУМЕНТЫ =====
   const addAttachedDocument = () => {
-    // Открываем диалог выбора файла
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
@@ -190,7 +220,6 @@ const SideClaimForm = () => {
       const files = Array.from(e.target.files);
       setDocumentFiles(prev => [...prev, ...files]);
       
-      // Добавляем в список прилагаемых документов
       files.forEach(file => {
         setFormData(prev => ({
           ...prev,
@@ -209,6 +238,7 @@ const SideClaimForm = () => {
     setDocumentFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // ===== ВАЛИДАЦИЯ ФОРМЫ =====
   const validateForm = () => {
     const errors = [];
     
@@ -240,16 +270,17 @@ const SideClaimForm = () => {
     return errors;
   };
 
+  // ===== ЗАГРУЗКА ДОКУМЕНТОВ =====
   const uploadDocuments = async () => {
     if (documentFiles.length === 0) return [];
     
     const uploadedIds = [];
-    const sideService = await import('../../API/SideCaseService');
+    const normalizedType = normalizeCaseType(caseType);
     
     for (const file of documentFiles) {
       try {
-        const result = await sideService.default.uploadDocument(
-          normalizeCaseType(caseType),
+        const result = await SideCaseService.uploadDocument(
+          normalizedType,
           caseId,
           file.name,
           file,
@@ -264,101 +295,7 @@ const SideClaimForm = () => {
     return uploadedIds;
   };
 
-  const handleSubmit = async () => {
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
-      setError(validationErrors.join('. '));
-      return;
-    }
-    
-    setSubmitting(true);
-    setError(null);
-    
-    try {
-      // Сначала загружаем приложенные файлы
-      setUploadingFiles(true);
-      const documentIds = await uploadDocuments();
-      setUploadingFiles(false);
-      
-      // Формируем полный текст искового заявления
-      const claimText = generateClaimText();
-      
-      // Формируем данные для API
-      const claimData = {
-        // Информация о деле
-        case_type: normalizeCaseType(caseType),
-        case_id: parseInt(caseId),
-        case_number: caseNumber || (caseInfo?.case_number_civil || caseInfo?.case_number_criminal || ''),
-        
-        // Данные искового заявления
-        claim_text: claimText,
-        claim_amount: parseFloat(formData.claim_amount) || 0,
-        claim_subject: formData.claim_subject,
-        claim_requirements: formData.claims,
-        
-        // Информация об истце
-        plaintiff_name: formData.plaintiff_info.full_name,
-        plaintiff_address: formData.plaintiff_info.address,
-        plaintiff_phone: formData.plaintiff_info.phone,
-        plaintiff_email: formData.plaintiff_info.email,
-        plaintiff_passport_series: formData.plaintiff_info.passport_series,
-        plaintiff_passport_number: formData.plaintiff_info.passport_number,
-        plaintiff_birth_date: formData.plaintiff_info.birth_date,
-        plaintiff_birth_place: formData.plaintiff_info.place_of_birth,
-        
-        // Информация об ответчике
-        defendant_name: formData.defendant_info.full_name,
-        defendant_address: formData.defendant_info.address,
-        defendant_phone: formData.defendant_info.phone,
-        defendant_email: formData.defendant_info.email,
-        
-        // Третьи лица
-        third_persons: formData.third_persons,
-        
-        // Прилагаемые документы
-        attached_documents: formData.attached_documents,
-        uploaded_document_ids: documentIds,
-        
-        // Информация о подаче
-        submission_date: formData.submission_date,
-        signer_info: formData.signer_info,
-        additional_notes: formData.additional_notes,
-      };
-      
-      // Отправляем иск
-      const response = await baseService.post('/side_case/civil-claim/', claimData);
-      
-      console.log('Claim submitted successfully:', response.data);
-      setSuccess(true);
-      
-      setTimeout(() => {
-        navigate('/my-cases');
-      }, 3000);
-      
-    } catch (err) {
-      console.error('Error submitting claim:', err);
-      console.error('Error details:', err.response?.data);
-      
-      let errorMessage = 'Ошибка при подаче искового заявления';
-      if (err.response?.data) {
-        if (typeof err.response.data === 'object') {
-          const errors = Object.entries(err.response.data)
-            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-            .join('; ');
-          errorMessage = errors;
-        } else {
-          errorMessage = err.response.data;
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      setError(errorMessage);
-    } finally {
-      setSubmitting(false);
-      setUploadingFiles(false);
-    }
-  };
-
+  // ===== ГЕНЕРАЦИЯ ТЕКСТА ИСКА =====
   const generateClaimText = () => {
     const plaintiff = formData.plaintiff_info;
     const defendant = formData.defendant_info;
@@ -387,21 +324,8 @@ ${formData.claim_subject}
 Обстоятельства, на которых основан иск:
 ${formData.circumstances}
 
-Нарушение прав истца:
-${formData.rights_violation || 'Не указано'}
-
-Доказательства:
-${formData.evidence || 'Будут представлены в судебном заседании'}
-
 Требования истца:
 ${formData.claims}
-
-${formData.pre_trial_compliance ? `Досудебный порядок соблюден:\n${formData.pre_trial_details}` : 'Досудебный порядок не требовался'}
-
-${formData.claim_calculation ? `Расчет цены иска:\n${formData.claim_calculation}` : ''}
-
-Приложение:
-${formData.attached_documents.map(doc => `- ${doc}`).join('\n')}
 
 ${formData.additional_notes ? `Дополнительно:\n${formData.additional_notes}` : ''}
 
@@ -409,30 +333,97 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
 Подпись: ${formData.signer_info}`;
   };
 
-  const formatNumber = (value) => {
-    if (!value) return '';
-    return new Intl.NumberFormat('ru-RU').format(value);
-  };
-
-  const getCaseTypeName = () => {
-    const names = {
-      criminal: 'Уголовное дело',
-      civil: 'Гражданское дело',
-      kas: 'Административное дело (КАС РФ)',
-      administrative: 'Дело об административном правонарушении (КоАП РФ)',
-    };
-    return names[caseType] || 'Дело';
-  };
-
-  const formatCaseNumber = () => {
-    if (caseNumber) return caseNumber;
-    if (caseInfo) {
-      if (caseInfo.case_number_criminal) return caseInfo.case_number_criminal;
-      if (caseInfo.case_number_civil) return caseInfo.case_number_civil;
-      if (caseInfo.case_number_kas) return caseInfo.case_number_kas;
-      if (caseInfo.case_number_admin) return caseInfo.case_number_admin;
+  // ===== ОТПРАВКА ФОРМЫ =====
+  const handleSubmit = async () => {
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join('. '));
+      return;
     }
-    return caseId;
+    
+    setSubmitting(true);
+    setError(null);
+    
+    try {
+      setUploadingFiles(true);
+      const documentIds = await uploadDocuments();
+      setUploadingFiles(false);
+      
+      const claimText = generateClaimText();
+      const normalizedCaseType = normalizeCaseType(caseType);
+      
+      const claimData = {
+        case_type: normalizedCaseType || 'civil',
+        case_id: caseId ? parseInt(caseId) : null,
+        case_number: caseNumber || '',
+        
+        claim_text: claimText,
+        claim_amount: parseFloat(formData.claim_amount) || 0,
+        claim_subject: formData.claim_subject,
+        claim_requirements: formData.claims,
+        
+        // Информация о суде
+        court_name: formData.court_name,
+        court_id: formData.court_id,
+        region_id: formData.region_id,
+        
+        plaintiff_name: formData.plaintiff_info.full_name,
+        plaintiff_address: formData.plaintiff_info.address,
+        plaintiff_phone: formData.plaintiff_info.phone || '',
+        plaintiff_email: formData.plaintiff_info.email || '',
+        plaintiff_passport_series: '',
+        plaintiff_passport_number: '',
+        plaintiff_birth_date: formData.plaintiff_info.birth_date || null,
+        plaintiff_birth_place: '',
+        
+        defendant_name: formData.defendant_info.full_name,
+        defendant_address: formData.defendant_info.address,
+        defendant_phone: formData.defendant_info.phone || '',
+        defendant_email: formData.defendant_info.email || '',
+        
+        third_persons: formData.third_persons || [],
+        attached_documents: formData.attached_documents || [],
+        uploaded_document_ids: documentIds,
+        
+        submission_date: formData.submission_date,
+        signer_info: formData.signer_info || formData.plaintiff_info.full_name,
+        additional_notes: formData.additional_notes || '',
+      };
+      
+      console.log('Submitting claim data:', claimData);
+      
+      const response = await baseService.post('/side_case/civil-claim/', claimData);
+      
+      console.log('Claim submitted successfully:', response.data);
+      setSuccess(true);
+      
+      setTimeout(() => {
+        navigate('/my-cases');
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Error submitting claim:', err);
+      console.error('Error details:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      let errorMessage = 'Ошибка при подаче искового заявления';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'object') {
+          const errors = Object.entries(err.response.data)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('; ');
+          errorMessage = errors;
+        } else {
+          errorMessage = err.response.data;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+    } finally {
+      setSubmitting(false);
+      setUploadingFiles(false);
+    }
   };
 
   return (
@@ -446,14 +437,6 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
       </div>
 
       <div className={styles.content}>
-        <div className={styles.caseInfo}>
-          <div className={styles.caseInfoTitle}>{getCaseTypeName()}</div>
-          <div className={styles.caseInfoNumber}>№ {formatCaseNumber()}</div>
-          {sideName && (
-            <div className={styles.caseInfoSide}>Ваша роль: {sideName}</div>
-          )}
-        </div>
-
         {error && (
           <div className={styles.error}>
             <strong>Ошибка:</strong> {error}
@@ -467,26 +450,77 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
           </div>
         )}
 
+        {/* ===== РАЗДЕЛ 1. ИНФОРМАЦИЯ О СУДЕ ===== */}
         <div className={styles.formSection}>
           <h3>1. Информация о суде</h3>
+          
+          {/* Выбор региона */}
           <div className={styles.formGroup}>
-            <label htmlFor="court_name">Наименование суда *</label>
-            <input
-              type="text"
-              id="court_name"
-              name="court_name"
-              value={formData.court_name}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Например: Центральный районный суд г. Москвы"
-              disabled={submitting || success}
-            />
-            <p className={styles.hint}>Укажите полное наименование суда, в который подается заявление</p>
+            <label htmlFor="region">Регион *</label>
+            <select
+              id="region"
+              value={selectedRegionId}
+              onChange={handleRegionChange}
+              className={styles.select}
+              disabled={submitting || success || loadingRegions}
+            >
+              <option value="">Выберите регион</option>
+              {regions.map(region => (
+                <option key={region.id} value={region.id}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+            {loadingRegions && <span className={styles.hint}>Загрузка регионов...</span>}
           </div>
+          
+          {/* Выбор суда */}
+          <div className={styles.formGroup}>
+            <label htmlFor="court">Наименование суда *</label>
+            <select
+              id="court"
+              value={selectedCourtId}
+              onChange={handleCourtChange}
+              className={styles.select}
+              disabled={
+                submitting || 
+                success || 
+                !selectedRegionId || 
+                loadingCourts || 
+                courtsByRegion.length === 0
+              }
+            >
+              <option value="">
+                {!selectedRegionId ? 'Сначала выберите регион' :
+                 loadingCourts ? 'Загрузка судов...' :
+                 courtsByRegion.length === 0 ? 'Нет судов в этом регионе' :
+                 'Выберите суд'}
+              </option>
+              {courtsByRegion.map(court => (
+                <option key={court.id} value={court.id}>
+                  {court.name}
+                </option>
+              ))}
+            </select>
+            {selectedRegionId && courtsByRegion.length === 0 && !loadingCourts && (
+              <span className={styles.hint} style={{ color: '#e53e3e' }}>
+                ⚠️ В выбранном регионе нет судов
+              </span>
+            )}
+          </div>
+          
+          {/* Отображение выбранного суда (только для информации) */}
+          {formData.court_name && (
+            <div className={styles.selectedCourt}>
+              <span className={styles.selectedCourtLabel}>Выбран суд:</span>
+              <span className={styles.selectedCourtName}>{formData.court_name}</span>
+            </div>
+          )}
         </div>
 
+        {/* ===== РАЗДЕЛ 2. СВЕДЕНИЯ ОБ ИСТЦЕ ===== */}
         <div className={styles.formSection}>
-          <h3>2. Сведения об истце (ст. 131 ГПК РФ)</h3>
+          <h3>2. Сведения об истце</h3>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label htmlFor="plaintiff_info.full_name">ФИО истца *</label>
@@ -509,35 +543,6 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
                 value={formData.plaintiff_info.birth_date}
                 onChange={handleChange}
                 className={styles.input}
-                disabled={submitting || success}
-              />
-            </div>
-          </div>
-          
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label htmlFor="plaintiff_info.passport_series">Серия паспорта</label>
-              <input
-                type="text"
-                id="plaintiff_info.passport_series"
-                name="plaintiff_info.passport_series"
-                value={formData.plaintiff_info.passport_series}
-                onChange={handleChange}
-                className={styles.input}
-                placeholder="0000"
-                disabled={submitting || success}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="plaintiff_info.passport_number">Номер паспорта</label>
-              <input
-                type="text"
-                id="plaintiff_info.passport_number"
-                name="plaintiff_info.passport_number"
-                value={formData.plaintiff_info.passport_number}
-                onChange={handleChange}
-                className={styles.input}
-                placeholder="000000"
                 disabled={submitting || success}
               />
             </div>
@@ -586,6 +591,7 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
           </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 3. СВЕДЕНИЯ ОБ ОТВЕТЧИКЕ ===== */}
         <div className={styles.formSection}>
           <h3>3. Сведения об ответчике</h3>
           <div className={styles.formGroup}>
@@ -642,35 +648,9 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
               />
             </div>
           </div>
-          
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label htmlFor="defendant_info.inn">ИНН (для юрлиц)</label>
-              <input
-                type="text"
-                id="defendant_info.inn"
-                name="defendant_info.inn"
-                value={formData.defendant_info.inn}
-                onChange={handleChange}
-                className={styles.input}
-                disabled={submitting || success}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="defendant_info.ogrn">ОГРН (для юрлиц)</label>
-              <input
-                type="text"
-                id="defendant_info.ogrn"
-                name="defendant_info.ogrn"
-                value={formData.defendant_info.ogrn}
-                onChange={handleChange}
-                className={styles.input}
-                disabled={submitting || success}
-              />
-            </div>
-          </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 4. ТРЕТЬИ ЛИЦА ===== */}
         <div className={styles.formSection}>
           <h3>4. Третьи лица</h3>
           <div className={styles.formGroup}>
@@ -712,6 +692,7 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
           </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 5. ПРЕДМЕТ И ЦЕНА ИСКА ===== */}
         <div className={styles.formSection}>
           <h3>5. Предмет и цена иска</h3>
           <div className={styles.formGroup}>
@@ -741,31 +722,12 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
               placeholder="Сумма в рублях"
               disabled={submitting || success}
             />
-            {formData.claim_amount > 0 && (
-              <p className={styles.hint}>
-                Государственная пошлина: ≈ {formatNumber(formData.claim_amount * 0.01)} руб.
-                (расчет: 1% от цены иска, но не менее 100 руб.)
-              </p>
-            )}
-          </div>
-          
-          <div className={styles.formGroup}>
-            <label htmlFor="claim_calculation">Расчет цены иска</label>
-            <textarea
-              id="claim_calculation"
-              name="claim_calculation"
-              value={formData.claim_calculation}
-              onChange={handleChange}
-              rows={4}
-              className={styles.textarea}
-              placeholder="Подробный расчет взыскиваемой суммы с указанием периода и методики расчета"
-              disabled={submitting || success}
-            />
           </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 6. ОБСТОЯТЕЛЬСТВА ДЕЛА ===== */}
         <div className={styles.formSection}>
-          <h3>6. Обстоятельства дела (ст. 131 ГПК РФ)</h3>
+          <h3>6. Обстоятельства дела</h3>
           <div className={styles.formGroup}>
             <label htmlFor="circumstances">Обстоятельства, на которых основан иск *</label>
             <textarea
@@ -773,43 +735,15 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
               name="circumstances"
               value={formData.circumstances}
               onChange={handleChange}
-              rows={6}
+              rows={5}
               className={styles.textarea}
-              placeholder="Подробно опишите, что, когда, где произошло, какие действия совершили стороны"
-              disabled={submitting || success}
-            />
-            <p className={styles.hint}>Укажите время, место, способ совершения нарушения, вину ответчика</p>
-          </div>
-          
-          <div className={styles.formGroup}>
-            <label htmlFor="rights_violation">Нарушение прав истца</label>
-            <textarea
-              id="rights_violation"
-              name="rights_violation"
-              value={formData.rights_violation}
-              onChange={handleChange}
-              rows={3}
-              className={styles.textarea}
-              placeholder="Какие права истца нарушены и в чем конкретно выражается нарушение"
-              disabled={submitting || success}
-            />
-          </div>
-          
-          <div className={styles.formGroup}>
-            <label htmlFor="evidence">Доказательства</label>
-            <textarea
-              id="evidence"
-              name="evidence"
-              value={formData.evidence}
-              onChange={handleChange}
-              rows={3}
-              className={styles.textarea}
-              placeholder="Какими доказательствами подтверждаются обстоятельства дела"
+              placeholder="Подробно опишите, что, когда, где произошло"
               disabled={submitting || success}
             />
           </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 7. ТРЕБОВАНИЯ ИСТЦА ===== */}
         <div className={styles.formSection}>
           <h3>7. Требования истца</h3>
           <div className={styles.formGroup}>
@@ -821,46 +755,15 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
               onChange={handleChange}
               rows={4}
               className={styles.textarea}
-              placeholder="Четко сформулируйте, что вы просите суд:\n- Взыскать сумму...\n- Обязать совершить действия...\n- Признать право..."
+              placeholder="Четко сформулируйте, что вы просите суд"
               disabled={submitting || success}
             />
           </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 8. ПРИЛАГАЕМЫЕ ДОКУМЕНТЫ ===== */}
         <div className={styles.formSection}>
-          <h3>8. Досудебный порядок</h3>
-          <div className={styles.checkboxGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                name="pre_trial_compliance"
-                checked={formData.pre_trial_compliance}
-                onChange={handleChange}
-                disabled={submitting || success}
-              />
-              Мной соблюден досудебный порядок урегулирования спора
-            </label>
-          </div>
-          
-          {formData.pre_trial_compliance && (
-            <div className={styles.formGroup}>
-              <label htmlFor="pre_trial_details">Подробности досудебного урегулирования</label>
-              <textarea
-                id="pre_trial_details"
-                name="pre_trial_details"
-                value={formData.pre_trial_details}
-                onChange={handleChange}
-                rows={3}
-                className={styles.textarea}
-                placeholder="Когда и кому направлялась претензия, какой получен ответ"
-                disabled={submitting || success}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className={styles.formSection}>
-          <h3>9. Прилагаемые документы</h3>
+          <h3>8. Прилагаемые документы</h3>
           <div className={styles.formGroup}>
             <button
               type="button"
@@ -888,16 +791,12 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
                 ))}
               </div>
             )}
-            
-            <p className={styles.hint}>
-              Приложите: квитанцию об оплате госпошлины, доверенность (если подает представитель),
-              документы, подтверждающие обстоятельства дела, расчет цены иска и т.д.
-            </p>
           </div>
         </div>
 
+        {/* ===== РАЗДЕЛ 9. ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ ===== */}
         <div className={styles.formSection}>
-          <h3>10. Дополнительная информация</h3>
+          <h3>9. Дополнительная информация</h3>
           <div className={styles.formGroup}>
             <label htmlFor="additional_notes">Иные сведения</label>
             <textarea
@@ -907,7 +806,7 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
               onChange={handleChange}
               rows={3}
               className={styles.textarea}
-              placeholder="Любые дополнительные сведения, имеющие значение для дела"
+              placeholder="Любые дополнительные сведения"
               disabled={submitting || success}
             />
           </div>
@@ -921,7 +820,7 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
               value={formData.signer_info}
               onChange={handleChange}
               className={styles.input}
-              placeholder="ФИО подателя или лица, подписывающего заявление"
+              placeholder="ФИО подателя"
               disabled={submitting || success}
             />
           </div>
@@ -940,6 +839,7 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
           </div>
         </div>
 
+        {/* ===== КНОПКИ ===== */}
         <div className={styles.actions}>
           <button 
             onClick={handleSubmit}
@@ -965,7 +865,6 @@ ${formData.additional_notes ? `Дополнительно:\n${formData.additiona
             <li>Исковое заявление подается в письменной форме</li>
             <li>Должно содержать все обязательные реквизиты</li>
             <li>К заявлению прилагаются документы по числу ответчиков</li>
-            <li>Несоблюдение требований может повлечь оставление заявления без движения</li>
           </ul>
         </div>
       </div>

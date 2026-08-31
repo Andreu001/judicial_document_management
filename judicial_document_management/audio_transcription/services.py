@@ -314,7 +314,7 @@ def process_audio_task(transcription_id):
 
 def create_protocol_document(instance, speaker_segments, speakers):
     """
-    Создает документ протокола с правильной структурой.
+    Создает документ протокола с правильной структурой и поддержкой пользовательских ролей.
     """
     doc = Document()
     
@@ -339,13 +339,11 @@ def create_protocol_document(instance, speaker_segments, speakers):
     
     # Дата и место извлекаем из первого сегмента, если есть
     first_segment_text = speaker_segments[0]['text'] if speaker_segments else ''
-    # Попытка извлечь дату из текста
     date_match = re.search(r'(\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+\d{4})', first_segment_text)
     if date_match:
         date_str = date_match.group(1)
         doc.add_paragraph(f'{date_str} город [НАЗВАНИЕ ГОРОДА]', style='Normal').alignment = WD_ALIGN_PARAGRAPH.CENTER
     else:
-        # Используем дату создания
         date_str = instance.created_at.strftime('%d %B %Y')
         date_str = date_str.replace('January', 'января').replace('February', 'февраля').replace('March', 'марта')
         date_str = date_str.replace('April', 'апреля').replace('May', 'мая').replace('June', 'июня')
@@ -381,17 +379,34 @@ def create_protocol_document(instance, speaker_segments, speakers):
     # Основное содержание с разбивкой по участникам
     doc.add_heading('ХОД СУДЕБНОГО ЗАСЕДАНИЯ', level=2)
     
-    # Группируем сегменты по ролям
-    current_role = None
+    # ВАЖНО: используем обновлённые сегменты из result_json, если они есть
+    segments_to_use = speaker_segments
+    if instance.result_json and 'segments' in instance.result_json:
+        segments_to_use = instance.result_json['segments']
+    
+    # Получаем маппинг пользовательских ролей из result_json
+    speaker_mapping = {}
+    if instance.result_json and 'speaker_mapping' in instance.result_json:
+        speaker_mapping = instance.result_json['speaker_mapping']
+    
+    # Роли с отображением (базовые)
     role_names = {
-        'judge': 'Председательствующий:',
-        'prosecutor': 'Государственный обвинитель:',
-        'defense': 'Защитник:',
-        'defendant': 'Подсудимый:',
-        'victim': 'Потерпевший/Потерпевшая:',
+        'judge': 'Судья',
+        'prosecutor': 'Прокурор',
+        'defense': 'Защитник',
+        'defendant': 'Подсудимый',
+        'victim': 'Потерпевший',
+        'witness': 'Свидетель',
+        'expert': 'Эксперт',
+        'interpreter': 'Переводчик',
+        'secretary': 'Секретарь',
+        'other': 'Участник'
     }
     
-    for seg in speaker_segments:
+    # Группируем сегменты по ролям
+    current_role = None
+    
+    for seg in segments_to_use:
         role = seg.get('role', 'unknown')
         text = seg['text']
         start_time = seg.get('start', 0)
@@ -399,8 +414,34 @@ def create_protocol_document(instance, speaker_segments, speakers):
         # Показываем время для каждой реплики
         time_str = format_time_ms(start_time)
         
-        # Определяем, какую роль отображать
-        display_role = role_names.get(role, f'Участник {role}:')
+        # Проверяем, есть ли пользовательское имя для этого спикера
+        custom_name = seg.get('custom_name', '')
+        custom_role = seg.get('custom_role', '')
+        
+        # Если custom_name не в сегменте, проверяем в маппинге
+        if not custom_name and role in speaker_mapping:
+            mapping = speaker_mapping[role]
+            custom_name = mapping.get('customName', '')
+            if mapping.get('role') == 'other':
+                custom_role = mapping.get('customRole', '')
+        
+        # Определяем отображение роли
+        if custom_name:
+            # Если есть кастомное имя, используем его
+            if custom_role:
+                # Если есть кастомная роль (для "Другое")
+                display_role = f"{custom_name} ({custom_role})"
+            else:
+                # Определяем базовую роль
+                base_role = role_names.get(role, role)
+                display_role = f"{custom_name} ({base_role})"
+        else:
+            # Если нет кастомного имени, используем базовую роль
+            if role == 'other' and custom_role:
+                # Для "Другое" с кастомной ролью
+                display_role = f"{custom_role}:"
+            else:
+                display_role = f"{role_names.get(role, role)}:"
         
         # Добавляем реплику с указанием роли
         p = doc.add_paragraph()
@@ -435,12 +476,40 @@ def create_protocol_document(instance, speaker_segments, speakers):
         'defense': 'Защитник',
         'defendant': 'Подсудимый',
         'victim': 'Потерпевший',
+        'witness': 'Свидетель',
+        'expert': 'Эксперт',
+        'interpreter': 'Переводчик',
+        'secretary': 'Секретарь',
+        'other': 'Другое'
     }
     
     total = sum(speakers.values())
     for role, count in sorted(speakers.items(), key=lambda x: -x[1]):
         row_cells = table.add_row().cells
-        row_cells[0].text = role_names_display.get(role, role)
+        
+        # Определяем отображение имени
+        # Проверяем, есть ли маппинг для этого спикера
+        display_name = role
+        if role in speaker_mapping:
+            mapping = speaker_mapping[role]
+            custom_name = mapping.get('customName', '')
+            custom_role = mapping.get('customRole', '')
+            
+            if custom_name:
+                if custom_role:
+                    display_name = f"{custom_name} ({custom_role})"
+                else:
+                    base_role = role_names_display.get(role, role)
+                    display_name = f"{custom_name} ({base_role})"
+            else:
+                if role == 'other' and custom_role:
+                    display_name = custom_role
+                else:
+                    display_name = role_names_display.get(role, role)
+        else:
+            display_name = role_names_display.get(role, role)
+        
+        row_cells[0].text = display_name
         row_cells[1].text = str(count)
         row_cells[2].text = f'{round(count / total * 100, 1)}%'
     
@@ -452,7 +521,7 @@ def create_protocol_document(instance, speaker_segments, speakers):
     
     p2 = doc.add_paragraph()
     p2.add_run('Количество распознанных фрагментов: ').bold = True
-    p2.add_run(str(len(speaker_segments)))
+    p2.add_run(str(len(segments_to_use)))
     
     p3 = doc.add_paragraph()
     p3.add_run('Статус: ').bold = True

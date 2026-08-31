@@ -191,3 +191,18 @@ class SignedCourtDocumentDownloadSerializer(serializers.Serializer):
     """Сериализатор для проверки подписи перед скачиванием"""
     document_id = serializers.IntegerField()
     confirm_status = serializers.BooleanField(default=True)
+
+
+class PartyDocumentHistoryListSerializer(serializers.ModelSerializer):
+    """Сериализатор для истории документов пользователя"""
+    case_number = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_review_status_display', read_only=True)
+
+    class Meta:
+        model = PartyDocument
+        fields = ['id', 'title', 'case_number', 'submission_date', 'review_status', 'status_display']
+
+    def get_case_number(self, obj):
+        if obj.case:
+            return str(obj.case)
+        return "—"

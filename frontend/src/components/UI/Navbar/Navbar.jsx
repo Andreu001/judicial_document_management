@@ -52,15 +52,11 @@ const Navbar = () => {
           <Link to="/my-cases?category=admin-offenses" className={styles.categoryLink}>
             Административные правонарушения
           </Link>
-          
-          <Link to="/archive" className={location.pathname === '/archive' ? styles.activeLink : ''}>
-            Архив
-          </Link>
-          
-          <Link to="/about" className={location.pathname === '/about' ? styles.activeLink : ''}>
-            Справка
-          </Link>
-          
+
+          <Link to="/my-cases?category=archived" className={styles.categoryLink}>
+            Архив дел
+        </Link>
+                  
           <div className={styles.dividerLine}></div>
           <div className={styles.sideCabinet}>
             <div className={styles.sideCabinetHeader}>

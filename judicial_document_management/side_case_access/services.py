@@ -1,10 +1,18 @@
-# side_case_access/services.py - ИСПРАВЛЕННАЯ ВЕРСИЯ (добавлены все типы сторон)
-
 import logging
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from .models import ExternalUser, CaseAccessGrant, SyncLog, SideCaseLink
 from django.utils import timezone
+
+from civil_proceedings.models import (
+    CivilProceedings, CivilProceedingsType,
+    CivilSidesCaseInCase, CivilDecision,
+    CivilCaseMovement, CivilPetition
+)
+from business_card.models import SidesCase, SidesCaseInCase
+from case_registry.models import RegisteredCase
+from case_registry.managers import case_registry
+from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -335,3 +343,223 @@ def handle_side_deletion(sender, instance, **kwargs):
             side_object_id=instance.id
         ).delete()
         SideCaseLink.objects.filter(side_type=side_type, side_id=instance.id).delete()
+
+
+class CaseCreationService:
+    """
+    Сервис для автоматического создания дел из исковых заявлений
+    """
+    
+# side_case_access/services.py
+
+class CaseCreationService:
+    """
+    Сервис для автоматического создания дел из исковых заявлений
+    """
+    
+    @classmethod
+    def create_civil_case_from_claim(cls, claim_data, external_user=None):
+        """
+        Создает гражданское дело из данных искового заявления (БЫСТРО)
+        """
+        from django.db import transaction
+        from django.utils import timezone
+        from civil_proceedings.models import (
+            CivilProceedings, CivilProceedingsType,
+            CivilSidesCaseInCase
+        )
+        from business_card.models import SidesCase, SidesCaseInCase
+        from users.models import User
+        
+        with transaction.atomic():
+            # 1. Получаем или создаем стороны (истец, ответчик)
+            plaintiff_side = cls._get_or_create_side(
+                name=claim_data['plaintiff_name'],
+                address=claim_data['plaintiff_address'],
+                phone=claim_data.get('plaintiff_phone', ''),
+                email=claim_data.get('plaintiff_email', ''),
+                birth_date=claim_data.get('plaintiff_birth_date'),
+                passport_series=claim_data.get('plaintiff_passport_series', ''),
+                passport_number=claim_data.get('plaintiff_passport_number', ''),
+            )
+            
+            defendant_side = cls._get_or_create_side(
+                name=claim_data['defendant_name'],
+                address=claim_data['defendant_address'],
+                phone=claim_data.get('defendant_phone', ''),
+                email=claim_data.get('defendant_email', ''),
+            )
+            
+            # 2. Получаем роли сторон
+            plaintiff_role, _ = SidesCase.objects.get_or_create(
+                sides_case='Истец',
+                defaults={'sides_case': 'Истец'}
+            )
+            defendant_role, _ = SidesCase.objects.get_or_create(
+                sides_case='Ответчик',
+                defaults={'sides_case': 'Ответчик'}
+            )
+            
+            # 3. Получаем председательствующего судью
+            presiding_judge = User.objects.filter(role='judge', is_active=True).first()
+            
+            # 4. Генерируем номер дела (используем get_next_number)
+            from case_registry.managers import case_registry
+            next_number = case_registry.get_next_number('2')
+            year = timezone.now().year
+            case_number = f"2-{next_number}/{year}"
+            
+            print(f"Сгенерирован номер дела: {case_number}")
+            
+            # 5. Создаем гражданское производство
+            civil_case = CivilProceedings.objects.create(
+                case_number_civil=case_number,
+                incoming_date=claim_data.get('submission_date', timezone.now().date()),
+                incoming_from='Подано через портал',
+                presiding_judge=presiding_judge,
+                status='active',
+                special_notes=cls._generate_claim_decision_text(claim_data),
+                case_type=CivilProceedingsType.objects.filter(code='1').first(),
+                category=claim_data.get('claim_subject', '')[:255],
+            )
+            
+            print(f"Создано гражданское дело: ID={civil_case.id}, номер={civil_case.case_number_civil}")
+            
+            # 6. Связываем стороны с делом
+            CivilSidesCaseInCase.objects.create(
+                civil_proceedings=civil_case,
+                sides_case_incase=plaintiff_side,
+                sides_case_role=plaintiff_role
+            )
+            
+            CivilSidesCaseInCase.objects.create(
+                civil_proceedings=civil_case,
+                sides_case_incase=defendant_side,
+                sides_case_role=defendant_role
+            )
+            
+            # 7. Добавляем третьих лиц
+            for third_person_name in claim_data.get('third_persons', []):
+                if third_person_name.strip():
+                    third_side = cls._get_or_create_side(
+                        name=third_person_name.strip(),
+                        address='',
+                    )
+                    third_role, _ = SidesCase.objects.get_or_create(
+                        sides_case='Третье лицо',
+                        defaults={'sides_case': 'Третье лицо'}
+                    )
+                    CivilSidesCaseInCase.objects.create(
+                        civil_proceedings=civil_case,
+                        sides_case_incase=third_side,
+                        sides_case_role=third_role
+                    )
+            
+            # 8. Если есть внешний пользователь - связываем с делом
+            if external_user:
+                cls._grant_access_to_user(external_user, civil_case, plaintiff_side)
+            
+            # 9. Прикрепляем документы
+            for doc_id in claim_data.get('uploaded_document_ids', []):
+                try:
+                    from case_documents.models import CaseDocument
+                    from django.contrib.contenttypes.models import ContentType
+                    doc = CaseDocument.objects.get(id=doc_id)
+                    doc.content_type = ContentType.objects.get_for_model(civil_case)
+                    doc.object_id = civil_case.id
+                    doc.save()
+                    print(f"Прикреплен документ {doc_id} к делу {civil_case.id}")
+                except Exception as e:
+                    print(f"Ошибка привязки документа {doc_id}: {e}")
+            
+            print(f"Дело {civil_case.case_number_civil} создано. Регистрация выполняется автоматически.")
+            
+            return civil_case
+    
+    @classmethod
+    def _get_or_create_side(cls, name, address='', phone='', email='', 
+                           birth_date=None, passport_series='', passport_number=''):
+        """Получить или создать сторону"""
+        side = SidesCaseInCase.objects.filter(
+            name=name,
+            address=address,
+        ).first()
+        
+        if not side:
+            side = SidesCaseInCase.objects.create(
+                name=name,
+                address=address,
+                phone=phone,
+                email=email,
+                birth_date=birth_date,
+                document_series=passport_series,
+                document_number=passport_number,
+            )
+        
+        return side
+    
+    @classmethod
+    def _generate_claim_decision_text(cls, claim_data):
+        """Генерирует текст решения из данных иска"""
+        text = f"""
+ИСКОВОЕ ЗАЯВЛЕНИЕ
+
+Истец: {claim_data['plaintiff_name']}
+Адрес: {claim_data['plaintiff_address']}
+
+Ответчик: {claim_data['defendant_name']}
+Адрес: {claim_data['defendant_address']}
+
+Предмет иска: {claim_data['claim_subject']}
+Цена иска: {claim_data.get('claim_amount', 0)} руб.
+
+Требования истца:
+{claim_data['claim_requirements']}
+
+"""
+        return text.strip()
+    
+    @classmethod
+    def _grant_access_to_user(cls, external_user, civil_case, plaintiff_side):
+        """Предоставляет доступ внешнему пользователю к делу"""
+        from .models import CaseAccessGrant
+        from django.contrib.contenttypes.models import ContentType
+        
+        content_type = ContentType.objects.get_for_model(civil_case)
+        
+        grant, created = CaseAccessGrant.objects.get_or_create(
+            external_user=external_user,
+            content_type=content_type,
+            object_id=civil_case.id,
+            defaults={
+                'side_type': 'civil_plaintiff',
+                'side_name': plaintiff_side.name,
+                'access_level': 'full',
+                'side_content_type': ContentType.objects.get_for_model(type(plaintiff_side)),
+                'side_object_id': plaintiff_side.id,
+                'is_active': True,
+            }
+        )
+        return grant
+    
+    @classmethod
+    def _generate_case_number(cls):
+        """Генерирует номер гражданского дела"""
+        year = timezone.now().year
+        from case_registry.models import RegistryIndex, RegistryCounter
+        
+        index, _ = RegistryIndex.objects.get_or_create(
+            index='2',
+            defaults={'name': 'Гражданские дела'}
+        )
+        
+        counter, _ = RegistryCounter.objects.get_or_create(
+            index=index,
+            defaults={'current_number': 0, 'total_registered': 0}
+        )
+        
+        counter.current_number += 1
+        counter.total_registered += 1
+        counter.save()
+
+        return f"2-{counter.current_number}/{year}"

@@ -1,6 +1,0 @@
-FROM ./saiga_gemma_9b.Q2_K.gguf
-
-TEMPLATE """[INST] {{ .Prompt }} [/INST]"""
-
-PARAMETER temperature 0.7
-PARAMETER top_p 0.9

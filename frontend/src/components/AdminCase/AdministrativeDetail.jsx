@@ -14,6 +14,9 @@ import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 import ProgressLog from '../CaseManagement/ProgressLog';
 import SubjectDetail from './SubjectDetail';
 import SecurityMeasureDetail from './SecurityMeasureDetail';
+import AudioTranscriptionTab from '../AudioTranscription/AudioTranscriptionTab';
+import AIAssistant from '../AIAssistant/AIAssistant';
+import JudgeAssistantCoap from './JudgeAssistantCoap';
 
 const AdministrativeDetail = () => {
   const { id } = useParams();
@@ -67,6 +70,7 @@ const AdministrativeDetail = () => {
   const [articleParts, setArticleParts] = useState([]);
   const [selectedPart, setSelectedPart] = useState('');
   const [structureLoading, setStructureLoading] = useState(false);
+  const [showAI, setShowAI] = useState(false);
   
   // Состояния для сворачивания блоков в сайдбаре
   const [collapsedSections, setCollapsedSections] = useState({
@@ -653,19 +657,26 @@ const AdministrativeDetail = () => {
         </div>
         
         <div className={styles.headerRight}>
+          <button 
+              onClick={() => setShowAI(true)} 
+              className={styles.aiButton}
+              disabled={isArchived}
+            >
+              AI Анализ
+            </button>
           {isArchived ? (
             <button 
               onClick={handleUnarchive}
               className={styles.unarchiveButton}
             >
-              📤 Вернуть из архива
+              Вернуть из архива
             </button>
           ) : (
             <button 
               onClick={handleArchive}
               className={styles.archiveButton}
             >
-              📁 Сдать в архив
+              Сдать в архив
             </button>
           )}
           
@@ -712,6 +723,12 @@ const AdministrativeDetail = () => {
                 Основные сведения
               </button>
               <button 
+                className={`${styles.tab} ${activeTab === 'assistant' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('assistant')}
+              >
+                Автоматизированный помощник
+              </button>
+              <button 
                 className={`${styles.tab} ${activeTab === 'consideration' ? styles.activeTab : ''} ${isArchived && isEditing ? styles.disabledTab : ''}`}
                 onClick={() => !(isArchived && isEditing) && setActiveTab('consideration')}
                 disabled={isArchived && isEditing}
@@ -740,6 +757,12 @@ const AdministrativeDetail = () => {
                 onClick={() => setActiveTab('additional')}
               >
                 Дополнительно
+              </button>
+              <button 
+                className={`${styles.tab} ${activeTab === 'audio' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('audio')}
+              >
+                Аудио-протокол
               </button>
             </div>
             <div className={styles.tabContentWrapper}>
@@ -824,6 +847,14 @@ const AdministrativeDetail = () => {
                   formatDateTime={formatDateTime}
                   isArchived={isArchived}
                 />
+              )}
+              {activeTab === 'audio' && (
+                <AudioTranscriptionTab caseId={id} caseType="coap" />
+              )}
+              {activeTab === 'assistant' && (
+                <div className={styles.tabContent}>
+                  <JudgeAssistantCoap proceedingId={id} caseType="coap" />
+                </div>
               )}
             </div>
           </div>
@@ -1207,6 +1238,17 @@ const AdministrativeDetail = () => {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
+      {showAI && (
+        <div className={styles.modalOverlay} onClick={() => setShowAI(false)}>
+          <div className={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>
+            <AIAssistant 
+              caseId={parseInt(id)} 
+              caseType="coap"
+              onClose={() => setShowAI(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

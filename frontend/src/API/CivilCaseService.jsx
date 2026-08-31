@@ -1,5 +1,4 @@
 import baseService from './baseService';
-import CaseManagementService from './CaseManagementService';
 
 const BASE_URL = '/civil_proceedings/';
 
@@ -12,6 +11,45 @@ class CivilCaseService {
       }
     }
     return cleaned;
+  }
+
+  // === Метод для получения всех сторон (для AppointmentWizard) ===
+  static async getAllSides(proceedingId) {
+    try {
+      const sides = await this.getSides(proceedingId);
+      const lawyers = await this.getLawyers(proceedingId);
+      
+      const result = [];
+      
+      sides.forEach(s => {
+        const sideDetail = s.sides_case_incase_detail || {};
+        result.push({
+          id: s.id,
+          type: 'side',
+          name: sideDetail.name || 'Сторона',
+          role: s.sides_case_role_detail?.sides_case || 'Сторона',
+          phone: sideDetail.phone || '',
+          email: sideDetail.email || '',
+        });
+      });
+      
+      lawyers.forEach(l => {
+        const lawyerDetail = l.lawyer_detail || {};
+        result.push({
+          id: l.id,
+          type: 'lawyer',
+          name: lawyerDetail.law_firm_name || 'Адвокат',
+          role: l.sides_case_role_detail?.sides_case || 'Представитель',
+          phone: lawyerDetail.law_firm_phone || '',
+          email: lawyerDetail.law_firm_email || '',
+        });
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching all sides:', error);
+      return [];
+    }
   }
   // === Роли сторон (из business_card) ===
   
@@ -67,32 +105,6 @@ class CivilCaseService {
         `${BASE_URL}civil-proceedings/`,
         cleanedData
       );
-      
-      // Автоматически создаем запись в справочном листе о поступлении дела
-      try {
-        const caseId = response.data.id;
-        if (caseId) {
-          // Импортируем CaseManagementService динамически или используем существующий импорт
-          const actionTypes = await CaseManagementService.getProgressActionTypes();
-          const caseReceivedAction = actionTypes.find(a => a.code === 'case_received');
-          
-          if (caseReceivedAction) {
-            await CaseManagementService.createProgressEntry(
-              'civil',
-              caseId,
-              {
-                action_type: caseReceivedAction.id,
-                description: `Дело №${response.data.case_number_civil} поступило в суд${response.data.incoming_from ? ` из ${response.data.incoming_from}` : ''}`,
-                action_date: response.data.incoming_date || new Date().toISOString().split('T')[0]
-              }
-            );
-          }
-        }
-      } catch (err) {
-        // Логируем ошибку, но не прерываем выполнение
-        console.warn('Could not create auto progress entry:', err.message);
-      }
-      
       return response.data;
     } catch (error) {
       console.error('Error creating civil proceedings:', error);

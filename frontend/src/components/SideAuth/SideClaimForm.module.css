@@ -375,3 +375,50 @@
     font-size: 1.2rem;
   }
 }
+
+/* Выбор региона и суда */
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: all 0.2s;
+  appearance: auto;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.select:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.selectedCourt {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #ebf8ff;
+  border-radius: 8px;
+  border: 1px solid #bee3f8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selectedCourtLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #2b6cb0;
+}
+
+.selectedCourtName {
+  font-size: 14px;
+  color: #2c5282;
+  font-weight: 600;
+}

@@ -1,0 +1,352 @@
+/* CasePetitionsView.module.css */
+/* Строгий судебный стиль */
+
+.pageContainer {
+  min-height: 100vh;
+  background: #f0f4f8;
+  padding: 80px 24px 40px calc(6.3cm + 24px);
+}
+
+.pageHeader {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.pageHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pageHeader h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 8px 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.caseRef {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin-top: 2px;
+}
+
+.caseTypeLabel {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 2px;
+  padding: 2px 10px;
+  background: #edf2f7;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.headerCount {
+  font-size: 0.9rem;
+  color: #4a5568;
+  padding-top: 4px;
+}
+
+.countNumber {
+  font-weight: 600;
+  color: #1a365d;
+  font-size: 1.1rem;
+}
+
+.btnBack {
+  background: none;
+  border: none;
+  color: #4a6a8f;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+
+.btnBack:hover {
+  color: #1a365d;
+}
+
+/* Карточка */
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.cardBody {
+  padding: 24px 28px;
+}
+
+/* Пустое состояние */
+.emptyState {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.emptyState h3 {
+  color: #4a5568;
+  font-weight: 500;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.emptyState p {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Список ходатайств */
+.petitionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Карточка ходатайства */
+.petitionCard {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.petitionCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e0;
+}
+
+/* Шапка карточки */
+.petitionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.petitionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.petitionDate {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.petitionType {
+  font-weight: 500;
+  color: #1a202c;
+  font-size: 0.9rem;
+}
+
+/* Статусы */
+.petitionStatusPending {
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.petitionStatusResolved {
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: #c6f6d5;
+  color: #276749;
+}
+
+/* Тело карточки */
+.petitionBody {
+  padding: 14px 18px;
+}
+
+.petitionField {
+  display: flex;
+  padding: 3px 0;
+  font-size: 0.9rem;
+}
+
+.petitionFieldLabel {
+  width: 120px;
+  flex-shrink: 0;
+  color: #718096;
+}
+
+.petitionFieldValue {
+  color: #1a202c;
+}
+
+.petitionText {
+  margin-top: 10px;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #2d3748;
+  line-height: 1.6;
+  border-left: 3px solid #e2e8f0;
+}
+
+/* РЕШЕНИЕ СУДА - выделенный блок */
+.petitionDecision {
+  margin-top: 12px;
+  padding: 14px 18px;
+  background: #f0f7f0;
+  border-radius: 6px;
+  border-left: 4px solid #276749;
+}
+
+.petitionDecisionLabel {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.petitionDecisionText {
+  font-size: 0.95rem;
+  color: #1a202c;
+}
+
+.petitionDecisionDate {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-left: 12px;
+  font-weight: 400;
+}
+
+/* Примечание */
+.noteBox {
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 3px solid #4a6a8f;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.noteBox p {
+  margin: 0;
+}
+
+/* Загрузка */
+.loadingState {
+  text-align: center;
+  padding: 60px 24px;
+  color: #718096;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #1a365d;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Ошибка */
+.alertError {
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  background: #fed7d7;
+  color: #9b2c2c;
+  border-left: 4px solid #9b2c2c;
+}
+
+/* ========================================
+   АДАПТИВНОСТЬ
+   ======================================== */
+
+@media (max-width: 992px) {
+  .pageContainer {
+    padding: 80px 16px 40px calc(6.3cm + 16px);
+  }
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 80px 12px 40px calc(6.3cm + 12px);
+  }
+  
+  .pageHeader {
+    padding: 16px 18px;
+  }
+  
+  .pageHeader h1 {
+    font-size: 1.1rem;
+  }
+  
+  .cardBody {
+    padding: 16px 18px;
+  }
+  
+  .petitionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .petitionField {
+    flex-direction: column;
+  }
+  
+  .petitionFieldLabel {
+    width: auto;
+    font-size: 0.8rem;
+  }
+  
+  .petitionDecisionText {
+    font-size: 0.9rem;
+  }
+  
+  .petitionDecisionDate {
+    display: block;
+    margin-left: 0;
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageContainer {
+    padding: 70px 10px 30px calc(6.3cm + 10px);
+  }
+  
+  .pageHeaderTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

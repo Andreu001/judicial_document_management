@@ -1,17 +1,27 @@
 # ai_assistant/views.py
+import json
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
-from .models import AISession, AIMessage, AICaseAnalysis, AIConfiguration
-from .services import CaseAnalyzer, DocumentReviewer, StatisticsAnalyzer, CitizenAssistant, AIService
+from .models import (
+    AISession, AIMessage, AICaseAnalysis, AIConfiguration,
+    ChatSession, ChatMessage, UploadedFile
+)
+from .services import (
+    CaseAnalyzer, DocumentReviewer, StatisticsAnalyzer,
+    CitizenAssistant, AIService, ChatService, FileUploadService, UniversalAIService
+)
 from .serializers import (
     AISessionSerializer, AIMessageSerializer, AICaseAnalysisSerializer,
-    AIConfigurationSerializer
+    AIConfigurationSerializer,
+    ChatSessionSerializer, ChatMessageSerializer, 
+    UploadedFileSerializer, ChatSessionCreateSerializer
 )
 
 User = get_user_model()
@@ -282,3 +292,278 @@ class CitizenAIAssistantViewSet(viewsets.ViewSet):
             return model.objects.get(id=case_id)
         except model.DoesNotExist:
             return None
+
+
+class ChatSessionViewSet(viewsets.ModelViewSet):
+    """Управление чат-сессиями"""
+    
+    permission_classes = [IsAuthenticated]
+    # ✅ Исправлено: JSONParser для create, MultiPartParser для send_message
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    
+    def get_queryset(self):
+        return ChatSession.objects.filter(
+            Q(user=self.request.user) | Q(user__isnull=True),
+            is_active=True
+        )
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ChatSessionCreateSerializer
+        return ChatSessionSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def send_message(self, request, pk=None):
+        """Отправка сообщения в сессии"""
+        session = self.get_object()
+        message = request.data.get('message', '').strip()
+        files = request.FILES.getlist('files', [])
+        
+        if not message:
+            return Response(
+                {'error': 'Сообщение не может быть пустым'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Загружаем файлы
+        uploaded_files = []
+        if files:
+            file_service = FileUploadService()
+            for file in files:
+                uploaded = file_service.upload_file(file, request.user, session)
+                uploaded_files.append(uploaded)
+        
+        # Отправляем сообщение
+        chat_service = ChatService()
+        result = chat_service.send_message(session, message, uploaded_files)
+        
+        return Response({
+            'message': ChatMessageSerializer(result['message']).data,
+            'response': result['response'],
+            'files': UploadedFileSerializer(uploaded_files, many=True).data if uploaded_files else []
+        })
+    
+    @action(detail=True, methods=['get'])
+    def messages(self, request, pk=None):
+        """Получение истории сообщений"""
+        session = self.get_object()
+        messages = session.get_messages()
+        return Response(ChatMessageSerializer(messages, many=True).data)
+    
+    @action(detail=True, methods=['post'])
+    def archive(self, request, pk=None):
+        """Архивирование сессии"""
+        session = self.get_object()
+        chat_service = ChatService()
+        chat_service.archive_session(session)
+        return Response({'status': 'archived'})
+    
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Восстановление сессии"""
+        session = self.get_object()
+        session.is_archived = False
+        session.is_active = True
+        session.save()
+        return Response({'status': 'restored'})
+    
+    @action(detail=True, methods=['post'])
+    def clear_messages(self, request, pk=None):
+        """Очистка истории сообщений"""
+        session = self.get_object()
+        session.messages.all().delete()
+        session.message_count = 0
+        session.save()
+        return Response({'status': 'cleared'})
+    
+    @action(detail=True, methods=['post'])
+    def set_context(self, request, pk=None):
+        """Установка контекста сессии"""
+        session = self.get_object()
+        context = request.data.get('context', {})
+        chat_service = ChatService()
+        chat_service.update_context(session, context)
+        return Response({'status': 'updated', 'context': session.context})
+
+
+class ChatFileViewSet(viewsets.ViewSet):
+    """Управление файлами в чате"""
+    
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    @action(detail=False, methods=['post'])
+    def upload(self, request):
+        """Загрузка файла"""
+        file = request.FILES.get('file')
+        session_id = request.data.get('session_id')
+        
+        if not file:
+            return Response(
+                {'error': 'Файл не предоставлен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Получаем сессию
+        session = None
+        if session_id:
+            try:
+                session = ChatSession.objects.get(id=session_id, user=request.user)
+            except ChatSession.DoesNotExist:
+                return Response(
+                    {'error': 'Сессия не найдена'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        # Загружаем файл
+        file_service = FileUploadService()
+        uploaded = file_service.upload_file(file, request.user, session)
+        
+        return Response(UploadedFileSerializer(uploaded).data)
+    
+    @action(detail=False, methods=['get'])
+    def list_files(self, request):
+        """Список файлов пользователя"""
+        files = UploadedFile.objects.filter(user=request.user)
+        return Response(UploadedFileSerializer(files, many=True).data)
+    
+    @action(detail=True, methods=['delete'])
+    def delete(self, request, pk=None):
+        """Удаление файла"""
+        file_service = FileUploadService()
+        if file_service.delete_file(pk, request.user):
+            return Response({'status': 'deleted'})
+        return Response(
+            {'error': 'Файл не найден'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    @action(detail=True, methods=['get'])
+    def content(self, request, pk=None):
+        """Получение содержимого файла"""
+        file_service = FileUploadService()
+        file_obj = file_service.get_file(pk, request.user)
+        
+        if not file_obj:
+            return Response(
+                {'error': 'Файл не найден'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return Response({
+            'id': file_obj.id,
+            'file_name': file_obj.file_name,
+            'file_type': file_obj.file_type,
+            'extracted_text': file_obj.extracted_text[:5000],
+            'processing_error': file_obj.processing_error,
+            'processed': file_obj.processed
+        })
+
+
+class UniversalAIViewSet(viewsets.ViewSet):
+    """Универсальный AI ассистент - быстрые запросы без сессии"""
+    
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def ask(self, request):
+        """Быстрый запрос к AI"""
+        question = request.data.get('question', '').strip()
+        context = request.data.get('context', {})
+        
+        if not question:
+            return Response(
+                {'error': 'Вопрос не может быть пустым'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        ai_service = UniversalAIService()
+        
+        # Формируем сообщения
+        messages = []
+        
+        # Добавляем контекст
+        if context:
+            context_str = json.dumps(context, ensure_ascii=False, indent=2)
+            messages.append({
+                'role': 'system',
+                'content': f"Контекст запроса: {context_str}"
+            })
+        
+        messages.append({
+            'role': 'user',
+            'content': question
+        })
+        
+        # Генерируем ответ
+        response = ai_service.generate_response(messages)
+        
+        return Response({
+            'question': question,
+            'answer': response,
+            'context': context
+        })
+    
+    @action(detail=False, methods=['post'])
+    def analyze_document(self, request):
+        """Анализ документа (быстрый)"""
+        text = request.data.get('text', '').strip()
+        file_id = request.data.get('file_id')
+        
+        if not text and not file_id:
+            return Response(
+                {'error': 'Предоставьте текст или ID файла'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Если есть file_id, получаем текст из файла
+        if file_id:
+            try:
+                file_obj = UploadedFile.objects.get(id=file_id, user=request.user)
+                text = file_obj.extracted_text[:10000]
+            except UploadedFile.DoesNotExist:
+                return Response(
+                    {'error': 'Файл не найден'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        if not text:
+            return Response(
+                {'error': 'Текст документа не найден'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        ai_service = UniversalAIService()
+        
+        messages = [
+            {
+                'role': 'system',
+                'content': """Ты - юридический эксперт. Проанализируй предоставленный документ.
+Выдели ключевые моменты, проверь на соответствие законодательству,
+укажи на возможные ошибки и дай рекомендации."""
+            },
+            {
+                'role': 'user',
+                'content': f"Проанализируй документ:\n\n{text[:5000]}"
+            }
+        ]
+        
+        response = ai_service.generate_response(messages)
+        
+        return Response({
+            'analysis': response,
+            'document_length': len(text)
+        })
+    
+    @action(detail=False, methods=['get'])
+    def status(self, request):
+        """Статус AI сервиса"""
+        ai_service = UniversalAIService()
+        return Response({
+            'available': ai_service.is_ready(),
+            'model': ai_service.model_name,
+            'is_ollama': ai_service.is_ollama_available
+        })

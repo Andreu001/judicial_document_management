@@ -84,7 +84,6 @@ const AudioTranscriptionService = {
       return response;
     } catch (error) {
       console.error('Ошибка получения предпросмотра:', error);
-      // Извлекаем сообщение об ошибке из ответа
       const errorMessage = error.response?.data?.error || 'Не удалось загрузить данные протокола';
       throw new Error(errorMessage);
     }
@@ -102,7 +101,6 @@ const AudioTranscriptionService = {
 
   getAudioUrl: async (id) => {
     try {
-      // Получаем URL аудиофайла из модели
       const response = await baseService.get(`/audio-transcription/transcriptions/${id}/`);
       const audioPath = response.data?.audio_file;
       if (audioPath) {
@@ -111,6 +109,33 @@ const AudioTranscriptionService = {
       return null;
     } catch (error) {
       console.error('Ошибка получения аудио:', error);
+      return null;
+    }
+  },
+
+  // ===== НОВЫЙ МЕТОД: Сохранение ролей участников =====
+  saveSpeakerRoles: async (transcriptionId, speakerMapping) => {
+    try {
+      const response = await baseService.post(
+        `/audio-transcription/transcriptions/${transcriptionId}/save-speaker-roles/`,
+        { speaker_mapping: speakerMapping }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Ошибка сохранения ролей:', error);
+      throw new Error(error.response?.data?.error || 'Не удалось сохранить роли');
+    }
+  },
+
+  // ===== НОВЫЙ МЕТОД: Получение сохраненных ролей =====
+  getSpeakerRoles: async (transcriptionId) => {
+    try {
+      const response = await baseService.get(
+        `/audio-transcription/transcriptions/${transcriptionId}/speaker-roles/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Ошибка получения ролей:', error);
       return null;
     }
   }

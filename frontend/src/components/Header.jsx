@@ -9,12 +9,15 @@ import MeetingsCalendar from './Calendar/MeetingsCalendar';
 import SideLoginForm from './SideAuth/SideLoginForm';
 import styles from './UI/Header/Header.module.css';
 import MessengerApp from './Messenger/MessengerApp';
+import AIAssistantUniversal from './AIAssistant/AIAssistantUniversal';
 
 const Header = ({ filter, setFilter, onSearch }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSideLogin, setShowSideLogin] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showMessenger, setShowMessenger] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [aiContext, setAIContext] = useState(null);
   const { user, isAuthenticated, logout } = useAuth();
   const { user: sideUser, logout: sideLogout, isAuthenticated: isSideAuthenticated } = useSideAuth();
   const navigate = useNavigate();
@@ -70,7 +73,24 @@ const Header = ({ filter, setFilter, onSearch }) => {
     setShowMessenger(!showMessenger);
   };
 
-  // Для стороны - хедер только с календарем и кнопкой выхода
+  const handleAIAssistantToggle = () => {
+    if (!showAIAssistant) {
+      // Получаем контекст текущей страницы
+      const params = new URLSearchParams(location.search);
+      const caseId = params.get('case_id');
+      const caseType = params.get('type');
+      
+      setAIContext({
+        page: location.pathname,
+        case_id: caseId,
+        case_type: caseType,
+        user_role: isJudge ? 'judge' : 'user'
+      });
+    }
+    setShowAIAssistant(!showAIAssistant);
+  };
+
+  // Для стороны - хедер только с календарем и AI
   if (isSide && !isJudge) {
     return (
       <>
@@ -85,8 +105,14 @@ const Header = ({ filter, setFilter, onSearch }) => {
             <button 
               className={`${styles.navButton} ${styles.messengerButton}`}
               onClick={handleMessengerToggle}
-              >Мессенджер
-              {showMessenger ? 'Скрыть чаты' : 'Мои чаты'}
+            >
+              {showMessenger ? 'Скрыть чаты' : 'Мессенджер'}
+            </button>
+            <button 
+              className={`${styles.navButton} ${styles.aiButton}`}
+              onClick={handleAIAssistantToggle}
+            >
+              🤖 AI Ассистент
             </button>
           </div>
 
@@ -107,7 +133,15 @@ const Header = ({ filter, setFilter, onSearch }) => {
         {showCalendar && (
           <MeetingsCalendar onClose={() => setShowCalendar(false)} />
         )}
-
+        {showMessenger && <MessengerApp onClose={() => setShowMessenger(false)} />}
+        {showAIAssistant && (
+          <div className={styles.aiOverlay}>
+            <AIAssistantUniversal 
+              onClose={() => setShowAIAssistant(false)}
+              initialContext={aiContext}
+            />
+          </div>
+        )}
       </>
     );
   }
@@ -147,6 +181,12 @@ const Header = ({ filter, setFilter, onSearch }) => {
             onClick={handleMessengerToggle}
           >
             {showMessenger ? 'Скрыть чаты' : 'Мессенджер'}
+          </button>
+          <button 
+            className={`${styles.navButton} ${styles.aiButton}`}
+            onClick={handleAIAssistantToggle}
+          >
+            🤖 AI Ассистент
           </button>
 
           <button 
@@ -201,6 +241,14 @@ const Header = ({ filter, setFilter, onSearch }) => {
         <MeetingsCalendar onClose={() => setShowCalendar(false)} />
       )}
       {showMessenger && <MessengerApp onClose={() => setShowMessenger(false)} />}
+      {showAIAssistant && (
+        <div className={styles.aiOverlay}>
+          <AIAssistantUniversal 
+            onClose={() => setShowAIAssistant(false)}
+            initialContext={aiContext}
+          />
+        </div>
+      )}
     </>
   );
 };

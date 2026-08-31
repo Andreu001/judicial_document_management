@@ -1,4 +1,5 @@
-// SideProfile.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// src/components/SideAuth/SideProfile.jsx
+// Полностью переработанная версия с выбором региона и суда
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -13,12 +14,17 @@ const SideProfile = () => {
   const [loadingCases, setLoadingCases] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [syncResult, setSyncResult] = useState(null);
-  const [showPetitionModal, setShowPetitionModal] = useState(false);
-  const [petitionText, setPetitionText] = useState('');
-  const [petitionCase, setPetitionCase] = useState(null);
-  const [submittingPetition, setSubmittingPetition] = useState(false);
   
-  // Состояние для модального окна досылки документов
+  // ===== СОСТОЯНИЯ ДЛЯ РЕГИОНОВ И СУДОВ =====
+  const [regions, setRegions] = useState([]);
+  const [courtsByRegion, setCourtsByRegion] = useState([]);
+  const [selectedRegionId, setSelectedRegionId] = useState('all');
+  const [selectedCourtId, setSelectedCourtId] = useState('all');
+  const [loadingRegions, setLoadingRegions] = useState(false);
+  const [loadingCourts, setLoadingCourts] = useState(false);
+  
+  const [showArchived, setShowArchived] = useState(false);
+  
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [documentFormData, setDocumentFormData] = useState({
@@ -31,13 +37,14 @@ const SideProfile = () => {
     document_file: null
   });
   const [documentErrors, setDocumentErrors] = useState({});
+  const [petitionCase, setPetitionCase] = useState(null);
   
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const categoryFromUrl = searchParams.get('category');
 
-  // Функция для преобразования типа дела из API в тип для маршрутов
+  // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
   const mapCaseTypeToRoute = (caseType) => {
     const typeMap = {
       'criminal': 'criminal',
@@ -55,7 +62,6 @@ const SideProfile = () => {
     return typeMap[caseType] || caseType;
   };
 
-  // Функция для получения content_type модели для бэкенда
   const getContentTypeModel = (caseType) => {
     const mapping = {
       criminal: 'criminalproceedings',
@@ -67,23 +73,64 @@ const SideProfile = () => {
     return mapping[routeType] || 'civilproceedings';
   };
 
-  // Подача нового иска (создание нового дела)
+  // ===== ЗАГРУЗКА РЕГИОНОВ =====
+  const loadRegions = async () => {
+    try {
+      setLoadingRegions(true);
+      const data = await SideCaseService.getRegions();
+      setRegions(data);
+    } catch (error) {
+      console.error('Error loading regions:', error);
+    } finally {
+      setLoadingRegions(false);
+    }
+  };
+
+  // ===== ЗАГРУЗКА СУДОВ ПО РЕГИОНУ =====
+  const loadCourtsByRegion = async (regionId) => {
+    if (!regionId || regionId === 'all') {
+      setCourtsByRegion([]);
+      setSelectedCourtId('all');
+      return;
+    }
+    
+    try {
+      setLoadingCourts(true);
+      const data = await SideCaseService.getCourtsByRegion(regionId);
+      setCourtsByRegion(data);
+      setSelectedCourtId('all');
+    } catch (error) {
+      console.error('Error loading courts:', error);
+      setCourtsByRegion([]);
+    } finally {
+      setLoadingCourts(false);
+    }
+  };
+
+  // ===== ОБРАБОТЧИКИ =====
+  const handleRegionChange = (e) => {
+    const regionId = e.target.value;
+    setSelectedRegionId(regionId);
+    loadCourtsByRegion(regionId);
+  };
+
+  const handleCourtChange = (e) => {
+    setSelectedCourtId(e.target.value);
+  };
+
   const handleNewClaim = () => {
     navigate('/civil-claim/new');
   };
 
-  // Загрузка списка дел
+  // ===== ЗАГРУЗКА ДЕЛ =====
   const loadCases = async () => {
     try {
       setLoadingCases(true);
       const casesData = await SideCaseService.getUserCases();
-      
       const normalizedCases = {};
       for (const [key, value] of Object.entries(casesData)) {
-        const normalizedKey = key.toLowerCase();
-        normalizedCases[normalizedKey] = value;
+        normalizedCases[key.toLowerCase()] = value;
       }
-      
       setCases(normalizedCases);
     } catch (error) {
       console.error('Error loading cases:', error);
@@ -92,6 +139,7 @@ const SideProfile = () => {
     }
   };
 
+  // ===== СИНХРОНИЗАЦИЯ =====
   const handleSync = async () => {
     const result = await syncAccess();
     if (result.success) {
@@ -101,9 +149,20 @@ const SideProfile = () => {
     }
   };
 
+  // ===== НАВИГАЦИЯ =====
   const handleViewCase = (caseType, caseId, caseNumber) => {
     const routeType = mapCaseTypeToRoute(caseType);
     navigate(`/case-view/${routeType}/${caseId}`);
+  };
+
+  const handleDocumentsClick = (caseType, caseId, caseNumber) => {
+    const routeType = mapCaseTypeToRoute(caseType);
+    navigate(`/case-party-documents/${routeType}/${caseId}`);
+  };
+
+  const handlePetitionsClick = (caseType, caseId, caseNumber) => {
+    const routeType = mapCaseTypeToRoute(caseType);
+    navigate(`/case-petitions/${routeType}/${caseId}`);
   };
 
   const handlePetitionClick = (caseType, caseId, caseNumber, sideName) => {
@@ -118,7 +177,12 @@ const SideProfile = () => {
     navigate(`/documents/${routeType}/${caseId}`);
   };
 
-  // Открытие модального окна для досылки документов с предзаполнением данных пользователя
+  const handleAudioClick = (caseType, caseId, caseNumber) => {
+    const routeType = mapCaseTypeToRoute(caseType);
+    navigate(`/case-audio/${routeType}/${caseId}`);
+  };
+
+  // ===== ДОКУМЕНТЫ =====
   const openDocumentModal = (caseType, caseId, caseNumber, sideName) => {
     setPetitionCase({ 
       type: caseType, 
@@ -126,8 +190,6 @@ const SideProfile = () => {
       number: caseNumber,
       sideName: sideName 
     });
-    
-    // Предзаполняем форму данными пользователя
     setDocumentFormData({
       document_type: '',
       title: '',
@@ -141,7 +203,6 @@ const SideProfile = () => {
     setShowDocumentModal(true);
   };
 
-  // Валидация формы документа
   const validateDocumentForm = () => {
     const errors = {};
     if (!documentFormData.document_type) {
@@ -160,11 +221,8 @@ const SideProfile = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Отправка документа через PartyDocument API
   const submitDocument = async () => {
-    if (!validateDocumentForm()) {
-      return;
-    }
+    if (!validateDocumentForm()) return;
     
     setUploadingDoc(true);
     try {
@@ -179,29 +237,9 @@ const SideProfile = () => {
       formData.append('submission_method', documentFormData.submission_method);
       formData.append('document_file', documentFormData.document_file);
 
-      console.log('Submitting party document:', {
-        caseType: petitionCase.type,
-        caseId: petitionCase.id,
-        document_type: documentFormData.document_type,
-        title: documentFormData.title
-      });
-
-      const result = await DocumentService.createPartyDocument(formData);
-      
-      console.log('Document uploaded successfully:', result);
-      alert('Документ успешно загружен! Он будет рассмотрен судом.');
-      
+      await DocumentService.createPartyDocument(formData);
+      alert('Документ успешно загружен');
       setShowDocumentModal(false);
-      setDocumentFormData({
-        document_type: '',
-        title: '',
-        description: '',
-        submitter_name: user?.full_name || '',
-        submitter_role: '',
-        submission_method: 'online',
-        document_file: null
-      });
-      
     } catch (error) {
       console.error('Error uploading document:', error);
       let errorMsg = 'Ошибка при загрузке документа';
@@ -217,17 +255,15 @@ const SideProfile = () => {
       } else if (error.message) {
         errorMsg = error.message;
       }
-      alert('Ошибка при загрузке документа: ' + errorMsg);
+      alert('Ошибка: ' + errorMsg);
     } finally {
       setUploadingDoc(false);
     }
   };
 
-  // Обработка изменения полей формы
   const handleDocumentFormChange = (e) => {
     const { name, value } = e.target;
     setDocumentFormData(prev => ({ ...prev, [name]: value }));
-    // Очищаем ошибку для этого поля
     if (documentErrors[name]) {
       setDocumentErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -236,7 +272,7 @@ const SideProfile = () => {
   const handleDocumentFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const maxSize = 20 * 1024 * 1024; // 20 MB
+      const maxSize = 20 * 1024 * 1024;
       if (file.size > maxSize) {
         setDocumentErrors(prev => ({ ...prev, document_file: 'Файл не должен превышать 20 МБ' }));
         return;
@@ -248,81 +284,80 @@ const SideProfile = () => {
     }
   };
 
-  const submitPetition = async () => {
-    if (!petitionText.trim()) {
-      alert('Введите текст ходатайства');
-      return;
-    }
-    
-    setSubmittingPetition(true);
-    try {
-      await SideCaseService.createPetition(
-        petitionCase.type,
-        petitionCase.id,
-        petitionText
-      );
-      alert('Ходатайство успешно подано!');
-      setShowPetitionModal(false);
-      setPetitionText('');
-      setPetitionCase(null);
-    } catch (error) {
-      alert('Ошибка при подаче ходатайства: ' + error.message);
-    } finally {
-      setSubmittingPetition(false);
-    }
-  };
-
+  // ===== EFFECTS =====
   useEffect(() => {
     loadCases();
+    loadRegions();
   }, []);
 
   useEffect(() => {
-    if (categoryFromUrl) {
-      const categoryMap = {
-        'criminal': 'criminal',
-        'civil': 'civil', 
-        'kas': 'kas',
-        'admin-offenses': 'administrative'
-      };
-      setActiveCategory(categoryMap[categoryFromUrl] || 'all');
-    } else {
+    if (categoryFromUrl === 'archived') {
+      setShowArchived(true);
       setActiveCategory('all');
+    } else {
+      setShowArchived(false);
+      if (categoryFromUrl) {
+        const categoryMap = {
+          'criminal': 'criminal',
+          'civil': 'civil', 
+          'kas': 'kas',
+          'admin-offenses': 'administrative'
+        };
+        setActiveCategory(categoryMap[categoryFromUrl] || 'all');
+      } else {
+        setActiveCategory('all');
+      }
     }
   }, [categoryFromUrl]);
 
+  // ===== ФИЛЬТРАЦИЯ ДЕЛ =====
   const getFilteredCases = () => {
-    if (activeCategory === 'all') {
-      return cases;
+    let allCases = { ...cases };
+    
+    // Фильтр по категории
+    if (activeCategory !== 'all') {
+      const filtered = {};
+      const categoryMap = {
+        'criminal': ['criminal', 'criminalproceedings'],
+        'civil': ['civil', 'civilproceedings'],
+        'kas': ['kas', 'kasproceedings'],
+        'administrative': ['administrative', 'administrativeproceedings', 'coap', 'admin']
+      };
+      const targetKeys = categoryMap[activeCategory] || [];
+      for (const key of targetKeys) {
+        if (allCases[key]?.length > 0) {
+          filtered[key] = allCases[key];
+        }
+      }
+      allCases = filtered;
     }
     
-    const filtered = {};
-    
-    switch (activeCategory) {
-      case 'criminal':
-        if (cases['criminal']?.length > 0) filtered['criminal'] = cases['criminal'];
-        else if (cases['criminalproceedings']?.length > 0) filtered['criminalproceedings'] = cases['criminalproceedings'];
-        break;
-      case 'civil':
-        if (cases['civil']?.length > 0) filtered['civil'] = cases['civil'];
-        else if (cases['civilproceedings']?.length > 0) filtered['civilproceedings'] = cases['civilproceedings'];
-        break;
-      case 'kas':
-        if (cases['kas']?.length > 0) filtered['kas'] = cases['kas'];
-        else if (cases['kasproceedings']?.length > 0) filtered['kasproceedings'] = cases['kasproceedings'];
-        break;
-      case 'administrative':
-        if (cases['administrative']?.length > 0) filtered['administrative'] = cases['administrative'];
-        else if (cases['administrativeproceedings']?.length > 0) filtered['administrativeproceedings'] = cases['administrativeproceedings'];
-        else if (cases['coap']?.length > 0) filtered['coap'] = cases['coap'];
-        else if (cases['admin']?.length > 0) filtered['admin'] = cases['admin'];
-        break;
-      default:
-        return cases;
+    const result = {};
+    for (const [type, caseList] of Object.entries(allCases)) {
+      const filteredList = caseList.filter(caseItem => {
+        // Фильтр по статусу (архив/активно)
+        const isArchived = caseItem.status === 'archived' || caseItem.status === 'archive';
+        if (showArchived ? !isArchived : isArchived) return false;
+        
+        // ===== ФИЛЬТР ПО СУДУ =====
+        if (selectedCourtId !== 'all') {
+          const courtId = caseItem.court?.id || caseItem.court_id;
+          if (courtId && courtId !== parseInt(selectedCourtId)) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      if (filteredList.length > 0) {
+        result[type] = filteredList;
+      }
     }
     
-    return filtered;
+    return result;
   };
 
+  // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ОТОБРАЖЕНИЯ =====
   const getCaseTypeName = (type) => {
     const names = {
       criminal: 'Уголовное дело',
@@ -331,25 +366,26 @@ const SideProfile = () => {
       civilproceedings: 'Гражданское дело',
       kas: 'Административное дело (КАС РФ)',
       kasproceedings: 'Административное дело (КАС РФ)',
-      administrative: 'Дело об АП (КоАП РФ)',
-      administrativeproceedings: 'Дело об АП (КоАП РФ)',
-      coap: 'Дело об АП (КоАП РФ)',
-      admin: 'Дело об АП (КоАП РФ)'
+      administrative: 'Дело об административном правонарушении',
+      administrativeproceedings: 'Дело об административном правонарушении',
+      coap: 'Дело об административном правонарушении',
+      admin: 'Дело об административном правонарушении'
     };
     return names[type] || type;
   };
   
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'pending': { text: 'В производстве', className: styles.statusPending },
-      'in_progress': { text: 'В производстве', className: styles.statusPending },
-      'completed': { text: 'Завершено', className: styles.statusCompleted },
-      'archived': { text: 'В архиве', className: styles.statusArchived },
-      'suspended': { text: 'Приостановлено', className: styles.statusSuspended },
-      'active': { text: 'В производстве', className: styles.statusPending }
+      'pending': { text: 'В производстве', className: styles.badgePending },
+      'in_progress': { text: 'В производстве', className: styles.badgePending },
+      'active': { text: 'В производстве', className: styles.badgePending },
+      'completed': { text: 'Завершено', className: styles.badgeCompleted },
+      'archived': { text: 'В архиве', className: styles.badgeArchived },
+      'archive': { text: 'В архиве', className: styles.badgeArchived },
+      'suspended': { text: 'Приостановлено', className: styles.badgeSuspended }
     };
-    const config = statusConfig[status] || { text: status || 'Неизвестно', className: styles.statusUnknown };
-    return <span className={`${styles.statusBadge} ${config.className}`}>{config.text}</span>;
+    const config = statusConfig[status] || { text: status || 'Неизвестно', className: styles.badgeUnknown };
+    return <span className={`${styles.badge} ${config.className}`}>{config.text}</span>;
   };
 
   const getDocumentTypes = () => {
@@ -367,45 +403,46 @@ const SideProfile = () => {
     ];
   };
 
-  const showProfileSection = activeCategory === 'all';
+  // ===== РЕНДЕРИНГ =====
+  const showProfileSection = activeCategory === 'all' && !showArchived;
   const filteredCases = getFilteredCases();
   const hasCases = Object.values(filteredCases).some(arr => arr && arr.length > 0);
   const documentTypes = getDocumentTypes();
 
   return (
-    <div className={styles.container}>
+    <div className={styles.pageContainer}>
+      {/* ===== ШАПКА ПРОФИЛЯ ===== */}
       {showProfileSection && (
-        <div className={styles.header}>
+        <div className={styles.profileHeader}>
           <div className={styles.userInfo}>
             <div className={styles.avatar}>
               {user?.full_name?.charAt(0) || 'У'}
             </div>
             <div className={styles.userDetails}>
               <h1>{user?.full_name || 'Участник процесса'}</h1>
-              <p className={styles.email}>{user?.email || 'Email не указан'}</p>
-              <p className={styles.provider}>
+              <p className={styles.userEmail}>{user?.email || 'Email не указан'}</p>
+              <p className={styles.userProvider}>
                 Вход через: {user?.social_provider === 'yandex' ? 'Яндекс ID' : user?.social_provider === 'vk' ? 'ВКонтакте' : 'Неизвестно'}
               </p>
             </div>
           </div>
           
           <div className={styles.headerActions}>
-            {/* НОВАЯ КНОПКА: Подача нового иска (создание отдельного дела) */}
             <button 
-              className={styles.newClaimButton}
+              className={`${styles.btn} ${styles.btnPrimary}`}
               onClick={handleNewClaim}
             >
-              📋 Подать исковое заявление
+              Подать исковое заявление
             </button>
             <button 
-              className={styles.syncButton} 
+              className={`${styles.btn} ${styles.btnSuccess}`}
               onClick={handleSync}
               disabled={syncing}
             >
               {syncing ? 'Синхронизация...' : 'Синхронизировать дела'}
             </button>
             <button 
-              className={styles.logoutButton} 
+              className={`${styles.btn} ${styles.btnDanger}`}
               onClick={logout}
             >
               Выйти
@@ -414,28 +451,29 @@ const SideProfile = () => {
         </div>
       )}
 
+      {/* ===== РЕЗУЛЬТАТ СИНХРОНИЗАЦИИ ===== */}
       {showProfileSection && syncResult && (
         <div className={styles.syncResult}>
-          <p>Синхронизация завершена!</p>
-          <p>Найдено дел: {syncResult.cases_found}, добавлено: {syncResult.cases_added}, удалено: {syncResult.cases_removed}</p>
+          <p>Синхронизация завершена. Найдено дел: {syncResult.cases_found}, добавлено: {syncResult.cases_added}</p>
         </div>
       )}
 
+      {/* ===== ПАСПОРТНЫЕ ДАННЫЕ ===== */}
       {showProfileSection && (
         <div className={styles.passportSection}>
-          <div className={styles.sectionHeader}>
+          <div className={styles.passportHeader}>
             <h3>Паспортные данные</h3>
           </div>
           <div className={styles.passportFields}>
-            <div className={styles.field}>
+            <div className={styles.passportField}>
               <label>Серия паспорта</label>
               <span>{user?.passport_series || 'Не указано'}</span>
             </div>
-            <div className={styles.field}>
+            <div className={styles.passportField}>
               <label>Номер паспорта</label>
               <span>{user?.passport_number || 'Не указано'}</span>
             </div>
-            <div className={styles.field}>
+            <div className={styles.passportField}>
               <label>Телефон</label>
               <span>{user?.phone || 'Не указан'}</span>
             </div>
@@ -446,167 +484,251 @@ const SideProfile = () => {
         </div>
       )}
 
+      {/* ===== ЗАГОЛОВОК ДЕЛ ===== */}
       <div className={styles.casesHeader}>
         <h2>
-          {activeCategory === 'all' ? 'Мои дела' : getCaseTypeName(activeCategory)}
+          {showArchived ? 'Архивные дела' : 
+           activeCategory !== 'all' ? getCaseTypeName(activeCategory) : 
+           'Мои дела'}
         </h2>
-        {activeCategory !== 'all' && (
+        {activeCategory !== 'all' && !showArchived && (
           <button 
-            className={styles.showAllButton}
+            className={styles.btnBack}
             onClick={() => navigate('/my-cases')}
           >
             ← Показать все дела
           </button>
         )}
+        {showArchived && (
+          <button 
+            className={styles.btnBack}
+            onClick={() => navigate('/my-cases')}
+          >
+            ← Вернуться к активным делам
+          </button>
+        )}
       </div>
 
+      {/* ===== ФИЛЬТРЫ: РЕГИОН, СУД, АРХИВ ===== */}
+      <div className={styles.filtersRow}>
+        <div className={styles.filterGroup}>
+          <label>Регион</label>
+          <select 
+            value={selectedRegionId} 
+            onChange={handleRegionChange}
+            className={styles.filterSelect}
+            disabled={loadingRegions}
+          >
+            <option value="all">Все регионы</option>
+            {regions.map(region => (
+              <option key={region.id} value={region.id}>
+                {region.name}
+              </option>
+            ))}
+          </select>
+          {loadingRegions && <span className={styles.filterHint}>Загрузка...</span>}
+        </div>
+        
+        <div className={styles.filterGroup}>
+          <label>Суд</label>
+          <select 
+            value={selectedCourtId} 
+            onChange={handleCourtChange}
+            className={styles.filterSelect}
+            disabled={selectedRegionId === 'all' || courtsByRegion.length === 0 || loadingCourts}
+          >
+            <option value="all">Все суды</option>
+            {courtsByRegion.map(court => (
+              <option key={court.id} value={court.id}>
+                {court.name}
+              </option>
+            ))}
+          </select>
+          {selectedRegionId !== 'all' && courtsByRegion.length === 0 && !loadingCourts && (
+            <span className={styles.filterHint} style={{ color: '#e53e3e' }}>
+              Нет судов в выбранном регионе
+            </span>
+          )}
+        </div>
+        
+        <div className={styles.filterGroup}>
+          <label>Показать</label>
+          <div className={styles.filterToggleGroup}>
+            <button 
+              className={`${styles.filterToggle} ${!showArchived ? styles.active : ''}`}
+              onClick={() => setShowArchived(false)}
+            >
+              Активные
+            </button>
+            <button 
+              className={`${styles.filterToggle} ${showArchived ? styles.active : ''}`}
+              onClick={() => setShowArchived(true)}
+            >
+              Архив
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== СПИСОК ДЕЛ ===== */}
       <div className={styles.casesContainer}>
         {loadingCases ? (
-          <div className={styles.loadingCases}>
+          <div className={styles.loadingState}>
             <div className={styles.spinner}></div>
-            <p>Загрузка ваших дел...</p>
+            <p>Загрузка дел...</p>
           </div>
         ) : hasCases ? (
           Object.entries(filteredCases).map(([caseType, caseList]) => (
             caseList && caseList.length > 0 && (
               <div key={caseType} className={styles.caseCategory}>
-                {activeCategory === 'all' && (
+                {activeCategory === 'all' && !showArchived && (
                   <h3 className={styles.categoryTitle}>
                     {getCaseTypeName(caseType)}
                     <span className={styles.categoryCount}>{caseList.length}</span>
                   </h3>
                 )}
+                {showArchived && (
+                  <h3 className={styles.categoryTitle}>
+                    Архивные дела
+                    <span className={styles.categoryCount}>{caseList.length}</span>
+                  </h3>
+                )}
                 <div className={styles.casesGrid}>
-                  {caseList.map((caseItem, idx) => (
-                    <div key={idx} className={styles.caseCard}>
-                      <div className={styles.caseCardHeader}>
-                        <div className={styles.caseNumber}>
-                          <strong>Дело №</strong> {caseItem.case_number}
+                  {caseList.map((caseItem, idx) => {
+                    const isArchived = caseItem.status === 'archived' || caseItem.status === 'archive';
+                    return (
+                      <div key={idx} className={`${styles.caseCard} ${isArchived ? styles.archivedCard : ''}`}>
+                        <div className={styles.caseCardHeader}>
+                          <div className={styles.caseNumber}>
+                            Дело № {caseItem.case_number}
+                          </div>
+                          {getStatusBadge(caseItem.status)}
                         </div>
-                        {getStatusBadge(caseItem.status)}
-                      </div>
-                      <div className={styles.caseCardBody}>
-                        <div className={styles.caseInfo}>
-                          <div className={styles.infoRow}>
-                            <span>Ваша роль:</span>
-                            <strong>{caseItem.side_name || 'Сторона'}</strong>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <span>Уровень доступа:</span>
-                            <span className={styles.accessLevel}>
-                              {caseItem.access_level === 'full' ? 'Полный' :
-                               caseItem.access_level === 'petition' ? 'Подача ходатайств' :
-                               caseItem.access_level === 'document' ? 'Досылка документов' :
-                               'Просмотр'}
-                            </span>
-                          </div>
-                          <div className={styles.infoRow}>
-                            <span>Дата предоставления:</span>
-                            <span>{new Date(caseItem.granted_at).toLocaleDateString('ru-RU')}</span>
+                        <div className={styles.caseCardBody}>
+                          <div className={styles.caseInfo}>
+                            <div className={styles.infoRow}>
+                              <span>Ваша роль</span>
+                              <strong>{caseItem.side_name || 'Сторона'}</strong>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <span>Уровень доступа</span>
+                              <span className={styles.accessLevel}>
+                                {caseItem.access_level === 'full' ? 'Полный' :
+                                 caseItem.access_level === 'petition' ? 'Подача ходатайств' :
+                                 caseItem.access_level === 'document' ? 'Досылка документов' :
+                                 'Просмотр'}
+                              </span>
+                            </div>
+                            <div className={styles.infoRow}>
+                              <span>Дата предоставления</span>
+                              <span>{new Date(caseItem.granted_at).toLocaleDateString('ru-RU')}</span>
+                            </div>
+                            {caseItem.court && (
+                              <div className={styles.infoRow}>
+                                <span>Суд</span>
+                                <span>{caseItem.court.name_short || caseItem.court.name}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
+                        <div className={styles.caseCardActions}>
+                          <button 
+                            className={`${styles.btn} ${styles.btnOutline}`}
+                            onClick={() => handleViewCase(caseType, caseItem.case_id, caseItem.case_number)}
+                          >
+                            Подробнее
+                          </button>
+                          <button 
+                            className={`${styles.btn} ${styles.btnSecondary}`}
+                            onClick={() => handleDocumentsClick(caseType, caseItem.case_id, caseItem.case_number)}
+                          >
+                            Документы
+                          </button>
+                          <button 
+                            className={`${styles.btn} ${styles.btnSuccess}`}
+                            onClick={() => handlePetitionsClick(caseType, caseItem.case_id, caseItem.case_number)}
+                          >
+                            Ходатайства
+                          </button>
+                          {!isArchived && (
+                            <>
+                              <button 
+                                className={`${styles.btn} ${styles.btnPrimary}`}
+                                onClick={() => handlePetitionClick(caseType, caseItem.case_id, caseItem.case_number, caseItem.side_name)}
+                                disabled={caseItem.access_level !== 'full' && caseItem.access_level !== 'petition'}
+                              >
+                                Подать ходатайство
+                              </button>
+                              <button 
+                                className={`${styles.btn} ${styles.btnPrimary}`}
+                                onClick={() => openDocumentModal(caseType, caseItem.case_id, caseItem.case_number, caseItem.side_name)}
+                                disabled={caseItem.access_level !== 'full' && caseItem.access_level !== 'document'}
+                              >
+                                Досылка документов
+                              </button>
+                            </>
+                          )}
+                          <button 
+                            className={`${styles.btn} ${styles.btnSecondary}`}
+                            onClick={() => handleDecisionClick(caseType, caseItem.case_id, caseItem.case_number)}
+                          >
+                            Решения
+                          </button>
+                          <button 
+                            className={`${styles.btn} ${styles.btnSecondary}`}
+                            onClick={() => handleAudioClick(caseType, caseItem.case_id, caseItem.case_number)}
+                          >
+                            Аудио-протокол
+                          </button>
+                        </div>
+                        {isArchived && (
+                          <div className={styles.archivedLabel}>
+                            Дело находится в архиве
+                          </div>
+                        )}
                       </div>
-                      <div className={styles.caseCardActions}>
-                        <button 
-                          className={styles.viewButton}
-                          onClick={() => handleViewCase(caseType, caseItem.case_id, caseItem.case_number)}
-                        >
-                          Подробнее
-                        </button>
-                        <button 
-                          className={styles.petitionButton}
-                          onClick={() => handlePetitionClick(caseType, caseItem.case_id, caseItem.case_number, caseItem.side_name)}
-                          disabled={caseItem.access_level !== 'full' && caseItem.access_level !== 'petition'}
-                        >
-                          Ходатайство
-                        </button>
-                        <button 
-                          className={styles.documentButton}
-                          onClick={() => openDocumentModal(caseType, caseItem.case_id, caseItem.case_number, caseItem.side_name)}
-                          disabled={caseItem.access_level !== 'full' && caseItem.access_level !== 'document'}
-                          title={caseItem.access_level !== 'full' && caseItem.access_level !== 'document' ? 'Недостаточно прав' : ''}
-                        >
-                          Досылка документов
-                        </button>
-                        <button 
-                          className={styles.decisionButton}
-                          onClick={() => handleDecisionClick(caseType, caseItem.case_id, caseItem.case_number)}
-                        >
-                          Решения
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )
           ))
         ) : (
-          <div className={styles.emptyCases}>            
-            <h3>У вас пока нет дел</h3>
-            {activeCategory === 'all' ? (
+          <div className={styles.emptyState}>
+            <h3>{showArchived ? 'Нет архивных дел' : 'У вас пока нет дел'}</h3>
+            {!showArchived && activeCategory === 'all' && (
               <>
-                <p>Нажмите кнопку "Синхронизировать дела", чтобы найти ваши дела по ФИО, email или паспортным данным</p>
-                <p>Или подайте новое исковое заявление, чтобы создать дело</p>
+                <p>Нажмите кнопку синхронизации, чтобы найти ваши дела по ФИО, email или паспортным данным</p>
+                <div className={styles.emptyActions}>
+                  <button 
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    onClick={handleSync} 
+                    disabled={syncing}
+                  >
+                    {syncing ? 'Синхронизация...' : 'Синхронизировать дела'}
+                  </button>
+                  <button 
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    onClick={handleNewClaim}
+                  >
+                    Подать исковое заявление
+                  </button>
+                </div>
               </>
-            ) : (
-              <p>В этой категории пока нет дел</p>
             )}
-            {activeCategory === 'all' && (
-              <div className={styles.emptyActions}>
-                <button className={styles.syncEmptyButton} onClick={handleSync} disabled={syncing}>
-                  {syncing ? 'Синхронизация...' : 'Синхронизировать дела'}
-                </button>
-                <button className={styles.newClaimEmptyButton} onClick={handleNewClaim}>
-                  📋 Подать исковое заявление
-                </button>
-              </div>
+            {showArchived && (
+              <button 
+                className={styles.btnBack}
+                onClick={() => navigate('/my-cases')}
+              >
+                ← Вернуться к активным делам
+              </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Модальное окно ходатайства */}
-      {showPetitionModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowPetitionModal(false)}>
-          <div className={styles.modalSmall} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Подача ходатайства</h3>
-              <button className={styles.modalClose} onClick={() => setShowPetitionModal(false)}>×</button>
-            </div>
-            <div className={styles.modalBody}>
-              <p className={styles.caseRef}>Дело №{petitionCase?.number}</p>
-              <div className={styles.formGroup}>
-                <label>Текст ходатайства *</label>
-                <textarea
-                  value={petitionText}
-                  onChange={(e) => setPetitionText(e.target.value)}
-                  rows={8}
-                  placeholder="Введите текст ходатайства..."
-                  className={styles.textarea}
-                />
-              </div>
-            </div>
-            <div className={styles.modalFooter}>
-              <button 
-                className={styles.submitButton} 
-                onClick={submitPetition}
-                disabled={submittingPetition}
-              >
-                {submittingPetition ? 'Отправка...' : 'Отправить ходатайство'}
-              </button>
-              <button 
-                className={styles.cancelModalButton} 
-                onClick={() => setShowPetitionModal(false)}
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно досылки документов */}
+      {/* ===== МОДАЛЬНОЕ ОКНО ДОСЫЛКИ ДОКУМЕНТОВ ===== */}
       {showDocumentModal && (
         <div className={styles.modalOverlay} onClick={() => setShowDocumentModal(false)}>
           <div className={styles.modalDocument} onClick={(e) => e.stopPropagation()}>
@@ -615,15 +737,15 @@ const SideProfile = () => {
               <button className={styles.modalClose} onClick={() => setShowDocumentModal(false)}>×</button>
             </div>
             <div className={styles.modalBody}>
-              <p className={styles.caseRef}>Дело №{petitionCase?.number}</p>
+              <p className={styles.caseRef}>Дело № {petitionCase?.number}</p>
               
               <div className={styles.formGroup}>
-                <label>Тип документа *</label>
+                <label>Тип документа</label>
                 <select
                   name="document_type"
                   value={documentFormData.document_type}
                   onChange={handleDocumentFormChange}
-                  className={`${styles.select} ${documentErrors.document_type ? styles.errorInput : ''}`}
+                  className={`${styles.formSelect} ${documentErrors.document_type ? styles.errorInput : ''}`}
                 >
                   <option value="">Выберите тип документа</option>
                   {documentTypes.map(type => (
@@ -636,14 +758,14 @@ const SideProfile = () => {
               </div>
 
               <div className={styles.formGroup}>
-                <label>Название документа *</label>
+                <label>Название документа</label>
                 <input
                   type="text"
                   name="title"
                   value={documentFormData.title}
                   onChange={handleDocumentFormChange}
                   placeholder="Например: Ходатайство о приобщении доказательств"
-                  className={`${styles.input} ${documentErrors.title ? styles.errorInput : ''}`}
+                  className={`${styles.formInput} ${documentErrors.title ? styles.errorInput : ''}`}
                 />
                 {documentErrors.title && <span className={styles.errorText}>{documentErrors.title}</span>}
               </div>
@@ -655,20 +777,19 @@ const SideProfile = () => {
                   value={documentFormData.description}
                   onChange={handleDocumentFormChange}
                   rows={3}
-                  className={styles.textarea}
-                  placeholder="Краткое содержание документа (необязательно)"
+                  className={styles.formTextarea}
+                  placeholder="Краткое содержание документа"
                 />
               </div>
 
               <div className={styles.formGroup}>
-                <label>Податель (ФИО) *</label>
+                <label>Податель (ФИО)</label>
                 <input
                   type="text"
                   name="submitter_name"
                   value={documentFormData.submitter_name}
                   onChange={handleDocumentFormChange}
-                  placeholder="Иванов Иван Иванович"
-                  className={`${styles.input} ${documentErrors.submitter_name ? styles.errorInput : ''}`}
+                  className={`${styles.formInput} ${documentErrors.submitter_name ? styles.errorInput : ''}`}
                 />
                 {documentErrors.submitter_name && <span className={styles.errorText}>{documentErrors.submitter_name}</span>}
               </div>
@@ -680,17 +801,17 @@ const SideProfile = () => {
                   name="submitter_role"
                   value={documentFormData.submitter_role}
                   onChange={handleDocumentFormChange}
+                  className={styles.formInput}
                   placeholder="Например: Истец, Ответчик, Обвиняемый"
-                  className={styles.input}
                 />
               </div>
 
               <div className={styles.formGroup}>
-                <label>Файл документа *</label>
+                <label>Файл документа</label>
                 <input
                   type="file"
                   onChange={handleDocumentFileChange}
-                  className={`${styles.fileInput} ${documentErrors.document_file ? styles.errorInput : ''}`}
+                  className={`${styles.formFile} ${documentErrors.document_file ? styles.errorInput : ''}`}
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                 />
                 {documentErrors.document_file && <span className={styles.errorText}>{documentErrors.document_file}</span>}
@@ -699,14 +820,14 @@ const SideProfile = () => {
             </div>
             <div className={styles.modalFooter}>
               <button 
-                className={styles.submitButton} 
+                className={`${styles.btn} ${styles.btnPrimary}`}
                 onClick={submitDocument}
                 disabled={uploadingDoc}
               >
                 {uploadingDoc ? 'Загрузка...' : 'Отправить документ'}
               </button>
               <button 
-                className={styles.cancelModalButton} 
+                className={`${styles.btn} ${styles.btnSecondary}`}
                 onClick={() => setShowDocumentModal(false)}
               >
                 Отмена

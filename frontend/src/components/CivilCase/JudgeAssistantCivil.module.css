@@ -1,0 +1,619 @@
+/* src/components/Civil/JudgeAssistantCivil.module.css */
+
+.container {
+  width: 100%;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.error {
+  text-align: center;
+  padding: 40px;
+  background: #fee7e7;
+  border-radius: 12px;
+  color: #c0392b;
+}
+
+.retryButton {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: #2c6e9e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Текущий этап */
+.currentStageCard {
+  background: linear-gradient(135deg, #1a3a2a 0%, #0f241a 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  color: white;
+}
+
+.stageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.stageLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+
+.refreshButton {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.refreshButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.refreshButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stageName {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.stageChapters {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 12px;
+  font-family: monospace;
+}
+
+.stageDescription {
+  font-size: 13px;
+  opacity: 0.9;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.nextStageHint {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hintIcon {
+  font-size: 16px;
+}
+
+/* Статистика */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2f6;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a3a2a;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #8ba0ae;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Основная сетка */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Секции */
+.section {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #eef2f6;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #fafcfc;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.sectionIcon {
+  font-size: 18px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a3a2a;
+  flex: 1;
+}
+
+/* Нарушения */
+.violationsList {
+  padding: 12px;
+}
+
+.violationItem {
+  background: #fef8e7;
+  border-left: 3px solid #fd7e14;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+.violationTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: #c47a2e;
+  margin-bottom: 6px;
+}
+
+.violationDetails {
+  font-size: 11px;
+  color: #8ba0ae;
+  margin-bottom: 6px;
+}
+
+.violationDescription {
+  font-size: 12px;
+  color: #5a6f7e;
+}
+
+/* Рекомендации */
+.actionsList {
+  padding: 12px;
+}
+
+.actionItem {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-left: 3px solid #8ba0ae;
+}
+
+.priorityCritical {
+  border-left-color: #dc3545;
+  background: #fff5f5;
+}
+
+.priorityHigh {
+  border-left-color: #fd7e14;
+  background: #fff8f0;
+}
+
+.priorityMedium {
+  border-left-color: #ffc107;
+  background: #fffef5;
+}
+
+.priorityLow {
+  border-left-color: #28a745;
+  background: #f0fff4;
+}
+
+.actionPriority {
+  font-size: 10px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.actionTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: #1a3a2a;
+  margin-bottom: 6px;
+}
+
+.actionDetails {
+  font-size: 11px;
+  color: #c47a2e;
+  margin-bottom: 6px;
+}
+
+.actionDeadline {
+  font-size: 10px;
+  color: #8ba0ae;
+}
+
+/* Ходатайства */
+.petitionsList, .participantsList {
+  padding: 12px;
+}
+
+.petitionItem, .participantItem {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.petitionTitle, .participantName {
+  font-weight: 600;
+  font-size: 13px;
+  color: #1a3a2a;
+  margin-bottom: 4px;
+}
+
+.petitionDate {
+  font-size: 10px;
+  color: #8ba0ae;
+  margin-bottom: 6px;
+}
+
+.petitionDescription, .participantSuggestion {
+  font-size: 11px;
+  color: #5a6f7e;
+}
+
+/* Ссылки */
+.linksList {
+  padding: 12px;
+}
+
+.linkItem {
+  padding: 10px 0;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.linkItem:last-child {
+  border-bottom: none;
+}
+
+.linkTitle {
+  display: block;
+  font-weight: 500;
+  font-size: 13px;
+  color: #2c6e9e;
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.linkTitle:hover {
+  text-decoration: underline;
+}
+
+.linkDescription {
+  font-size: 11px;
+  color: #8ba0ae;
+}
+
+/* Заметки */
+.addNoteButton {
+  background: #eef2f6;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #2c6e9e;
+  transition: background 0.2s;
+}
+
+.addNoteButton:hover {
+  background: #e2e8ed;
+}
+
+.noteForm {
+  padding: 16px;
+  background: #fafcfc;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.noteInput, .noteSelect, .noteTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border: 1px solid #dce5ec;
+  border-radius: 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.noteTextarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.noteRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.noteRow .noteSelect {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.noteActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.saveNoteButton, .cancelNoteButton {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.saveNoteButton {
+  background: #2c6e9e;
+  color: white;
+}
+
+.saveNoteButton:hover:not(:disabled) {
+  background: #1e5a82;
+}
+
+.saveNoteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelNoteButton {
+  background: #eef2f6;
+  color: #5a6f7e;
+}
+
+.cancelNoteButton:hover {
+  background: #e2e8ed;
+}
+
+.notesList {
+  padding: 12px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.noteItem {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border-left: 3px solid #8ba0ae;
+}
+
+.noteCompleted {
+  opacity: 0.7;
+  background: #f0f4f7;
+  border-left-color: #28a745;
+}
+
+.noteHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.noteType {
+  font-size: 10px;
+  font-weight: 500;
+  color: #8ba0ae;
+}
+
+.noteImportance {
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.noteActions {
+  display: flex;
+  gap: 8px;
+}
+
+.completeNoteButton, .deleteNoteButton {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.completeNoteButton {
+  color: #28a745;
+}
+
+.completeNoteButton:hover {
+  color: #1e7e34;
+}
+
+.deleteNoteButton {
+  color: #dc3545;
+}
+
+.deleteNoteButton:hover {
+  color: #a71d2a;
+}
+
+.noteTitle {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a3a2a;
+  margin-bottom: 8px;
+}
+
+.noteContent {
+  font-size: 12px;
+  color: #5a6f7e;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.noteLinks {
+  margin-bottom: 10px;
+}
+
+.noteLink {
+  display: inline-block;
+  font-size: 11px;
+  color: #2c6e9e;
+  text-decoration: none;
+  background: #eef2f6;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+
+.noteLink:hover {
+  text-decoration: underline;
+}
+
+.noteMeta {
+  font-size: 10px;
+  color: #8ba0ae;
+  border-top: 1px solid #eef2f6;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.emptyNotes {
+  text-align: center;
+  padding: 40px;
+  color: #8ba0ae;
+  font-size: 12px;
+}
+
+/* Кнопка назначки */
+.appointmentButtonContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f0f7fc 0%, #e8f4f8 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #d0e4f0;
+}
+
+.appointmentButton {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #1a6e4a 0%, #0e4a2e 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(26, 110, 74, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appointmentButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(26, 110, 74, 0.4);
+}
+
+.appointmentButton:active {
+  transform: translateY(0);
+}
+
+.appointmentHint {
+  font-size: 13px;
+  color: #5a6f7e;
+  font-style: italic;
+}
+
+/* Адаптивность */
+@media (max-width: 1000px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stageName {
+    font-size: 18px;
+  }
+
+  .appointmentButtonContainer {
+    flex-direction: column;
+    text-align: center;
+  }
+}

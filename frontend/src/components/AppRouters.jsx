@@ -57,6 +57,9 @@ import PartyDocumentsPage from './Documents/PartyDocumentsPage';
 import PartyDocumentForm from './Documents/PartyDocumentForm';
 import PartyDocumentDetailPage from './Documents/PartyDocumentDetailPage';
 import SideClaimForm from './SideAuth/SideClaimForm';
+import CasePetitionsView from './SideAuth/CasePetitionsView';
+import CasePartyDocumentsView from './SideAuth/CasePartyDocumentsView';
+import CaseAudioView from './SideAuth/CaseAudioView';
 
 // Court Registry pages
 import CourtRegistryDashboard from '../components/CourtRegistry/CourtRegistryDashboard';
@@ -73,9 +76,14 @@ import VCSDetail from '../components/CourtRegistry/VCS/VCSDetail';
 import VCSForm from '../components/CourtRegistry/VCS/VCSForm';
 import MessengerRegistration from '../components/CourtRegistry/Messenger/MessengerRegistration';
 import AuditLog from '../components/CourtRegistry/Audit/AuditLog';
+import DepartmentList from '../components/CourtRegistry/Departments/DepartmentList';
+import DepartmentForm from '../components/CourtRegistry/Departments/DepartmentForm';
+import EmployeeList from '../components/CourtRegistry/Employees/EmployeeList';
+import EmployeeForm from '../components/CourtRegistry/Employees/EmployeeForm';
 
 import Messenger from './Messenger/MessengerApp';
 import CaseDistributionPage from '../components/CaseDistribution/CaseDistributionPage';
+
 
 // Компонент для защиты маршрутов только для сотрудников суда
 const JudgeRoute = ({ children }) => {
@@ -212,17 +220,74 @@ const AppRouter = () => {
             <AuditLog />
           </JudgeRoute>
         } />
+        <Route path="court-registry/departments" element={
+          <JudgeRoute>
+            <DepartmentList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/departments/new" element={
+          <JudgeRoute>
+            <DepartmentForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/departments/:id" element={
+          <JudgeRoute>
+            <DepartmentForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/departments/:id/edit" element={
+          <JudgeRoute>
+            <DepartmentForm isEdit={true} />
+          </JudgeRoute>
+        } />
+
+        <Route path="court-registry/employees" element={
+          <JudgeRoute>
+            <EmployeeList />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/employees/new" element={
+          <JudgeRoute>
+            <EmployeeForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/employees/:id" element={
+          <JudgeRoute>
+            <EmployeeForm />
+          </JudgeRoute>
+        } />
+        <Route path="court-registry/employees/:id/edit" element={
+          <JudgeRoute>
+            <EmployeeForm isEdit={true} />
+          </JudgeRoute>
+        } />
         {/* Маршруты для стороны (участники процесса) */}
         <Route path="my-cases" element={
           <SideRoute>
             <SideProfile />
           </SideRoute>
         } />
+        <Route path="/case-audio/:caseType/:caseId" element={<CaseAudioView />} />
         <Route path="/case-view/:caseType/:caseId" element={<SideRoute><CaseDetailView /></SideRoute>} />
         <Route path="/documents/:caseType/:caseId" element={<SideRoute><DocumentsViewPage /></SideRoute>} />
         <Route path="side_case/oauth-callback/" element={<OAuthCallbackHandler />} />
 
         <Route path="/side-petition/:caseType/:caseId" element={<SidePetitionForm />} />
+        <Route path="/case-documents/:caseType/:caseId" element={
+          <SideRoute>
+            <DocumentsViewPage />
+          </SideRoute>
+        } />
+        <Route path="/case-petitions/:caseType/:caseId" element={
+          <SideRoute>
+            <CasePetitionsView />
+          </SideRoute>
+        } />
+        <Route path="/case-party-documents/:caseType/:caseId" element={
+          <SideRoute>
+            <CasePartyDocumentsView />
+          </SideRoute>
+        } />
 
         {/* Маршруты только для сотрудников суда */}
         <Route path="profile" element={

@@ -1,3 +1,4 @@
+from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -19,6 +20,10 @@ from .serializers import (
     CaseInfoSerializer, PetitionInputSerializer, DocumentUploadSerializer
 )
 from .services import CaseAccessSyncService
+
+from case_documents.models import PartyDocument
+from side_case_access.serializers import PetitionHistorySerializer
+from case_documents.serializers import PartyDocumentHistoryListSerializer
 
 
 class SocialAuthCallbackView(APIView):
@@ -282,21 +287,46 @@ class CreatePetitionView(APIView):
             )
         except CaseAccessGrant.DoesNotExist:
             return None
-    
+
+
     def _create_petition(self, case, case_type, data, user):
         """Создает ходатайство в зависимости от типа дела"""
         from django.utils import timezone
+        from business_card.models import PetitionsInCase, Decisions
         
-        petition_data = {
-            'date_application': timezone.now().date(),
-            'notation': data.get('petition_text', ''),
+        # Формируем petitioner_info
+        petitioner_info = {
+            'name': data.get('petitioner_info', user.full_name or user.email or 'Участник процесса'),
+            'source': 'side_user',
+            'user_email': user.email,
+            'user_id': user.id,
+            'user_full_name': user.full_name,
         }
         
+        # Если есть side_name из grant, добавляем его
+        if hasattr(self, '_current_side_name') and self._current_side_name:
+            petitioner_info['side_name'] = self._current_side_name
+        
+        # Создаем запись в PetitionsInCase
+        petitions_incase = PetitionsInCase.objects.create(
+            date_application=timezone.now().date(),
+            notation=data.get('petition_text', ''),
+            petitioner_info=petitioner_info,
+        )
+        
+        # Добавляем типы ходатайств если есть
+        if data.get('petition_type_id'):
+            try:
+                from business_card.models import Petitions
+                petition_type = Petitions.objects.get(id=data['petition_type_id'])
+                petitions_incase.petitions_name.add(petition_type)
+            except Exception as e:
+                logger.warning(f"Не удалось добавить тип ходатайства: {e}")
+        
+        # Создаем ходатайство в зависимости от типа дела
         if case_type == 'criminal':
-            # Для уголовных дел
             from criminal_proceedings.models import PetitionCriminal, Defendant
             
-            # Находим подсудимого, связанного с пользователем
             defendant = Defendant.objects.filter(
                 criminal_proceedings=case,
                 full_name_criminal__icontains=user.full_name
@@ -304,29 +334,19 @@ class CreatePetitionView(APIView):
             
             petition = PetitionCriminal.objects.create(
                 criminal_proceedings=case,
-                date_application=timezone.now().date(),
-                notation=data.get('petition_text', ''),
+                petitions_incase=petitions_incase,
                 petitioner_type='criminal_defendant',
                 petitioner_id=defendant.id if defendant else None,
             )
             return {'id': petition.id, 'message': 'Ходатайство подано', 'case_type': 'criminal'}
         
         elif case_type == 'civil':
-            # Для гражданских дел
             from civil_proceedings.models import CivilPetition, CivilSidesCaseInCase
             
             side = CivilSidesCaseInCase.objects.filter(
                 civil_proceedings=case,
                 sides_case_incase__name__icontains=user.full_name
             ).first()
-            
-            # Создаем запись в PetitionsInCase (business_card)
-            from business_card.models import PetitionsInCase, Decisions
-            
-            petitions_incase = PetitionsInCase.objects.create(
-                date_application=timezone.now().date(),
-                notation=data.get('petition_text', ''),
-            )
             
             petition = CivilPetition.objects.create(
                 civil_proceedings=case,
@@ -336,7 +356,37 @@ class CreatePetitionView(APIView):
             )
             return {'id': petition.id, 'message': 'Ходатайство подано', 'case_type': 'civil'}
         
-        # Аналогично для kas и administrative...
+        elif case_type == 'kas':
+            from administrative_proceedings.models import KasPetition, KasSidesCaseInCase
+            
+            side = KasSidesCaseInCase.objects.filter(
+                kas_proceedings=case,
+                sides_case_incase__name__icontains=user.full_name
+            ).first()
+            
+            petition = KasPetition.objects.create(
+                kas_proceedings=case,
+                petitions_incase=petitions_incase,
+                petitioner_type='kas_sides',
+                petitioner_id=side.id if side else None,
+            )
+            return {'id': petition.id, 'message': 'Ходатайство подано', 'case_type': 'kas'}
+        
+        elif case_type == 'administrative':
+            from administrative_code.models import AdministrativePetition, AdministrativeSidesCaseInCase
+            
+            side = AdministrativeSidesCaseInCase.objects.filter(
+                administrative_proceedings=case,
+                sides_case_incase__name__icontains=user.full_name
+            ).first()
+            
+            petition = AdministrativePetition.objects.create(
+                administrative_proceedings=case,
+                petitions_incase=petitions_incase,
+                petitioner_type='admin_sides',
+                petitioner_id=side.id if side else None,
+            )
+            return {'id': petition.id, 'message': 'Ходатайство подано', 'case_type': 'administrative'}
         
         return {'message': 'Ходатайство подано', 'case_type': case_type}
 
@@ -1126,3 +1176,125 @@ class ExportDecisionWordView(APIView):
                 {'error': f'Error generating Word: {str(e)}'},
                 status=500
             )
+
+
+class UserDocumentsHistoryView(generics.ListAPIView):
+    """История отправленных документов текущего пользователя"""
+    serializer_class = PartyDocumentHistoryListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Предполагаем, что пользователь - ExternalUser
+        return PartyDocument.objects.filter(external_user=user, document_file__isnull=False).order_by('-submission_date')
+
+
+class UserPetitionsHistoryView(generics.ListAPIView):
+    """История поданных ходатайств текущего пользователя"""
+    serializer_class = PetitionHistorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Собираем ходатайства из всех производств
+        criminal_petitions = PetitionCriminal.objects.filter(external_user=user).order_by('-date_application')
+        civil_petitions = CivilPetition.objects.filter(external_user=user).order_by('-date_application')
+        # Возвращаем объединенный список
+        return list(criminal_petitions) + list(civil_petitions)
+
+
+class SubmitClaimView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        from case_registry.serializers import ClaimSubmissionSerializer
+        from .services import CaseCreationService
+        
+        print("=== Received claim data ===")
+        print(request.data)
+        
+        serializer = ClaimSubmissionSerializer(data=request.data)
+        if not serializer.is_valid():
+            print("=== Validation errors ===")
+            print(serializer.errors)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=400)
+        
+        data = serializer.validated_data
+        
+        try:
+            civil_case = CaseCreationService.create_civil_case_from_claim(
+                claim_data=data,
+                external_user=request.user if hasattr(request.user, 'id') else None
+            )
+            
+            return Response({
+                'success': True,
+                'message': 'Исковое заявление успешно подано',
+                'case_id': civil_case.id,
+                'case_number': civil_case.case_number_civil,
+                'registered_case_number': civil_case.registered_case.full_number if civil_case.registered_case else None,
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+
+class UserCourtsView(APIView):
+    """Список судов, где у пользователя есть дела"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        grants = CaseAccessGrant.objects.filter(
+            external_user=request.user,
+            is_active=True
+        ).select_related('content_type')
+        
+        courts = set()
+        for grant in grants:
+            case = grant.case
+            if case and hasattr(case, 'presiding_judge') and case.presiding_judge:
+                judge = case.presiding_judge
+                court_name = getattr(judge, 'court_name', None) or getattr(judge, 'organization', 'Неизвестный суд')
+                courts.add(court_name)
+        
+        return Response(list(courts))
+
+
+class RegionsListView(APIView):
+    """Получить список регионов для выбора в личном кабинете"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        from court_registry.models import Region
+        
+        regions = Region.objects.filter(is_active=True).order_by('name')
+        data = [{'id': r.id, 'name': r.name, 'code': r.code} for r in regions]
+        return Response(data)
+
+
+class CourtsByRegionView(APIView):
+    """Получить список судов по региону"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        region_id = request.query_params.get('region_id')
+        if not region_id:
+            return Response({'error': 'Не указан регион'}, status=400)
+        
+        from court_registry.models import CourtDirectory
+        
+        courts = CourtDirectory.objects.filter(
+            region_id=region_id,
+            is_active=True
+        ).order_by('name')
+        
+        data = [{'id': c.id, 'name': c.name, 'code': c.code} for c in courts]
+        return Response(data)

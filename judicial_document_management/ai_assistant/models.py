@@ -209,3 +209,134 @@ class AIContextCache(models.Model):
                 expires_at=timezone.now() + timezone.timedelta(seconds=ttl_seconds)
             )
             return data
+
+
+class ChatSession(models.Model):
+    """Сессия чата с AI - общая, не привязанная к конкретному делу"""
+    
+    SESSION_TYPES = [
+        ('general', 'Общий чат'),
+        ('legal_consultation', 'Юридическая консультация'),
+        ('case_review', 'Обзор дела'),
+        ('document_analysis', 'Анализ документа'),
+        ('court_procedure', 'Судопроизводство'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    external_user = models.ForeignKey('side_case_access.ExternalUser', on_delete=models.CASCADE, null=True, blank=True)
+    
+    title = models.CharField(max_length=200, default='Новый диалог')
+    session_type = models.CharField(max_length=30, choices=SESSION_TYPES, default='general')
+    
+    # Контекст сессии (может содержать информацию о деле)
+    context = models.JSONField(default=dict, blank=True)
+    
+    # Метаданные
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
+    
+    # Статистика
+    message_count = models.PositiveIntegerField(default=0)
+    last_message_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Чат-сессия'
+        verbose_name_plural = 'Чат-сессии'
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_session_type_display()})"
+    
+    def get_messages(self):
+        return self.messages.all().order_by('created_at')
+    
+    def add_message(self, role, content, metadata=None):
+        msg = ChatMessage.objects.create(
+            session=self,
+            role=role,
+            content=content,
+            metadata=metadata or {}
+        )
+        self.message_count += 1
+        self.last_message_at = timezone.now()
+        self.save(update_fields=['message_count', 'last_message_at', 'updated_at'])
+        return msg
+    
+    def get_context_string(self):
+        """Формирует контекст для AI"""
+        context_parts = []
+        if self.context.get('case_id'):
+            context_parts.append(f"Дело №{self.context.get('case_number', 'неизвестно')}")
+        if self.context.get('case_type'):
+            context_parts.append(f"Тип дела: {self.context.get('case_type')}")
+        if self.context.get('documents'):
+            context_parts.append(f"Загружено документов: {len(self.context.get('documents', []))}")
+        return ", ".join(context_parts) if context_parts else "Общий юридический диалог"
+
+
+class ChatMessage(models.Model):
+    """Сообщение в чате"""
+    
+    ROLE_CHOICES = [
+        ('user', 'Пользователь'),
+        ('assistant', 'Ассистент'),
+        ('system', 'Системное'),
+        ('tool', 'Инструмент'),
+    ]
+    
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    content = models.TextField()
+    
+    # Для загруженных файлов
+    attached_files = models.JSONField(default=list, blank=True, verbose_name="Прикрепленные файлы")
+    
+    # Метаданные
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"[{self.role}] {self.content[:50]}..."
+
+
+class UploadedFile(models.Model):
+    """Загруженный файл для AI"""
+    
+    FILE_TYPES = [
+        ('pdf', 'PDF'),
+        ('docx', 'Word'),
+        ('txt', 'Text'),
+        ('image', 'Image'),
+        ('other', 'Другое'),
+    ]
+    
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name='uploaded_files', null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    
+    file = models.FileField(upload_to='ai_uploads/%Y/%m/%d/')
+    file_name = models.CharField(max_length=255)
+    file_type = models.CharField(max_length=20, choices=FILE_TYPES)
+    file_size = models.PositiveIntegerField(verbose_name="Размер в байтах")
+    
+    # Извлеченный текст
+    extracted_text = models.TextField(blank=True, verbose_name="Извлеченный текст")
+    
+    # Метаданные
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    processed = models.BooleanField(default=False)
+    processing_error = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return self.file_name
+    
+    def get_file_extension(self):
+        return self.file_name.split('.')[-1].lower() if '.' in self.file_name else ''

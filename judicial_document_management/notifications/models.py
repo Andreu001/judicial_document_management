@@ -18,7 +18,16 @@ RULE_TYPES = [
     ('incoming_correspondence', 'Входящая корреспонденция'),
     ('outgoing_correspondence', 'Исходящая корреспонденция')
 ]
-    
+
+NOTIFICATION_TYPES = [
+        ('petition', 'Новое ходатайство'),
+        ('document', 'Новый документ'),
+        ('decision', 'Принято решение'),
+        ('case_update', 'Обновление дела'),
+        ('system', 'Системное уведомление'),
+        ('side_case', 'Уведомление стороны'),
+    ]
+
 
 class NotificationRule(models.Model):
     """Правила для автоматического создания уведомлений"""
@@ -185,9 +194,9 @@ class Notification(models.Model):
     
     # Связь с проверкой подсудности
     jurisdiction_check = models.ForeignKey(
-        JurisdictionCheck, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        JurisdictionCheck,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         verbose_name="Проверка подсудности"
     )

@@ -541,7 +541,7 @@ class PetitionCriminalSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         petitions_name_ids = validated_data.pop('petitions_name', None)
         date_application = validated_data.pop('date_application', None)
-        decision_rendered_id = validated_data.pop('decision_rendered', None)
+        decision_rendered_value = validated_data.pop('decision_rendered', None)
         date_decision = validated_data.pop('date_decision', None)
         notation = validated_data.pop('notation', None)
 
@@ -558,12 +558,27 @@ class PetitionCriminalSerializer(serializers.ModelSerializer):
             if notation is not None:
                 petitions_incase.notation = notation
             
-            if decision_rendered_id is not None:
-                if decision_rendered_id:
-                    try:
-                        decision = CriminalDecisions.objects.get(id=decision_rendered_id)
-                        petitions_incase.decision_rendered = decision
-                    except CriminalDecisions.DoesNotExist:
+            # ========== ИСПРАВЛЕНИЕ: ПРОВЕРЯЕМ ТИП ==========
+            if decision_rendered_value is not None:
+                if decision_rendered_value:
+                    if isinstance(decision_rendered_value, int):
+                        try:
+                            # В уголовных используется CriminalDecisions
+                            from .models import CriminalDecisions
+                            decision = CriminalDecisions.objects.get(id=decision_rendered_value)
+                            petitions_incase.decision_rendered = decision
+                        except CriminalDecisions.DoesNotExist:
+                            petitions_incase.decision_rendered = None
+                    elif isinstance(decision_rendered_value, Decisions):
+                        petitions_incase.decision_rendered = decision_rendered_value
+                    elif isinstance(decision_rendered_value, str):
+                        try:
+                            from .models import CriminalDecisions
+                            decision = CriminalDecisions.objects.get(id=int(decision_rendered_value))
+                            petitions_incase.decision_rendered = decision
+                        except (ValueError, CriminalDecisions.DoesNotExist):
+                            petitions_incase.decision_rendered = None
+                    else:
                         petitions_incase.decision_rendered = None
                 else:
                     petitions_incase.decision_rendered = None

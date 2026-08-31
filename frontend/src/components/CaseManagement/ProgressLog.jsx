@@ -1,4 +1,3 @@
-// ProgressLog.jsx - универсальная версия для всех типов дел
 import React, { useState, useEffect } from 'react';
 import CaseManagementService from '../../API/CaseManagementService';
 import styles from './ProgressLog.module.css';

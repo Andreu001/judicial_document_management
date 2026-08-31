@@ -447,3 +447,53 @@
   background: linear-gradient(135deg, #2d3748, #1a2634);
   box-shadow: 0 2px 8px rgba(26, 38, 52, 0.3);
 }
+
+
+.aiButton {
+  background: linear-gradient(135deg, #1e3c5c, #2c4a6e) !important;
+  color: white !important;
+  font-weight: 500;
+  padding: 6px 16px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aiButton:hover {
+  background: linear-gradient(135deg, #2c4a6e, #3a5c82) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(30, 60, 92, 0.3);
+}
+
+.aiButton:active {
+  transform: translateY(0);
+}
+
+.aiButton.active {
+  background: linear-gradient(135deg, #2c4a6e, #1e3c5c) !important;
+  box-shadow: 0 2px 8px rgba(30, 60, 92, 0.3);
+}
+
+.aiOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .aiOverlay {
+    padding: 0;
+  }
+}

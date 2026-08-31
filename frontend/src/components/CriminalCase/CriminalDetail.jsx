@@ -20,7 +20,7 @@ import ConfirmDialog from '../../pages/ConfirmDialog';
 import ProgressLog from '../CaseManagement/ProgressLog';
 import NotificationsPanel from '../CaseManagement/NotificationsPanel';
 import JudgeAssistant from './JudgeAssistant';
-import AudioTranscriptionTab from './AudioTranscriptionTab';
+import AudioTranscriptionTab from '../AudioTranscription/AudioTranscriptionTab';
 import AIAssistant from '../AIAssistant/AIAssistant';
 
 const CriminalDetail = () => {
@@ -463,7 +463,7 @@ const CriminalDetail = () => {
                 className={styles.aiButton}
                 disabled={isArchived}
               >
-                🤖 AI Анализ
+                AI Анализ
               </button>
           {isArchived ? (
             <button onClick={handleUnarchive} className={styles.unarchiveButton}>Вернуть из архива</button>
@@ -494,7 +494,7 @@ const CriminalDetail = () => {
               <button className={`${styles.tab} ${activeTab === 'expertise' ? styles.activeTab : ''}`} onClick={() => setActiveTab('expertise')}>Экспертизы и соединение</button>
               <button className={`${styles.tab} ${activeTab === 'private' ? styles.activeTab : ''}`} onClick={() => setActiveTab('private')}>Частные определения и даты</button>
               <button className={`${styles.tab} ${activeTab === 'additional' ? styles.activeTab : ''}`} onClick={() => setActiveTab('additional')}>Дополнительно</button>
-              <button className={`${styles.tab} ${activeTab === 'audio' ? styles.activeTab : ''}`} onClick={() => setActiveTab('audio')}>🎤 Аудио-протокол</button>
+              <button className={`${styles.tab} ${activeTab === 'audio' ? styles.activeTab : ''}`} onClick={() => setActiveTab('audio')}>Аудио-протокол</button>
             </div>
             <div className={styles.tabContentWrapper}>
               {activeTab === 'basic' && <BasicInfoTab isEditing={isEditing && !isArchived} formData={formData} options={options} criminalData={criminalData} caseMovement={caseMovement} handleDateChange={handleDateChange} formatDate={formatDate} handleInputChange={handleInputChange} handleFieldChange={handleFieldChange} getOptionLabel={getOptionLabel} formatBoolean={formatBoolean} referringAuthorities={referringAuthorities} judges={judges} showRareFields={showRareFields} setShowRareFields={setShowRareFields} showRepeatCaseDetails={() => formData.repeat_case === true}
@@ -810,8 +810,6 @@ const CriminalDetail = () => {
           onConfirm={confirmDialog.onConfirm} 
           onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))} 
         />
-
-        {/* 👇 ДОБАВЬТЕ ЭТО МОДАЛЬНОЕ ОКНО С AI */}
         {showAI && (
           <div className={styles.modalOverlay} onClick={() => setShowAI(false)}>
             <div className={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>

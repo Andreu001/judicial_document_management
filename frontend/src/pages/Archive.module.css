@@ -33,6 +33,13 @@
   background: white;
   border: 1px solid #e0e7ed;
   color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.statBadge:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
 }
 
 .statBadge.active {
@@ -120,6 +127,12 @@
 .adminCard {
   border-left: 4px solid #9e6b4f;
 }
+.kasCard {
+  border-left: 4px solid #9b59b6;
+}
+.otherCard {
+  border-left: 4px solid #16a085;
+}
 
 .cardHeader {
   padding: 0.6rem 1rem;
@@ -140,6 +153,14 @@
 }
 .adminHeader {
   background: linear-gradient(135deg, #9e6b4f 0%, #b77f5c 100%);
+  color: white;
+}
+.kasHeader {
+  background: linear-gradient(135deg, #7b1fa2 0%, #9b59b6 100%);
+  color: white;
+}
+.otherHeader {
+  background: linear-gradient(135deg, #1a7a6a 0%, #16a085 100%);
   color: white;
 }
 
@@ -237,6 +258,7 @@
   border: 1px solid #d0d9e2;
   border-radius: 4px;
   background: #f8fafc;
+  transition: border-color 0.2s, background 0.2s;
 }
 
 .editInput:focus {
@@ -254,6 +276,14 @@
   background: #f8fafc;
   resize: vertical;
   min-height: 60px;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.editTextarea:focus {
+  outline: none;
+  border-color: #3498db;
+  background: white;
 }
 
 .editActions {
@@ -271,10 +301,16 @@
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .saveBtn:hover {
   background: #219a52;
+}
+
+.saveBtn:disabled {
+  background: #a0c4a8;
+  cursor: not-allowed;
 }
 
 .cancelBtn {
@@ -286,15 +322,21 @@
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .cancelBtn:hover {
   background: #7f8c8d;
 }
 
+.cancelBtn:disabled {
+  background: #c5d0d1;
+  cursor: not-allowed;
+}
+
 .editNotesBtn {
   margin-top: 0.3rem;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.6rem;
   background: #edf2f7;
   border: 1px solid #d0d9e2;
   border-radius: 4px;
@@ -302,10 +344,12 @@
   color: #4a5568;
   cursor: pointer;
   display: inline-block;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .editNotesBtn:hover {
   background: #e2e8f0;
+  border-color: #b8c4d0;
 }
 
 /* Действия с карточкой */
@@ -326,6 +370,7 @@
   font-weight: 500;
   cursor: pointer;
   text-align: center;
+  transition: background 0.2s;
 }
 
 .viewBtn:hover {
@@ -343,6 +388,7 @@
   font-weight: 500;
   cursor: pointer;
   text-align: center;
+  transition: background 0.2s;
 }
 
 .unarchiveBtn:hover {
@@ -409,43 +455,4 @@
     padding: 0.3rem 0.8rem;
     font-size: 0.8rem;
   }
-}
-
-.kasCard {
-    border-left: 4px solid #9b59b6;
-}
-
-.kasHeader {
-    background-color: #f3e5f5;
-}
-
-.kasHeader .caseType {
-    color: #8e44ad;
-}
-
-.statBadge {
-    padding: 8px 16px;
-    border: 1px solid #dee2e6;
-    background: white;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.statBadge:hover {
-    background: #f8f9fa;
-}
-
-.statBadge.active {
-    background: #007bff;
-    color: white;
-    border-color: #007bff;
-}
-
-.statsBar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
 }

@@ -13,6 +13,45 @@ class KasCaseService {
     return cleaned;
   }
 
+  // === Метод для получения всех сторон (для AppointmentWizard) ===
+  static async getAllSides(proceedingId) {
+    try {
+      const sides = await this.getSides(proceedingId);
+      const lawyers = await this.getLawyers(proceedingId);
+      
+      const result = [];
+      
+      sides.forEach(s => {
+        const sideDetail = s.sides_case_incase_detail || {};
+        result.push({
+          id: s.id,
+          type: 'side',
+          name: sideDetail.name || 'Сторона',
+          role: s.sides_case_role_detail?.sides_case || 'Сторона',
+          phone: sideDetail.phone || '',
+          email: sideDetail.email || '',
+        });
+      });
+      
+      lawyers.forEach(l => {
+        const lawyerDetail = l.lawyer_detail || {};
+        result.push({
+          id: l.id,
+          type: 'lawyer',
+          name: lawyerDetail.law_firm_name || 'Адвокат',
+          role: l.sides_case_role_detail?.sides_case || 'Представитель',
+          phone: lawyerDetail.law_firm_phone || '',
+          email: lawyerDetail.law_firm_email || '',
+        });
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching all sides:', error);
+      return [];
+    }
+  }
+
   // === Роли сторон (из business_card) ===
   
   static async getSideRoles() {

@@ -382,37 +382,62 @@ class KasPetitionSerializer(serializers.ModelSerializer):
     def get_petitioner_info(self, obj):
         return obj.petitioner_info
 
-    def create(self, validated_data):
-        kas_proceedings = self.context.get('kas_proceedings')
-        if not kas_proceedings:
-            raise serializers.ValidationError({'kas_proceedings': 'Не указано производство КАС'})
-        petitions_name_ids = validated_data.pop('petitions_name', [])
-        date_application = validated_data.pop('date_application')
-        decision_rendered_id = validated_data.pop('decision_rendered', None)
+    def update(self, instance, validated_data):
+        petitions_name_ids = validated_data.pop('petitions_name', None)
+        date_application = validated_data.pop('date_application', None)
+        decision_rendered_value = validated_data.pop('decision_rendered', None)
         date_decision = validated_data.pop('date_decision', None)
-        notation = validated_data.pop('notation', '')
+        notation = validated_data.pop('notation', None)
         petitioner_type = validated_data.pop('petitioner_type', None)
         petitioner_id = validated_data.pop('petitioner_id', None)
-        petitions_incase = PetitionsInCase.objects.create(
-            date_application=date_application,
-            date_decision=date_decision,
-            notation=notation
-        )
-        if petitions_name_ids:
-            petitions_incase.petitions_name.set(petitions_name_ids)
-        if decision_rendered_id:
-            try:
-                decision = Decisions.objects.get(id=decision_rendered_id)
-                petitions_incase.decision_rendered = decision
-                petitions_incase.save()
-            except Decisions.DoesNotExist:
-                pass
-        return KasPetition.objects.create(
-            kas_proceedings=kas_proceedings,
-            petitions_incase=petitions_incase,
-            petitioner_type=petitioner_type,
-            petitioner_id=petitioner_id
-        )
+
+        if instance.petitions_incase:
+            petitions_incase = instance.petitions_incase
+            
+            if date_application is not None:
+                petitions_incase.date_application = date_application
+            if date_decision is not None:
+                petitions_incase.date_decision = date_decision
+            if notation is not None:
+                petitions_incase.notation = notation
+            
+            # ========== ИСПРАВЛЕНИЕ: ПРОВЕРЯЕМ ТИП ==========
+            if decision_rendered_value is not None:
+                if decision_rendered_value:
+                    if isinstance(decision_rendered_value, int):
+                        try:
+                            decision = Decisions.objects.get(id=decision_rendered_value)
+                            petitions_incase.decision_rendered = decision
+                        except Decisions.DoesNotExist:
+                            petitions_incase.decision_rendered = None
+                    elif isinstance(decision_rendered_value, Decisions):
+                        petitions_incase.decision_rendered = decision_rendered_value
+                    elif isinstance(decision_rendered_value, str):
+                        try:
+                            decision = Decisions.objects.get(id=int(decision_rendered_value))
+                            petitions_incase.decision_rendered = decision
+                        except (ValueError, Decisions.DoesNotExist):
+                            petitions_incase.decision_rendered = None
+                    else:
+                        petitions_incase.decision_rendered = None
+                else:
+                    petitions_incase.decision_rendered = None
+            
+            petitions_incase.save()
+
+            if petitions_name_ids is not None:
+                petitions_incase.petitions_name.set(petitions_name_ids)
+
+        if petitioner_type is not None:
+            instance.petitioner_type = petitioner_type
+        if petitioner_id is not None:
+            instance.petitioner_id = petitioner_id
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
 
 class KasProceedingsSerializer(serializers.ModelSerializer):

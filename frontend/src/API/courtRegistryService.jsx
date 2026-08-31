@@ -46,6 +46,7 @@ export const getDepartmentEmployees = (id) => baseService.get(`${BASE}/departmen
 // Сотрудники (упрощенные)
 // =============================================================================
 
+export const getUsers = (params) => baseService.get('/api/users/', { params });
 export const getEmployees = (params) => baseService.get(`${BASE}/employees/`, { params });
 export const getEmployee = (id) => baseService.get(`${BASE}/employees/${id}/`);
 export const createEmployee = (data) => baseService.post(`${BASE}/employees/`, data);

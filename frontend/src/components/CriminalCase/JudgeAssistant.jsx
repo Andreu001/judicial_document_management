@@ -23,8 +23,7 @@ const JudgeAssistant = ({ proceedingId }) => {
   });
   const [submittingNote, setSubmittingNote] = useState(false);
 
-  // Базовый URL для API judge-assistant
-  const getBaseUrl = () => `/judge-assistant/case-advisor/${proceedingId}`;
+  const getBaseUrl = () => `/judge-assistant/case-advisor/criminal/${proceedingId}`;
 
   // Загрузка анализа дела
   const loadAnalysis = useCallback(async () => {

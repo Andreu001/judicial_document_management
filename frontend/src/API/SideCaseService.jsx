@@ -1,5 +1,3 @@
-// SideCaseService.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
-
 import baseService from './baseService';
 
 const BASE_URL = '/side_case/';
@@ -315,29 +313,53 @@ class SideCaseService {
       return [];
     }
   }
-  
+
+  // ========== ИСПРАВЛЕННЫЙ МЕТОД ДЛЯ СКАЧИВАНИЯ ДОКУМЕНТА ==========
   static async downloadDocument(documentId, filename) {
-    try {
-      const response = await baseService.get(`/case-documents/documents/${documentId}/download-signed/`, {
-        responseType: 'blob'
-      });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename || 'document.pdf');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error downloading document:', error);
-      throw error;
-    }
+      try {
+          // Используем новый эндпоинт для скачивания подписанных документов
+          const url = `/case-documents/documents/${documentId}/download-signed/`;
+          
+          console.log('Downloading document from URL:', url);
+          
+          const response = await baseService.get(url, {
+              responseType: 'blob'
+          });
+          
+          // Определяем расширение файла из Content-Disposition или Content-Type
+          let extension = 'pdf';
+          const contentType = response.headers['content-type'] || '';
+          
+          if (contentType.includes('pdf')) {
+              extension = 'pdf';
+          } else if (contentType.includes('word') || contentType.includes('docx')) {
+              extension = 'docx';
+          } else if (contentType.includes('doc')) {
+              extension = 'doc';
+          } else if (contentType.includes('jpg') || contentType.includes('jpeg')) {
+              extension = 'jpg';
+          } else if (contentType.includes('png')) {
+              extension = 'png';
+          }
+          
+          const blob = new Blob([response.data]);
+          const urlBlob = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = urlBlob;
+          link.setAttribute('download', `${filename || 'document'}.${extension}`);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(urlBlob);
+          
+          return { success: true };
+      } catch (error) {
+          console.error('Error downloading document:', error);
+          throw error;
+      }
   }
-  
+
+  // Получение ходатайств по делу
   static async getCasePetitions(caseType, caseId) {
     try {
       const normalizedType = this.normalizeCaseTypeForApi(caseType);
@@ -361,9 +383,20 @@ class SideCaseService {
       }
       
       const response = await baseService.get(url);
-      return response.data;
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching case petitions:', error);
+      return [];
+    }
+  }
+
+  // Получение истории ходатайств пользователя
+  static async getUserPetitionsHistory() {
+    try {
+      const response = await baseService.get(`${BASE_URL}petitions-history/`);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching petitions history:', error);
       return [];
     }
   }
@@ -406,6 +439,8 @@ class SideCaseService {
     }
   }
   
+  // ========== ИСПРАВЛЕННЫЙ МЕТОД isAuthenticated ==========
+  // Проблема была в вызове this.logout() - в некоторых браузерах this может быть undefined
   static isAuthenticated() {
     const token = localStorage.getItem('side_token');
     const user = localStorage.getItem('side_user');
@@ -415,7 +450,8 @@ class SideCaseService {
       const timeDiff = Date.now() - parseInt(loginTime);
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if (timeDiff > sevenDays) {
-        this.logout();
+        // Используем SideCaseService.logout() вместо this.logout()
+        SideCaseService.logout();
         return false;
       }
       return true;
@@ -429,19 +465,119 @@ class SideCaseService {
     return userData ? JSON.parse(userData) : null;
   }
   
-  static async logout() {
+  // ========== ИСПРАВЛЕННЫЙ МЕТОД logout ==========
+  static logout() {
     localStorage.removeItem('side_token');
     localStorage.removeItem('side_user');
     localStorage.removeItem('side_login_time');
-    this.setupAuthHeader();
+    // Используем SideCaseService вместо this для setupAuthHeader
+    SideCaseService.setupAuthHeader();
   }
   
+  // ========== ИСПРАВЛЕННЫЙ МЕТОД setupAuthHeader ==========
   static setupAuthHeader() {
     const token = localStorage.getItem('side_token');
     if (token) {
       baseService.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
       delete baseService.defaults.headers.common['Authorization'];
+    }
+  }
+
+  // Получение списка судов, где у пользователя есть дела
+  static async getUserCourts() {
+      try {
+          const response = await baseService.get(`${BASE_URL}user-courts/`);
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching user courts:', error);
+          return [];
+      }
+  }
+
+  // Получение истории документов
+  static async getUserDocumentsHistory() {
+      try {
+          const response = await baseService.get(`${BASE_URL}documents-history/`);
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching documents history:', error);
+          return [];
+      }
+  }
+
+  // Получение истории ходатайств
+  static async getUserPetitionsHistory() {
+      try {
+          const response = await baseService.get(`${BASE_URL}petitions-history/`);
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching petitions history:', error);
+          return [];
+      }
+  }
+
+  // Получение аудио-протоколов для дела
+  static async getAudioTranscriptions(caseType, caseId) {
+      try {
+          const response = await baseService.get(`${BASE_URL}audio-transcriptions/?case_type=${caseType}&case_id=${caseId}`);
+          return response.data;
+      } catch (error) {
+          console.error('Error fetching audio transcriptions:', error);
+          return [];
+      }
+  }
+
+  // Получение деталей конкретного ходатайства
+  static async getPetitionDetail(caseType, caseId, petitionId) {
+    try {
+      const normalizedType = this.normalizeCaseTypeForApi(caseType);
+      let url = '';
+      
+      switch (normalizedType) {
+        case 'criminal':
+          url = `/criminal_proceedings/criminal-proceedings/${caseId}/petitions/${petitionId}/`;
+          break;
+        case 'civil':
+          url = `/civil_proceedings/civil-proceedings/${caseId}/petitions/${petitionId}/`;
+          break;
+        case 'administrative':
+          url = `/administrative_code/administrative-proceedings/${caseId}/petitions/${petitionId}/`;
+          break;
+        case 'kas':
+          url = `/administrative_proceedings/kas-proceedings/${caseId}/petitions/${petitionId}/`;
+          break;
+        default:
+          return null;
+      }
+      
+      const response = await baseService.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching petition detail:', error);
+      return null;
+    }
+  }
+
+  // Получение списка регионов
+  static async getRegions() {
+    try {
+      const response = await baseService.get(`${BASE_URL}regions/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching regions:', error);
+      return [];
+    }
+  }
+
+  // Получение судов по региону
+  static async getCourtsByRegion(regionId) {
+    try {
+      const response = await baseService.get(`${BASE_URL}courts-by-region/?region_id=${regionId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching courts by region:', error);
+      return [];
     }
   }
 }

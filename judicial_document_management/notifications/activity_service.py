@@ -25,7 +25,6 @@ class CaseActivityService:
         Получить председательствующего судью по делу.
         Универсальный метод для всех типов дел.
         """
-        # Это уже должно работать, так как mapping есть
         model_name = case._meta.model_name
         
         field_name = cls.JUDGE_FIELD_MAPPING.get(model_name)
@@ -33,26 +32,17 @@ class CaseActivityService:
             judge = getattr(case, field_name)
             if judge:
                 return judge
-    
+        return None
+
     @classmethod
     def create_activity(cls, case, activity_type, title, description='', 
                         related_object=None, link='', auto_notify=True):
         """
         Создать активность по делу и опционально отправить уведомление судье.
-        
-        Args:
-            case: Объект дела
-            activity_type: Тип активности (см. CaseActivity.ACTIVITY_TYPES)
-            title: Заголовок активности
-            description: Описание
-            related_object: Связанный объект (документ, ходатайство и т.д.)
-            link: Ссылка для перехода
-            auto_notify: Автоматически создать уведомление для судьи
-        
-        Returns:
-            CaseActivity объект
         """
         from .models import CaseActivity, CaseNotificationSummary
+        
+        logger.info(f"=== create_activity: case={case}, activity_type={activity_type}, auto_notify={auto_notify} ===")
         
         case_content_type = ContentType.objects.get_for_model(case)
         
@@ -78,33 +68,41 @@ class CaseActivityService:
         
         # Автоматическое уведомление судьи
         if auto_notify:
+            logger.info(f"auto_notify=True, вызываем notify_judge для активности {activity.id}")
             cls.notify_judge(activity, case)
+        else:
+            logger.info(f"auto_notify=False, пропускаем уведомление")
         
         # Обновляем сводку
         cls.update_notification_summary(case)
         
         return activity
-    
+
     @classmethod
     def notify_judge(cls, activity, case):
         """
         Отправить уведомление председательствующему судье.
-        Использует существующую модель Notification из приложения notifications.
         """
         from .models import Notification
+        
+        logger.info(f"=== notify_judge вызван для активности {activity.id} ===")
         
         judge = cls.get_presiding_judge(case)
         if not judge:
             logger.warning(f"Нет судьи для уведомления по делу {case}")
             return False
         
+        logger.info(f"Судья найден: {judge.username} (ID: {judge.id})")
+        
         # Определяем приоритет
         priority = 'high' if 'petition' in activity.activity_type else 'medium'
         
         # Формируем заголовок и сообщение
-        title = f"🔔 {activity.title}"
+        title = f" {activity.title}"
         
-        # Создаем уведомление в существующей модели Notification
+        logger.info(f"Создаем уведомление: title='{title}', priority='{priority}'")
+        
+        # Создаем уведомление
         notification_kwargs = {
             'user': judge,
             'title': title,
@@ -127,10 +125,10 @@ class CaseActivityService:
         
         try:
             notification = Notification.objects.create(**notification_kwargs)
-            logger.info(f"Уведомление #{notification.id} отправлено судье {judge.username} по делу {case}")
+            logger.info(f"✅ Уведомление #{notification.id} отправлено судье {judge.username} по делу {case}")
             return True
         except Exception as e:
-            logger.error(f"Ошибка создания уведомления: {e}")
+            logger.error(f"❌ Ошибка создания уведомления: {e}")
             return False
     
     @classmethod
@@ -192,15 +190,6 @@ class CaseActivityService:
     def mark_activities_as_read(cls, case, judge, activity_ids=None, activity_type=None):
         """
         Отметить активности по делу как прочитанные.
-        
-        Args:
-            case: Объект дела
-            judge: Судья (для проверки прав)
-            activity_ids: Список ID активностей (если None - все по делу)
-            activity_type: Тип активности для фильтрации
-        
-        Returns:
-            Количество отмеченных
         """
         from .models import CaseActivity
         
@@ -226,7 +215,6 @@ class CaseActivityService:
         count = queryset.update(is_read_by_judge=True)
         
         if count > 0:
-            # Обновляем сводку
             cls.update_notification_summary(case)
         
         return count
@@ -246,7 +234,6 @@ class CaseActivityService:
         # Проверяем, что судья является председательствующим
         presiding_judge = cls.get_presiding_judge(case)
         if presiding_judge and presiding_judge.id != judge.id:
-            # Если не председательствующий, возвращаем пустой статус
             return {
                 'has_unread': False,
                 'total_unread': 0,
@@ -261,7 +248,6 @@ class CaseActivityService:
                 case_object_id=case.id,
                 judge=judge
             )
-            # Принудительно обновляем сводку перед возвратом
             summary.update_summary()
             summary.refresh_from_db()
             
@@ -290,78 +276,47 @@ class PartyResponseService:
     
     @classmethod
     def notify_party_document_received(cls, party_document, external_user):
-        """
-        Уведомить участника о получении его документа судом.
-        """
-        from side_case_access.models import ExternalUser
-        from side_case_access.serializers import ExternalUserSerializer
-        
         if not external_user:
             return False
         
-        # Создаем активность для участника (в его личном кабинете)
-        # Используем модель SyncLog или специальную модель для уведомлений участников
-        # Здесь можно создать запись в отдельной модели UserPartyNotification
-        
-        # Пока просто логируем и возвращаем успех
         logger.info(f"Уведомление для участника {external_user.full_name}: "
                    f"Документ '{party_document.title}' получен судом")
-        
-        # TODO: Создать модель UserPartyNotification для хранения уведомлений участников
-        # Или использовать существующую Notification, привязав к внешнему пользователю
-        
         return True
     
     @classmethod
     def notify_party_document_accepted(cls, party_document, external_user, judge_decision):
-        """
-        Уведомить участника о приобщении документа к материалам дела.
-        """
         if not external_user:
             return False
         
         logger.info(f"Уведомление для участника {external_user.full_name}: "
                    f"Документ '{party_document.title}' приобщен к делу. "
                    f"Решение: {judge_decision}")
-        
         return True
     
     @classmethod
     def notify_party_document_rejected(cls, party_document, external_user, reason):
-        """
-        Уведомить участника об отказе в приобщении документа.
-        """
         if not external_user:
             return False
         
         logger.info(f"Уведомление для участника {external_user.full_name}: "
                    f"Отказано в приобщении документа '{party_document.title}'. "
                    f"Причина: {reason}")
-        
         return True
     
     @classmethod
     def notify_party_petition_received(cls, petition, external_user, case):
-        """
-        Уведомить участника о получении ходатайства судом.
-        """
         if not external_user:
             return False
         
         logger.info(f"Уведомление для участника {external_user.full_name}: "
                    f"Ходатайство по делу {case} получено судом")
-        
         return True
     
     @classmethod
     def notify_party_petition_resolved(cls, petition, external_user, decision):
-        """
-        Уведомить участника о решении по ходатайству.
-        """
         if not external_user:
             return False
         
         logger.info(f"Уведомление для участника {external_user.full_name}: "
                    f"По ходатайству принято решение: {decision}")
-        
         return True

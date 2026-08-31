@@ -1007,3 +1007,55 @@
 .articleSearchContainer select option:hover {
     background-color: #e9ecef;
 }
+
+/* Кнопка AI анализа */
+.aiButton {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #6C63FF, #4A3FCF);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(108, 99, 255, 0.3);
+}
+
+.aiButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.4);
+}
+
+.aiButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Модальное окно AI */
+.aiModalContent {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 85vh;
+  margin: auto;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

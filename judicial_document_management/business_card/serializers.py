@@ -142,6 +142,8 @@ class BusinessCardSerializer(serializers.ModelSerializer):
                   )
 
 
+# business_card/serializers.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
 class PetitionsInCaseSerializer(serializers.ModelSerializer):
     """
     Промежуточная таблица для ходатайств
@@ -149,23 +151,30 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
 
     notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
     petitions_name = PetitionsSerializer(many=True, read_only=True)
+    
+    # ДОБАВЛЯЕМ поле petitioner_info для чтения/записи
+    petitioner_info = serializers.JSONField(required=False, default=dict, allow_null=True)
+    
     decision_rendered = serializers.PrimaryKeyRelatedField(
         queryset=Decisions.objects.all(),
-        many=True,
         required=False,
-        allow_empty=True
+        allow_null=True
     )
 
     class Meta:
         model = PetitionsInCase
         fields = (
-            'petitions_name',
             'id',
+            'petitions_name',
             'notification_parties',
             'date_application',
-            'decision_rendered',  # Убедитесь, что поле включено
+            'decision_rendered',
             'date_decision',
+            'notation',
+            'petitioner_info',
+            'business_card',
         )
+        read_only_fields = ('business_card',)
 
 
 class AppealSerializer(serializers.ModelSerializer):
