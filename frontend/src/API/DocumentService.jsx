@@ -162,17 +162,6 @@ class DocumentService {
     }
   }
 
-  static async deleteCriminalDocument(proceedingId, documentId) {
-    try {
-      await baseService.delete(
-        `/criminal_proceedings/criminal-proceedings/${proceedingId}/documents/${documentId}/`
-      );
-    } catch (error) {
-      console.error('Error deleting criminal document:', error);
-      throw error;
-    }
-  }
-
   static async signCriminalDocument(proceedingId, documentId) {
     try {
       console.log(`Signing document: /criminal_proceedings/criminal-proceedings/${proceedingId}/documents/${documentId}/sign/`);
@@ -256,16 +245,6 @@ class DocumentService {
     }
   }
 
-  static async deleteCivilDocument(proceedingId, documentId) {
-    try {
-      await baseService.delete(
-        `/civil_proceedings/civil-proceedings/${proceedingId}/documents/${documentId}/`
-      );
-    } catch (error) {
-      console.error('Error deleting civil document:', error);
-      throw error;
-    }
-  }
 
   static async signCivilDocument(proceedingId, documentId) {
     try {
@@ -344,17 +323,6 @@ class DocumentService {
     }
   }
 
-  static async deleteAdminDocument(proceedingId, documentId) {
-    try {
-      await baseService.delete(
-        `/administrative_code/administrative-proceedings/${proceedingId}/documents/${documentId}/`
-      );
-    } catch (error) {
-      console.error('Error deleting admin document:', error);
-      throw error;
-    }
-  }
-
   static async signAdminDocument(proceedingId, documentId) {
     try {
       const response = await baseService.post(
@@ -428,17 +396,6 @@ class DocumentService {
       return response.data;
     } catch (error) {
       console.error('Error updating kas document:', error);
-      throw error;
-    }
-  }
-
-  static async deleteKasDocument(proceedingId, documentId) {
-    try {
-      await baseService.delete(
-        `/administrative_proceedings/kas-proceedings/${proceedingId}/documents/${documentId}/`
-      );
-    } catch (error) {
-      console.error('Error deleting kas document:', error);
       throw error;
     }
   }
@@ -877,6 +834,17 @@ class DocumentService {
       return response.data;
     } catch (error) {
       console.error('Error marking document as read:', error);
+      throw error;
+    }
+  }
+  static async getTemplateContent(templateId) {
+    try {
+      const response = await baseService.get(
+        `${BASE_URL}templates/${templateId}/content/`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching template content:', error);
       throw error;
     }
   }

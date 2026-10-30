@@ -345,19 +345,46 @@ class CourtEmployeeDetailSerializer(CourtEmployeeListSerializer):
         ]
 
 
+# court_registry/serializers.py
+
 class CourtEmployeeCreateUpdateSerializer(serializers.ModelSerializer):
+    new_user = serializers.DictField(
+        write_only=True, required=False, allow_null=True
+    )
+
     class Meta:
         model = CourtEmployee
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at', 'created_by']
 
     def validate(self, attrs):
-        if 'department' in attrs:
-            if not attrs['department'].is_active:
-                raise serializers.ValidationError(
-                    "Отдел не активен"
-                )
+        new_user = attrs.get('new_user')
+        employee = attrs.get('employee')
+        if not employee and not new_user:
+            raise serializers.ValidationError(
+                'Укажите пользователя или данные для создания нового'
+            )
+        if 'department' in attrs and not attrs['department'].is_active:
+            raise serializers.ValidationError('Отдел не активен')
         return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        new_user_data = validated_data.pop('new_user', None)
+        if new_user_data:
+            from users.models import User
+            from users.serializers import UserCreateSerializer
+            user_ser = UserCreateSerializer(data=new_user_data)
+            user_ser.is_valid(raise_exception=True)
+            employee = user_ser.save()
+            validated_data['employee'] = employee
+
+        return super().create(validated_data)
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        validated_data.pop('new_user', None)
+        return super().update(instance, validated_data)
 
 # =============================================================================
 # Передача дел

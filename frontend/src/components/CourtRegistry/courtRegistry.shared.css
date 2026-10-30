@@ -617,3 +617,31 @@
 .cr-breadcrumbs a { color: var(--cr-accent); text-decoration: none; }
 .cr-breadcrumbs a:hover { text-decoration: underline; }
 .cr-breadcrumbs span { color: var(--cr-text-secondary); }
+
+/* =============================================================================
+   Ячейка действий в таблицах — фиксированная минимальная ширина,
+   чтобы кнопки не обрезались родительским overflow: hidden
+   ============================================================================= */
+
+.cr-table th.cr-actions-col,
+.cr-table td.cr-actions-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.cr-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.cr-actions .cr-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.cr-table {
+  min-width: 720px;   /* подберите под ваш набор колонок; для 7 колонок хватает */
+}

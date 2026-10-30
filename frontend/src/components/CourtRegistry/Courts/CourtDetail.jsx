@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import {
-  getCourt, registerCourtInNetwork, getCourtDepartments,
-  getCourtEmployees, getCourtJudges, getDepartments, getEmployees
-} from '../../../API/courtRegistryService';
+import { getCourt, registerCourtInNetwork } from '../../../API/courtRegistryService';
+import DepartmentList from '../Departments/DepartmentList';
+import EmployeeList from '../Employees/EmployeeList';
 import '../courtRegistry.shared.css';
 import styles from './CourtDetail.module.css';
 
@@ -180,7 +179,7 @@ const CourtDetail = () => {
             <Link to={`/court-registry/departments/new?court=${id}`} className="cr-btn cr-btn-sm cr-btn-primary">+ Добавить отдел</Link>
           </div>
           <div className="cr-card-body">
-            <DepartmentListForCourt courtId={id} />
+            <DepartmentList embedded courtId={id} />
           </div>
         </div>
       )}
@@ -192,7 +191,7 @@ const CourtDetail = () => {
             <Link to={`/court-registry/employees/new?court=${id}`} className="cr-btn cr-btn-sm cr-btn-primary">+ Добавить сотрудника</Link>
           </div>
           <div className="cr-card-body">
-            <EmployeeListForCourt courtId={id} />
+            <EmployeeList embedded courtId={id} />
           </div>
         </div>
       )}
@@ -257,211 +256,6 @@ const CourtDetail = () => {
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-// Компонент для отображения отделов внутри детальной страницы
-const DepartmentListForCourt = ({ courtId }) => {
-  const [deps, setDeps] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    loadDepartments();
-  }, [courtId]);
-
-  const loadDepartments = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Получаем ВСЕ отделы без фильтрации
-      const res = await getDepartments();
-      console.log('All departments response:', res.data);
-      
-      // Обрабатываем ответ
-      let allDepartments = [];
-      if (res.data && Array.isArray(res.data)) {
-        allDepartments = res.data;
-      } else if (res.data && res.data.results && Array.isArray(res.data.results)) {
-        allDepartments = res.data.results;
-      } else {
-        allDepartments = [];
-      }
-      
-      // Фильтруем: показываем отделы, у которых court_id равен courtId ИЛИ court_id равен NULL
-      const filteredDepartments = allDepartments.filter(dept => 
-        dept.court === parseInt(courtId) || dept.court === null || dept.court === undefined
-      );
-      
-      setDeps(filteredDepartments);
-      
-      // Логируем для отладки
-      console.log(`Всего отделов: ${allDepartments.length}, отфильтровано: ${filteredDepartments.length} для court ${courtId}`);
-      
-    } catch (err) {
-      console.error('Error loading departments:', err);
-      setError('Не удалось загрузить отделы');
-      setDeps([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="cr-loading">Загрузка...</div>;
-  if (error) return <div className="cr-error">{error}</div>;
-  if (!deps.length) return <div className="cr-empty"><div className="cr-empty-text">Отделы отсутствуют</div></div>;
-
-  return (
-    <div className="cr-table-wrap">
-      <table className="cr-table">
-        <thead>
-          <tr>
-            <th>Название</th>
-            <th>Телефон</th>
-            <th>Кабинет</th>
-            <th>Сотрудников</th>
-            <th>Статус</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {deps.map(d => (
-            <tr key={d.id}>
-              <td>
-                <strong>{d.name}</strong>
-                {d.court === null && (
-                  <span className="cr-badge cr-badge-warning" style={{ marginLeft: 8, fontSize: 10 }}>
-                    без суда
-                  </span>
-                )}
-              </td>
-              <td>{d.phone_internal || '—'}</td>
-              <td>{d.room || '—'}</td>
-              <td>{d.employees_count || 0}</td>
-              <td>
-                {d.is_active ? (
-                  <span className="cr-badge cr-badge-success">Активен</span>
-                ) : (
-                  <span className="cr-badge cr-badge-neutral">Неактивен</span>
-                )}
-              </td>
-              <td>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button 
-                    className="cr-btn cr-btn-sm cr-btn-outline" 
-                    onClick={() => navigate(`/court-registry/departments/${d.id}`)}
-                  >
-                    Открыть
-                  </button>
-                  <button 
-                    className="cr-btn cr-btn-sm cr-btn-outline" 
-                    onClick={() => navigate(`/court-registry/departments/${d.id}/edit?court=${courtId}`)}
-                  >
-                    Ред.
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-// Компонент для отображения сотрудников внутри детальной страницы
-const EmployeeListForCourt = ({ courtId }) => {
-  const [emps, setEmps] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    loadEmployees();
-  }, [courtId]);
-
-  const loadEmployees = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await getCourtEmployees(courtId);
-      console.log('Employees response:', res.data);
-      
-      let employeesData = [];
-      if (res.data && Array.isArray(res.data)) {
-        employeesData = res.data;
-      } else if (res.data && res.data.results && Array.isArray(res.data.results)) {
-        employeesData = res.data.results;
-      } else {
-        employeesData = [];
-      }
-      
-      setEmps(employeesData);
-      
-    } catch (err) {
-      console.error('Error loading employees:', err);
-      setError('Не удалось загрузить сотрудников');
-      setEmps([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="cr-loading">Загрузка...</div>;
-  if (error) return <div className="cr-error">{error}</div>;
-  if (!emps.length) return <div className="cr-empty"><div className="cr-empty-text">Сотрудники отсутствуют</div></div>;
-
-  return (
-    <div className="cr-table-wrap">
-      <table className="cr-table">
-        <thead>
-          <tr>
-            <th>ФИО</th>
-            <th>Должность</th>
-            <th>Отдел</th>
-            <th>Руководитель</th>
-            <th>Телефон</th>
-            <th>Статус</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {emps.map(e => (
-            <tr key={e.id}>
-              <td><strong>{e.employee_info?.last_name} {e.employee_info?.first_name}</strong></td>
-              <td>{e.position}</td>
-              <td>{e.department_name || '—'}</td>
-              <td>{e.is_head_of_department ? <span className="cr-badge cr-badge-success">Да</span> : '—'}</td>
-              <td>{e.phone_internal || e.phone_mobile || '—'}</td>
-              <td>
-                {e.is_active ? (
-                  <span className="cr-badge cr-badge-success">Активен</span>
-                ) : (
-                  <span className="cr-badge cr-badge-neutral">Неактивен</span>
-                )}
-              </td>
-              <td>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button 
-                    className="cr-btn cr-btn-sm cr-btn-outline" 
-                    onClick={() => navigate(`/court-registry/employees/${e.id}`)}
-                  >
-                    Открыть
-                  </button>
-                  <button 
-                    className="cr-btn cr-btn-sm cr-btn-outline" 
-                    onClick={() => navigate(`/court-registry/employees/${e.id}/edit?court=${courtId}`)}
-                  >
-                    Ред.
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };

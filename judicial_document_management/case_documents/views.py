@@ -27,6 +27,9 @@ import io
 import re
 from django.conf import settings
 import logging
+from docx import Document as DocxDocument
+from docx.shared import Pt
+
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +305,58 @@ class DocumentTemplateViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DocumentTemplate.objects.filter(is_active=True)
     serializer_class = DocumentTemplateSerializer
     filterset_fields = ['case_category']
+
+    @action(detail=True, methods=['get'], url_path='content')
+    def get_template_content(self, request, pk=None):
+        """
+        Возвращает HTML-содержимое шаблона .docx
+        с подставленными плейсхолдерами.
+        """
+        template = self.get_object()
+        if not template.template_file:
+            return Response({'error': 'У шаблона нет файла'}, status=400)
+
+        try:
+            doc = DocxDocument(template.template_file.path)
+            html_parts = []
+
+            for para in doc.paragraphs:
+                text = para.text
+                if not text.strip():
+                    html_parts.append('<p>&nbsp;</p>')
+                    continue
+
+                # Простейшее форматирование
+                style = para.style.name if para.style else ''
+                if 'Heading 1' in style:
+                    html_parts.append(f'<h1>{text}</h1>')
+                elif 'Heading 2' in style:
+                    html_parts.append(f'<h2>{text}</h2>')
+                else:
+                    # Сохраняем выравнивание
+                    align = para.alignment
+                    align_style = ''
+                    if align is not None:
+                        if align == 1:  # CENTER
+                            align_style = ' style="text-align:center"'
+                        elif align == 2:  # RIGHT
+                            align_style = ' style="text-align:right"'
+                    html_parts.append(f'<p{align_style}>{text}</p>')
+
+            # Таблицы
+            for table in doc.tables:
+                rows = []
+                for row in table.rows:
+                    cells = ''.join(f'<td>{c.text}</td>' for c in row.cells)
+                    rows.append(f'<tr>{cells}</tr>')
+                html_parts.append(f'<table border="1">{"".join(rows)}</table>')
+
+            html = '\n'.join(html_parts)
+            return Response({'content': html, 'title': template.name})
+
+        except Exception as e:
+            logger.error(f"Error reading docx template: {e}")
+            return Response({'error': str(e)}, status=500)
 
 
 class DocumentViewSet(viewsets.ModelViewSet):

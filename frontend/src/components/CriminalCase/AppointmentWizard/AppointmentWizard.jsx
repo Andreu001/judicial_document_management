@@ -30,6 +30,7 @@ const AppointmentWizard = ({
   const [caseData, setCaseData] = useState(null);
   const [allSides, setAllSides] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [defendantDetails, setDefendantDetails] = useState(null);
   
   // Данные формы
   const [wizardData, setWizardData] = useState({
@@ -85,6 +86,7 @@ const AppointmentWizard = ({
       // Получаем всех участников
       const sidesResponse = await CriminalCaseService.getAllSides(caseId);
       setAllSides(sidesResponse);
+      
       
       // Получаем шаблоны документов для уголовных дел
       const templatesResponse = await DocumentService.getCriminalDocumentTemplates(caseId);
@@ -180,23 +182,19 @@ const AppointmentWizard = ({
 
     try {
       setLoading(true);
-      
-      // Здесь будет логика генерации документа на основе шаблона и данных
-      // Используем существующий метод для создания документа
-      const documentData = {
-        template: wizardData.selectedTemplateId,
-        title: wizardData.documentTitle || `Постановление о назначении ${wizardData.hearingType === 'preliminary' ? 'предварительного слушания' : 'судебного заседания'}`,
-        content: wizardData.documentContent || generateDocumentContent(),
-      };
-      
-      // Создаем документ через существующий сервис
-      const response = await DocumentService.createCriminalDocument(caseId, documentData);
-      
+
+      // 1. Берём «сырой» текст из Word-шаблона
+      const { content: rawContent, title: rawTitle } =
+        await DocumentService.getTemplateContent(wizardData.selectedTemplateId);
+
+      // 2. Подставляем переменные
+      const filledContent = fillTemplate(rawContent);
+
       updateWizardData({
-        documentId: response.id,
-        documentContent: response.content
+        documentContent: filledContent,
+        documentTitle: wizardData.documentTitle || rawTitle,
       });
-      
+
       showInfo('Успешно', 'Постановление сформировано');
     } catch (error) {
       console.error('Error generating document:', error);
@@ -204,6 +202,152 @@ const AppointmentWizard = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  // Подстановка плейсхолдеров
+  const fillTemplate = (content) => {
+    const fmt = (d) => {
+      if (!d) return '';
+      try {
+        return new Date(d).toLocaleDateString('ru-RU', {
+          day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+      } catch {
+        return '';
+      }
+    };
+
+    const today = fmt(new Date());
+
+    // === Данные дела ===
+    const caseNo =
+      caseData?.case_number_criminal ||
+      caseData?.case_number ||
+      caseNumber ||
+      '[Номер дела]';
+
+    const judge =
+      caseData?.presiding_judge_full_name ||
+      caseData?.presiding_judge_name ||
+      caseData?.judge_name ||
+      '[ФИО судьи]';
+
+    const courtName =
+      caseData?.court_name ||
+      'Верховный Суд Республики Крым';
+
+    const courtAddress =
+      caseData?.court_address ||
+      'Республика Крым, г. Симферополь, ул. Павленко, 2';
+
+    // === Подсудимый ===
+    const findSide = (types) =>
+      (allSides || []).find((s) => {
+        const t = (s.type || s.side_type || s.role || '').toString().toLowerCase();
+        return types.includes(t);
+      }) || {};
+
+    const defendantSide = findSide(['defendant', 'подсудимый', 'обвиняемый']);
+
+    const defendantName =
+      defendantSide.full_name_criminal ||
+      defendantSide.full_name ||
+      defendantSide.name ||
+      '[ФИО подсудимого]';
+
+    const defendantBirth =
+      fmt(defendantSide.birth_date) || '[дата рождения]';
+
+    // === Статья: собираем из full_number + часть + пункты ===
+    let defendantArticle = '';
+    if (defendantSide.article_detail?.full_number) {
+      defendantArticle = defendantSide.article_detail.full_number;
+    } else if (defendantSide.article) {
+      defendantArticle = String(defendantSide.article);
+    }
+
+    if (defendantSide.article_part) {
+      defendantArticle += ` ч.${defendantSide.article_part}`;
+    }
+
+    if (defendantSide.article_clauses) {
+      const clauses = Array.isArray(defendantSide.article_clauses)
+        ? defendantSide.article_clauses.join(',')
+        : defendantSide.article_clauses;
+      if (clauses) {
+        defendantArticle += ` п.${clauses}`;
+      }
+    }
+
+    if (!defendantArticle) {
+      defendantArticle = '[статья УК РФ]';
+    }
+
+    const defendantCustody =
+      defendantSide.restraint_measure_display ||
+      defendantSide.restraint_measure ||
+      'заключения под стражу';
+
+    // === Прокурор / защитник ===
+    const prosecutorSide = findSide(['prosecutor', 'прокурор', 'гособвинитель']);
+    const lawyerSide = findSide(['lawyer', 'адвокат', 'защитник']);
+
+    const prosecutor = prosecutorSide.name || '[ФИО прокурора]';
+    const lawyer = lawyerSide.name || '[ФИО защитника]';
+
+    const lawyerCenter =
+      'Единый Крымский Республиканский центр субсидированной юридической помощи';
+
+    // === Участники ===
+    const participants =
+      wizardData.selectedParticipants
+        .filter((p) => p.selected)
+        .map((p) => p.name)
+        .join(', ') || '[список участников]';
+
+    // === Даты ===
+    const receiptDate = fmt(caseData?.indictment_receipt_date) || '[дата]';
+    const receivedDate = fmt(caseData?.case_received_date) || '[дата]';
+
+    const replacements = {
+      '{{case_number}}': caseNo,
+      '{{judge_name}}': judge,
+      '{{court_name}}': courtName,
+      '{{court_address}}': courtAddress,
+      '{{hearing_date}}': fmt(wizardData.hearingDate),
+      '{{hearing_time}}': wizardData.hearingTime || '',
+      '{{hearing_room}}': wizardData.hearingRoom || '',
+      '{{hearing_type}}':
+        wizardData.hearingType === 'preliminary'
+          ? 'предварительное слушание'
+          : 'судебное заседание',
+      '{{session_type}}':
+        wizardData.sessionType === 'open' ? 'открытом' : 'закрытом',
+      '{{court_composition}}':
+        {
+          single: 'судьей единолично',
+          collegium: 'коллегией судей',
+          jury: 'с участием присяжных заседателей',
+        }[wizardData.courtComposition] || '',
+      '{{defendant_name}}': defendantName,
+      '{{defendant_birth_date}}': defendantBirth,
+      '{{defendant_article}}': defendantArticle,
+      '{{defendant_custody}}': defendantCustody,
+      '{{prosecutor_name}}': prosecutor,
+      '{{lawyer_name}}': lawyer,
+      '{{lawyer_center}}': lawyerCenter,
+      '{{participants}}': participants,
+      '{{decision_date}}': today,
+      '{{receipt_date}}': receiptDate,
+      '{{case_received_date}}': receivedDate,
+    };
+
+    let result = content;
+    Object.entries(replacements).forEach(([key, value]) => {
+      const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      result = result.replace(new RegExp(escaped, 'g'), value ?? '');
+    });
+    return result;
   };
 
   // Генерация содержимого документа

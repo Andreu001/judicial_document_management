@@ -201,17 +201,6 @@ class CriminalProceedings(models.Model):
         null=True, blank=True, verbose_name="Дата принятия дела судьей"
     )
 
-    closed_court_session = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=[
-            ('1', 'Да'),
-            ('2', 'Нет'),
-        ],
-        verbose_name="Закрытое судебное заседание"
-    )
-
     # Пункт 5 - Решение судьи при назначении дела
     judge_decision = models.CharField(
         max_length=255,
@@ -594,20 +583,6 @@ class CriminalProceedings(models.Model):
         verbose_name="Продолжительность рассмотрения дела (дней)"
     )
     
-    # Категория длительности
-    consideration_duration_category = models.CharField(
-        max_length=2,
-        null=True, blank=True,
-        choices=[
-            ('1', 'до 1 месяца'),
-            ('2', 'от 1 до 3 месяцев'),
-            ('3', 'от 3 до 6 месяцев'),
-            ('4', 'от 6 месяцев до 1 года'),
-            ('5', 'свыше 1 года'),
-        ],
-        verbose_name="Категория длительности рассмотрения"
-    )
-
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -659,17 +634,6 @@ class Defendant(models.Model):
         on_delete=models.CASCADE,
         related_name='criminal_defendants',
         verbose_name='Подсудимый по делу'
-    )
-    
-    # --- ИЗМЕНЕНИЕ: ЗАМЕНЯЕМ IntegerField на ForeignKey ---
-    # Статья обвинения (обвинение)
-    article = models.ForeignKey(
-        CriminalCodeArticle,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='defendant_charges',
-        verbose_name='Статья УК РФ (обвинение)'
     )
     
     # Статья по приговору

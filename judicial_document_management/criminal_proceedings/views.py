@@ -129,25 +129,67 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
     
-    @action(detail=True, methods=['get'], url_path='all-sides')
     def all_sides(self, request, pk=None):
-        """Возвращает объединённый список всех сторон по делу (обвиняемые, адвокаты, иные стороны)"""
-        proceeding = self.get_object()
+        from .models_person_card import CriminalPersonCard, CrimeComposition
 
-        # 1. Обвиняемые
+        proceeding = self.get_object()
         defendants = Defendant.objects.filter(criminal_proceedings=proceeding)
-        defendant_list = [
-            {
+
+        defendant_list = []
+        for d in defendants:
+            article_obj = None
+            article_part = ''
+            article_clauses = ''
+
+            # Статья обвинения теперь берётся ТОЛЬКО из карточки подсудимого
+            try:
+                person_card = CriminalPersonCard.objects.filter(defendant=d).first()
+                if person_card:
+                    main_crime = CrimeComposition.objects.filter(
+                        person_card=person_card, article_type='1'
+                    ).select_related('article').first() \
+                        or CrimeComposition.objects.filter(
+                            person_card=person_card
+                        ).select_related('article').first()
+
+                    if main_crime and main_crime.article:
+                        article_obj = main_crime.article
+                        article_part = main_crime.article_part or ''
+                        article_clauses = main_crime.article_clauses or ''
+            except Exception as e:
+                logger.warning(f"Не удалось получить статью из карточки для defendant {d.id}: {e}")
+
+            article_data = None
+            if article_obj:
+                article_data = {
+                    'id': article_obj.id,
+                    'full_number': article_obj.full_number,
+                    'number': article_obj.number,
+                    'title_short': getattr(article_obj, 'title_short', '') or '',
+                }
+
+            defendant_list.append({
                 'id': d.id,
                 'type': 'defendant',
                 'name': d.full_name_criminal or f"Обвиняемый #{d.id}",
                 'role': 'Обвиняемый',
-                'details': d.full_name_criminal or ''
-            }
-            for d in defendants
-        ]
+                'details': d.full_name_criminal or '',
+                'full_name_criminal': d.full_name_criminal or '',
+                'birth_date': d.birth_date.isoformat() if d.birth_date else None,
+                'article': article_obj.id if article_obj else None,
+                'article_part': article_part,
+                'article_clauses': article_clauses,
+                'article_detail': article_data,
+                'restraint_measure': d.restraint_measure or '',
+                'restraint_measure_display': (
+                    d.get_restraint_measure_display()
+                    if hasattr(d, 'get_restraint_measure_display') and d.restraint_measure else ''
+                ),
+                'citizenship': d.citizenship or '',
+                'address': d.address or '',
+            })
 
-        # 2. Адвокаты (исправлено: используем lawyer.law_firm_name)
+        # 2. Адвокаты
         lawyers = LawyerCriminal.objects.filter(criminal_proceedings=proceeding)
         lawyer_list = [
             {
@@ -155,12 +197,15 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
                 'type': 'lawyer',
                 'name': l.lawyer.law_firm_name if l.lawyer else 'Адвокат',
                 'role': l.sides_case_role.sides_case if l.sides_case_role else 'Адвокат',
-                'details': l.lawyer.law_firm_name if l.lawyer else ''
+                'details': l.lawyer.law_firm_name if l.lawyer else '',
+                'law_firm_name': l.lawyer.law_firm_name if l.lawyer else '',
+                'law_firm_phone': l.lawyer.law_firm_phone if l.lawyer else '',
+                'law_firm_email': l.lawyer.law_firm_email if l.lawyer else '',
             }
             for l in lawyers
         ]
 
-        # 3. Иные стороны (исправлено: используем criminal_side_case.name)
+        # 3. Иные стороны
         sides = CriminalSidesCaseInCase.objects.filter(criminal_proceedings=proceeding)
         side_list = [
             {
@@ -168,7 +213,7 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
                 'type': 'side',
                 'name': s.criminal_side_case.name if s.criminal_side_case else 'Сторона',
                 'role': s.sides_case_criminal.sides_case if s.sides_case_criminal else 'Участник',
-                'details': s.criminal_side_case.name if s.criminal_side_case else ''
+                'details': s.criminal_side_case.name if s.criminal_side_case else '',
             }
             for s in sides
         ]

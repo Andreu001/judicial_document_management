@@ -252,54 +252,31 @@ class LawyerCriminalSerializer(serializers.ModelSerializer):
 class DefendantSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='sides_case_defendant.name', read_only=True)
     full_name = serializers.CharField(source='sides_case_defendant.name', read_only=True)
-    
-    # Поле для чтения ID стороны (для фронтенда)
     sides_case_defendant_id = serializers.IntegerField(source='sides_case_defendant.id', read_only=True)
-    
-    # Поле для записи ID стороны (обязательное при создании)
     sides_case_defendant_input = serializers.IntegerField(
-        write_only=True, 
-        required=True,
-        source='sides_case_defendant_id'
+        write_only=True, required=True, source='sides_case_defendant_id'
     )
-    
     sides_case_defendant_name = serializers.CharField(
-        source='sides_case_defendant.sides_case', 
-        read_only=True
+        source='sides_case_defendant.sides_case', read_only=True
     )
 
     edit_name = serializers.CharField(write_only=True, required=False)
     edit_address = serializers.CharField(write_only=True, required=False)
     edit_birth_date = serializers.DateField(write_only=True, required=False)
-    
-    # --- НОВЫЕ ПОЛЯ ДЛЯ СТАТЕЙ ---
-    # Детальная информация о статье обвинения
-    article_detail = serializers.SerializerMethodField()
+
+    # --- ОСТАВЛЯЕМ ТОЛЬКО СТАТЬЮ ПО ПРИГОВОРУ ---
     conviction_article_detail = serializers.SerializerMethodField()
-    
-    # Структура статьи (части и пункты) для фронтенда
-    article_structure = serializers.SerializerMethodField()
     conviction_article_structure = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Defendant
         fields = "__all__"
         read_only_fields = ("criminal_proceedings", "sides_case_defendant")
         extra_kwargs = {
             'sides_case_defendant': {'required': False, 'read_only': True},
-            'article': {'required': False, 'allow_null': True},
+            # 'article' УБРАТЬ — поля больше нет в модели
             'conviction_article': {'required': False, 'allow_null': True},
         }
-    
-    def get_article_detail(self, obj):
-        if obj.article:
-            return {
-                'id': obj.article.id,
-                'full_number': obj.article.full_number,
-                'title': obj.article.title[:100] if obj.article.title else '',
-                'parts': obj.article.structure.get('parts', []) if obj.article.structure else []
-            }
-        return None
     
     def get_conviction_article_detail(self, obj):
         if obj.conviction_article:
@@ -309,12 +286,6 @@ class DefendantSerializer(serializers.ModelSerializer):
                 'title': obj.conviction_article.title[:100] if obj.conviction_article.title else '',
                 'parts': obj.conviction_article.structure.get('parts', []) if obj.conviction_article.structure else []
             }
-        return None
-    
-    def get_article_structure(self, obj):
-        """Возвращает структуру статьи для фронтенда (части и пункты)"""
-        if obj.article and obj.article.structure:
-            return obj.article.structure
         return None
     
     def get_conviction_article_structure(self, obj):

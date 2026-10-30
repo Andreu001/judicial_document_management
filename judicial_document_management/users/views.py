@@ -37,7 +37,7 @@ class UserViewSet(viewsets.ModelViewSet):
             # Только админы могут создавать/изменять/удалять пользователей
             return [IsAdmin()]
         # Все аутентифицированные могут просматривать
-        return [AllowAny]
+        return [AllowAny()]
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

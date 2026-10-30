@@ -675,24 +675,6 @@ export const CaseCategoryTab = ({
           </div>
 
           <div className={styles.field}>
-            <label>Закрытое судебное заседание</label>
-            {isEditing ? (
-              <select
-                name="closed_court_session"
-                value={formData.closed_court_session || ''}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="">Выберите</option>
-                <option value="1">Да</option>
-                <option value="2">Нет</option>
-              </select>
-            ) : (
-              <span>{criminalData?.closed_court_session === '1' ? 'Да' : criminalData?.closed_court_session === '2' ? 'Нет' : 'Не указано'}</span>
-            )}
-          </div>
-
-          <div className={styles.field}>
             <label>Решение судьи при назначении дела</label>
             {isEditing ? (
               <select

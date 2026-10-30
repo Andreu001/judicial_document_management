@@ -622,41 +622,6 @@ const DefendantDetail = () => {
                       </div>
                     </div>
                   </div>
-
-                  <div className={styles.fieldGroup}>
-                    <h3 className={styles.subsectionTitle}>Уголовная статья</h3>
-                    <div className={styles.tabGrid}>
-                      <div className={styles.field}>
-                        <ArticleSelector
-                          value={selectedArticleId}
-                          onChange={setSelectedArticleId}
-                          onPartChange={setSelectedArticlePart}
-                          onClausesChange={setSelectedArticleClauses}
-                          partValue={selectedArticlePart}
-                          clausesValue={selectedArticleClauses}
-                          label="Статья обвинения (УК РФ)"
-                          disabled={!isEditing && !isCreateMode}
-                        />
-                      </div>
-
-                      <div className={styles.field}>
-                        <label>Максимальное наказание (лет)</label>
-                        {isEditing || isCreateMode ? (
-                          <input
-                            type="number"
-                            name="maximum_penalty_article"
-                            value={formData.maximum_penalty_article || ''}
-                            onChange={handleInputChange}
-                            className={styles.input}
-                          />
-                        ) : (
-                          <span>
-                            {currentDefendant?.maximum_penalty_article ? `${currentDefendant.maximum_penalty_article} лет` : 'Не указано'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 

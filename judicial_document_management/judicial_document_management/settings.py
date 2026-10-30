@@ -201,7 +201,7 @@ AUTH_PASSWORD_VALIDATORS = [
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-    BASE_DIR / 'static' / 'admin_custom',
+    # BASE_DIR / 'static' / 'admin_custom',
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
