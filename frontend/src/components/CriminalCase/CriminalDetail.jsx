@@ -503,8 +503,8 @@ const CriminalDetail = () => {
                 <div className={styles.tabContent}>
                   <JudgeAssistant proceedingId={id} />
                 </div>
-              )}          
-              {activeTab === 'evidence' && <EvidenceTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} formatBoolean={formatBoolean} criminalData={criminalData} />}
+              )}
+              {activeTab === 'evidence' && <EvidenceTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleFieldChange={handleFieldChange} formatBoolean={formatBoolean} criminalData={criminalData} />}
               {activeTab === 'category' && <CaseCategoryTab isEditing={isEditing && !isArchived} formData={formData} options={options} caseMovement={caseMovement} handleDateChange={handleDateChange} handleInputChange={handleInputChange} handleFieldChange={handleFieldChange} getOptionLabel={getOptionLabel} criminalData={criminalData} formatDate={formatDate} setShowRulingModal={setShowRulingModal} showPreliminaryHearingGrounds={() => formData.judge_decision === '2'} formatBoolean={formatBoolean} />}
               {activeTab === 'result' && <ResultTab 
                 isEditing={isEditing && !isArchived} 
@@ -520,12 +520,8 @@ const CriminalDetail = () => {
               {activeTab === 'expertise' && <ExpertiseAndJoiningTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleDateChange={handleDateChange} formatDate={formatDate} />}
               {activeTab === 'private' && <PrivateRulingsAndDatesTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleDateChange={handleDateChange} formatDate={formatDate} criminalData={criminalData} />}
               {activeTab === 'additional' && <AdditionalTab isEditing={isEditing} formData={formData} handleInputChange={handleInputChange} criminalData={criminalData} handleDateChange={handleDateChange} formatDate={formatDate} formatBoolean={formatBoolean} isArchived={isArchived} />}
-              {activeTab === 'private' && <PrivateRulingsAndDatesTab isEditing={isEditing && !isArchived} formData={formData} handleInputChange={handleInputChange} handleDateChange={handleDateChange} formatDate={formatDate} criminalData={criminalData} />}
-              
               {/* НОВАЯ ВКЛАДКА АУДИО */}
               {activeTab === 'audio' && <AudioTranscriptionTab caseId={id} />}
-              
-              {activeTab === 'additional' && <AdditionalTab isEditing={isEditing} formData={formData} handleInputChange={handleInputChange} criminalData={criminalData} handleDateChange={handleDateChange} formatDate={formatDate} formatBoolean={formatBoolean} isArchived={isArchived} />}
             </div>
           </div>
         </div>

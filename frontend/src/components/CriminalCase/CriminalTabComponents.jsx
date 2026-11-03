@@ -368,6 +368,55 @@ export const BasicInfoTab = ({
             </div>
           )}
         </div>
+
+        <div className={styles.fieldGroup}>
+          <h3 className={styles.subsectionTitle}>Важные даты</h3>
+
+          <div className={styles.field}>
+            <label>Дата сдачи дела в отдел делопроизводства</label>
+            {isEditing ? (
+              <input
+                type="date"
+                name="case_to_office_date"
+                value={formData.case_to_office_date || ''}
+                onChange={(e) => handleDateChange('case_to_office_date', e.target.value)}
+                className={styles.input}
+              />
+            ) : (
+              <span>{formatDate(criminalData.case_to_office_date)}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>Дата вступления приговора в законную силу</label>
+            {isEditing ? (
+              <input
+                type="date"
+                name="sentence_effective_date"
+                value={formData.sentence_effective_date || ''}
+                onChange={(e) => handleDateChange('sentence_effective_date', e.target.value)}
+                className={styles.input}
+              />
+            ) : (
+              <span>{formatDate(criminalData.sentence_effective_date)}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>Дата сдачи в архив</label>
+            {isEditing ? (
+              <input
+                type="date"
+                name="archived_date"
+                value={formData.archived_date || ''}
+                onChange={(e) => handleDateChange('archived_date', e.target.value)}
+                className={styles.input}
+              />
+            ) : (
+              <span>{formatDate(criminalData.archived_date)}</span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -789,244 +838,327 @@ export const CaseCategoryTab = ({
 
 // =================== РЕЗУЛЬТАТ И СОСТАВ (ResultTab) ===================
 
-export const ResultTab = ({ 
-  isEditing, 
-  formData, 
-  options, 
-  handleInputChange, 
-  handleFieldChange,  // <-- ДОБАВИТЬ ЭТОТ ПАРАМЕТР
-  getOptionLabel, 
-  criminalData, 
-  formatBoolean 
-}) => (
-  <div className={styles.tabContent}>
-    <div className={styles.tabGrid}>
-      <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>Результат рассмотрения дела</h3>
-        
-        <div className={styles.field}>
-          <label>Результат рассмотрения</label>
-          {isEditing ? (
-            <select
-              name="case_result"
-              value={formData.case_result || ''}
-              onChange={handleInputChange}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              {options.caseResult.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span>{getOptionLabel(options.caseResult, criminalData.case_result)}</span>
-          )}
+// =================== РЕЗУЛЬТАТ И СОСТАВ (ResultTab) ===================
+
+/**
+ * Компонент вкладки "Результат и состав".
+ *
+ * Особенности:
+ *  - Поле "Дата вынесения приговора" (sentence_date) — перед "Результат рассмотрения".
+ *  - Поле "Общая продолжительность (дни)" (total_duration_days) — рассчитывается
+ *    автоматически как разница между датой поступления дела в суд (incoming_date)
+ *    и датой вынесения приговора (sentence_date). Ручной ввод запрещён.
+ *  - Поле "Категория длительности рассмотрения" (case_duration_category) —
+ *    заполняется пользователем вручную и сохраняется в БД.
+ */
+export const ResultTab = ({
+  isEditing,
+  formData,
+  options,
+  handleInputChange,
+  handleFieldChange,
+  getOptionLabel,
+  criminalData,
+  formatBoolean
+}) => {
+  const incomingDate = formData?.incoming_date || criminalData?.incoming_date;
+  const sentenceDate = formData?.sentence_date || criminalData?.sentence_date;
+
+  let calculatedDuration = null;
+  if (incomingDate && sentenceDate) {
+    const start = new Date(incomingDate);
+    const end = new Date(sentenceDate);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+      const diffMs = end.getTime() - start.getTime();
+      calculatedDuration = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    }
+  }
+
+  const autoCategory = (() => {
+    if (calculatedDuration === null) return '';
+    if (calculatedDuration > 1095) return '5'; // свыше 3 л.
+    if (calculatedDuration > 730) return '4';  // свыше 2 л. до 3 л.
+    if (calculatedDuration > 365) return '3';  // свыше 1 г. до 2 л.
+    if (calculatedDuration > 90) return '2';   // свыше 3 мес. до 1 г.
+    if (calculatedDuration > 45) return '1';   // свыше 1,5 мес. до 3 мес.
+    return '';
+  })();
+
+  React.useEffect(() => {
+    if (
+      isEditing &&
+      autoCategory &&
+      !formData?.case_duration_category &&
+      typeof handleFieldChange === 'function'
+    ) {
+      handleFieldChange('case_duration_category', autoCategory);
+    }
+  }, [calculatedDuration, autoCategory, isEditing]);
+
+  React.useEffect(() => {
+    if (
+      isEditing &&
+      calculatedDuration !== null &&
+      formData?.total_duration_days !== calculatedDuration &&
+      typeof handleFieldChange === 'function'
+    ) {
+      handleFieldChange('total_duration_days', calculatedDuration);
+    }
+  }, [calculatedDuration, isEditing]);
+
+  return (
+    <div className={styles.tabContent}>
+      <div className={styles.tabGrid}>
+        <div className={styles.fieldGroup}>
+          <h3 className={styles.subsectionTitle}>Результат рассмотрения дела</h3>
+
+          <div className={styles.field}>
+            <label>Дата вынесения приговора</label>
+            {isEditing ? (
+              <input
+                type="date"
+                name="sentence_date"
+                value={formData.sentence_date || ''}
+                onChange={(e) =>
+                  handleFieldChange('sentence_date', e.target.value || null)
+                }
+                className={styles.input}
+              />
+            ) : (
+              <span>{criminalData.sentence_date ? new Date(criminalData.sentence_date).toLocaleDateString('ru-RU') : 'Не указано'}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>Результат рассмотрения</label>
+            {isEditing ? (
+              <select
+                name="case_result"
+                value={formData.case_result || ''}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                {options.caseResult.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>{getOptionLabel(options.caseResult, criminalData.case_result)}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>
+              Общая продолжительность (дни)
+              <small style={{ display: 'block', color: '#888', fontWeight: 'normal' }}>
+                рассчитывается автоматически: дата вынесения приговора − дата поступления дела в суд
+              </small>
+            </label>
+            <span>
+              {calculatedDuration !== null
+                ? calculatedDuration
+                : (criminalData.total_duration_days || 'Не указано')}
+            </span>
+            {isEditing && (
+              <input
+                type="hidden"
+                name="total_duration_days"
+                value={calculatedDuration !== null ? calculatedDuration : (formData.total_duration_days || '')}
+              />
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>Категория длительности рассмотрения</label>
+            {isEditing ? (
+              <select
+                name="case_duration_category"
+                value={formData.case_duration_category || ''}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                {options.caseDurationCategory.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>{getOptionLabel(options.caseDurationCategory, criminalData.case_duration_category)}</span>
+            )}
+          </div>
+
+          {/* Количество лиц, в отношении которых дело прекращено */}
+          <div className={styles.field}>
+            <label>Количество лиц, дело прекращено по нереабилитирующим основаниям</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="persons_non_rehabilitated"
+                value={formData.persons_non_rehabilitated || 0}
+                onChange={handleInputChange}
+                className={styles.input}
+                min="0"
+              />
+            ) : (
+              <span>{criminalData.persons_non_rehabilitated || 0}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label>Количество лиц, дело прекращено по реабилитирующим основаниям</label>
+            {isEditing ? (
+              <input
+                type="number"
+                name="persons_rehabilitated"
+                value={formData.persons_rehabilitated || 0}
+                onChange={handleInputChange}
+                className={styles.input}
+                min="0"
+              />
+            ) : (
+              <span>{criminalData.persons_rehabilitated || 0}</span>
+            )}
+          </div>
         </div>
 
-        <div className={styles.field}>
-          <label>Общая продолжительность (дни)</label>
-          {isEditing ? (
-            <input
-              type="number"
-              name="total_duration_days"
-              value={formData.total_duration_days || ''}
-              onChange={handleInputChange}
-              className={styles.input}
-            />
-          ) : (
-            <span>{criminalData.total_duration_days || 'Не указано'}</span>
-          )}
-        </div>
+        <div className={styles.fieldGroup}>
+          <h3 className={styles.subsectionTitle}>Состав суда и участие в процессе</h3>
 
-        <div className={styles.field}>
-          <label>Категория длительности рассмотрения</label>
-          {isEditing ? (
-            <select
-              name="case_duration_category"
-              value={formData.case_duration_category || ''}
-              onChange={handleInputChange}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              {options.caseDurationCategory.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span>{getOptionLabel(options.caseDurationCategory, criminalData.case_duration_category)}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+            <label>Без участия подсудимого (ч. 5 ст. 247 УПК РФ)</label>
+            {isEditing ? (
+              <select
+                name="absence_defendant"
+                value={formData.absence_defendant === true ? 'true' : formData.absence_defendant === false ? 'false' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleFieldChange('absence_defendant', val === 'true' ? true : val === 'false' ? false : null);
+                }}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            ) : (
+              <span>{formatBoolean(criminalData.absence_defendant)}</span>
+            )}
+          </div>
 
-        {/* Количество лиц, в отношении которых дело прекращено */}
-        <div className={styles.field}>
-          <label>Количество лиц, дело прекращено по нереабилитирующим основаниям</label>
-          {isEditing ? (
-            <input
-              type="number"
-              name="persons_non_rehabilitated"
-              value={formData.persons_non_rehabilitated || 0}
-              onChange={handleInputChange}
-              className={styles.input}
-              min="0"
-            />
-          ) : (
-            <span>{criminalData.persons_non_rehabilitated || 0}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+            <label>Без участия адвоката у подсудимого</label>
+            {isEditing ? (
+              <select
+                name="absence_lawyer"
+                value={formData.absence_lawyer === true ? 'true' : formData.absence_lawyer === false ? 'false' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleFieldChange('absence_lawyer', val === 'true' ? true : val === 'false' ? false : null);
+                }}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            ) : (
+              <span>{formatBoolean(criminalData.absence_lawyer)}</span>
+            )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Количество лиц, дело прекращено по реабилитирующим основаниям</label>
-          {isEditing ? (
-            <input
-              type="number"
-              name="persons_rehabilitated"
-              value={formData.persons_rehabilitated || 0}
-              onChange={handleInputChange}
-              className={styles.input}
-              min="0"
-            />
-          ) : (
-            <span>{criminalData.persons_rehabilitated || 0}</span>
-          )}
-        </div>
-      </div>
+          <div className={styles.field}>
+            <label>Закрытое заседание</label>
+            {isEditing ? (
+              <select
+                name="closed_hearing"
+                value={formData.closed_hearing === true ? 'true' : formData.closed_hearing === false ? 'false' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleFieldChange('closed_hearing', val === 'true' ? true : val === 'false' ? false : null);
+                }}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            ) : (
+              <span>{formatBoolean(criminalData.closed_hearing)}</span>
+            )}
+          </div>
 
-      <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>Состав суда и участие в процессе</h3>
-        
-        <div className={styles.field}>
-          <label>Без участия подсудимого (ч. 5 ст. 247 УПК РФ)</label>
-          {isEditing ? (
-            <select
-              name="absence_defendant"
-              value={formData.absence_defendant === true ? 'true' : formData.absence_defendant === false ? 'false' : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleFieldChange('absence_defendant', val === 'true' ? true : val === 'false' ? false : null);
-              }}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              <option value="true">Да</option>
-              <option value="false">Нет</option>
-            </select>
-          ) : (
-            <span>{formatBoolean(criminalData.absence_defendant)}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+            <label>Участие прокурора</label>
+            {isEditing ? (
+              <select
+                name="participation_prosecutor"
+                value={formData.participation_prosecutor === true ? 'true' : formData.participation_prosecutor === false ? 'false' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleFieldChange('participation_prosecutor', val === 'true' ? true : val === 'false' ? false : null);
+                }}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            ) : (
+              <span>{formatBoolean(criminalData.participation_prosecutor)}</span>
+            )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Без участия адвоката у подсудимого</label>
-          {isEditing ? (
-            <select
-              name="absence_lawyer"
-              value={formData.absence_lawyer === true ? 'true' : formData.absence_lawyer === false ? 'false' : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleFieldChange('absence_lawyer', val === 'true' ? true : val === 'false' ? false : null);
-              }}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              <option value="true">Да</option>
-              <option value="false">Нет</option>
-            </select>
-          ) : (
-            <span>{formatBoolean(criminalData.absence_lawyer)}</span>
-          )}
-        </div>
+          <div className={styles.field}>
+            <label>Особый порядок при согласии обвиняемого</label>
+            {isEditing ? (
+              <select
+                name="special_procedure_consent"
+                value={formData.special_procedure_consent === true ? 'true' : formData.special_procedure_consent === false ? 'false' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleFieldChange('special_procedure_consent', val === 'true' ? true : val === 'false' ? false : null);
+                }}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            ) : (
+              <span>{formatBoolean(criminalData.special_procedure_consent)}</span>
+            )}
+          </div>
 
-        <div className={styles.field}>
-          <label>Закрытое заседание</label>
-          {isEditing ? (
-            <select
-              name="closed_hearing"
-              value={formData.closed_hearing === true ? 'true' : formData.closed_hearing === false ? 'false' : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleFieldChange('closed_hearing', val === 'true' ? true : val === 'false' ? false : null);
-              }}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              <option value="true">Да</option>
-              <option value="false">Нет</option>
-            </select>
-          ) : (
-            <span>{formatBoolean(criminalData.closed_hearing)}</span>
-          )}
-        </div>
-
-        <div className={styles.field}>
-          <label>Участие прокурора</label>
-          {isEditing ? (
-            <select
-              name="participation_prosecutor"
-              value={formData.participation_prosecutor === true ? 'true' : formData.participation_prosecutor === false ? 'false' : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleFieldChange('participation_prosecutor', val === 'true' ? true : val === 'false' ? false : null);
-              }}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              <option value="true">Да</option>
-              <option value="false">Нет</option>
-            </select>
-          ) : (
-            <span>{formatBoolean(criminalData.participation_prosecutor)}</span>
-          )}
-        </div>
-
-        <div className={styles.field}>
-          <label>Особый порядок при согласии обвиняемого</label>
-          {isEditing ? (
-            <select
-              name="special_procedure_consent"
-              value={formData.special_procedure_consent === true ? 'true' : formData.special_procedure_consent === false ? 'false' : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleFieldChange('special_procedure_consent', val === 'true' ? true : val === 'false' ? false : null);
-              }}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              <option value="true">Да</option>
-              <option value="false">Нет</option>
-            </select>
-          ) : (
-            <span>{formatBoolean(criminalData.special_procedure_consent)}</span>
-          )}
-        </div>
-
-        <div className={styles.field}>
-          <label>Особый порядок при досудебном соглашении</label>
-          {isEditing ? (
-            <select
-              name="special_procedure_agreement"
-              value={formData.special_procedure_agreement === true ? 'true' : formData.special_procedure_agreement === false ? 'false' : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleFieldChange('special_procedure_agreement', val === 'true' ? true : val === 'false' ? false : null);
-              }}
-              className={styles.select}
-            >
-              <option value="">Выберите</option>
-              <option value="true">Да</option>
-              <option value="false">Нет</option>
-            </select>
-          ) : (
-            <span>{formatBoolean(criminalData.special_procedure_agreement)}</span>
-          )}
+          <div className={styles.field}>
+            <label>Особый порядок при досудебном соглашении</label>
+            {isEditing ? (
+              <select
+                name="special_procedure_agreement"
+                value={formData.special_procedure_agreement === true ? 'true' : formData.special_procedure_agreement === false ? 'false' : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleFieldChange('special_procedure_agreement', val === 'true' ? true : val === 'false' ? false : null);
+                }}
+                className={styles.select}
+              >
+                <option value="">Выберите</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            ) : (
+              <span>{formatBoolean(criminalData.special_procedure_agreement)}</span>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // =================== СУДЕБНОЕ РЕШЕНИЕ (AppealTab) ===================
 export const AppealTab = ({
@@ -1750,41 +1882,47 @@ export const ExpertiseAndJoiningTab = ({ isEditing, formData, handleInputChange,
 );
 
 // =================== ЧАСТНЫЕ ОПРЕДЕЛЕНИЯ И ДАТЫ ===================
-export const PrivateRulingsAndDatesTab = ({ isEditing, formData, handleInputChange, handleDateChange, formatDate, criminalData }) => (
+export const PrivateRulingsAndDatesTab = ({
+  isEditing,
+  formData,
+  handleInputChange,
+  handleDateChange,
+  formatDate,
+}) => (
   <div className={styles.tabContent}>
     <div className={styles.tabGrid}>
       <div className={styles.fieldGroup}>
         <h3 className={styles.subsectionTitle}>Частные определения</h3>
+
         <div className={styles.field}>
           <label>Количество частных определений (постановлений)</label>
-          {isEditing ? <input type="number" name="private_rulings_count" value={formData.private_rulings_count || ''} onChange={handleInputChange} className={styles.input} /> : <span>{formData.private_rulings_count || 'Не указано'}</span>}
+          {isEditing ? (
+            <input
+              type="number"
+              name="private_rulings_count"
+              value={formData.private_rulings_count || ''}
+              onChange={handleInputChange}
+              className={styles.input}
+              min="0"
+            />
+          ) : (
+            <span>{formData.private_rulings_count || 'Не указано'}</span>
+          )}
         </div>
-      </div>
-      <div className={styles.fieldGroup}>
-        <h3 className={styles.subsectionTitle}>Важные даты</h3>
+
         <div className={styles.field}>
-          <label>Дата сдачи дела в отдел делопроизводства</label>
-          {isEditing ? <input type="date" name="case_to_office_date" value={formData.case_to_office_date || ''} onChange={(e) => handleDateChange('case_to_office_date', e.target.value)} className={styles.input} /> : <span>{formatDate(formData.case_to_office_date)}</span>}
-        </div>
-        <div className={styles.field}>
-          <label>Дата вступления приговора в законную силу</label>
-          {isEditing ? <input type="date" name="sentence_effective_date" value={formData.sentence_effective_date || ''} onChange={(e) => handleDateChange('sentence_effective_date', e.target.value)} className={styles.input} /> : <span>{formatDate(formData.sentence_effective_date)}</span>}
-        </div>
-        <div className={styles.field}>
-          <label>Дата обращения приговора к исполнению</label>
-          {isEditing ? <input type="date" name="sentence_execution_date" value={formData.sentence_execution_date || ''} onChange={(e) => handleDateChange('sentence_execution_date', e.target.value)} className={styles.input} /> : <span>{formatDate(formData.sentence_execution_date)}</span>}
-        </div>
-        <div className={styles.field}>
-          <label>Дата направления приговора для исполнения</label>
-          {isEditing ? <input type="date" name="execution_sent_date" value={formData.execution_sent_date || ''} onChange={(e) => handleDateChange('execution_sent_date', e.target.value)} className={styles.input} /> : <span>{formatDate(formData.execution_sent_date)}</span>}
-        </div>
-        <div className={styles.field}>
-          <label>Куда направлен приговор для исполнения</label>
-          {isEditing ? <input type="text" name="execution_sent_to" value={formData.execution_sent_to || ''} onChange={handleInputChange} className={styles.input} /> : <span>{formData.execution_sent_to || 'Не указано'}</span>}
-        </div>
-        <div className={styles.field}>
-          <label>Дата сдачи в архив</label>
-          {isEditing ? <input type="date" name="archived_date" value={formData.archived_date || ''} onChange={(e) => handleDateChange('archived_date', e.target.value)} className={styles.input} /> : <span>{formatDate(criminalData?.archived_date)}</span>}
+          <label>Дата вынесения частного определения</label>
+          {isEditing ? (
+            <input
+              type="date"
+              name="private_rulings_date"
+              value={formData.private_rulings_date || ''}
+              onChange={(e) => handleDateChange('private_rulings_date', e.target.value)}
+              className={styles.input}
+            />
+          ) : (
+            <span>{formatDate(formData.private_rulings_date)}</span>
+          )}
         </div>
       </div>
     </div>

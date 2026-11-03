@@ -5,7 +5,7 @@ from .models import (FamiliarizationCase, SidesCase,
                      Petitions, ConsideredCase, Decisions,
                      Category, BusinessCard, PetitionsInCase,
                      SidesCaseInCase, Appeal, BusinessMovement,
-                     Lawyer, ExecutionCase)
+                     Lawyer, ExecutionCase, LawyerProfile)
 from django.contrib.auth import get_user_model
 from criminal_proceedings.serializers import CriminalProceedingsSerializer
 
@@ -224,19 +224,30 @@ class ExecutionCaseSerializer(serializers.ModelSerializer):
                   )
 
 
+class LawyerProfileSerializer(serializers.ModelSerializer):
+    """Сериализатор реестра адвокатов"""
+
+    class Meta:
+        model = LawyerProfile
+        fields = '__all__'
+        read_only_fields = ('id',)
+
+
 class LawyerSerializer(serializers.ModelSerializer):
     sides_case_incase = serializers.PrimaryKeyRelatedField(
         queryset=SidesCaseInCase.objects.all()
     )
-    
-
     sides_case_incase_name = serializers.SerializerMethodField()
-    
+    profile_detail = LawyerProfileSerializer(source='profile', read_only=True)
+    payment_status_display = serializers.CharField(
+        source='get_payment_status_display', read_only=True
+    )
+
     class Meta:
         model = Lawyer
         fields = '__all__'
         read_only_fields = ('id',)
-    
+
     def get_sides_case_incase_name(self, obj):
         if obj.sides_case_incase:
             return obj.sides_case_incase.name
@@ -244,56 +255,120 @@ class LawyerSerializer(serializers.ModelSerializer):
 
 
 class LawyerCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания адвокатов"""
-    
-    # Поля для создания связанного SidesCaseInCase
-    name = serializers.CharField(write_only=True, required=True)
-    status = serializers.CharField(write_only=True, default='individual')
-    sides_case = serializers.PrimaryKeyRelatedField(
-        queryset=SidesCase.objects.filter(sides_case='Адвокат(защитник)'),
-        many=True,
+    """Создание/обновление адвоката под форму LawyerDetails.jsx"""
+
+    lawyer_data = serializers.DictField(write_only=True, required=False)
+    sides_case_role = serializers.PrimaryKeyRelatedField(
+        queryset=SidesCase.objects.all(),
         write_only=True,
-        required=True
+        required=False,
+        allow_null=True
     )
-    address = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    email = serializers.EmailField(write_only=True, required=False, allow_blank=True)
-    
+    profile_id = serializers.PrimaryKeyRelatedField(
+        queryset=LawyerProfile.objects.all(),
+        source='profile',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    save_to_registry = serializers.BooleanField(
+        write_only=True, required=False, default=False
+    )
+
     class Meta:
         model = Lawyer
         fields = [
-            'id', 'name', 'status', 'sides_case', 'address', 'phone', 'email',
-            'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
-            'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
-            'lawyer_certificate_number', 'lawyer_certificate_date',
-            'days_for_payment', 'payment_amount', 'payment_date', 'notes'
+            'id',
+            'lawyer_data', 'sides_case_role',
+            'profile_id', 'save_to_registry',
         ]
-    
-    def create(self, validated_data):
-        # Извлекаем данные для SidesCaseInCase
-        business_card = self.context['business_card']
-        name = validated_data.pop('name')
-        status = validated_data.pop('status')
-        sides_case_ids = validated_data.pop('sides_case')
-        address = validated_data.pop('address', '')
-        phone = validated_data.pop('phone', '')
-        email = validated_data.pop('email', '')
-        
-        # Создаем SidesCaseInCase для адвоката
-        sides_case_incase = SidesCaseInCase.objects.create(
+
+    # ---- helpers ----
+    def _pop_lawyer_data(self, validated_data):
+        lawyer_data = validated_data.pop('lawyer_data', {}) or {}
+        sides_case_role = validated_data.pop('sides_case_role', None)
+        profile = validated_data.get('profile')
+        save_to_registry = validated_data.pop('save_to_registry', False)
+        return lawyer_data, sides_case_role, profile, save_to_registry
+
+    def _create_profile_if_needed(self, lawyer_data, profile, save_to_registry):
+        if profile is None and save_to_registry:
+            profile = LawyerProfile.objects.create(
+                full_name=lawyer_data.get('full_name') or lawyer_data.get('law_firm_name') or 'Адвокат',
+                law_firm_name=lawyer_data.get('law_firm_name'),
+                law_firm_address=lawyer_data.get('law_firm_address'),
+                law_firm_phone=lawyer_data.get('law_firm_phone'),
+                law_firm_email=lawyer_data.get('law_firm_email'),
+                bank_name=lawyer_data.get('bank_name'),
+                bank_bik=lawyer_data.get('bank_bik'),
+                correspondent_account=lawyer_data.get('correspondent_account'),
+                payment_account=lawyer_data.get('payment_account'),
+                lawyer_certificate_number=lawyer_data.get('lawyer_certificate_number'),
+                lawyer_certificate_date=lawyer_data.get('lawyer_certificate_date'),
+                notes=lawyer_data.get('notes'),
+            )
+        return profile
+
+    def _build_sides_case_incase(self, business_card, lawyer_data, sides_case_role):
+        name = lawyer_data.get('law_firm_name') or 'Адвокат'
+        address = lawyer_data.get('law_firm_address')
+        phone = lawyer_data.get('law_firm_phone')
+        email = lawyer_data.get('law_firm_email')
+
+        incase = SidesCaseInCase.objects.create(
             name=name,
-            status=status,
+            status='individual',
             address=address,
             phone=phone,
             email=email,
-            business_card=business_card
         )
-        sides_case_incase.sides_case.set(sides_case_ids)
-        
-        # Создаем Lawyer
+        if sides_case_role is not None:
+            incase.sides_case.set([sides_case_role])
+        return incase
+
+    # ---- create ----
+    def create(self, validated_data):
+        business_card = self.context.get('business_card')
+        lawyer_data, sides_case_role, profile, save_to_registry = self._pop_lawyer_data(validated_data)
+        profile = self._create_profile_if_needed(lawyer_data, profile, save_to_registry)
+
+        incase = self._build_sides_case_incase(business_card, lawyer_data, sides_case_role)
+
         lawyer = Lawyer.objects.create(
-            sides_case_incase=sides_case_incase,
-            **validated_data
+            sides_case_incase=incase,
+            profile=profile,
+            **{k: v for k, v in lawyer_data.items() if k in [
+                'full_name', 'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
+                'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
+                'lawyer_certificate_number', 'lawyer_certificate_date',
+                'days_for_payment', 'payment_amount', 'payment_date', 'payment_date',
+                'payment_status', 'payment_request_date', 'accounting_sent_date',
+                'notes',
+            ]}
         )
-        
         return lawyer
+
+    # ---- update ----
+    def update(self, instance, validated_data):
+        lawyer_data, sides_case_role, profile, save_to_registry = self._pop_lawyer_data(validated_data)
+        profile = self._create_profile_if_needed(lawyer_data, profile, save_to_registry)
+
+        if profile is not None:
+            instance.profile = profile
+
+        if sides_case_role is not None and instance.sides_case_incase:
+            instance.sides_case_incase.sides_case.set([sides_case_role])
+
+        for key, value in lawyer_data.items():
+            if key in [
+                'full_name', 'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
+                'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
+                'lawyer_certificate_number', 'lawyer_certificate_date',
+                'days_for_payment', 'payment_amount', 'payment_date', 'payment_per_day',
+                'payment_status', 'payment_request_date', 'accounting_sent_date',
+                'notes',
+            ]:
+                setattr(instance, key, value)
+
+        instance.save()
+        return instance

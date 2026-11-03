@@ -171,8 +171,6 @@
 
 .tabContentWrapper {
   padding: 1.25rem;
-  max-height: calc(100vh - 250px);
-  overflow-y: auto;
 }
 
 .tabContent {
@@ -401,7 +399,10 @@
   }
   
   .tabs {
-    flex-direction: column;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8fafd;
   }
   
   .tabContentWrapper {
@@ -482,4 +483,44 @@
     max-width: none;
     position: static;
   }
+}
+
+.registryToggleBlock {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #eef6ff;
+  border: 1px solid #b7d8ff;
+  border-radius: 8px;
+}
+
+.autocompleteList {
+  list-style: none;
+  margin: 4px 0 0 0;
+  padding: 4px 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 100;
+  background: white;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.autocompleteItem {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #2d3748;
+}
+
+.autocompleteItem:hover {
+  background: #eef6ff;
+}
+
+.autocompleteWrapper {
+  position: relative;
 }

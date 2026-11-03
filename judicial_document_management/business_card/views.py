@@ -2,20 +2,21 @@ from django.contrib.auth import get_user_model
 # from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 # from django.http import HttpResponseBadRequest
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
 from rest_framework.response import Response
 from rest_framework import status
 from users.permissions import IsCourtStaff, IsLawyer
 
 from .models import (SidesCase, Petitions, Category, BusinessCard,
-                     Appeal, SidesCaseInCase, Decisions, Lawyer)
+                     Appeal, SidesCaseInCase, Decisions, Lawyer, LawyerProfile)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           ConsideredCaseSerializer, ExecutionCaseSerializer,
                           CategorySerializer, BusinessCardSerializer,
                           PetitionsInCaseSerializer, SidesCaseInCaseSerializer,
                           AppealSerializer, BusinessMovementSerializer,
-                          LawyerSerializer, DecisionsSerializer, LawyerCreateSerializer)
+                          LawyerSerializer, DecisionsSerializer, LawyerCreateSerializer,
+                          LawyerProfileSerializer)
 from django_filters import rest_framework as django_filters
 from rest_framework.decorators import action
 from .filters import SidesCaseInCaseFilter
@@ -38,11 +39,15 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 class SidesCaseViewSet(viewsets.ModelViewSet):
-    """
-    Список сторон по делу
-    """
     queryset = SidesCase.objects.all()
     serializer_class = SidesCaseSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # ?lawyer=1 — вернуть только адвокатские роли
+        if self.request.query_params.get('lawyer') == '1':
+            queryset = queryset.filter(sides_case__icontains='Адвокат')
+        return queryset
 
 
 class PetitionsViewSet(viewsets.ModelViewSet):
@@ -425,6 +430,13 @@ class ExecutionCaseViewSet(viewsets.ModelViewSet):
 
         instance = serializer.save(business_card=businesscard)
         instance.notification_parties.set(executioncase)
+
+
+class LawyerProfileViewSet(viewsets.ModelViewSet):
+    queryset = LawyerProfile.objects.filter(is_active=True)
+    serializer_class = LawyerProfileSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['full_name', 'law_firm_name', 'lawyer_certificate_number']
 
 
 class LawyerViewSet(viewsets.ModelViewSet):

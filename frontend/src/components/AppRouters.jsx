@@ -21,6 +21,7 @@ import CorrespondenceOut from "./Correspondence/CorrespondenceOut";
 import CorrespondenceForm from "./Correspondence/CorrespondenceForm";
 import CorrespondenceDetail from "./Correspondence/CorrespondenceDetail";
 import LawyerDetails from "../pages/sides/LawyerDetails";
+import LawyerProfilesPage from '../pages/sides/LawyerProfilesPage';
 import PersonSearch from "./ParticipantsProcess/PersonSearch";
 import CivilDetail from "./CivilCase/CivilDetail";
 import CivilDecisionDetail from "./CivilCase/CivilDecisionDetail";
@@ -298,6 +299,11 @@ const AppRouter = () => {
         <Route path="person-search" element={
           <JudgeRoute>
             <PersonSearch />
+          </JudgeRoute>
+        } />
+        <Route path="lawyer-profiles" element={
+          <JudgeRoute>
+            <LawyerProfilesPage />
           </JudgeRoute>
         } />
         <Route path="hr" element={

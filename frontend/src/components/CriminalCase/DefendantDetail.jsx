@@ -483,12 +483,12 @@ const DefendantDetail = () => {
               >
                 Меры пресечения
               </button>
-              <button 
+              {/* <button 
                 className={`${styles.tab} ${activeTab === 'punishment' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('punishment')}
               >
                 Наказание
-              </button>
+              </button> */}
               <button 
                 className={`${styles.tab} ${activeTab === 'financial' ? styles.activeTab : ''}`}
                 onClick={() => setActiveTab('financial')}
@@ -744,7 +744,7 @@ const DefendantDetail = () => {
                   </div>
                 </div>
               )}
-
+{/*
               {activeTab === 'punishment' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>
@@ -825,7 +825,7 @@ const DefendantDetail = () => {
                   </div>
                 </div>
               )}
-
+*/}
               {activeTab === 'financial' && (
                 <div className={styles.tabContent}>
                   <div className={styles.fieldGroup}>

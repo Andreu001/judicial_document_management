@@ -279,9 +279,52 @@ class SidesCaseInCase(models.Model):
         return f'{self.name} ({self.get_status_display()})'
 
 
+class LawyerProfile(models.Model):
+    """Реестр адвокатов (не привязан к конкретному делу)"""
+    full_name = models.CharField(max_length=255, verbose_name="ФИО адвоката")
+    law_firm_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Адвокатское образование")
+    law_firm_address = models.TextField(blank=True, null=True, verbose_name="Адрес")
+    law_firm_phone = models.CharField(max_length=50, blank=True, null=True, verbose_name="Телефон")
+    law_firm_email = models.EmailField(blank=True, null=True, verbose_name="Email")
+
+    bank_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Банк")
+    bank_bik = models.CharField(max_length=20, blank=True, null=True, verbose_name="БИК")
+    correspondent_account = models.CharField(max_length=30, blank=True, null=True, verbose_name="Корр. счёт")
+    payment_account = models.CharField(max_length=30, blank=True, null=True, verbose_name="Расчётный счёт")
+
+    lawyer_certificate_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="№ удостоверения")
+    lawyer_certificate_date = models.DateField(blank=True, null=True, verbose_name="Дата выдачи")
+
+    notes = models.TextField(blank=True, null=True, verbose_name="Примечания")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    class Meta:
+        verbose_name = "Адвокат (реестр)"
+        verbose_name_plural = "Реестр адвокатов"
+        ordering = ['full_name']
+        indexes = [
+            models.Index(fields=['full_name']),
+        ]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.law_firm_name or '—'})"
+
+
 class Lawyer(models.Model):
     '''Модель для адвокатов с информацией об оплате'''
 
+    full_name = models.CharField(
+        max_length=255,
+        blank=True, null=True,
+        verbose_name='ФИО адвоката'
+    )
+    profile = models.ForeignKey(
+        LawyerProfile,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='assignments',
+        verbose_name="Профиль адвоката (реестр)"
+    )
     law_firm_name = models.CharField(
         blank=True,
         null=True,
@@ -351,6 +394,14 @@ class Lawyer(models.Model):
         default=0,
         verbose_name='Количество дней для оплаты'
     )
+    payment_per_day = models.DecimalField(
+        blank=True,
+        null=True,
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Сумма оплаты за один день (руб.)'
+    )
     payment_amount = models.DecimalField(
         blank=True,
         null=True,
@@ -368,6 +419,26 @@ class Lawyer(models.Model):
         blank=True,
         null=True,
         verbose_name='Примечания'
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('none', 'Не требуется'),
+            ('requested', 'Заявка подана'),
+            ('approved', 'Постановление вынесено'),
+            ('sent_to_accounting', 'Направлено в бухгалтерию'),
+            ('paid', 'Оплачено'),
+        ],
+        default='none',
+        verbose_name="Статус оплаты"
+    )
+    payment_request_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата заявки на оплату"
+    )
+    accounting_sent_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата направления в бухгалтерию"
     )
 
     def __str__(self):

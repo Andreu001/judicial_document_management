@@ -569,6 +569,22 @@ class CriminalCaseService {
     }
   }
 
+  static async getSentencedPunishmentOptions() {
+    try {
+      const response = await baseService.get(`${BASE_URL}sentenced-punishment-options/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sentenced punishment options:', error);
+      return {
+        instance: [],
+        punishment_category: [],
+        punishment_type: [],
+        assignment_features: [],
+        release_basis: [],
+      };
+    }
+  }
+
   // === Архивные операции ===
 
   static async archiveCriminalProceeding(proceedingId) {

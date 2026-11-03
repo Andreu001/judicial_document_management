@@ -354,6 +354,11 @@ class CriminalProceedings(models.Model):
         verbose_name="Количество частных определений (постановлений)"
     )
 
+    private_rulings_date = models.DateField(
+        null=True, blank=True,
+        verbose_name="Дата вынесения частного определения (постановления)"
+    )
+
     # Пункт 12 - Сдача в делопроизводство
     case_to_office_date = models.DateField(
         null=True, blank=True,
@@ -612,8 +617,18 @@ class CriminalProceedings(models.Model):
         verbose_name = "Уголовное производство"
         verbose_name_plural = "Уголовные производства"
 
-    def __str__(self):
-        return f"Уголовное дело {self.case_number_criminal}"
+        def __str__(self):
+            return f"Уголовное дело {self.case_number_criminal}"
+
+    def save(self, *args, **kwargs):
+        """
+        Автоматический подсчёт продолжительности рассмотрения дела:
+        """
+        if self.incoming_date and self.sentence_date:
+            delta = self.sentence_date - self.incoming_date
+            self.total_duration_days = delta.days
+
+        super().save(*args, **kwargs)
 
 
 class Defendant(models.Model):
@@ -773,7 +788,7 @@ class Defendant(models.Model):
         verbose_name="Изменена на меру"
     )
 
-    # Статья по приговору (уже есть выше)
+    # Статья по приговору (убрать? есть подробно в персональной карточке)
     
     punishment_type = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Вид наказания"

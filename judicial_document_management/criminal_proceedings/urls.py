@@ -15,7 +15,8 @@ from .views import (CriminalProceedingsViewSet, DefendantViewSet,
     CriminalCassationResultViewSet, CriminalSupervisoryResultViewSet)
 from .views_person_card import (
     CriminalPersonCardViewSet, PreviousConvictionViewSet,
-    CrimeCompositionViewSet, SentencedPunishmentViewSet
+    CrimeCompositionViewSet, SentencedPunishmentViewSet,
+    sentenced_punishment_options
 )
 
 router = routers.DefaultRouter()
@@ -138,4 +139,6 @@ urlpatterns = [
     path("criminal-proceedings/<int:proceeding_id>/all-sides/",
          CriminalProceedingsViewSet.all_sides,
          name="all-sides"),
+    path("sentenced-punishment-options/", sentenced_punishment_options,
+         name="sentenced-punishment-options"),
 ]

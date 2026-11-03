@@ -3,6 +3,7 @@ ViewSet для статистической карточки на подсуди
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -11,6 +12,9 @@ import logging
 from .models import Defendant, CriminalProceedings
 from .models_person_card import (
     CriminalPersonCard, PreviousConviction, CrimeComposition, SentencedPunishment
+)
+from .person_card_constants import (
+    COURT_INSTANCE_CHOICES, PUNISHMENT_TYPE_CHOICES, SENTENCING_FEATURE_CHOICES
 )
 from .serializers_person_card import (
     CriminalPersonCardSerializer,
@@ -152,3 +156,35 @@ class SentencedPunishmentViewSet(viewsets.ModelViewSet):
         person_card_id = self.kwargs.get('person_card_id')
         person_card = get_object_or_404(CriminalPersonCard, pk=person_card_id)
         serializer.save(person_card=person_card)
+
+
+@api_view(['GET'])
+def sentenced_punishment_options(request):
+    """Опции для формы назначенного наказания"""
+    return Response({
+        'instance': [
+            {'value': v, 'label': l} for v, l in COURT_INSTANCE_CHOICES
+        ],
+        'punishment_category': [
+            {'value': 'main', 'label': 'основное наказание'},
+            {'value': 'main_separate', 'label': 'основное наказание, исполняемое самостоятельно'},
+            {'value': 'additional', 'label': 'дополнительное наказание'},
+        ],
+        'punishment_type': [
+            {'value': v, 'label': l} for v, l in PUNISHMENT_TYPE_CHOICES
+        ],
+        'assignment_features': [
+            {'value': v, 'label': l} for v, l in SENTENCING_FEATURE_CHOICES
+        ],
+        'release_basis': [
+            {'value': v, 'label': l} for v, l in [
+                ('0', 'не освобождался'),
+                ('1', 'амнистия (ст. 84 УК РФ)'),
+                ('2', 'изменение обстановки (ст. 80.1 УК РФ)'),
+                ('3', 'болезнь (ст. 81 УК РФ)'),
+                ('4', 'помещение в спец. учебно-воспитательное учреждение'),
+                ('5', 'принудительные меры воспитательного воздействия'),
+                ('6', 'истечение срока давности (ст. 78, 83 УК РФ)'),
+            ]
+        ],
+    })

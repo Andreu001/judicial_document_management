@@ -50,8 +50,16 @@ const CriminalPersonCard = () => {
     instance: 'first',
     punishment_category: 'main',
     punishment_type: '',
+    fine_amount: '',
+    fine_multiplier: '',
+    fine_percent: '',
+    hours: '',
+    years: '',
+    months: '',
     amount: '',
-    assignment_features: ''
+    unit: '',
+    assignment_features: '',
+    release_basis: '',
   });
   
   // Опции для select
@@ -62,6 +70,10 @@ const CriminalPersonCard = () => {
     court_result: [],
     correctional_institution: [],
     punishment_type: [],
+    punishment_category: [],
+    instance: [],
+    assignment_features: [],
+    release_basis: [],
     recidivism: [],
     crime_stage: []
   });
@@ -116,6 +128,7 @@ const CriminalPersonCard = () => {
   useEffect(() => {
     if (proceedingId && defendantId) {
       loadData();
+      loadOptions();
     }
   }, [proceedingId, defendantId]);
   
@@ -161,10 +174,12 @@ const CriminalPersonCard = () => {
     try {
       const [
         defendantOptions,
-        criminalOptions
+        criminalOptions,
+        punishmentOptions,
       ] = await Promise.all([
         CriminalCaseService.getDefendantOptions(),
-        CriminalCaseService.getCriminalOptions()
+        CriminalCaseService.getCriminalOptions(),
+        CriminalCaseService.getSentencedPunishmentOptions(),
       ]);
       
       setOptions({
@@ -173,7 +188,11 @@ const CriminalPersonCard = () => {
         occupation: [],
         court_result: criminalOptions.case_result || [],
         correctional_institution: [],
-        punishment_type: [],
+        punishment_type: punishmentOptions.punishment_type || [],
+        punishment_category: punishmentOptions.punishment_category || [],
+        instance: punishmentOptions.instance || [],
+        assignment_features: punishmentOptions.assignment_features || [],
+        release_basis: punishmentOptions.release_basis || [],
         recidivism: [],
         crime_stage: []
       });
@@ -357,39 +376,46 @@ const CriminalPersonCard = () => {
   const addSentence = async () => {
     try {
       if (!card || !card.id) {
-        console.error('Card not found, cannot add sentence');
         alert('Сначала сохраните основную карточку');
         return;
       }
+
+      const sizeType = getPunishmentSizeType(newSentence.punishment_type);
 
       const sentenceData = {
         instance: newSentence.instance,
         punishment_category: newSentence.punishment_category,
         punishment_type: newSentence.punishment_type,
-        amount: newSentence.amount || null,
-        assignment_features: newSentence.assignment_features || null
+        assignment_features: newSentence.assignment_features || null,
+        release_basis: newSentence.release_basis || null,
       };
 
-      console.log('Sending sentence data:', sentenceData);
+      if (sizeType === 'money') {
+        sentenceData.fine_amount = newSentence.fine_amount || null;
+        sentenceData.fine_multiplier = newSentence.fine_multiplier || null;
+        sentenceData.fine_percent = newSentence.fine_percent || null;
+      } else if (sizeType === 'hours') {
+        sentenceData.hours = newSentence.hours || null;
+      } else if (sizeType === 'term') {
+        sentenceData.years = newSentence.years || null;
+        sentenceData.months = newSentence.months || null;
+      }
 
-      const sentence = await CriminalCaseService.createSentence(
-        card.id,
-        sentenceData
-      );
-      
+      const sentence = await CriminalCaseService.createSentence(card.id, sentenceData);
       setSentences([...sentences, sentence]);
       setShowAddSentence(false);
       setNewSentence({
         instance: 'first',
         punishment_category: 'main',
         punishment_type: '',
-        amount: '',
-        assignment_features: ''
+        fine_amount: '', fine_multiplier: '', fine_percent: '',
+        hours: '', years: '', months: '',
+        amount: '', unit: '',
+        assignment_features: '', release_basis: '',
       });
     } catch (error) {
       console.error('Ошибка добавления наказания:', error);
-      console.error('Error response:', error.response?.data);
-      alert(`Ошибка добавления наказания: ${JSON.stringify(error.response?.data)}`);
+      alert(`Ошибка: ${JSON.stringify(error.response?.data)}`);
     }
   };
   
@@ -411,6 +437,33 @@ const CriminalPersonCard = () => {
       }
     } catch (error) {
       console.error(`Ошибка удаления ${type}:`, error);
+    }
+  };
+
+  const getPunishmentSizeType = (punishmentType) => {
+    switch (punishmentType) {
+      case '1':   // штраф (руб.)
+        return 'money';
+
+      case '4':   // обязательные работы (часов)
+        return 'hours';
+
+      case '2':   // лишение права занимать должности / заниматься деятельностью (лет, месяцев)
+      case '5':   // исправительные работы (лет, месяцев)
+      case '6':   // ограничение по военной службе (лет, месяцев)
+      case '7':   // ограничение свободы
+      case '8':   // арест (месяцев)
+      case '9':   // содержание в дисциплинарной воинской части (лет, месяцев)
+      case '10':  // лишение свободы на определенный срок (лет, месяцев)
+      case '14':  // принудительные работы (лет, месяцев)
+        return 'term';
+
+      // '3.1', '3.2', '3.3' — лишение звания/чина/наград (размер не вводится)
+      // '11' — пожизненное лишение свободы (срок не вводится)
+      // '12' — смертная казнь (срок не вводится)
+      // '13' — наказание не назначалось (размер не вводится)
+      default:
+        return 'none';
     }
   };
   
@@ -1035,8 +1088,7 @@ const CriminalPersonCard = () => {
                 <div className={styles.cardItemHeader}>
                   <span className={styles.cardItemTitle}>
                     {sentence.instance === 'first' ? 'I инстанция' : 'Апелляция'} — 
-                    {sentence.punishment_category === 'main' ? 'Основное' : 
-                     sentence.punishment_category === 'additional' ? 'Дополнительное' : 'Основное (самостоятельно)'}
+                    {sentence.punishment_category_display || sentence.punishment_category}
                   </span>
                   <button 
                     onClick={() => deleteItem('sentence', sentence.id)}
@@ -1047,71 +1099,199 @@ const CriminalPersonCard = () => {
                 </div>
                 <div className={styles.cardItemDetails}>
                   <div>Вид: {sentence.punishment_type_display || sentence.punishment_type}</div>
-                  {sentence.amount && <div>Размер: {sentence.amount} {sentence.unit || ''}</div>}
+                  {/* Условное отображение размера */}
+                  {sentence.fine_amount && (
+                    <div>Штраф: {sentence.fine_amount} руб.</div>
+                  )}
+                  {sentence.fine_multiplier && (
+                    <div>Кратность: {sentence.fine_multiplier}×</div>
+                  )}
+                  {sentence.fine_percent && (
+                    <div>Процент дохода: {sentence.fine_percent}%</div>
+                  )}
+                  {sentence.hours && (
+                    <div>Часы: {sentence.hours} ч.</div>
+                  )}
+                  {(sentence.years || sentence.months) && (
+                    <div>
+                      Срок: {sentence.years || 0} г. {sentence.months || 0} мес.
+                    </div>
+                  )}
+                  {/* Fallback для старых записей */}
+                  {!sentence.fine_amount && !sentence.hours && !sentence.years && !sentence.months && sentence.amount && (
+                    <div>Размер: {sentence.amount} {sentence.unit_display || sentence.unit || ''}</div>
+                  )}
                 </div>
               </div>
             ))}
             
-            {showAddSentence && (
-              <div className={styles.addForm}>
-                <h4>Добавление наказания</h4>
-                <div className={styles.formGrid}>
-                  <div className={styles.fieldGroup}>
-                    <label>Инстанция</label>
-                    <select
-                      value={newSentence.instance}
-                      onChange={(e) => setNewSentence({...newSentence, instance: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="first">Первая инстанция</option>
-                      <option value="appeal">Апелляция</option>
-                    </select>
+            {showAddSentence && (() => {
+              const sizeType = getPunishmentSizeType(newSentence.punishment_type);
+              return (
+                <div className={styles.addForm}>
+                  <h4>Добавление наказания</h4>
+                  <div className={styles.formGrid}>
+
+                    {/* Инстанция */}
+                    <div className={styles.fieldGroup}>
+                      <label>Инстанция</label>
+                      <select
+                        value={newSentence.instance}
+                        onChange={(e) => setNewSentence({...newSentence, instance: e.target.value})}
+                        className={styles.select}
+                      >
+                        {options.instance.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Категория */}
+                    <div className={styles.fieldGroup}>
+                      <label>Категория</label>
+                      <select
+                        value={newSentence.punishment_category}
+                        onChange={(e) => setNewSentence({...newSentence, punishment_category: e.target.value})}
+                        className={styles.select}
+                      >
+                        {options.punishment_category.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Вид наказания */}
+                    <div className={styles.fieldGroup}>
+                      <label>Вид наказания</label>
+                      <select
+                        value={newSentence.punishment_type}
+                        onChange={(e) => setNewSentence({
+                          ...newSentence,
+                          punishment_type: e.target.value,
+                          // сбрасываем поля размера при смене вида
+                          fine_amount: '', fine_multiplier: '', fine_percent: '',
+                          hours: '', years: '', months: '',
+                        })}
+                        className={styles.select}
+                      >
+                        <option value="">Выберите</option>
+                        {options.punishment_type.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* РАЗМЕР — условный рендер */}
+                    {sizeType === 'money' && (
+                      <>
+                        <div className={styles.fieldGroup}>
+                          <label>Сумма штрафа (руб.)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={newSentence.fine_amount}
+                            onChange={(e) => setNewSentence({...newSentence, fine_amount: e.target.value})}
+                            className={styles.input}
+                          />
+                        </div>
+                        <div className={styles.fieldGroup}>
+                          <label>Кратность (если кратный сумме)</label>
+                          <input
+                            type="number"
+                            value={newSentence.fine_multiplier}
+                            onChange={(e) => setNewSentence({...newSentence, fine_multiplier: e.target.value})}
+                            className={styles.input}
+                          />
+                        </div>
+                        <div className={styles.fieldGroup}>
+                          <label>% от заработка/дохода</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={newSentence.fine_percent}
+                            onChange={(e) => setNewSentence({...newSentence, fine_percent: e.target.value})}
+                            className={styles.input}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {sizeType === 'hours' && (
+                      <div className={styles.fieldGroup}>
+                        <label>Количество часов</label>
+                        <input
+                          type="number"
+                          value={newSentence.hours}
+                          onChange={(e) => setNewSentence({...newSentence, hours: e.target.value})}
+                          className={styles.input}
+                        />
+                      </div>
+                    )}
+
+                    {sizeType === 'term' && (
+                      <>
+                        <div className={styles.fieldGroup}>
+                          <label>Срок (лет)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={newSentence.years}
+                            onChange={(e) => setNewSentence({...newSentence, years: e.target.value})}
+                            className={styles.input}
+                          />
+                        </div>
+                        <div className={styles.fieldGroup}>
+                          <label>Срок (месяцев)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="11"
+                            value={newSentence.months}
+                            onChange={(e) => setNewSentence({...newSentence, months: e.target.value})}
+                            className={styles.input}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Особенности назначения */}
+                    <div className={styles.fieldGroup}>
+                      <label>Особенности назначения</label>
+                      <select
+                        value={newSentence.assignment_features}
+                        onChange={(e) => setNewSentence({...newSentence, assignment_features: e.target.value})}
+                        className={styles.select}
+                      >
+                        <option value="">Выберите</option>
+                        {options.assignment_features.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Основания освобождения */}
+                    <div className={styles.fieldGroup}>
+                      <label>Основания освобождения</label>
+                      <select
+                        value={newSentence.release_basis}
+                        onChange={(e) => setNewSentence({...newSentence, release_basis: e.target.value})}
+                        className={styles.select}
+                      >
+                        <option value="">Выберите</option>
+                        {options.release_basis.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
                   </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Категория</label>
-                    <select
-                      value={newSentence.punishment_category}
-                      onChange={(e) => setNewSentence({...newSentence, punishment_category: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="main">Основное наказание</option>
-                      <option value="main_separate">Основное наказание, исполняемое самостоятельно</option>
-                      <option value="additional">Дополнительное наказание</option>
-                    </select>
-                  </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Вид наказания</label>
-                    <select
-                      value={newSentence.punishment_type}
-                      onChange={(e) => setNewSentence({...newSentence, punishment_type: e.target.value})}
-                      className={styles.select}
-                    >
-                      <option value="">Выберите</option>
-                      <option value="1">Штраф</option>
-                      <option value="5">Исправительные работы</option>
-                      <option value="10">Лишение свободы</option>
-                      <option value="7">Ограничение свободы</option>
-                      <option value="4">Обязательные работы</option>
-                      <option value="14">Принудительные работы</option>
-                    </select>
-                  </div>
-                  <div className={styles.fieldGroup}>
-                    <label>Размер</label>
-                    <input
-                      type="text"
-                      value={newSentence.amount}
-                      onChange={(e) => setNewSentence({...newSentence, amount: e.target.value})}
-                      className={styles.input}
-                      placeholder="например, 2 года 6 месяцев"
-                    />
+                  <div className={styles.formActions}>
+                    <button onClick={addSentence} className={styles.saveButton}>Добавить</button>
+                    <button onClick={() => setShowAddSentence(false)} className={styles.cancelButton}>Отмена</button>
                   </div>
                 </div>
-                <div className={styles.formActions}>
-                  <button onClick={addSentence} className={styles.saveButton}>Добавить</button>
-                  <button onClick={() => setShowAddSentence(false)} className={styles.cancelButton}>Отмена</button>
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
         

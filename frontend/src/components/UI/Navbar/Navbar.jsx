@@ -13,6 +13,7 @@ const Navbar = () => {
   const { isAuthenticated: isJudgeAuthenticated, user: judgeUser } = useAuth();
   const { isAuthenticated: isSideAuthenticated, user: sideUser } = useSideAuth();
   const location = useLocation();
+  const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
 
   // Определяем, кто авторизован
   const isJudge = isJudgeAuthenticated();
@@ -165,9 +166,24 @@ const Navbar = () => {
           )}
         </div>
 
-        <Link to="/person-search" className={location.pathname === '/person-search' ? styles.activeLink : ''}>
-          Участники процесса
-        </Link>
+        <div className={styles.dropdown}>
+          <button
+            onClick={() => { if (!isJudge) return; setIsParticipantsOpen(!isParticipantsOpen); }}
+            className={styles.dropdownButton}
+          >
+            Участники процесса
+          </button>
+          {isParticipantsOpen && (
+            <div className={styles.dropdownContent}>
+              <Link to="/person-search" className={location.pathname === '/person-search' ? styles.activeLink : ''}>
+                Поиск участников
+              </Link>
+              <Link to="/lawyer-profiles" className={location.pathname === '/lawyer-profiles' ? styles.activeLink : ''}>
+                Реестр адвокатов
+              </Link>
+            </div>
+          )}
+        </div>
         <Link to="/hr" className={location.pathname === '/hr' ? styles.activeLink : ''}>
           Кадры
         </Link>

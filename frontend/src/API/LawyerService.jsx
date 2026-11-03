@@ -4,15 +4,68 @@ const CIVIL_BASE_URL = '/civil_proceedings/civil-proceedings/';
 const ADMIN_BASE_URL = '/administrative_code/administrative-proceedings/';
 
 class LawyerService {
-
-    // === Роли сторон (из business_card) ===
   
-  static async getSideRoles() {
+  // === Реестр адвокатов ===
+
+  static async getLawyerRoles() {
     try {
-      const response = await baseService.get('/business_card/sides/');
+      const response = await baseService.get('/business_card/sides/?lawyer=1');
       return response.data;
     } catch (error) {
-      console.error('Error fetching side roles:', error);
+      console.error('Error fetching lawyer roles:', error);
+      return [];
+    }
+  }
+
+  static async searchLawyerProfiles(query) {
+    try {
+      const response = await baseService.get(
+        `/business_card/lawyer-profiles/?search=${encodeURIComponent(query)}`
+      );
+      // DRF SearchFilter возвращает либо массив, либо {results: [...]}
+      return Array.isArray(response.data) ? response.data : (response.data.results || []);
+    } catch (error) {
+      console.error('Error searching lawyer profiles:', error);
+      return [];
+    }
+  }
+
+  static async createLawyerProfile(data) {
+    try {
+      const response = await baseService.post('/business_card/lawyer-profiles/', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating lawyer profile:', error);
+      throw error;
+    }
+  }
+
+    static async updateLawyerProfile(id, data) {
+    try {
+      const response = await baseService.put(`/business_card/lawyer-profiles/${id}/`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating lawyer profile:', error);
+      throw error;
+    }
+  }
+
+  static async deleteLawyerProfile(id) {
+    try {
+      const response = await baseService.delete(`/business_card/lawyer-profiles/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting lawyer profile:', error);
+      throw error;
+    }
+  }
+
+  static async getAllLawyerProfiles() {
+    try {
+      const response = await baseService.get('/business_card/lawyer-profiles/');
+      return Array.isArray(response.data) ? response.data : (response.data.results || []);
+    } catch (error) {
+      console.error('Error fetching lawyer profiles:', error);
       return [];
     }
   }

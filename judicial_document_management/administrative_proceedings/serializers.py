@@ -208,6 +208,7 @@ class KasLawyerSerializer(serializers.ModelSerializer):
         if obj.lawyer:
             return {
                 'id': obj.lawyer.id,
+                'full_name': obj.lawyer.full_name,
                 'law_firm_name': obj.lawyer.law_firm_name,
                 'law_firm_address': obj.lawyer.law_firm_address,
                 'law_firm_phone': obj.lawyer.law_firm_phone,
@@ -219,6 +220,7 @@ class KasLawyerSerializer(serializers.ModelSerializer):
                 'payment_account': obj.lawyer.payment_account,
                 'lawyer_certificate_date': obj.lawyer.lawyer_certificate_date,
                 'days_for_payment': obj.lawyer.days_for_payment,
+                'payment_per_day': obj.lawyer.payment_per_day,
                 'payment_amount': obj.lawyer.payment_amount,
                 'payment_date': obj.lawyer.payment_date,
                 'notes': obj.lawyer.notes,

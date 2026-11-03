@@ -535,6 +535,34 @@ class SentencedPunishment(models.Model):
         verbose_name="Единицы измерения",
         null=True, blank=True
     )
+    years = models.PositiveSmallIntegerField(
+        verbose_name="Срок (лет)",
+        null=True, blank=True
+    )
+    months = models.PositiveSmallIntegerField(
+        verbose_name="Срок (месяцев)",
+        null=True, blank=True
+    )
+    fine_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="Сумма штрафа (руб.)",
+        null=True, blank=True
+    )
+    fine_multiplier = models.PositiveIntegerField(
+        verbose_name="Кратность штрафа",
+        null=True, blank=True
+    )
+    fine_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name="Процент от заработка/дохода",
+        null=True, blank=True
+    )
+    hours = models.PositiveIntegerField(
+        verbose_name="Количество часов",
+        null=True, blank=True
+    )
     
     # 6.5, 7.7 Особенности назначения
     assignment_features = models.CharField(

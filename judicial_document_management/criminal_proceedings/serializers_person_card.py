@@ -126,6 +126,7 @@ class SentencedPunishmentSerializer(serializers.ModelSerializer):
     instance_display = serializers.CharField(source='get_instance_display', read_only=True)
     punishment_category_display = serializers.CharField(source='get_punishment_category_display', read_only=True)
     punishment_type_display = serializers.CharField(source='get_punishment_type_display', read_only=True)
+    unit_display = serializers.CharField(source='get_unit_display', read_only=True)
     
     class Meta:
         model = SentencedPunishment

@@ -12,6 +12,8 @@ const LawyerDetails = () => {
   const { proceedingId, lawyerId, materialId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileResults, setProfileResults] = useState([]);
   
   // Определяем тип дела по URL
   const caseType = location.pathname.includes('/admin-proceedings/') ? 'admin' : 
@@ -28,6 +30,7 @@ const LawyerDetails = () => {
   const [activeTab, setActiveTab] = useState('main');
     
   const [formData, setFormData] = useState({
+    full_name: '',
     sides_case_role: '',
     law_firm_name: '',
     law_firm_address: '',
@@ -40,9 +43,11 @@ const LawyerDetails = () => {
     lawyer_certificate_number: '',
     lawyer_certificate_date: '',
     days_for_payment: '',
+    payment_per_day: '',
     payment_amount: '',
     payment_date: '',
-    notes: ''
+    notes: '',
+    save_to_registry: false,
   });
   
   const [loading, setLoading] = useState(true);
@@ -80,11 +85,23 @@ const LawyerDetails = () => {
   };
 
   useEffect(() => {
+    const days = parseFloat(formData.days_for_payment) || 0;
+    const perDay = parseFloat(formData.payment_per_day) || 0;
+    if (days > 0 && perDay > 0) {
+      const total = (days * perDay).toFixed(2);
+      setFormData(prev => ({
+        ...prev,
+        payment_amount: total,
+      }));
+    }
+  }, [formData.days_for_payment, formData.payment_per_day]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        const rolesResponse = await LawyerService.getSideRoles();
+        const rolesResponse = await LawyerService.getLawyerRoles();
         setSideRoles(rolesResponse || []);
         
         if (lawyerId && lawyerId !== 'create') {
@@ -111,6 +128,10 @@ const LawyerDetails = () => {
             setLawyerData(data);
 
             setFormData({
+              full_name:
+                data.lawyer_detail?.full_name ||
+                data.profile_detail?.full_name ||
+                '',
               sides_case_role: data.sides_case_role?.id || data.sides_case_role || '',
               law_firm_name: data.lawyer_detail?.law_firm_name || '',
               law_firm_address: data.lawyer_detail?.law_firm_address || '',
@@ -123,6 +144,7 @@ const LawyerDetails = () => {
               lawyer_certificate_number: data.lawyer_detail?.lawyer_certificate_number || '',
               lawyer_certificate_date: data.lawyer_detail?.lawyer_certificate_date || '',
               days_for_payment: data.lawyer_detail?.days_for_payment || '',
+              payment_per_day: data.lawyer_detail?.payment_per_day || '',
               payment_amount: data.lawyer_detail?.payment_amount || '',
               payment_date: data.lawyer_detail?.payment_date || '',
               notes: data.lawyer_detail?.notes || ''
@@ -146,6 +168,48 @@ const LawyerDetails = () => {
     fetchData();
   }, [effectiveProceedingId, lawyerId, caseType]);
 
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
+
+  useEffect(() => {
+    if (!profileSearch || profileSearch.length < 2) {
+      setProfileResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await LawyerService.searchLawyerProfiles(profileSearch);
+        setProfileResults(results || []);
+      } catch (err) {
+        console.error('Ошибка поиска по реестру:', err);
+        setProfileResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [profileSearch]);
+
+  // Подстановка данных профиля в форму
+  const applyProfile = (profile) => {
+    setFormData(prev => ({
+      ...prev,
+      full_name: profile.full_name || '',
+      law_firm_name: profile.law_firm_name || '',
+      law_firm_address: profile.law_firm_address || '',
+      law_firm_phone: profile.law_firm_phone || '',
+      law_firm_email: profile.law_firm_email || '',
+      bank_name: profile.bank_name || '',
+      bank_bik: profile.bank_bik || '',
+      correspondent_account: profile.correspondent_account || '',
+      payment_account: profile.payment_account || '',
+      lawyer_certificate_number: profile.lawyer_certificate_number || '',
+      lawyer_certificate_date: profile.lawyer_certificate_date || '',
+      notes: profile.notes || '',
+    }));
+    // Сохраняем выбранный профиль, чтобы при сохранении передать profile_id
+    setSelectedProfileId(profile.id);
+    setProfileSearch(profile.full_name || '');
+    setProfileResults([]);
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -162,6 +226,7 @@ const LawyerDetails = () => {
     try {
       const requestData = {
         lawyer_data: {
+          full_name: formData.full_name || null,
           law_firm_name: formData.law_firm_name,
           law_firm_address: formData.law_firm_address || null,
           law_firm_phone: formData.law_firm_phone || null,
@@ -174,10 +239,17 @@ const LawyerDetails = () => {
           lawyer_certificate_date: formData.lawyer_certificate_date || null,
           days_for_payment: formData.days_for_payment ? parseInt(formData.days_for_payment) : null,
           payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
+          payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
           payment_date: formData.payment_date || null,
-          notes: formData.notes || null
+          notes: formData.notes || null,
+          payment_status: formData.payment_status || 'none',
+          payment_request_date: formData.payment_request_date || null,
+          accounting_sent_date: formData.accounting_sent_date || null,
         },
-        sides_case_role: parseInt(formData.sides_case_role)
+        sides_case_role: formData.sides_case_role ? parseInt(formData.sides_case_role) : null,
+        // новые поля
+        profile_id: selectedProfileId || null,
+        save_to_registry: formData.save_to_registry || false,
       };
 
       Object.keys(requestData.lawyer_data).forEach(key => {
@@ -328,6 +400,17 @@ const LawyerDetails = () => {
 
             <div className={styles.tabContentWrapper}>
               <form onSubmit={handleSubmit}>
+                <div className={styles.registryToggleBlock}>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      name="save_to_registry"
+                      checked={formData.save_to_registry || false}
+                      onChange={handleInputChange}
+                    />
+                    Сохранить в реестр адвокатов (для повторного использования)
+                  </label>
+                </div>
                 {activeTab === 'main' && (
                   <div className={styles.tabContent}>
                     <div className={styles.fieldGroup}>
@@ -357,6 +440,46 @@ const LawyerDetails = () => {
 
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Основная информация</h3>
+
+                        <div className={styles.fieldGroup}>
+                          <h3 className={styles.subsectionTitle}>Выбор из реестра</h3>
+                          <div className={`${styles.field} ${styles.autocompleteWrapper}`}>
+                            <label>Адвокат из реестра</label>
+                            <input
+                              type="text"
+                              placeholder="Начните вводить ФИО или название фирмы..."
+                              value={profileSearch}
+                              onChange={(e) => setProfileSearch(e.target.value)}
+                              className={styles.input}
+                            />
+                            {profileResults.length > 0 && (
+                              <ul className={styles.autocompleteList}>
+                                {profileResults.map(p => (
+                                  <li
+                                    key={p.id}
+                                    onMouseDown={() => applyProfile(p)}
+                                    className={styles.autocompleteItem}
+                                  >
+                                    <strong>{p.full_name}</strong>
+                                    {p.law_firm_name ? ` — ${p.law_firm_name}` : ''}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={styles.field}>
+  <label>ФИО адвоката</label>
+  <input
+    type="text"
+    name="full_name"
+    value={formData.full_name || ''}
+    onChange={handleInputChange}
+    className={styles.input}
+    placeholder="ФИО адвоката"
+  />
+</div>
                       
                       <div className={styles.field}>
                         <label>Название организации *</label>
@@ -511,7 +634,34 @@ const LawyerDetails = () => {
                   <div className={styles.tabContent}>
                     <div className={styles.fieldGroup}>
                       <h3 className={styles.subsectionTitle}>Оплата за счет федерального бюджета</h3>
-                      
+
+                      <div className={styles.field}>
+                        <label>Статус оплаты</label>
+                        <select
+                          name="payment_status"
+                          value={formData.payment_status || 'none'}
+                          onChange={handleInputChange}
+                          className={styles.select}
+                        >
+                          <option value="none">Не требуется</option>
+                          <option value="requested">Заявка подана</option>
+                          <option value="approved">Постановление вынесено</option>
+                          <option value="sent_to_accounting">Направлено в бухгалтерию</option>
+                          <option value="paid">Оплачено</option>
+                        </select>
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дата ходатайства на оплату</label>
+                        <input
+                          type="date"
+                          name="payment_request_date"
+                          value={formData.payment_request_date || ''}
+                          onChange={handleInputChange}
+                          className={styles.input}
+                        />
+                      </div>
+
                       <div className={styles.field}>
                         <label>Количество дней для оплаты</label>
                         <input
@@ -520,8 +670,21 @@ const LawyerDetails = () => {
                           value={formData.days_for_payment || ''}
                           onChange={handleInputChange}
                           className={styles.input}
-                          placeholder="0"
                           min="0"
+                        />
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Сумма оплаты за один день (руб.)</label>
+                        <input
+                          type="number"
+                          name="payment_per_day"
+                          value={formData.payment_per_day || ''}
+                          onChange={handleInputChange}
+                          className={styles.input}
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
                         />
                       </div>
 
@@ -533,9 +696,9 @@ const LawyerDetails = () => {
                           value={formData.payment_amount || ''}
                           onChange={handleInputChange}
                           className={styles.input}
-                          placeholder="0.00"
                           step="0.01"
                           min="0"
+                          readOnly
                         />
                       </div>
 
@@ -545,6 +708,17 @@ const LawyerDetails = () => {
                           type="date"
                           name="payment_date"
                           value={formData.payment_date || ''}
+                          onChange={handleInputChange}
+                          className={styles.input}
+                        />
+                      </div>
+
+                      <div className={styles.field}>
+                        <label>Дата направления в бухгалтерию</label>
+                        <input
+                          type="date"
+                          name="accounting_sent_date"
+                          value={formData.accounting_sent_date || ''}
                           onChange={handleInputChange}
                           className={styles.input}
                         />
