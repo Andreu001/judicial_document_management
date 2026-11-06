@@ -580,6 +580,17 @@ class SideCaseService {
       return [];
     }
   }
+  static async getCaseMovements(caseType, caseId) {
+    try {
+      const response = await baseService.get(
+        `/side_case/movements/${caseType}/${caseId}/`
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching case movements:', error);
+      return [];
+    }
+  }
 }
 
 SideCaseService.setupAuthHeader();

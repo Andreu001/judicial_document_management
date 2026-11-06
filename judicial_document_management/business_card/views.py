@@ -8,7 +8,8 @@ from rest_framework import status
 from users.permissions import IsCourtStaff, IsLawyer
 
 from .models import (SidesCase, Petitions, Category, BusinessCard,
-                     Appeal, SidesCaseInCase, Decisions, Lawyer, LawyerProfile)
+                     Appeal, SidesCaseInCase, Decisions, Lawyer, LawyerProfile,
+                     CourtSessionResult, ReasonDeposition)
 from .serializers import (FamiliarizationCaseSerializer,
                           SidesCaseSerializer, PetitionsSerializer,
                           ConsideredCaseSerializer, ExecutionCaseSerializer,
@@ -16,7 +17,8 @@ from .serializers import (FamiliarizationCaseSerializer,
                           PetitionsInCaseSerializer, SidesCaseInCaseSerializer,
                           AppealSerializer, BusinessMovementSerializer,
                           LawyerSerializer, DecisionsSerializer, LawyerCreateSerializer,
-                          LawyerProfileSerializer)
+                          LawyerProfileSerializer, CourtSessionResultSerializer,
+                          ReasonDepositionSerializer)
 from django_filters import rest_framework as django_filters
 from rest_framework.decorators import action
 from .filters import SidesCaseInCaseFilter
@@ -291,51 +293,57 @@ class FamiliarizationCaseViewSet(viewsets.ModelViewSet):
         instance.notification_parties.set(familiarization)
 
 
+class CourtSessionResultViewSet(viewsets.ReadOnlyModelViewSet):
+    """Справочник: ход дела"""
+    queryset = CourtSessionResult.objects.filter(is_active=True)
+    serializer_class = CourtSessionResultSerializer
+    pagination_class = None
+
+
+class ReasonDepositionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Справочник: причина отложения"""
+    queryset = ReasonDeposition.objects.filter(is_active=True)
+    serializer_class = ReasonDepositionSerializer
+    pagination_class = None
+
+
 class BusinessMovementViewSet(viewsets.ModelViewSet):
-    """
-    Движение дела
-    """
+    """Движение дела"""
     serializer_class = BusinessMovementSerializer
 
     def get_queryset(self):
         businesscard = get_object_or_404(
             BusinessCard, pk=self.kwargs.get('businesscard_id')
-            )
-        new_queryset = businesscard.businessmovement.all()
-        return new_queryset
+        )
+        return businesscard.businessmovement.all()
 
     def perform_create(self, serializer):
         businesscard_id = self.kwargs.get('businesscard_id')
         businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-        decision_case_data = self.request.data.get('decision_case', [])
-        
+        decision_case_data = self.request.data.get('decision_case', []) or []
         decision_case_ids = [
             int(decision_id) for decision_id in decision_case_data
             if isinstance(decision_id, (int, str)) and str(decision_id).isdigit()
         ]
-
         decisions = Decisions.objects.filter(id__in=decision_case_ids)
-        
+
         instance = serializer.save(business_card=businesscard)
         instance.decision_case.set(decisions)
 
-def perform_update(self, serializer):
-    businesscard_id = self.kwargs.get('businesscard_id')
-    businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
+    def perform_update(self, serializer):
+        businesscard_id = self.kwargs.get('businesscard_id')
+        businesscard = get_object_or_404(BusinessCard, pk=businesscard_id)
 
-    decision_case_data = self.request.data.get('decision_case', [])
+        decision_case_data = self.request.data.get('decision_case', []) or []
+        decision_case_ids = [
+            int(decision_id) for decision_id in decision_case_data
+            if isinstance(decision_id, (int, str)) and str(decision_id).isdigit()
+        ]
+        decisions = Decisions.objects.filter(id__in=decision_case_ids)
 
-    decision_case_ids = [
-        int(decision_id) for decision_id in decision_case_data
-        if isinstance(decision_id, (int, str)) and str(decision_id).isdigit()
-    ]
-
-    decisions = Decisions.objects.filter(id__in=decision_case_ids)
-
-    instance = serializer.save(business_card=businesscard)
-
-    instance.decision_case.set(decisions)
+        instance = serializer.save(business_card=businesscard)
+        instance.decision_case.set(decisions)
 
 
 class ConsideredCaseViewSet(viewsets.ModelViewSet):

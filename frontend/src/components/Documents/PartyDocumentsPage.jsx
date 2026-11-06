@@ -146,7 +146,7 @@ const PartyDocumentsPage = () => {
     <div className={styles.container}>
       <ModalDialog />
       <div className={styles.header}>
-        <button onClick={() => navigate(-1)} className={styles.backButton}>
+        <button onClick={() => navigate('/cards')} className={styles.backButton}>
           ← Назад
         </button>
         <h1>Документы сторон</h1>

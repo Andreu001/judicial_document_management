@@ -71,7 +71,6 @@ const SideDetail = () => {
     sides_case_role: '',
     name: '',
     status: 'individual',
-    date_sending_agenda: '',
     birth_date: '',
     gender: '',
     document_type: '',
@@ -139,13 +138,16 @@ const SideDetail = () => {
       setSide(data);
 
       const sideInCaseDetail = data.sides_case_incase_detail || data.criminal_side_case_detail || {};
-      const roleDetail = data.sides_case_role_detail || {};
+      const roleDetail = data.sides_case_role_detail || data.sides_case_criminal_detail || {};
 
       setFormData({
-        sides_case_role: data.sides_case_role || roleDetail?.id || '',
+        sides_case_role:
+        data.sides_case_role ||
+        data.sides_case_criminal ||
+        roleDetail?.id ||
+        '',
         name: sideInCaseDetail.name || data.name || '',
         status: sideInCaseDetail.status || data.status || 'individual',
-        date_sending_agenda: sideInCaseDetail.date_sending_agenda || data.date_sending_agenda || '',
         birth_date: sideInCaseDetail.birth_date || data.birth_date || '',
         gender: sideInCaseDetail.gender || data.gender || '',
         document_type: sideInCaseDetail.document_type || data.document_type || '',
@@ -209,7 +211,6 @@ const SideDetail = () => {
       const sidesCaseInCaseData = {
         name: formData.name,
         status: formData.status,
-        date_sending_agenda: formData.date_sending_agenda || null,
         birth_date: formData.birth_date || null,
         gender: formData.gender || null,
         document_type: formData.document_type || null,
@@ -506,21 +507,6 @@ const SideDetail = () => {
                                personType === 'other' ? 'Иное' : 
                                personType || 'Не указано'}
                             </span>
-                          )}
-                        </div>
-
-                        <div className={styles.field}>
-                          <label>Дата направления повестки</label>
-                          {(isEditing || isCreateMode) ? (
-                            <input
-                              type="date"
-                              name="date_sending_agenda"
-                              value={formData.date_sending_agenda || ''}
-                              onChange={(e) => handleDateChange('date_sending_agenda', e.target.value)}
-                              className={styles.input}
-                            />
-                          ) : (
-                            <span>{formatDate(formData.date_sending_agenda)}</span>
                           )}
                         </div>
 

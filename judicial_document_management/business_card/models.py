@@ -163,11 +163,11 @@ class SidesCaseInCase(models.Model):
         blank=True,
         null=True
     )
-
-    date_sending_agenda = models.DateField(
+    citizenship = models.CharField(
+        max_length=100,
         blank=True,
         null=True,
-        verbose_name='Дата направления повестки'
+        verbose_name='Гражданство'
     )
 
     # Для физических лиц
@@ -424,7 +424,7 @@ class Lawyer(models.Model):
         max_length=20,
         choices=[
             ('none', 'Не требуется'),
-            ('requested', 'Заявка подана'),
+            ('requested', 'Подано ходатайство об оплате'),
             ('approved', 'Постановление вынесено'),
             ('sent_to_accounting', 'Направлено в бухгалтерию'),
             ('paid', 'Оплачено'),
@@ -537,11 +537,70 @@ class FamiliarizationCase(models.Model):
         return f'Всего оплаченно {self.total_amount} за {self.number_days}'
 
 
+class CourtSessionResult(models.Model):
+    """Справочник: ход дела / результат судебного заседания"""
+    name = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name='Ход дела'
+    )
+    order = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='Порядок сортировки'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Активен'
+    )
+
+    class Meta:
+        ordering = ('order', 'name')
+        verbose_name = 'Ход дела'
+        verbose_name_plural = 'Ход дела'
+
+    def __str__(self):
+        return self.name
+
+
+class ReasonDeposition(models.Model):
+    """Справочник: причина отложения / результат заседания"""
+    name = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name='Причина отложения'
+    )
+    order = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='Порядок сортировки'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Активен'
+    )
+
+    class Meta:
+        ordering = ('order', 'name')
+        verbose_name = 'Причина отложения'
+        verbose_name_plural = 'Причины отложения'
+
+    def __str__(self):
+        return self.name
+
+
 class BusinessMovement(models.Model):
     '''8. Движение по делу'''
+
+
+    business_card = models.ForeignKey(
+        BusinessCard,
+        on_delete=models.CASCADE,
+        related_name='businessmovement',
+        verbose_name='Карточка на дело',
+        null=True, blank=True,
+    )
     date_meeting = models.DateField(
         verbose_name='Дата заседания'
-        )
+    )
     meeting_time = models.TimeField(
         verbose_name='Время заседания'
     )
@@ -550,23 +609,21 @@ class BusinessMovement(models.Model):
         blank=True,
         verbose_name='Решение по поступившему делу'
     )
-    composition_colleges = models.CharField(
+    court_session_result = models.ForeignKey(
+        CourtSessionResult,
         blank=True,
         null=True,
-        max_length=50,
-        verbose_name='Состав коллегии'  # далее сделать выбор из списка
+        on_delete=models.SET_NULL,
+        related_name='movements',
+        verbose_name='Ход дела'
     )
-    result_court_session = models.CharField(
+    reason_deposition = models.ForeignKey(
+        ReasonDeposition,
         blank=True,
         null=True,
-        max_length=200,  # В дальнейшем выбор из списка
-        verbose_name='Результат судебного заседания'
-    )
-    reason_deposition = models.CharField(
-        blank=True,
-        null=True,
-        max_length=200,  # В дальнейшем выбор из списка вариантов
-        verbose_name='причина отложения'
+        on_delete=models.SET_NULL,
+        related_name='movements',
+        verbose_name='Причина отложения'
     )
 
     class Meta:

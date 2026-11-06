@@ -128,7 +128,8 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             {'message': 'Дело возвращено из архива'},
             status=status.HTTP_200_OK
         )
-    
+
+    @action(detail=True, methods=['get'], url_path='all-sides')
     def all_sides(self, request, pk=None):
         from .models_person_card import CriminalPersonCard, CrimeComposition
 
@@ -141,7 +142,6 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             article_part = ''
             article_clauses = ''
 
-            # Статья обвинения теперь берётся ТОЛЬКО из карточки подсудимого
             try:
                 person_card = CriminalPersonCard.objects.filter(defendant=d).first()
                 if person_card:
@@ -189,7 +189,6 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
                 'address': d.address or '',
             })
 
-        # 2. Адвокаты
         lawyers = LawyerCriminal.objects.filter(criminal_proceedings=proceeding)
         lawyer_list = [
             {
@@ -205,7 +204,6 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             for l in lawyers
         ]
 
-        # 3. Иные стороны
         sides = CriminalSidesCaseInCase.objects.filter(criminal_proceedings=proceeding)
         side_list = [
             {
@@ -218,8 +216,7 @@ class CriminalProceedingsViewSet(viewsets.ModelViewSet):
             for s in sides
         ]
 
-        all_sides = defendant_list + lawyer_list + side_list
-        return Response(all_sides)
+        return Response(defendant_list + lawyer_list + side_list)
 
     @action(detail=True, methods=['get'], url_path='document-templates')
     def document_templates(self, request, pk=None):

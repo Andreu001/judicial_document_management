@@ -4,6 +4,14 @@ import CriminalCaseService from '../../API/CriminalCaseService';
 import styles from './CriminalDetail.module.css';
 import ConfirmDialog from '../../pages/ConfirmDialog';
 
+const TABS = [
+  { id: 'main', label: 'Основные сведения' },
+  { id: 'control', label: 'Контроль исполнения' },
+  { id: 'marks', label: 'Отметки об исполнении' },
+  { id: 'removal', label: 'Снятие с контроля' },
+  { id: 'extra', label: 'Дополнительная информация' },
+];
+
 const CriminalExecutionDetail = () => {
   const { proceedingId, executionId } = useParams();
   const navigate = useNavigate();
@@ -11,8 +19,12 @@ const CriminalExecutionDetail = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [allSides, setAllSides] = useState([]);
+  const [activeTab, setActiveTab] = useState('main');
+
   const [formData, setFormData] = useState({
     sentence_execution_date: '',
+    execution_delivery_date: '',
+    execution_receipt_date: '',
     execution_sent_date: '',
     execution_sent_to: '',
     execution_sent_document: '',
@@ -69,36 +81,42 @@ const CriminalExecutionDetail = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleDateChange = (name, dateString) => {
+    setFormData(prev => ({ ...prev, [name]: dateString || null }));
+  };
+
+  const handleRecipientChange = (e) => {
+    const value = e.target.value;
+    if (!value) {
+      setFormData(prev => ({
+        ...prev,
+        execution_recipient_type: '',
+        execution_recipient_id: ''
+      }));
+      return;
+    }
+    const [type, id] = value.split('-');
     setFormData(prev => ({
       ...prev,
-      [name]: dateString || null
+      execution_recipient_type: type,
+      execution_recipient_id: id
     }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setSaving(true);
     setError(null);
 
     try {
       const dataToSend = { ...formData };
-      
-      // Не удаляем пустые поля, так как они могут быть валидными null значениями
-      // Вместо этого преобразуем пустые строки в null
       Object.keys(dataToSend).forEach(key => {
-        if (dataToSend[key] === '') {
-          dataToSend[key] = null;
-        }
+        if (dataToSend[key] === '') dataToSend[key] = null;
       });
 
-      // Для создания записи убеждаемся, что есть получатель
       if (!isEditing) {
         if (!dataToSend.execution_recipient_type || !dataToSend.execution_recipient_id) {
           setError('Необходимо выбрать получателя');
@@ -106,8 +124,6 @@ const CriminalExecutionDetail = () => {
           return;
         }
       }
-
-      console.log('Sending data:', dataToSend); // Для отладки
 
       if (isEditing) {
         await CriminalCaseService.updateExecution(proceedingId, executionId, dataToSend);
@@ -117,10 +133,12 @@ const CriminalExecutionDetail = () => {
       navigate(-1);
     } catch (error) {
       console.error('Error saving execution:', error);
-      // Попробуем получить более детальную информацию об ошибке
       if (error.response?.data) {
-        console.error('Server error details:', error.response.data);
-        setError(JSON.stringify(error.response.data) || 'Ошибка сохранения');
+        setError(
+          typeof error.response.data === 'object'
+            ? JSON.stringify(error.response.data)
+            : String(error.response.data)
+        );
       } else {
         setError(error.response?.data?.message || 'Ошибка сохранения');
       }
@@ -129,82 +147,76 @@ const CriminalExecutionDetail = () => {
     }
   };
 
-  const handleCancel = () => {
-    navigate(-1);
-  };
+  const handleCancel = () => navigate(-1);
 
   const getRecipientName = () => {
     if (!formData.execution_recipient_type || !formData.execution_recipient_id) return null;
-    
-    const recipient = allSides.find(s => 
-      s.type === formData.execution_recipient_type && s.id === parseInt(formData.execution_recipient_id)
+    const recipient = allSides.find(
+      s => s.type === formData.execution_recipient_type
+        && s.id === parseInt(formData.execution_recipient_id, 10)
     );
-    
     return recipient ? recipient.name : 'Неизвестный получатель';
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return dateString;
-  };
+  const formatDate = (dateString) => dateString || '';
 
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button 
-            onClick={() => navigate(-1)} 
-            className={styles.backButton}
-          >
-            ← Назад
-          </button>
-          <h1 className={styles.title}>
-            {isEditing ? 'Редактирование записи об исполнении' : 'Новая запись об исполнении'}
-          </h1>
-        </div>
-        
-        <div className={styles.headerRight}>
-          <button 
-            onClick={handleSubmit}
-            className={styles.saveButton}
-            disabled={saving}
-          >
-            {saving ? 'Сохранение...' : 'Сохранить'}
-          </button>
-          <button 
-            onClick={handleCancel}
-            className={styles.cancelButton}
-          >
-            Отмена
-          </button>
-        </div>
-      </div>
-
-      {error && <div className={styles.error}>{error}</div>}
-
-      <form onSubmit={handleSubmit} className={styles.tabContentWrapper}>
+  const renderTabContent = () => {
+    if (activeTab === 'main') {
+      return (
         <div className={styles.tabContent}>
+          {/* === БЛОК 1. Получатель + даты направления/вручения === */}
           <div className={styles.fieldGroup}>
-            <h3 className={styles.subsectionTitle}>Основные сведения</h3>
-            
+            <h3 className={styles.subsectionTitle}>Получатель приговора/решения</h3>
+
             <div className={styles.tabGrid}>
               <div className={styles.field}>
-                <label>Получатель приговора/решения:</label>
+                <label>Получатель:</label>
                 {!isEditing ? (
                   <select
-                    name="execution_recipient_type"
-                    value={formData.execution_recipient_type}
-                    onChange={handleInputChange}
+                    name="execution_recipient"
+                    value={
+                      formData.execution_recipient_type && formData.execution_recipient_id
+                        ? `${formData.execution_recipient_type}-${formData.execution_recipient_id}`
+                        : ''
+                    }
+                    onChange={handleRecipientChange}
                     className={styles.select}
                   >
-                    <option value="">Выберите тип получателя</option>
-                    <option value="defendant">Обвиняемый</option>
-                    <option value="lawyer">Адвокат</option>
-                    <option value="side">Сторона</option>
+                    <option value="">— выберите получателя —</option>
+
+                    {allSides.filter(s => s.type === 'defendant').length > 0 && (
+                      <optgroup label="Обвиняемые">
+                        {allSides.filter(s => s.type === 'defendant').map(r => (
+                          <option key={`defendant-${r.id}`} value={`defendant-${r.id}`}>
+                            {r.name} ({r.role || 'Обвиняемый'})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {allSides.filter(s => s.type === 'lawyer').length > 0 && (
+                      <optgroup label="Адвокаты">
+                        {allSides.filter(s => s.type === 'lawyer').map(r => (
+                          <option key={`lawyer-${r.id}`} value={`lawyer-${r.id}`}>
+                            {r.name} ({r.role || 'Адвокат'})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {allSides.filter(s => s.type === 'side').length > 0 && (
+                      <optgroup label="Иные участники">
+                        {allSides.filter(s => s.type === 'side').map(r => (
+                          <option key={`side-${r.id}`} value={`side-${r.id}`}>
+                            {r.name} ({r.role || 'Участник'})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 ) : (
                   <span className={styles.staticValue}>
@@ -213,41 +225,44 @@ const CriminalExecutionDetail = () => {
                 )}
               </div>
 
-              {!isEditing && formData.execution_recipient_type && (
-                <div className={styles.field}>
-                  <label>Выберите получателя:</label>
-                  <select
-                    name="execution_recipient_id"
-                    value={formData.execution_recipient_id}
-                    onChange={handleInputChange}
-                    className={styles.select}
-                  >
-                    <option value="">Выберите получателя</option>
-                    {allSides
-                      .filter(s => s.type === formData.execution_recipient_type)
-                      .map(recipient => (
-                        <option key={`${recipient.type}-${recipient.id}`} value={recipient.id}>
-                          {recipient.name} ({recipient.role})
-                        </option>
-                      ))
-                    }
-                  </select>
-                </div>
-              )}
+              <div className={styles.field}>
+                <label>Дата направления получателю:</label>
+                <input
+                  type="date"
+                  name="execution_delivery_date"
+                  value={formData.execution_delivery_date || ''}
+                  onChange={(e) => handleDateChange('execution_delivery_date', e.target.value)}
+                  className={styles.input}
+                />
+              </div>
 
               <div className={styles.field}>
+                <label>Дата вручения получателю:</label>
+                <input
+                  type="date"
+                  name="execution_receipt_date"
+                  value={formData.execution_receipt_date || ''}
+                  onChange={(e) => handleDateChange('execution_receipt_date', e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* === БЛОК 2. Обращение к исполнению === */}
+          <div className={styles.fieldGroup}>
+            <h3 className={styles.subsectionTitle}>Обращение к исполнению</h3>
+
+            <div className={styles.tabGrid}>
+              <div className={styles.field}>
                 <label>Дата обращения приговора к исполнению:</label>
-                {isEditing ? (
-                  <span className={styles.staticValue}>{formatDate(formData.sentence_execution_date) || '—'}</span>
-                ) : (
-                  <input
-                    type="date"
-                    name="sentence_execution_date"
-                    value={formData.sentence_execution_date || ''}
-                    onChange={(e) => handleDateChange('sentence_execution_date', e.target.value)}
-                    className={styles.input}
-                  />
-                )}
+                <input
+                  type="date"
+                  name="sentence_execution_date"
+                  value={formData.sentence_execution_date || ''}
+                  onChange={(e) => handleDateChange('sentence_execution_date', e.target.value)}
+                  className={styles.input}
+                />
               </div>
 
               <div className={styles.field}>
@@ -291,10 +306,16 @@ const CriminalExecutionDetail = () => {
               </div>
             </div>
           </div>
+        </div>
+      );
+    }
 
+    if (activeTab === 'control') {
+      return (
+        <div className={styles.tabContent}>
           <div className={styles.fieldGroup}>
             <h3 className={styles.subsectionTitle}>Контроль исполнения</h3>
-            
+
             <div className={styles.tabGrid}>
               <div className={styles.field}>
                 <label>Дата поступления контрольной карточки:</label>
@@ -320,10 +341,16 @@ const CriminalExecutionDetail = () => {
               </div>
             </div>
           </div>
+        </div>
+      );
+    }
 
+    if (activeTab === 'marks') {
+      return (
+        <div className={styles.tabContent}>
           <div className={styles.fieldGroup}>
             <h3 className={styles.subsectionTitle}>Отметки об исполнении</h3>
-            
+
             <div className={styles.tabGrid}>
               <div className={styles.field}>
                 <label>Дата отметки об исполнении:</label>
@@ -361,10 +388,16 @@ const CriminalExecutionDetail = () => {
               />
             </div>
           </div>
+        </div>
+      );
+    }
 
+    if (activeTab === 'removal') {
+      return (
+        <div className={styles.tabContent}>
           <div className={styles.fieldGroup}>
             <h3 className={styles.subsectionTitle}>Снятие с контроля</h3>
-            
+
             <div className={styles.tabGrid}>
               <div className={styles.field}>
                 <label>Дата снятия с контроля:</label>
@@ -390,10 +423,16 @@ const CriminalExecutionDetail = () => {
               </div>
             </div>
           </div>
+        </div>
+      );
+    }
 
+    if (activeTab === 'extra') {
+      return (
+        <div className={styles.tabContent}>
           <div className={styles.fieldGroup}>
             <h3 className={styles.subsectionTitle}>Дополнительная информация</h3>
-            
+
             <div className={styles.field}>
               <label>Информация о рассылке копий:</label>
               <textarea
@@ -419,7 +458,60 @@ const CriminalExecutionDetail = () => {
             </div>
           </div>
         </div>
-      </form>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <button onClick={() => navigate(-1)} className={styles.backButton}>
+            ← Назад
+          </button>
+          <h1 className={styles.title}>
+            {isEditing ? 'Редактирование записи об исполнении' : 'Новая запись об исполнении'}
+          </h1>
+        </div>
+
+        <div className={styles.headerRight}>
+          <button
+            onClick={handleSubmit}
+            className={styles.saveButton}
+            disabled={saving}
+          >
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+          <button onClick={handleCancel} className={styles.cancelButton}>
+            Отмена
+          </button>
+        </div>
+      </div>
+
+      {error && <div className={styles.error}>{error}</div>}
+
+      <div className={styles.tabsContainer}>
+        <div className={styles.tabs}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.tabContentWrapper}>
+          <form onSubmit={handleSubmit}>
+            {renderTabContent()}
+          </form>
+        </div>
+      </div>
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}

@@ -412,3 +412,23 @@
     gap: 8px;
   }
 }
+
+.cardItemActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.editButton:hover {
+  background: #0056b3;
+}

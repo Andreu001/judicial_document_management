@@ -6,7 +6,8 @@ from .views import (FamiliarizationCaseViewSet, SidesCaseViewSet,
                     BusinessCardViewSet, AppealViewSet,
                     BusinessMovementViewSet, SidesCaseInCaseViewSet,
                     ExecutionCaseViewSet, DecisionsViewSet, LawyerViewSet,
-                    LawyerProfileViewSet
+                    LawyerProfileViewSet, CourtSessionResultViewSet,
+                    ReasonDepositionViewSet
                     )
 
 
@@ -62,6 +63,17 @@ router.register(
     r'lawyer-profiles',
     LawyerProfileViewSet,
     basename='lawyer-profiles'
+)
+
+router.register(
+    r'court-session-results',
+    CourtSessionResultViewSet,
+    basename='court-session-results'
+)
+router.register(
+    r'reason-depositions',
+    ReasonDepositionViewSet,
+    basename='reason-depositions'
 )
 
 urlpatterns = [

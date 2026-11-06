@@ -169,6 +169,27 @@ class MovementService {
       throw error;
     }
   }
+  // === Справочники: ход дела и причина отложения ===
+
+  static async getCourtSessionResults() {
+    try {
+      const response = await baseService.get('/business_card/court-session-results/');
+      return response;
+    } catch (error) {
+      console.error('Ошибка при загрузке справочника "Ход дела":', error);
+      throw error;
+    }
+  }
+
+  static async getReasonDepositions() {
+    try {
+      const response = await baseService.get('/business_card/reason-depositions/');
+      return response;
+    } catch (error) {
+      console.error('Ошибка при загрузке справочника "Причина отложения":', error);
+      throw error;
+    }
+  }
 }
 
 export default MovementService;

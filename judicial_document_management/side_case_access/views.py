@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from rest_framework import status
 import os
 import uuid
 from django.utils import timezone
@@ -24,6 +25,32 @@ from .services import CaseAccessSyncService
 from case_documents.models import PartyDocument
 from side_case_access.serializers import PetitionHistorySerializer
 from case_documents.serializers import PartyDocumentHistoryListSerializer
+
+
+def _check_access(user, case_type, case_id):
+    from .models import CaseAccessGrant
+    from django.contrib.contenttypes.models import ContentType
+
+    mapping = {
+        'criminal': ('criminal_proceedings', 'criminalproceedings'),
+        'civil': ('civil_proceedings', 'civilproceedings'),
+        'kas': ('administrative_proceedings', 'kasproceedings'),
+        'administrative': ('administrative_code', 'administrativeproceedings'),
+    }
+    if case_type not in mapping:
+        return None
+
+    app_label, model_name = mapping[case_type]
+    try:
+        ct = ContentType.objects.get(app_label=app_label, model=model_name)
+        return CaseAccessGrant.objects.get(
+            external_user=user,
+            content_type=ct,
+            object_id=case_id,
+            is_active=True,
+        )
+    except (ContentType.DoesNotExist, CaseAccessGrant.DoesNotExist):
+        return None
 
 
 class SocialAuthCallbackView(APIView):
@@ -235,6 +262,76 @@ class SyncAccessView(APIView):
     def post(self, request):
         result = CaseAccessSyncService.sync_user_access(request.user, triggered_by='user')
         return Response(result)
+
+
+class AudioTranscriptionsProxyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        case_type = request.query_params.get('case_type')
+        case_id = request.query_params.get('case_id')
+
+        if not case_type or not case_id:
+            return Response(
+                {'error': 'Параметры case_type и case_id обязательны'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        grant = _check_access(request.user, case_type, case_id)
+        if not grant:
+            return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        internal_url = f"{settings.INTERNAL_API_URL}/audio-transcription/transcriptions/"
+        params = {'case_type': case_type, 'case_id': case_id}
+
+        # ВАЖНО: пробрасываем оригинальный Authorization из входящего запроса
+        headers = {}
+        incoming_auth = request.META.get('HTTP_AUTHORIZATION')
+        if incoming_auth:
+            headers['Authorization'] = incoming_auth
+
+        try:
+            response = requests.get(internal_url, params=params, headers=headers, timeout=10)
+            return Response(response.json(), status=response.status_code)
+        except requests.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class AudioTranscriptionDownloadProxyView(APIView):
+    """Прокси для скачивания аудио-протокола."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, transcription_id):
+        # Проверку доступа лучше сделать внутри соответствующего audio-сервиса,
+        # но минимум — аутентификация уже есть.
+        internal_url = (
+            f"{settings.INTERNAL_API_URL}"
+            f"/audio-transcription/transcriptions/{transcription_id}/download/"
+        )
+
+        headers = {}
+        if hasattr(request, 'auth') and request.auth:
+            headers['Authorization'] = f'Bearer {request.auth}'
+
+        try:
+            response = requests.get(internal_url, headers=headers, timeout=30, stream=True)
+            if response.status_code != 200:
+                return Response(
+                    {'error': 'Не удалось скачать файл'},
+                    status=response.status_code,
+                )
+
+            from django.http import FileResponse
+            file_response = FileResponse(
+                response.raw,
+                content_type=response.headers.get('Content-Type', 'application/octet-stream'),
+            )
+            file_response['Content-Disposition'] = response.headers.get(
+                'Content-Disposition', 'attachment'
+            )
+            return file_response
+        except requests.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
 
 
 class CreatePetitionView(APIView):
@@ -465,42 +562,48 @@ class UploadDocumentView(APIView):
 
 
 class DownloadDecisionView(APIView):
-    """Скачивание решения по делу"""
+    """
+    Скачивание подписанного решения по делу.
+    Фронт обращается: /side_case/decision/{case_type}/{case_id}/{decision_id}/download/
+    Бэкенд проксирует в case_documents.
+    """
     permission_classes = [IsAuthenticated]
-    
-    def get(self, request, case_type, case_id):
-        grant = self._check_access(request.user, case_type, case_id)
+
+    def get(self, request, case_type, case_id, decision_id):
+        grant = _check_access(request.user, case_type, case_id)
         if not grant:
-            return Response({'error': 'Access denied'}, status=403)
-        
-        # Получаем решение/приговор по делу
-        file_path = self._get_decision_file(grant.case, case_type)
-        
-        if not file_path:
-            return Response({'error': 'Decision file not found'}, status=404)
-        
-        from django.http import FileResponse
-        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=f"decision_{case_id}.pdf")
-    
-    def _check_access(self, user, case_type, case_id):
-        # Аналогично
-        ...
-    
-    def _get_decision_file(self, case, case_type):
-        """Возвращает путь к файлу решения"""
-        # Реализуйте в зависимости от того, где хранятся решения
-        # Например, из CaseDocument с типом 'decision'
-        from legal_documents.models import CaseDocument
-        
-        doc = CaseDocument.objects.filter(
-            case_content_type=ContentType.objects.get_for_model(case),
-            case_object_id=case.id,
-            title__icontains='решение'
-        ).first()
-        
-        if doc and doc.generated_file:
-            return doc.generated_file.path
-        return None
+            return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        internal_url = (
+            f"{settings.INTERNAL_API_URL}"
+            f"/case-documents/documents/{decision_id}/download-signed/"
+        )
+
+        headers = {}
+        if hasattr(request, 'auth') and request.auth:
+            headers['Authorization'] = f'Bearer {request.auth}'
+
+        try:
+            response = requests.get(internal_url, headers=headers, timeout=30)
+        except requests.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        if response.status_code != 200:
+            return Response(
+                {'error': 'Не удалось скачать решение'},
+                status=response.status_code,
+            )
+
+        from django.http import HttpResponse
+        resp = HttpResponse(
+            response.content,
+            content_type=response.headers.get('Content-Type', 'application/pdf'),
+        )
+        resp['Content-Disposition'] = response.headers.get(
+            'Content-Disposition',
+            f'attachment; filename="decision_{decision_id}.pdf"',
+        )
+        return resp
 
 
 class YandexAuthCallbackView(APIView):
@@ -589,7 +692,10 @@ class PartyDocumentsProxyView(APIView):
             params['case_id'] = case_id
         
         # Добавляем токен для internal API
-        headers = {'Authorization': f'Bearer {request.auth}' if hasattr(request, 'auth') else ''}
+        headers = {}
+        incoming_auth = request.META.get('HTTP_AUTHORIZATION')
+        if incoming_auth:
+            headers['Authorization'] = incoming_auth
         
         try:
             response = requests.get(internal_url, params=params, headers=headers)
@@ -680,7 +786,7 @@ class ExportDecisionPDFView(APIView):
     
     def get(self, request, case_type, case_id, decision_id):
         # Проверяем доступ
-        grant = self._check_access(request.user, case_type, case_id)
+        grant = _check_access(request.user, case_type, case_id)
         if not grant:
             return Response({'error': 'Access denied'}, status=403)
         
@@ -691,29 +797,6 @@ class ExportDecisionPDFView(APIView):
         
         # Генерируем PDF
         return self._generate_pdf(decision, case, case_type)
-    
-    def _check_access(self, user, case_type, case_id):
-        type_mapping = {
-            'criminal': ('criminal_proceedings', 'criminalproceedings'),
-            'civil': ('civil_proceedings', 'civilproceedings'),
-            'kas': ('administrative_proceedings', 'kasproceedings'),
-            'administrative': ('administrative_code', 'administrativeproceedings'),
-        }
-        
-        if case_type not in type_mapping:
-            return None
-        
-        app_label, model_name = type_mapping[case_type]
-        try:
-            ct = ContentType.objects.get(app_label=app_label, model=model_name)
-            return CaseAccessGrant.objects.get(
-                external_user=user,
-                content_type=ct,
-                object_id=case_id,
-                is_active=True
-            )
-        except (ContentType.DoesNotExist, CaseAccessGrant.DoesNotExist):
-            return None
     
     def _get_decision(self, case_type, case_id, decision_id):
         """Получает решение в зависимости от типа дела - ИСПРАВЛЕНО с правильными полями"""
@@ -948,7 +1031,7 @@ class ExportDecisionWordView(APIView):
     
     def get(self, request, case_type, case_id, decision_id):
         # Проверяем доступ
-        grant = self._check_access(request.user, case_type, case_id)
+        grant = _check_access(request.user, case_type, case_id)
         if not grant:
             return Response({'error': 'Access denied'}, status=403)
         
@@ -1298,3 +1381,99 @@ class CourtsByRegionView(APIView):
         
         data = [{'id': c.id, 'name': c.name, 'code': c.code} for c in courts]
         return Response(data)
+
+
+class CaseMovementsProxyView(APIView):
+    """
+    Список движений по делу.
+    GET /side_case/movements/{case_type}/{case_id}/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, case_type, case_id):
+        grant = _check_access(request.user, case_type, case_id)
+        if not grant:
+            return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Куда проксировать (учитываем, что URL'ы разные по приложениям)
+        endpoints = {
+            'criminal': f'/criminal_proceedings/criminal-proceedings/{case_id}/criminal-case-movement/',
+            'civil': f'/civil_proceedings/civil-proceedings/{case_id}/movements/',
+            'kas': f'/administrative_proceedings/kas-proceedings/{case_id}/movements/',
+            'administrative': f'/administrative_code/administrative-proceedings/{case_id}/movements/',
+        }
+        if case_type not in endpoints:
+            return Response({'error': 'Неизвестный тип дела'}, status=status.HTTP_400_BAD_REQUEST)
+
+        url = f"{settings.INTERNAL_API_URL}{endpoints[case_type]}"
+        headers = {}
+        if hasattr(request, 'auth') and request.auth:
+            headers['Authorization'] = f'Bearer {request.auth}'
+
+        try:
+            response = requests.get(url, headers=headers, timeout=15)
+            return Response(response.json(), status=response.status_code)
+        except requests.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class CaseMovementsProxyView(APIView):
+    """
+    Список движений по делу.
+    GET /side_case/movements/{case_type}/{case_id}/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, case_type, case_id):
+        grant = _check_access(request.user, case_type, case_id)
+        if not grant:
+            return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        endpoints = {
+            'criminal': f'/criminal_proceedings/criminal-proceedings/{case_id}/criminal-case-movement/',
+            'civil': f'/civil_proceedings/civil-proceedings/{case_id}/movements/',
+            'kas': f'/administrative_proceedings/kas-proceedings/{case_id}/movements/',
+            'administrative': f'/administrative_code/administrative-proceedings/{case_id}/movements/',
+        }
+        if case_type not in endpoints:
+            return Response({'error': 'Неизвестный тип дела'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        url = f"{settings.INTERNAL_API_URL}{endpoints[case_type]}"
+        headers = {}
+        if hasattr(request, 'auth') and request.auth:
+            headers['Authorization'] = f'Bearer {request.auth}'
+
+        try:
+            response = requests.get(url, headers=headers, timeout=15)
+            return Response(response.json(), status=response.status_code)
+        except requests.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class AudioTranscriptionDownloadAudioProxyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, transcription_id):
+        internal_url = (
+            f"{settings.INTERNAL_API_URL}"
+            f"/audio-transcription/transcriptions/{transcription_id}/download-audio/"
+        )
+        headers = {}
+        if hasattr(request, 'auth') and request.auth:
+            headers['Authorization'] = f'Bearer {request.auth}'
+        try:
+            response = requests.get(internal_url, headers=headers, timeout=30, stream=True)
+            if response.status_code != 200:
+                return Response({'error': 'Не удалось скачать файл'}, status=response.status_code)
+            from django.http import FileResponse
+            fr = FileResponse(
+                response.raw,
+                content_type=response.headers.get('Content-Type', 'audio/wav'),
+            )
+            fr['Content-Disposition'] = response.headers.get(
+                'Content-Disposition', 'attachment'
+            )
+            return fr
+        except requests.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)

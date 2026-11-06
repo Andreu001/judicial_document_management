@@ -119,25 +119,14 @@ class NotificationService {
    */
   static async getCaseNotificationStatus(caseType, caseId) {
     try {
-      let url = '';
-      switch (caseType) {
-        case 'criminal':
-          url = `/criminal_proceedings/criminal-proceedings/${caseId}/notification-status/`;
-          break;
-        case 'civil':
-          url = `/civil_proceedings/civil-proceedings/${caseId}/notification-status/`;
-          break;
-        case 'admin':
-          url = `/administrative_code/administrative-proceedings/${caseId}/notification-status/`;
-          break;
-        case 'kas':
-          url = `/administrative_proceedings/kas-proceedings/${caseId}/notification-status/`;
-          break;
-        default:
-          return { has_unread: false, total_unread: 0 };
-      }
-      
-      const response = await baseService.get(url);
+      // Приводим тип к тому, что ждёт бэкенд (/notifications/case-activities/status/)
+      let apiCaseType = caseType;
+      if (caseType === 'admin') apiCaseType = 'administrative';
+
+      const response = await baseService.get(
+        `/notifications/case-activities/status/`,
+        { params: { case_type: apiCaseType, case_id: caseId } }
+      );
       return response.data;
     } catch (error) {
       console.error('Error fetching case notification status:', error);

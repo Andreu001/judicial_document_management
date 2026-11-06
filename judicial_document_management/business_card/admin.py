@@ -1,16 +1,32 @@
 from django.contrib import admin
 
 from .models import (SidesCase, BusinessMovement, Decisions,
-                     Petitions, BusinessCard, Category, Appeal)
+                     Petitions, BusinessCard, Category, Appeal,
+                     CourtSessionResult, ReasonDeposition)
+
+
+
+@admin.register(CourtSessionResult)
+class CourtSessionResultAdmin(admin.ModelAdmin):
+    list_display = ('order', 'name', 'is_active')
+    list_display_links = ('name',)
+    list_editable = ('order', 'is_active')
+    search_fields = ('name',)
+
+
+@admin.register(ReasonDeposition)
+class ReasonDepositionAdmin(admin.ModelAdmin):
+    list_display = ('order', 'name', 'is_active')
+    list_display_links = ('name',)
+    list_editable = ('order', 'is_active')
+    search_fields = ('name',)
 
 
 @admin.register(BusinessMovement)
 class ReceivedCaseAdmin(admin.ModelAdmin):
-    '''Поступившее дело'''
-    list_display = ('pk',
-                    'date_meeting',
-                    'meeting_time',
-                    )
+    list_display = ('pk', 'date_meeting', 'meeting_time',
+                    'court_session_result', 'reason_deposition')
+    list_filter = ('court_session_result', 'reason_deposition')
     search_fields = ('date_meeting',)
     empty_value_display = '-пусто-'
 
@@ -18,10 +34,8 @@ class ReceivedCaseAdmin(admin.ModelAdmin):
 @admin.register(SidesCase)
 class SidesCaseAdmin(admin.ModelAdmin):
     '''Стороны по делу'''
-    list_display = (
-        'sides_case',
-    )
-    search_fields = ('text',)
+    list_display = ('sides_case',)
+    search_fields = ('sides_case',)
     empty_value_display = '-пусто-'
 
 
@@ -37,11 +51,9 @@ class PetitionsAdmin(admin.ModelAdmin):
 
 @admin.register(Decisions)
 class DecisionsAdmin(admin.ModelAdmin):
-    '''Стороны по делу'''
-    list_display = (
-        'name_case',
-    )
-    search_fields = ('text',)
+    '''Решения'''
+    list_display = ('name_case',)
+    search_fields = ('name_case',)
     empty_value_display = '-пусто-'
 
 
@@ -62,11 +74,8 @@ class BusinessCardAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     '''Модель категории дела'''
-    list_display = (
-        'title_category',
-        'description',
-    )
-    search_fields = ('title',)
+    list_display = ('title_category', 'description')
+    search_fields = ('title_category',)
     empty_value_display = '-пусто-'
 
 

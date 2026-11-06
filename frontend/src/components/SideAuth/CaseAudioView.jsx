@@ -11,6 +11,8 @@ const CaseAudioView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [caseNumber, setCaseNumber] = useState('');
+  const [downloadingAudioId, setDownloadingAudioId] = useState(null);
+  const [downloadingDocxId, setDownloadingDocxId] = useState(null);
 
   useEffect(() => {
     loadAudio();
@@ -71,17 +73,13 @@ const CaseAudioView = () => {
   };
 
   const handleDownloadAudio = async (transcriptionId, filename) => {
+    setDownloadingAudioId(transcriptionId);
     try {
-      const response = await fetch(`/side_case/audio-transcriptions/${transcriptionId}/download/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('side_token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Ошибка скачивания');
-      }
-      
+      const response = await fetch(
+        `/side_case/audio-transcriptions/${transcriptionId}/download-audio/`,
+        { headers: { 'Authorization': `Bearer ${localStorage.getItem('side_token')}` } }
+      );
+      if (!response.ok) throw new Error('Ошибка скачивания');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -94,21 +92,19 @@ const CaseAudioView = () => {
     } catch (error) {
       console.error('Error downloading audio:', error);
       alert('Ошибка при скачивании аудио-протокола');
+    } finally {
+      setDownloadingAudioId(null);
     }
   };
 
   const handleDownloadDocx = async (transcriptionId) => {
+    setDownloadingDocxId(transcriptionId);
     try {
-      const response = await fetch(`/audio-transcription/transcriptions/${transcriptionId}/download/`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('side_token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Ошибка скачивания');
-      }
-      
+      const response = await fetch(
+        `/side_case/audio-transcriptions/${transcriptionId}/download/`,
+        { headers: { 'Authorization': `Bearer ${localStorage.getItem('side_token')}` } }
+      );
+      if (!response.ok) throw new Error('Ошибка скачивания');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -121,8 +117,10 @@ const CaseAudioView = () => {
     } catch (error) {
       console.error('Error downloading docx:', error);
       alert('Ошибка при скачивании протокола');
+    } finally {
+      setDownloadingDocxId(null);
     }
-  };
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';

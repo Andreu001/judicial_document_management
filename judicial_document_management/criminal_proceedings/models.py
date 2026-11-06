@@ -1397,18 +1397,11 @@ class CriminalCivilClaim(models.Model):
     
     # Связь с потерпевшим (опционально)
     victim = models.ForeignKey(
-        'Defendant',  # или отдельная модель для потерпевших
+        'CriminalSidesCaseInCase',
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='civil_claims',
         verbose_name="Потерпевший (истец)"
-    )
-    
-    # Истец (текстовое поле, если не из справочника)
-    plaintiff_name = models.CharField(
-        max_length=500,
-        verbose_name="Истец (гражданский истец)",
-        null=True, blank=True
     )
     
     # Ответчик
@@ -1558,6 +1551,16 @@ class CriminalExecution(models.Model):
         verbose_name="Приговор вступивший в законную силу вручен",
         blank=True,
         null=True
+    )
+
+        # ------------------- Получатель: даты направления и вручения -------------------
+    execution_delivery_date = models.DateField(
+        verbose_name="Дата направления получателю",
+        null=True, blank=True
+    )
+    execution_receipt_date = models.DateField(
+        verbose_name="Дата вручения получателю",
+        null=True, blank=True
     )
 
     # ------------------- Раздел "Обращение к исполнению" -------------------

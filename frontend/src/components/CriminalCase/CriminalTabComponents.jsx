@@ -491,6 +491,43 @@ export const CaseCategoryTab = ({
   
   // Определяем, какой результат предварительного слушания выбран
   const preliminaryResult = formData.preliminary_hearing_result || criminalData?.preliminary_hearing_result;
+
+    // ============================================================
+  // АВТОРАСЧЁТ: продолжительность приостановления (дней)
+  // ============================================================
+  const suspensionDate =
+    formData?.date_suspension_case || criminalData?.date_suspension_case;
+
+  const calculatedSuspensionDays = (() => {
+    if (!suspensionDate) return null;
+    const start = new Date(suspensionDate);
+    if (isNaN(start.getTime())) return null;
+
+    // Если в модели появится поле resumption_date — используем его.
+    // Пока его нет, считаем до сегодняшнего дня.
+    const endRaw =
+      formData?.resumption_date || criminalData?.resumption_date;
+    const end = endRaw ? new Date(endRaw) : new Date();
+
+    if (isNaN(end.getTime()) || end < start) return 0;
+
+    const diffMs = end.getTime() - start.getTime();
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  })();
+
+  // Автоматически проставляем значение в formData при редактировании,
+  // если поле пустое или уже было вычислено ранее (не ручная правка).
+  React.useEffect(() => {
+    if (!isEditing) return;
+    if (calculatedSuspensionDays === null) return;
+    if (typeof handleFieldChange !== 'function') return;
+
+    const current = formData?.suspension_duration_days;
+    // Пустое или ещё не число — подставляем
+    if (current === null || current === undefined || current === '') {
+      handleFieldChange('suspension_duration_days', calculatedSuspensionDays);
+    }
+  }, [calculatedSuspensionDays, isEditing]);
   
   // Функция для отображения условных полей при направлении по подсудности из предварительного слушания
   const renderPreliminaryTransferFields = () => {
@@ -815,18 +852,42 @@ export const CaseCategoryTab = ({
           )}
 
           <div className={styles.field}>
-            <label>Продолжительность приостановления (дней)</label>
+            <label>
+              Продолжительность приостановления (дней)
+              <small style={{ display: 'block', color: '#888', fontWeight: 'normal' }}>
+                рассчитывается автоматически: от даты приостановления до
+                {formData?.resumption_date || criminalData?.resumption_date
+                  ? ' даты возобновления'
+                  : ' сегодняшнего дня'}
+              </small>
+            </label>
             {isEditing ? (
-              <input
-                type="number"
-                name="suspension_duration_days"
-                value={formData.suspension_duration_days || ''}
-                onChange={handleInputChange}
-                className={styles.input}
-                min="0"
-              />
+              <>
+                <input
+                  type="number"
+                  name="suspension_duration_days"
+                  value={
+                    calculatedSuspensionDays !== null
+                      ? calculatedSuspensionDays
+                      : (formData.suspension_duration_days || '')
+                  }
+                  className={styles.input}
+                  min="0"
+                  readOnly
+                  style={{ backgroundColor: '#f5f7fa', cursor: 'not-allowed' }}
+                />
+                {calculatedSuspensionDays === null && (
+                  <small style={{ color: '#c47a2e', fontSize: 11 }}>
+                    Укажите «Дату приостановления дела», чтобы рассчитать срок
+                  </small>
+                )}
+              </>
             ) : (
-              <span>{criminalData?.suspension_duration_days || 'Не указано'}</span>
+              <span>
+                {criminalData?.suspension_duration_days != null
+                  ? `${criminalData.suspension_duration_days} дн.`
+                  : 'Не указано'}
+              </span>
             )}
           </div>
         </div>

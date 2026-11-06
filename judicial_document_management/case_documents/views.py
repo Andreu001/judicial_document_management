@@ -3,6 +3,7 @@
 from rest_framework import viewsets, status, mixins
 from rest_framework import serializers
 from rest_framework.decorators import action
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
@@ -761,8 +762,14 @@ class ContentTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'app_label', 'model']
 
 
+@api_view(['GET'])
 def get_content_types(request):
-    models = ['criminalproceedings', 'civilproceedings', 'administrativeproceedings', 'kasproceedings']
+    models = [
+        'criminalproceedings',
+        'civilproceedings',
+        'administrativeproceedings',
+        'kasproceedings',
+    ]
     content_types = ContentType.objects.filter(model__in=models)
     serializer = ContentTypeSerializer(content_types, many=True)
     return Response(serializer.data)

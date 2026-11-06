@@ -352,6 +352,12 @@ const CriminalBusinessCard = ({ card, remove }) => {
     }
   };
   
+  const formatTime = (timeString) => {
+    if (!timeString) return '—';
+    // может прийти 'HH:MM' или 'HH:MM:SS'
+    return timeString.slice(0, 5);
+  };
+
   // Форматирование дат
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -412,41 +418,153 @@ const CriminalBusinessCard = ({ card, remove }) => {
       console.error('Ошибка удаления записи об исполнении:', error);
     }
   };
-  const ExecutionItem = ({ execution }) => (
-    <div className={styles.compactItem}>
-      <div className={styles.compactItemContent}>
-        <div className={styles.compactItemTitle}>
-          Исполнение #{execution.id}
+  
+  const SENT_DOCUMENT_LABELS = {
+    '1': 'Копия приговора',
+    '2': 'Исполнительный лист',
+    '3': 'Распоряжение об исполнении',
+    '4': 'Копия апелляционного определения',
+    '5': 'Иное',
+  };
+
+  const ExecutionItem = ({ execution }) => {
+    // Определяем получателя из *_detail полей
+    const defendantDetail = execution.criminal_defendant_execution_detail || null;
+    const lawyerDetail = execution.sides_case_lawyer_execution_detail || null;
+    const sideDetail = execution.criminal_side_case_execution_detail || null;
+
+    let recipientName = null;
+    let recipientType = null;
+    if (defendantDetail) {
+      recipientName = defendantDetail.full_name || 'Обвиняемый';
+      recipientType = 'Обвиняемый';
+    } else if (lawyerDetail) {
+      recipientName = lawyerDetail.law_firm_name || 'Адвокат';
+      recipientType = 'Адвокат';
+    } else if (sideDetail) {
+      recipientName = sideDetail.name || 'Сторона';
+      recipientType = 'Сторона';
+    }
+
+    const sentDocLabel = SENT_DOCUMENT_LABELS[execution.execution_sent_document] || null;
+
+    return (
+      <div className={styles.compactItem}>
+        <div className={styles.compactItemContent}>
+          {/* Заголовок: получатель + тип */}
+          <div className={styles.compactItemTitle}>
+            {recipientName || `Исполнение #${execution.id}`}
+            {recipientType && (
+              <span className={styles.sideType}>
+                {recipientType}
+              </span>
+            )}
+          </div>
+
+          {/* Блок: даты направления/вручения получателю */}
+          {(execution.execution_delivery_date || execution.execution_receipt_date) && (
+            <div className={styles.compactItemSubtitle}>
+              {execution.execution_delivery_date && (
+                <>Направлено получателю: {formatDate(execution.execution_delivery_date)}</>
+              )}
+              {execution.execution_delivery_date && execution.execution_receipt_date && ' · '}
+              {execution.execution_receipt_date && (
+                <>Вручено: {formatDate(execution.execution_receipt_date)}</>
+              )}
+            </div>
+          )}
+
+          {/* Блок: обращение к исполнению */}
+          {(execution.sentence_execution_date ||
+            execution.execution_sent_date ||
+            execution.execution_sent_to ||
+            sentDocLabel) && (
+            <div className={styles.compactItemSubtitle}>
+              {execution.sentence_execution_date && (
+                <>Обращено к исполнению: {formatDate(execution.sentence_execution_date)}</>
+              )}
+              {execution.sentence_execution_date && execution.execution_sent_date && ' · '}
+              {execution.execution_sent_date && (
+                <>Направлено: {formatDate(execution.execution_sent_date)}</>
+              )}
+              {execution.execution_sent_to && (
+                <><br />Куда: {execution.execution_sent_to}</>
+              )}
+              {sentDocLabel && (
+                <><br />Документ: {sentDocLabel}</>
+              )}
+            </div>
+          )}
+
+          {/* Блок: контроль */}
+          {(execution.control_return_date || execution.control_result) && (
+            <div className={styles.compactItemSubtitle}>
+              {execution.control_return_date && (
+                <>Контроль: {formatDate(execution.control_return_date)}</>
+              )}
+              {execution.control_return_date && execution.control_result && ' · '}
+              {execution.control_result && <>{execution.control_result}</>}
+            </div>
+          )}
+
+          {/* Блок: отметка об исполнении */}
+          {(execution.execution_mark_date ||
+            execution.execution_mark_author ||
+            execution.execution_mark_content) && (
+            <div className={styles.compactItemSubtitle}>
+              <span className={styles.sideType} style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
+                Отметка об исполнении
+              </span>
+              {execution.execution_mark_date && (
+                <> {formatDate(execution.execution_mark_date)}</>
+              )}
+              {execution.execution_mark_author && (
+                <> · {execution.execution_mark_author}</>
+              )}
+              {execution.execution_mark_content && (
+                <><br />{execution.execution_mark_content}</>
+              )}
+            </div>
+          )}
+
+          {/* Блок: снято с контроля */}
+          {(execution.removal_from_control_date ||
+            execution.removal_from_control_reason) && (
+            <div className={styles.compactItemSubtitle}>
+              <span className={styles.sideType} style={{ backgroundColor: '#eceff1', color: '#455a64' }}>
+                Снято с контроля
+              </span>
+              {execution.removal_from_control_date && (
+                <> {formatDate(execution.removal_from_control_date)}</>
+              )}
+              {execution.removal_from_control_reason && (
+                <> · {execution.removal_from_control_reason}</>
+              )}
+            </div>
+          )}
         </div>
-        {execution.execution_sent_date && (
-          <div className={styles.compactItemSubtitle}>
-            Направлено: {formatDate(execution.execution_sent_date)}
-          </div>
-        )}
-        {execution.execution_sent_to && (
-          <div className={styles.compactItemSubtitle}>
-            {execution.execution_sent_to}
-          </div>
-        )}
+
+        <div className={styles.compactItemActions}>
+          <button
+            onClick={() =>
+              router(`/criminal-proceedings/${card.criminal_proceedings_id}/executions/${execution.id}`)
+            }
+            className={styles.actionButton}
+            title="Просмотреть"
+          >
+            →
+          </button>
+          <button
+            onClick={() => handleDeleteExecution(execution.id)}
+            className={styles.deleteButton}
+            title="Удалить"
+          >
+            ×
+          </button>
+        </div>
       </div>
-      <div className={styles.compactItemActions}>
-        <button 
-          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/executions/${execution.id}`)}
-          className={styles.actionButton}
-          title="Просмотреть"
-        >
-          →
-        </button>
-        <button 
-          onClick={() => handleDeleteExecution(execution.id)}
-          className={styles.deleteButton}
-          title="Удалить"
-        >
-          ×
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const CivilClaimItem = ({ claim }) => (
     <div className={styles.compactItem}>
@@ -740,101 +858,80 @@ const CriminalBusinessCard = ({ card, remove }) => {
     </div>
   );
   
-    const PetitionItem = ({ petition }) => {
-      const petitionDetail = petition.petitions_incase_detail || {};
-      const petitionerInfo = petition.petitioner_info || {};
+  const MovementItem = ({ movement }) => {
+    // Бэкенд отдаёт business_movement_detail; fallback — сам movement
+    const details = movement.business_movement_detail || movement;
 
-      return (
-        <div className={styles.compactItem}>
-          <div className={styles.compactItemContent}>
-            <div className={styles.compactItemTitle}>
-              Ходатайство
-              {petitionDetail.date_application && (
-                <span className={styles.sideType}>
-                  {formatDate(petitionDetail.date_application)}
-                </span>
-              )}
-            </div>
-            {petitionDetail.petitions_name && petitionDetail.petitions_name.length > 0 && (
-              <div className={styles.compactItemSubtitle}>
-                Тип: {petitionDetail.petitions_name.map(p => p.name).join(', ')}
-              </div>
-            )}
-            {petitionerInfo && petitionerInfo.name && (
-              <div className={styles.compactItemSubtitle}>
-                Заявитель: {petitionerInfo.name} ({petitionerInfo.role || 'Участник'})
-              </div>
-            )}
-            {petitionDetail.date_decision && (
-              <div className={styles.compactItemSubtitle}>
-                Решение от: {formatDate(petitionDetail.date_decision)}
-              </div>
-            )}
-            {petitionDetail.decision_rendered && petitionDetail.decision_rendered.name_case && (
-              <div className={styles.compactItemSubtitle}>
-                Результат: {petitionDetail.decision_rendered.name_case}
-              </div>
-            )}
-            {petitionDetail.notation && (
-              <div className={styles.compactItemSubtitle}>
-                Примечание: {petitionDetail.notation.length > 50 ? petitionDetail.notation.slice(0, 50) + '...' : petitionDetail.notation}
-              </div>
+    const csr = details.court_session_result_detail || null;
+    const rd = details.reason_deposition_detail || null;
+
+    // decision_case может быть массивом объектов или массивом id
+    const decisionNames = Array.isArray(details.decision_case)
+      ? details.decision_case
+          .map(d => (typeof d === 'object' ? d.name_case : null))
+          .filter(Boolean)
+      : [];
+
+    return (
+      <div className={styles.compactItem}>
+        <div className={styles.compactItemContent}>
+          <div className={styles.compactItemTitle}>
+            {details.date_meeting ? formatDate(details.date_meeting) : 'Дата не указана'}
+            {details.meeting_time && (
+              <span className={styles.sideType}>
+                {formatTime(details.meeting_time)}
+              </span>
             )}
           </div>
-          <div className={styles.compactItemActions}>
-            <button 
-              onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/petitions/${petition.id}`)}
-              className={styles.actionButton}
-              title="Просмотреть"
-            >
-              →
-            </button>
-            <button 
-              onClick={() => handleDeletePetition(petition.id)}
-              className={styles.deleteButton}
-              title="Удалить"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      );
-    };
-  
-  const MovementItem = ({ movement }) => (
-    <div className={styles.compactItem}>
-      <div className={styles.compactItemContent}>
-        <div className={styles.compactItemTitle}>        
-          {movement.first_hearing_date && (
+
+          {csr && (
             <div className={styles.compactItemSubtitle}>
-              {(movement.first_hearing_date)}
+              Ход дела:{' '}
+              <span className={styles.sideType} style={{ backgroundColor: '#e3f2fd', color: '#1565c0' }}>
+                {csr.name}
+              </span>
             </div>
           )}
-          {movement.meeting_time && (
+
+          {rd && (
             <div className={styles.compactItemSubtitle}>
-              {(movement.meeting_time)}
+              Причина отложения:{' '}
+              <span className={styles.sideType} style={{ backgroundColor: '#fff3e0', color: '#e65100' }}>
+                {rd.name}
+              </span>
+            </div>
+          )}
+
+          {decisionNames.length > 0 && (
+            <div className={styles.compactItemSubtitle}>
+              Решения: {decisionNames.join(', ')}
             </div>
           )}
         </div>
+
+        <div className={styles.compactItemActions}>
+          <button
+            onClick={() =>
+              router(
+                `/criminal-proceedings/${card.criminal_proceedings_id}/criminal-case-movement/${movement.id}`
+              )
+            }
+            className={styles.actionButton}
+            title="Просмотреть"
+          >
+            →
+          </button>
+          <button
+            onClick={() => handleDeleteMovement(card.criminal_proceedings_id, movement.id)}
+            className={styles.deleteButton}
+            title="Удалить"
+          >
+            ×
+          </button>
+        </div>
       </div>
-      <div className={styles.compactItemActions}>
-        <button 
-          onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/criminal-case-movement/${movement.id}`)}
-          className={styles.actionButton}
-          title="Просмотреть"
-        >
-          →
-        </button>
-        <button 
-          onClick={() => handleDeleteMovement(card.criminal_proceedings_id, movement.id)}
-          className={styles.deleteButton}
-          title="Удалить"
-        >
-          ×
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
   
   // Объединяем все стороны в один массив для отображения
   const allSides = [
@@ -857,11 +954,13 @@ const CriminalBusinessCard = ({ card, remove }) => {
           <div className={styles.caseArticle}>
               {criminalCase?.presiding_judge_full_name && (
                 <div className={styles.detailRow}>
-                  <div className={styles.detailLabel}>Судья: 
+                  <div className={styles.detailLabeljudge}>Судья: 
                     {criminalCase.presiding_judge_full_name}</div>
                 </div>
               )}
-            {criminalCase?.article_criminal ? `ст. ${criminalCase.article_criminal}` : 'Статья не указана'}
+            {criminalCase?.main_article
+              ? `ст. ${criminalCase.main_article}`
+              : 'Статья не указана'}
           </div>
           <div className={styles.caseDate}>
             {formatDate(criminalCase?.initiation_date || card.pub_date)}
@@ -939,23 +1038,94 @@ const CriminalBusinessCard = ({ card, remove }) => {
       
       {/* Контент в зависимости от активной вкладки */}
       <div className={styles.cardContent}>
-        {activeTab === 'summary' && (
-          <div className={styles.summaryContent}>
-            
-            <div className={styles.summaryDetails}>
-              {criminalCase?.court_name && (
-                <div className={styles.detailRow}>
-                  <div className={styles.detailLabel}>Суд:</div>
-                  <div className={styles.detailValue}>{criminalCase.court_name}</div>
-                </div>
-              )}
+        {activeTab === 'summary' && (() => {
+          // Локальные fallback-словари — как в CivilBusinessCard (getDecisionOutcomeText)
+          const caseResultLabel = (() => {
+            if (criminalCase?.case_result_display) return criminalCase.case_result_display;
+            const map = {
+              '1': 'вынесен приговор',
+              '2': 'прекращено',
+              '3': 'принудительные меры медицинского характера',
+              '4': 'направлено по подсудности',
+              '5': 'направлено по подведомственности',
+              '6': 'возвращено прокурору (ст. 237 УПК РФ)',
+              '7': 'возвращено (ст. 446.2 УПК РФ)',
+              '8': 'роспуск коллегии присяжных',
+            };
+            return map[criminalCase?.case_result] || criminalCase?.case_result || null;
+          })();
+
+          const caseCategoryLabel = (() => {
+            if (criminalCase?.case_category_criminal_display) return criminalCase.case_category_criminal_display;
+            const map = {
+              '1': 'с участием лица под стражей',
+              '2': 'с участием несовершеннолетнего',
+              '3': 'особый порядок (представление прокурора)',
+            };
+            return map[criminalCase?.case_category_criminal] || criminalCase?.case_category_criminal || null;
+          })();
+
+          return (
+            <div className={styles.summaryContent}>
+              <div className={styles.summaryDetails}>
+                {criminalCase?.number_of_persons != null && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Число лиц по делу:</span>
+                    <span className={styles.detailValue}>{criminalCase.number_of_persons}</span>
+                  </div>
+                )}
+
+                {caseCategoryLabel && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Категория дела:</span>
+                    <span className={styles.detailValue}>{caseCategoryLabel}</span>
+                  </div>
+                )}
+
+                {criminalCase?.incoming_date && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Дата поступления в суд:</span>
+                    <span className={styles.detailValue}>{formatDate(criminalCase.incoming_date)}</span>
+                  </div>
+                )}
+
+                {criminalCase?.volume_count != null && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Количество томов:</span>
+                    <span className={styles.detailValue}>{criminalCase.volume_count}</span>
+                  </div>
+                )}
+
+                {caseResultLabel && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Результат рассмотрения:</span>
+                    <span className={styles.detailValue}>{caseResultLabel}</span>
+                  </div>
+                )}
+
+                {criminalCase?.total_duration_days != null && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Общая продолжительность:</span>
+                    <span className={styles.detailValue}>{criminalCase.total_duration_days} дн.</span>
+                  </div>
+                )}
+
+                {criminalCase?.status && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Статус:</span>
+                    <span className={styles.detailValue}>
+                      {criminalCase.status_display || criminalCase.status}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.lastActivity}>
+                Обновлено: {formatDateTime(quickStats.lastActivity)}
+              </div>
             </div>
-            
-            <div className={styles.lastActivity}>
-              Обновлено: {formatDateTime(quickStats.lastActivity)}
-            </div>
-          </div>
-        )}
+          );
+        })()}
         
         {activeTab === 'sides' && (
           <div className={styles.tabContent}>
@@ -1174,12 +1344,20 @@ const CriminalBusinessCard = ({ card, remove }) => {
           <div className={styles.tabContent}>
             <div className={styles.tabHeader}>
               <h3>Документы сторон ({partyDocumentsStats.total})</h3>
-              <button 
-                onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/party-documents/create`)}
-                className={styles.addButton}
-              >
-                + Добавить документ
-              </button>
+              <div className={styles.addButtonsGroup}>
+                <button
+                  onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/party-documents`)}
+                  className={styles.addButton}
+                >
+                  Показать все документы
+                </button>
+                <button
+                  onClick={() => router(`/criminal-proceedings/${card.criminal_proceedings_id}/party-documents/create`)}
+                  className={styles.addButton}
+                >
+                  + Добавить документ
+                </button>
+              </div>
             </div>
             <div className={styles.compactList}>
               {partyDocuments.length > 0 ? (

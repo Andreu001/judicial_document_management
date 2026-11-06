@@ -141,7 +141,7 @@ const PartyDocumentForm = ({ caseType, isEdit = false, initialData = null }) => 
         <div className={styles.header}>
           <button 
             type="button" 
-            onClick={() => navigate(`/${caseType}-proceedings/${proceedingId}/party-documents`)}
+            onClick={() => navigate('/cards')}
             className={styles.backButton}
           >
             ← Назад
@@ -254,7 +254,7 @@ const PartyDocumentForm = ({ caseType, isEdit = false, initialData = null }) => 
             <div className={styles.formActions}>
               <button 
                 type="button" 
-                onClick={() => navigate(`/${caseType}-proceedings/${proceedingId}/party-documents`)}
+                onClick={() => navigate('/cards')}
                 className={styles.cancelButton}
               >
                 Отмена

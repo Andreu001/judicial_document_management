@@ -46,6 +46,9 @@ const LawyerDetails = () => {
     payment_per_day: '',
     payment_amount: '',
     payment_date: '',
+    payment_status: 'none',
+    payment_request_date: '',
+    accounting_sent_date: '',
     notes: '',
     save_to_registry: false,
   });
@@ -147,6 +150,9 @@ const LawyerDetails = () => {
               payment_per_day: data.lawyer_detail?.payment_per_day || '',
               payment_amount: data.lawyer_detail?.payment_amount || '',
               payment_date: data.lawyer_detail?.payment_date || '',
+              payment_status: data.lawyer_detail?.payment_status || 'none',
+              payment_request_date: data.lawyer_detail?.payment_request_date || '',
+              accounting_sent_date: data.lawyer_detail?.accounting_sent_date || '', 
               notes: data.lawyer_detail?.notes || ''
             });
             
@@ -227,7 +233,7 @@ const LawyerDetails = () => {
       const requestData = {
         lawyer_data: {
           full_name: formData.full_name || null,
-          law_firm_name: formData.law_firm_name,
+          law_firm_name: formData.law_firm_name || null,
           law_firm_address: formData.law_firm_address || null,
           law_firm_phone: formData.law_firm_phone || null,
           law_firm_email: formData.law_firm_email || null,
@@ -238,7 +244,7 @@ const LawyerDetails = () => {
           lawyer_certificate_number: formData.lawyer_certificate_number || null,
           lawyer_certificate_date: formData.lawyer_certificate_date || null,
           days_for_payment: formData.days_for_payment ? parseInt(formData.days_for_payment) : null,
-          payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
+          payment_per_day: formData.payment_per_day ? parseFloat(formData.payment_per_day) : null,
           payment_amount: formData.payment_amount ? parseFloat(formData.payment_amount) : null,
           payment_date: formData.payment_date || null,
           notes: formData.notes || null,
@@ -247,9 +253,8 @@ const LawyerDetails = () => {
           accounting_sent_date: formData.accounting_sent_date || null,
         },
         sides_case_role: formData.sides_case_role ? parseInt(formData.sides_case_role) : null,
-        // новые поля
         profile_id: selectedProfileId || null,
-        save_to_registry: formData.save_to_registry || false,
+        save_to_registry: Boolean(formData.save_to_registry),
       };
 
       Object.keys(requestData.lawyer_data).forEach(key => {
@@ -644,7 +649,7 @@ const LawyerDetails = () => {
                           className={styles.select}
                         >
                           <option value="none">Не требуется</option>
-                          <option value="requested">Заявка подана</option>
+                          <option value="requested">Подано ходатайство об оплате</option>
                           <option value="approved">Постановление вынесено</option>
                           <option value="sent_to_accounting">Направлено в бухгалтерию</option>
                           <option value="paid">Оплачено</option>

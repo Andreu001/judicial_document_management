@@ -23,6 +23,7 @@ const CriminalPersonCard = () => {
   // Состояния для форм добавления
   const [showAddConviction, setShowAddConviction] = useState(false);
   const [showAddCrime, setShowAddCrime] = useState(false);
+  const [editingCrimeId, setEditingCrimeId] = useState(null);
   const [showAddSentence, setShowAddSentence] = useState(false);
   
   // Новое состояние для формы судимости
@@ -329,8 +330,37 @@ const CriminalPersonCard = () => {
       alert(`Ошибка добавления судимости: ${JSON.stringify(error.response?.data)}`);
     }
   };
-  
-  const addCrimeComposition = async () => {
+
+  const startEditCrime = (crime) => {
+    setEditingCrimeId(crime.id);
+    setNewCrime({
+      instance: crime.instance || 'first',
+      article_type: crime.article_type || '2',
+      article_id: crime.article || '',
+      article_part: crime.article_part || '',
+      article_clauses: crime.article_clauses || '',
+      crime_stage: crime.crime_stage || '0',
+      recidivism: crime.recidivism || '0',
+      // при необходимости добавьте остальные поля, которые есть в форме
+    });
+    setShowAddCrime(true);
+  };
+
+  const cancelEditCrime = () => {
+    setEditingCrimeId(null);
+    setShowAddCrime(false);
+    setNewCrime({
+      instance: 'first',
+      article_type: '2',
+      article_id: '',
+      article_part: '',
+      article_clauses: '',
+      crime_stage: '0',
+      recidivism: '0'
+    });
+  };
+
+    const addCrimeComposition = async () => {
     try {
       if (!card || !card.id) {
         console.error('Card not found, cannot add crime composition');
@@ -370,6 +400,49 @@ const CriminalPersonCard = () => {
       console.error('Ошибка добавления состава преступления:', error);
       console.error('Error response:', error.response?.data);
       alert(`Ошибка добавления состава преступления: ${JSON.stringify(error.response?.data)}`);
+    }
+  };
+  
+  const saveCrimeComposition = async () => {
+    try {
+      if (!card || !card.id) {
+        alert('Сначала сохраните основную карточку');
+        return;
+      }
+
+      const crimeData = {
+        instance: newCrime.instance,
+        article_type: newCrime.article_type,
+        article_id: newCrime.article_id || null,
+        article_part: newCrime.article_part || null,
+        article_clauses: newCrime.article_clauses || null,
+        crime_stage: newCrime.crime_stage,
+        recidivism: newCrime.recidivism
+      };
+
+      if (editingCrimeId) {
+        // обновление
+        const updated = await CriminalCaseService.updateCrimeComposition(
+          card.id,
+          editingCrimeId,
+          crimeData
+        );
+        setCrimeCompositions(prev =>
+          prev.map(c => (c.id === editingCrimeId ? updated : c))
+        );
+      } else {
+        // создание
+        const created = await CriminalCaseService.createCrimeComposition(
+          card.id,
+          crimeData
+        );
+        setCrimeCompositions(prev => [...prev, created]);
+      }
+
+      cancelEditCrime();
+    } catch (error) {
+      console.error('Ошибка сохранения состава преступления:', error);
+      alert(`Ошибка: ${JSON.stringify(error.response?.data || error.message)}`);
     }
   };
   
@@ -813,7 +886,19 @@ const CriminalPersonCard = () => {
             <div className={styles.subsectionHeader}>
               <h3>Составы преступлений</h3>
               <button 
-                onClick={() => setShowAddCrime(true)}
+                onClick={() => {
+                  setEditingCrimeId(null);
+                  setNewCrime({
+                    instance: 'first',
+                    article_type: '2',
+                    article_id: '',
+                    article_part: '',
+                    article_clauses: '',
+                    crime_stage: '0',
+                    recidivism: '0'
+                  });
+                  setShowAddCrime(true);
+                }}
                 className={styles.addButton}
               >
                 + Добавить состав
@@ -832,12 +917,21 @@ const CriminalPersonCard = () => {
                     {getArticleDisplay(crime.article_detail, crime.article_part, crime.article_clauses)}
                     {crime.article_type === '1' && ' (основная)'}
                   </span>
-                  <button 
-                    onClick={() => deleteItem('crime', crime.id)}
-                    className={styles.deleteButton}
-                  >
-                    Удалить
-                  </button>
+                  <div className={styles.cardItemActions}>
+                    <button
+                      onClick={() => startEditCrime(crime)}
+                      className={styles.editButton}
+                      title="Редактировать"
+                    >
+                      Редактировать
+                    </button>
+                    <button
+                      onClick={() => deleteItem('crime', crime.id)}
+                      className={styles.deleteButton}
+                    >
+                      Удалить
+                    </button>
+                  </div>
                 </div>
                 <div className={styles.cardItemDetails}>
                   <div>Стадия: {crime.crime_stage_display || crime.crime_stage}</div>
@@ -849,7 +943,9 @@ const CriminalPersonCard = () => {
             
               {showAddCrime && (
                 <div className={styles.addForm}>
-                  <h4>Добавление состава преступления</h4>
+                  <h4>
+                    {editingCrimeId ? 'Редактирование состава преступления' : 'Добавление состава преступления'}
+                  </h4>
                   <div className={styles.formGrid}>
                     <div className={styles.fieldGroup}>
                       <label>Инстанция</label>
@@ -870,7 +966,7 @@ const CriminalPersonCard = () => {
                         className={styles.select}
                       >
                         <option value="1">Основная статья</option>
-                        <option value="2">Дополнительная квалификация</option>
+                        <option value="2">Другие статьи</option>
                       </select>
                     </div>
                     <div className={styles.fieldGroup}>
@@ -918,8 +1014,12 @@ const CriminalPersonCard = () => {
                     </div>
                   </div>
                   <div className={styles.formActions}>
-                    <button onClick={addCrimeComposition} className={styles.saveButton}>Добавить</button>
-                    <button onClick={() => setShowAddCrime(false)} className={styles.cancelButton}>Отмена</button>
+                    <button onClick={saveCrimeComposition} className={styles.saveButton}>
+                      {editingCrimeId ? 'Сохранить изменения' : 'Добавить'}
+                    </button>
+                    <button onClick={cancelEditCrime} className={styles.cancelButton}>
+                      Отмена
+                    </button>
                   </div>
                 </div>
               )}

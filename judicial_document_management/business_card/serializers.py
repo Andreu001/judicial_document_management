@@ -1,11 +1,11 @@
-
 from rest_framework import serializers
 
 from .models import (FamiliarizationCase, SidesCase,
                      Petitions, ConsideredCase, Decisions,
                      Category, BusinessCard, PetitionsInCase,
                      SidesCaseInCase, Appeal, BusinessMovement,
-                     Lawyer, ExecutionCase, LawyerProfile)
+                     Lawyer, ExecutionCase, LawyerProfile,
+                     CourtSessionResult, ReasonDeposition)
 from django.contrib.auth import get_user_model
 from criminal_proceedings.serializers import CriminalProceedingsSerializer
 
@@ -16,7 +16,7 @@ class SidesCaseInCaseSerializer(serializers.ModelSerializer):
     """
     Модель добавления сторон по делу
     """
-    
+
     sides_case_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(
         source='get_status_display',
@@ -28,24 +28,22 @@ class SidesCaseInCaseSerializer(serializers.ModelSerializer):
     )
     lawyer_id = serializers.SerializerMethodField()
     is_lawyer = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = SidesCaseInCase
         fields = '__all__'
-    
+
     def get_sides_case_name(self, obj):
         return [side.sides_case for side in obj.sides_case.all()]
-    
+
     def get_lawyer_id(self, obj):
-        # Получаем ID связанного адвоката, если он существует
         try:
             lawyer = obj.lawyer_info
             return lawyer.id if lawyer else None
         except Lawyer.DoesNotExist:
             return None
-    
+
     def get_is_lawyer(self, obj):
-        # Проверяем, является ли сторона адвокатом
         return obj.sides_case.filter(sides_case__icontains='Адвокат').exists()
 
 
@@ -142,8 +140,6 @@ class BusinessCardSerializer(serializers.ModelSerializer):
                   )
 
 
-# business_card/serializers.py - ИСПРАВЛЕННАЯ ВЕРСИЯ
-
 class PetitionsInCaseSerializer(serializers.ModelSerializer):
     """
     Промежуточная таблица для ходатайств
@@ -151,10 +147,9 @@ class PetitionsInCaseSerializer(serializers.ModelSerializer):
 
     notification_parties = SidesCaseInCaseSerializer(many=True, read_only=True)
     petitions_name = PetitionsSerializer(many=True, read_only=True)
-    
-    # ДОБАВЛЯЕМ поле petitioner_info для чтения/записи
+
     petitioner_info = serializers.JSONField(required=False, default=dict, allow_null=True)
-    
+
     decision_rendered = serializers.PrimaryKeyRelatedField(
         queryset=Decisions.objects.all(),
         required=False,
@@ -192,21 +187,44 @@ class AppealSerializer(serializers.ModelSerializer):
                   )
 
 
+class CourtSessionResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourtSessionResult
+        fields = ('id', 'name', 'order')
+
+
+class ReasonDepositionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReasonDeposition
+        fields = ('id', 'name', 'order')
+
+
 class BusinessMovementSerializer(serializers.ModelSerializer):
-    """
-    Движение по делу
-    """
+    """Движение по делу"""
+
+    court_session_result_detail = CourtSessionResultSerializer(
+        source='court_session_result', read_only=True
+    )
+    reason_deposition_detail = ReasonDepositionSerializer(
+        source='reason_deposition', read_only=True
+    )
+    decision_case_detail = DecisionsSerializer(
+        source='decision_case', many=True, read_only=True
+    )
 
     class Meta:
         model = BusinessMovement
-        fields = ('date_meeting',
-                  'id',
-                  'meeting_time',
-                  'decision_case',
-                  'composition_colleges',
-                  'result_court_session',
-                  'reason_deposition',
-                  )
+        fields = (
+            'id',
+            'date_meeting',
+            'meeting_time',
+            'decision_case',
+            'decision_case_detail',
+            'court_session_result',
+            'court_session_result_detail',
+            'reason_deposition',
+            'reason_deposition_detail',
+        )
 
 
 class ExecutionCaseSerializer(serializers.ModelSerializer):
@@ -234,10 +252,8 @@ class LawyerProfileSerializer(serializers.ModelSerializer):
 
 
 class LawyerSerializer(serializers.ModelSerializer):
-    sides_case_incase = serializers.PrimaryKeyRelatedField(
-        queryset=SidesCaseInCase.objects.all()
-    )
-    sides_case_incase_name = serializers.SerializerMethodField()
+    """Сериализатор для чтения адвоката"""
+
     profile_detail = LawyerProfileSerializer(source='profile', read_only=True)
     payment_status_display = serializers.CharField(
         source='get_payment_status_display', read_only=True
@@ -247,11 +263,6 @@ class LawyerSerializer(serializers.ModelSerializer):
         model = Lawyer
         fields = '__all__'
         read_only_fields = ('id',)
-
-    def get_sides_case_incase_name(self, obj):
-        if obj.sides_case_incase:
-            return obj.sides_case_incase.name
-        return None
 
 
 class LawyerCreateSerializer(serializers.ModelSerializer):
@@ -275,6 +286,17 @@ class LawyerCreateSerializer(serializers.ModelSerializer):
         write_only=True, required=False, default=False
     )
 
+    # Поля Lawyer, которые разрешено записывать через lawyer_data
+    ALLOWED_LAWYER_FIELDS = (
+        'full_name',
+        'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
+        'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
+        'lawyer_certificate_number', 'lawyer_certificate_date',
+        'days_for_payment', 'payment_per_day', 'payment_amount', 'payment_date',
+        'payment_status', 'payment_request_date', 'accounting_sent_date',
+        'notes',
+    )
+
     class Meta:
         model = Lawyer
         fields = [
@@ -283,7 +305,7 @@ class LawyerCreateSerializer(serializers.ModelSerializer):
             'profile_id', 'save_to_registry',
         ]
 
-    # ---- helpers ----
+    # ---------- helpers ----------
     def _pop_lawyer_data(self, validated_data):
         lawyer_data = validated_data.pop('lawyer_data', {}) or {}
         sides_case_role = validated_data.pop('sides_case_role', None)
@@ -292,9 +314,14 @@ class LawyerCreateSerializer(serializers.ModelSerializer):
         return lawyer_data, sides_case_role, profile, save_to_registry
 
     def _create_profile_if_needed(self, lawyer_data, profile, save_to_registry):
+        """Создаёт LawyerProfile, если галочка стоит и профиль не выбран"""
         if profile is None and save_to_registry:
             profile = LawyerProfile.objects.create(
-                full_name=lawyer_data.get('full_name') or lawyer_data.get('law_firm_name') or 'Адвокат',
+                full_name=(
+                    lawyer_data.get('full_name')
+                    or lawyer_data.get('law_firm_name')
+                    or 'Адвокат'
+                ),
                 law_firm_name=lawyer_data.get('law_firm_name'),
                 law_firm_address=lawyer_data.get('law_firm_address'),
                 law_firm_phone=lawyer_data.get('law_firm_phone'),
@@ -309,46 +336,24 @@ class LawyerCreateSerializer(serializers.ModelSerializer):
             )
         return profile
 
-    def _build_sides_case_incase(self, business_card, lawyer_data, sides_case_role):
-        name = lawyer_data.get('law_firm_name') or 'Адвокат'
-        address = lawyer_data.get('law_firm_address')
-        phone = lawyer_data.get('law_firm_phone')
-        email = lawyer_data.get('law_firm_email')
+    def _filter_lawyer_data(self, lawyer_data):
+        return {
+            k: v for k, v in lawyer_data.items()
+            if k in self.ALLOWED_LAWYER_FIELDS
+        }
 
-        incase = SidesCaseInCase.objects.create(
-            name=name,
-            status='individual',
-            address=address,
-            phone=phone,
-            email=email,
-        )
-        if sides_case_role is not None:
-            incase.sides_case.set([sides_case_role])
-        return incase
-
-    # ---- create ----
+    # ---------- create ----------
     def create(self, validated_data):
-        business_card = self.context.get('business_card')
         lawyer_data, sides_case_role, profile, save_to_registry = self._pop_lawyer_data(validated_data)
         profile = self._create_profile_if_needed(lawyer_data, profile, save_to_registry)
 
-        incase = self._build_sides_case_incase(business_card, lawyer_data, sides_case_role)
-
         lawyer = Lawyer.objects.create(
-            sides_case_incase=incase,
             profile=profile,
-            **{k: v for k, v in lawyer_data.items() if k in [
-                'full_name', 'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
-                'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
-                'lawyer_certificate_number', 'lawyer_certificate_date',
-                'days_for_payment', 'payment_amount', 'payment_date', 'payment_date',
-                'payment_status', 'payment_request_date', 'accounting_sent_date',
-                'notes',
-            ]}
+            **self._filter_lawyer_data(lawyer_data)
         )
         return lawyer
 
-    # ---- update ----
+    # ---------- update ----------
     def update(self, instance, validated_data):
         lawyer_data, sides_case_role, profile, save_to_registry = self._pop_lawyer_data(validated_data)
         profile = self._create_profile_if_needed(lawyer_data, profile, save_to_registry)
@@ -356,19 +361,8 @@ class LawyerCreateSerializer(serializers.ModelSerializer):
         if profile is not None:
             instance.profile = profile
 
-        if sides_case_role is not None and instance.sides_case_incase:
-            instance.sides_case_incase.sides_case.set([sides_case_role])
-
-        for key, value in lawyer_data.items():
-            if key in [
-                'full_name', 'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
-                'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
-                'lawyer_certificate_number', 'lawyer_certificate_date',
-                'days_for_payment', 'payment_amount', 'payment_date', 'payment_per_day',
-                'payment_status', 'payment_request_date', 'accounting_sent_date',
-                'notes',
-            ]:
-                setattr(instance, key, value)
+        for key, value in self._filter_lawyer_data(lawyer_data).items():
+            setattr(instance, key, value)
 
         instance.save()
         return instance

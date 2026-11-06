@@ -70,7 +70,7 @@ class CriminalCivilClaimInline(admin.TabularInline):
     """Inline для гражданских исков"""
     model = CriminalCivilClaim
     extra = 0
-    fields = ['plaintiff_name', 'claim_amount', 'result', 'awarded_amount', 'decision_date']
+    fields = ['claim_amount', 'result', 'awarded_amount', 'decision_date']
 
 
 # ==================== ADMINS ====================
@@ -299,11 +299,11 @@ class CriminalExecutionAdmin(admin.ModelAdmin):
 @admin.register(CriminalCivilClaim)
 class CriminalCivilClaimAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'criminal_proceedings_link', 'plaintiff_name', 'claim_amount',
+        'id', 'criminal_proceedings_link', 'claim_amount',
         'result', 'awarded_amount', 'decision_date'
     ]
     list_filter = ['result']
-    search_fields = ['criminal_proceedings__case_number_criminal', 'plaintiff_name', 'defendant_name']
+    search_fields = ['criminal_proceedings__case_number_criminal', 'defendant_name']
     readonly_fields = ['criminal_proceedings']
     
     def criminal_proceedings_link(self, obj):

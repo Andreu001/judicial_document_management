@@ -43,6 +43,22 @@ urlpatterns = [
           views.ExportDecisionWordView.as_view(), 
           name='export_decision_word'),
 
+     path(
+          'audio-transcriptions/',
+          views.AudioTranscriptionsProxyView.as_view(),
+          name='audio-transcriptions',
+     ),
+     path(
+          'audio-transcriptions/<int:transcription_id>/download/',
+          views.AudioTranscriptionDownloadProxyView.as_view(),
+          name='audio-transcription-download',
+     ),
+     path(
+          'movements/<str:case_type>/<int:case_id>/',
+          views.CaseMovementsProxyView.as_view(),
+          name='case-movements',
+     ),
+
      # PartyDocuments прокси
      path('party-documents/', views.PartyDocumentsProxyView.as_view(), name='party_documents'),
      path('party-documents/<int:doc_id>/', views.PartyDocumentDetailProxyView.as_view(), name='party_document_detail'),

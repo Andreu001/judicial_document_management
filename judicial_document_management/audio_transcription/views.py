@@ -316,6 +316,39 @@ class AudioTranscriptionViewSet(viewsets.GenericViewSet):
         speaker_mapping = instance.result_json.get('speaker_mapping', {})
         return Response(speaker_mapping)
 
+    @action(detail=True, methods=['get'], url_path='download-audio')
+    def download_audio(self, request, pk=None):
+        instance = self.get_object()
+        if not instance.audio_file:
+            return Response({'error': 'Аудиофайл не найден'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            return FileResponse(
+                instance.audio_file.open('rb'),
+                as_attachment=True,
+                filename=os.path.basename(instance.audio_file.name),
+                content_type='audio/wav',
+            )
+        except FileNotFoundError:
+            raise Http404("Файл не найден на сервере")
+
+    def list(self, request):
+        """
+        GET /audio-transcription/transcriptions/?case_type=...&case_id=...
+        Отдаёт список транскрипций по делу.
+        Если параметры не переданы — возвращает все записи (для внутреннего
+        использования / отладки).
+        """
+        case_type = request.query_params.get('case_type')
+        case_id = request.query_params.get('case_id')
+
+        if case_type and case_id:
+            # Переиспользуем логику by_case
+            return self.by_case(request)
+
+        qs = self.get_queryset()
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
 
 class AudioTranscriptionDownloadView(APIView):
     permission_classes = [IsAuthenticated]

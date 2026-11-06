@@ -73,8 +73,8 @@ const DocumentsViewPage = () => {
       try {
           // Используем тот же эндпоинт что и в карточке документа
           const response = await baseService.get(
-              `/case-documents/documents/${decisionId}/download-signed/`,
-              { responseType: 'blob' }
+            `/side_case/decision/${caseType}/${caseId}/${decisionId}/download/`,
+            { responseType: 'blob' }
           );
           
           const contentDisposition = response.headers['content-disposition'] || '';

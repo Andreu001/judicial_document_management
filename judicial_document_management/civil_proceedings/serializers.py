@@ -4,7 +4,8 @@ from users.models import User
 from business_card.models import (SidesCase,
             SidesCaseInCase, Lawyer,
             BusinessMovement, PetitionsInCase, Decisions,
-            Petitions
+            Petitions, LawyerProfile,
+            CourtSessionResult, ReasonDeposition,
         )
 from .models import (
     CivilProceedings, CivilDecision, CivilExecution,
@@ -199,28 +200,67 @@ class CivilSidesCaseInCaseSerializer(serializers.ModelSerializer):
 
 
 class NestedLawyerSerializer(serializers.ModelSerializer):
+    """Вложенный сериализатор для создания представителя"""
     class Meta:
         model = Lawyer
         fields = [
-            'id', 'law_firm_name', 'law_firm_address', 'law_firm_phone',
+            'id', 'full_name',
+            'law_firm_name', 'law_firm_address', 'law_firm_phone',
             'law_firm_email', 'bank_name', 'bank_bik', 'correspondent_account',
             'payment_account', 'lawyer_certificate_number', 'lawyer_certificate_date',
-            'days_for_payment', 'payment_amount', 'payment_date', 'notes'
+            'days_for_payment', 'payment_per_day', 'payment_amount', 'payment_date',
+            'payment_status', 'payment_request_date', 'accounting_sent_date',
+            'notes',
         ]
 
 
 class CivilLawyerSerializer(serializers.ModelSerializer):
+    """Сериализатор для представителей в гражданском деле"""
+
     lawyer_detail = serializers.SerializerMethodField()
     sides_case_role_detail = serializers.SerializerMethodField()
-    lawyer_data = NestedLawyerSerializer(write_only=True, required=False)
-    existing_lawyer_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+
+    lawyer_data = serializers.DictField(write_only=True, required=False)
+
+    existing_lawyer_id = serializers.IntegerField(
+        write_only=True, required=False, allow_null=True
+    )
+
+    profile_id = serializers.PrimaryKeyRelatedField(
+        queryset=LawyerProfile.objects.all(),
+        source='_profile_for_creation',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    save_to_registry = serializers.BooleanField(
+        write_only=True, required=False, default=False
+    )
+
+    ALLOWED_LAWYER_FIELDS = (
+        'full_name',
+        'law_firm_name', 'law_firm_address', 'law_firm_phone', 'law_firm_email',
+        'bank_name', 'bank_bik', 'correspondent_account', 'payment_account',
+        'lawyer_certificate_number', 'lawyer_certificate_date',
+        'days_for_payment', 'payment_per_day', 'payment_amount', 'payment_date',
+        'payment_status', 'payment_request_date', 'accounting_sent_date',
+        'notes',
+    )
+
+    NULLABLE_LAWYER_FIELDS = (
+        'payment_date',
+        'payment_request_date',
+        'accounting_sent_date',
+        'lawyer_certificate_date',
+    )
 
     class Meta:
         model = CivilLawyer
         fields = [
             'id', 'civil_proceedings', 'lawyer', 'sides_case_role',
             'lawyer_detail', 'sides_case_role_detail',
-            'lawyer_data', 'existing_lawyer_id'
+            'lawyer_data', 'existing_lawyer_id',
+            'profile_id', 'save_to_registry',
         ]
         read_only_fields = ('civil_proceedings', 'lawyer')
 
@@ -234,16 +274,20 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
                 'law_firm_phone': obj.lawyer.law_firm_phone,
                 'law_firm_email': obj.lawyer.law_firm_email,
                 'lawyer_certificate_number': obj.lawyer.lawyer_certificate_number,
+                'lawyer_certificate_date': obj.lawyer.lawyer_certificate_date,
                 'bank_name': obj.lawyer.bank_name,
                 'bank_bik': obj.lawyer.bank_bik,
                 'correspondent_account': obj.lawyer.correspondent_account,
                 'payment_account': obj.lawyer.payment_account,
-                'lawyer_certificate_date': obj.lawyer.lawyer_certificate_date,
                 'days_for_payment': obj.lawyer.days_for_payment,
                 'payment_per_day': obj.lawyer.payment_per_day,
                 'payment_amount': obj.lawyer.payment_amount,
                 'payment_date': obj.lawyer.payment_date,
+                'payment_status': obj.lawyer.payment_status,
+                'payment_request_date': obj.lawyer.payment_request_date,
+                'accounting_sent_date': obj.lawyer.accounting_sent_date,
                 'notes': obj.lawyer.notes,
+                'profile_id': obj.lawyer.profile_id,
             }
         return None
 
@@ -255,29 +299,63 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
             }
         return None
 
+    def _filter_lawyer_data(self, lawyer_data):
+        return {
+            k: v for k, v in lawyer_data.items()
+            if k in self.ALLOWED_LAWYER_FIELDS
+        }
+
+    def _apply_lawyer_data(self, lawyer, lawyer_data):
+        for attr, value in self._filter_lawyer_data(lawyer_data).items():
+            if value is not None or attr in self.NULLABLE_LAWYER_FIELDS:
+                setattr(lawyer, attr, value)
+        lawyer.save()
+
+    def _create_profile_if_needed(self, lawyer_data, profile, save_to_registry):
+        if profile is None and save_to_registry:
+            profile = LawyerProfile.objects.create(
+                full_name=(
+                    lawyer_data.get('full_name')
+                    or lawyer_data.get('law_firm_name')
+                    or 'Представитель'
+                ),
+                law_firm_name=lawyer_data.get('law_firm_name'),
+                law_firm_address=lawyer_data.get('law_firm_address'),
+                law_firm_phone=lawyer_data.get('law_firm_phone'),
+                law_firm_email=lawyer_data.get('law_firm_email'),
+                bank_name=lawyer_data.get('bank_name'),
+                bank_bik=lawyer_data.get('bank_bik'),
+                correspondent_account=lawyer_data.get('correspondent_account'),
+                payment_account=lawyer_data.get('payment_account'),
+                lawyer_certificate_number=lawyer_data.get('lawyer_certificate_number'),
+                lawyer_certificate_date=lawyer_data.get('lawyer_certificate_date'),
+                notes=lawyer_data.get('notes'),
+            )
+        return profile
+
     def validate(self, data):
         existing_id = data.get('existing_lawyer_id')
         new_data = data.get('lawyer_data')
-        
+
         if not existing_id and not new_data and not self.instance:
             raise serializers.ValidationError(
-                "Необходимо указать либо existing_lawyer_id для существующего адвоката, "
-                "либо lawyer_data для создания нового адвоката"
+                "Необходимо указать либо existing_lawyer_id для существующего представителя, "
+                "либо lawyer_data для создания нового представителя"
             )
-        
+
         if existing_id and new_data:
             raise serializers.ValidationError(
                 "Нельзя указать одновременно existing_lawyer_id и lawyer_data"
             )
-        
+
         if existing_id:
             try:
                 Lawyer.objects.get(id=existing_id)
             except Lawyer.DoesNotExist:
                 raise serializers.ValidationError(
-                    {'existing_lawyer_id': f'Адвокат с ID {existing_id} не существует'}
+                    {'existing_lawyer_id': f'Представитель с ID {existing_id} не существует'}
                 )
-        
+
         return data
 
     def create(self, validated_data):
@@ -286,46 +364,66 @@ class CivilLawyerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'civil_proceedings': 'Не указано гражданское производство'}
             )
-        
+
         existing_id = validated_data.pop('existing_lawyer_id', None)
-        new_lawyer_data = validated_data.pop('lawyer_data', None)
-        sides_case_role = validated_data.pop('sides_case_role')
-        
-        if new_lawyer_data:
-            lawyer = NestedLawyerSerializer().create(new_lawyer_data)
-        else:
+        new_lawyer_data = validated_data.pop('lawyer_data', None) or {}
+        sides_case_role = validated_data.pop('sides_case_role', None)
+
+        profile = validated_data.pop('_profile_for_creation', None)
+        save_to_registry = validated_data.pop('save_to_registry', False)
+
+        if existing_id:
             lawyer = Lawyer.objects.get(id=existing_id)
-        
+            if new_lawyer_data:
+                self._apply_lawyer_data(lawyer, new_lawyer_data)
+        else:
+            profile = self._create_profile_if_needed(
+                new_lawyer_data, profile, save_to_registry
+            )
+            lawyer = Lawyer.objects.create(
+                profile=profile,
+                **self._filter_lawyer_data(new_lawyer_data)
+            )
+
         civil_lawyer = CivilLawyer.objects.create(
             civil_proceedings=civil_proceedings,
             lawyer=lawyer,
             sides_case_role=sides_case_role
         )
-        
+
         return civil_lawyer
 
     def update(self, instance, validated_data):
-        if 'sides_case_role' in validated_data:
-            instance.sides_case_role = validated_data['sides_case_role']
-        
-        if 'lawyer_data' in validated_data:
-            lawyer_data = validated_data.pop('lawyer_data')
-            if lawyer_data and instance.lawyer:
-                for attr, value in lawyer_data.items():
-                    if value is not None:
-                        setattr(instance.lawyer, attr, value)
-                instance.lawyer.save()
-        
+        sides_case_role = validated_data.pop('sides_case_role', None)
+        lawyer_data = validated_data.pop('lawyer_data', None)
         validated_data.pop('existing_lawyer_id', None)
-        validated_data.pop('lawyer_data', None)
-        
+
+        profile = validated_data.pop('_profile_for_creation', None)
+        save_to_registry = validated_data.pop('save_to_registry', False)
+
+        if sides_case_role is not None:
+            instance.sides_case_role = sides_case_role
+
+        if instance.lawyer:
+            if lawyer_data:
+                profile = self._create_profile_if_needed(
+                    lawyer_data, profile, save_to_registry
+                )
+                if profile is not None:
+                    instance.lawyer.profile = profile
+                self._apply_lawyer_data(instance.lawyer, lawyer_data)
+            else:
+                if profile is not None:
+                    instance.lawyer.profile = profile
+                    instance.lawyer.save()
+
         instance.save()
         return instance
 
 
 class CivilCaseMovementSerializer(serializers.ModelSerializer):
     business_movement_detail = serializers.SerializerMethodField(read_only=True)
-    
+
     date_meeting = serializers.DateField(required=True, write_only=True)
     meeting_time = serializers.TimeField(required=True, write_only=True)
     decision_case = serializers.PrimaryKeyRelatedField(
@@ -334,19 +432,16 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
         required=False,
         write_only=True
     )
-    composition_colleges = serializers.CharField(
-        required=False, 
-        allow_blank=True, 
+    court_session_result = serializers.PrimaryKeyRelatedField(
+        queryset=CourtSessionResult.objects.all(),
+        required=False,
+        allow_null=True,
         write_only=True
     )
-    result_court_session = serializers.CharField(
-        required=False, 
-        allow_blank=True, 
-        write_only=True
-    )
-    reason_deposition = serializers.CharField(
-        required=False, 
-        allow_blank=True, 
+    reason_deposition = serializers.PrimaryKeyRelatedField(
+        queryset=ReasonDeposition.objects.all(),
+        required=False,
+        allow_null=True,
         write_only=True
     )
 
@@ -354,37 +449,49 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
         model = CivilCaseMovement
         fields = [
             'id', 'civil_proceedings', 'business_movement',
-            'business_movement_detail', 'date_meeting', 'meeting_time',
-            'decision_case', 'composition_colleges', 'result_court_session',
-            'reason_deposition'
+            'business_movement_detail',
+            'date_meeting', 'meeting_time', 'decision_case',
+            'court_session_result', 'reason_deposition',
         ]
         read_only_fields = ('civil_proceedings', 'business_movement')
 
     def get_business_movement_detail(self, obj):
-        if obj.business_movement:
-            return {
-                'id': obj.business_movement.id,
-                'date_meeting': obj.business_movement.date_meeting,
-                'meeting_time': obj.business_movement.meeting_time,
-                'decision_case': [
-                    {'id': d.id, 'name_case': d.name_case} 
-                    for d in obj.business_movement.decision_case.all()
-                ],
-                'composition_colleges': obj.business_movement.composition_colleges,
-                'result_court_session': obj.business_movement.result_court_session,
-                'reason_deposition': obj.business_movement.reason_deposition,
-            }
-        return None
+        if not obj.business_movement:
+            return None
+
+        bm = obj.business_movement
+        csr = bm.court_session_result
+        rd = bm.reason_deposition
+
+        return {
+            'id': bm.id,
+            'date_meeting': bm.date_meeting,
+            'meeting_time': bm.meeting_time,
+            'decision_case': [
+                {'id': d.id, 'name_case': d.name_case}
+                for d in bm.decision_case.all()
+            ],
+            'court_session_result': csr.id if csr else None,
+            'court_session_result_detail': (
+                {'id': csr.id, 'name': csr.name} if csr else None
+            ),
+            'reason_deposition': rd.id if rd else None,
+            'reason_deposition_detail': (
+                {'id': rd.id, 'name': rd.name} if rd else None
+            ),
+        }
 
     def validate(self, data):
-        request_method = self.context.get('request').method if self.context.get('request') else None
-        
-        if request_method == 'POST':
+        request = self.context.get('request')
+        if request and request.method == 'POST':
             if not data.get('date_meeting'):
-                raise serializers.ValidationError({'date_meeting': 'Обязательное поле.'})
+                raise serializers.ValidationError(
+                    {'date_meeting': 'Обязательное поле.'}
+                )
             if not data.get('meeting_time'):
-                raise serializers.ValidationError({'meeting_time': 'Обязательное поле.'})
-        
+                raise serializers.ValidationError(
+                    {'meeting_time': 'Обязательное поле.'}
+                )
         return data
 
     def create(self, validated_data):
@@ -396,55 +503,50 @@ class CivilCaseMovementSerializer(serializers.ModelSerializer):
 
         date_meeting = validated_data.pop('date_meeting')
         meeting_time = validated_data.pop('meeting_time')
-        decision_case_ids = validated_data.pop('decision_case', [])
-        composition_colleges = validated_data.pop('composition_colleges', '')
-        result_court_session = validated_data.pop('result_court_session', '')
-        reason_deposition = validated_data.pop('reason_deposition', '')
+        decision_case = validated_data.pop('decision_case', [])
+        court_session_result = validated_data.pop('court_session_result', None)
+        reason_deposition = validated_data.pop('reason_deposition', None)
 
         business_movement = BusinessMovement.objects.create(
             date_meeting=date_meeting,
             meeting_time=meeting_time,
-            composition_colleges=composition_colleges,
-            result_court_session=result_court_session,
-            reason_deposition=reason_deposition
+            court_session_result=court_session_result,
+            reason_deposition=reason_deposition,
         )
 
-        if decision_case_ids:
-            business_movement.decision_case.set(decision_case_ids)
+        if decision_case:
+            business_movement.decision_case.set(decision_case)
 
-        civil_movement = CivilCaseMovement.objects.create(
+        return CivilCaseMovement.objects.create(
             civil_proceedings=civil_proceedings,
-            business_movement=business_movement
+            business_movement=business_movement,
         )
-
-        return civil_movement
 
     def update(self, instance, validated_data):
         date_meeting = validated_data.pop('date_meeting', None)
         meeting_time = validated_data.pop('meeting_time', None)
-        decision_case_ids = validated_data.pop('decision_case', None)
-        composition_colleges = validated_data.pop('composition_colleges', None)
-        result_court_session = validated_data.pop('result_court_session', None)
-        reason_deposition = validated_data.pop('reason_deposition', None)
+        decision_case = validated_data.pop('decision_case', None)
+
+        _unset = object()
+        court_session_result = validated_data.pop('court_session_result', _unset)
+        reason_deposition = validated_data.pop('reason_deposition', _unset)
 
         if instance.business_movement:
-            business_movement = instance.business_movement
-            
-            if date_meeting is not None:
-                business_movement.date_meeting = date_meeting
-            if meeting_time is not None:
-                business_movement.meeting_time = meeting_time
-            if composition_colleges is not None:
-                business_movement.composition_colleges = composition_colleges
-            if result_court_session is not None:
-                business_movement.result_court_session = result_court_session
-            if reason_deposition is not None:
-                business_movement.reason_deposition = reason_deposition
-            
-            business_movement.save()
+            bm = instance.business_movement
 
-            if decision_case_ids is not None:
-                business_movement.decision_case.set(decision_case_ids)
+            if date_meeting is not None:
+                bm.date_meeting = date_meeting
+            if meeting_time is not None:
+                bm.meeting_time = meeting_time
+            if court_session_result is not _unset:
+                bm.court_session_result = court_session_result
+            if reason_deposition is not _unset:
+                bm.reason_deposition = reason_deposition
+
+            bm.save()
+
+            if decision_case is not None:
+                bm.decision_case.set(decision_case)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

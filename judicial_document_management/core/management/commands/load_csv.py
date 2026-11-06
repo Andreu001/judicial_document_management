@@ -5,8 +5,11 @@ from django.conf import settings
 from django.core.management import BaseCommand
 
 # Импортируйте ваши модели (существующие)
-from business_card.models import Category, Decisions, Petitions, SidesCase, Appeal
+from business_card.models import (Category, Decisions, Petitions,
+                                  SidesCase, Appeal,
+                                  CourtSessionResult, ReasonDeposition,)
 from case_registry.models import RegistryIndex
+from case_management.models import ProgressActionType
 from personnel.models import AbsenceType, AbsenceRecord
 from administrative_code.models import (
     CaseOrderAdmin, AdministrativeCategory, ExecutionStageAdmin,
@@ -69,9 +72,13 @@ class Command(BaseCommand):
             Petitions: 'petitions.csv',
             SidesCase: 'sidescase.csv',
             Appeal: 'appeal.csv',
+            CourtSessionResult: 'court_session_results.csv',
+            ReasonDeposition: 'reason_depositions.csv',
             
             # case_registry
             RegistryIndex: 'case_registry.csv',
+            
+            ProgressActionType: 'progress_action_types.csv',
             
             # judge_absence
             AbsenceType: 'absence_records.csv',

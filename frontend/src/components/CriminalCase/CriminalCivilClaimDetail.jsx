@@ -17,7 +17,6 @@ const CriminalCivilClaimDetail = () => {
   const [victims, setVictims] = useState([]);
   const [formData, setFormData] = useState({
     victim: '',
-    plaintiff_name: '',
     defendant_name: '',
     claim_amount: '',
     theft_damage_amount: '',
@@ -62,10 +61,10 @@ const CriminalCivilClaimDetail = () => {
 
   const loadVictims = async () => {
     try {
-      const defendants = await CriminalCaseService.getDefendants(proceedingId);
-      setVictims(defendants);
+      const sides = await CriminalCaseService.getSides(proceedingId);
+      setVictims(sides);
     } catch (error) {
-      console.error('Ошибка загрузки потерпевших:', error);
+      console.error('Ошибка загрузки сторон по делу:', error);
       setVictims([]);
     }
   };
@@ -219,32 +218,19 @@ const CriminalCivilClaimDetail = () => {
                           className={styles.select}
                         >
                           <option value="">Выберите потерпевшего</option>
-                          {victims.map(victim => (
-                            <option key={victim.id} value={victim.id}>
-                              {victim.full_name_criminal}
+                          {victims.map(side => (
+                            <option key={side.id} value={side.id}>
+                              {side.name || `Сторона #${side.id}`}
+                              {side.sides_case_criminal_detail?.sides_case
+                                ? ` — ${side.sides_case_criminal_detail.sides_case}`
+                                : ''}
                             </option>
                           ))}
                         </select>
                       ) : (
                         <span>
-                          {victims.find(v => v.id === formData.victim)?.full_name_criminal || 'Не указано'}
+                          {victims.find(v => v.id === formData.victim)?.name || 'Не указано'}
                         </span>
-                      )}
-                    </div>
-
-                    <div className={styles.field}>
-                      <label>Истец (гражданский истец)</label>
-                      {(isEditing || isCreateMode) ? (
-                        <input
-                          type="text"
-                          name="plaintiff_name"
-                          value={formData.plaintiff_name || ''}
-                          onChange={handleInputChange}
-                          className={styles.input}
-                          placeholder="ФИО или наименование"
-                        />
-                      ) : (
-                        <span>{formData.plaintiff_name || 'Не указано'}</span>
                       )}
                     </div>
 

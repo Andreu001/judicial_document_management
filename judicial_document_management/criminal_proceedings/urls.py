@@ -136,9 +136,6 @@ urlpatterns = [
     path("criminal-proceedings/<int:proceeding_id>/unarchive/",
          CriminalProceedingsViewSet.as_view({'post': 'unarchive'}),
          name="criminal-proceedings-unarchive"),
-    path("criminal-proceedings/<int:proceeding_id>/all-sides/",
-         CriminalProceedingsViewSet.all_sides,
-         name="all-sides"),
     path("sentenced-punishment-options/", sentenced_punishment_options,
          name="sentenced-punishment-options"),
 ]

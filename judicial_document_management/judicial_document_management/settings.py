@@ -464,3 +464,8 @@ DATE_FORMAT = 'd.m.Y'
 DATETIME_FORMAT = 'd.m.Y H:i'
 SHORT_DATE_FORMAT = 'd.m.Y'
 SHORT_DATETIME_FORMAT = 'd.m.Y H:i'
+
+INTERNAL_API_URL = os.environ.get(
+    'INTERNAL_API_URL',
+    'http://127.0.0.1:8000'
+)

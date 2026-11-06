@@ -184,7 +184,7 @@ class CaseActivityViewSet(viewsets.ReadOnlyModelViewSet):
         if not case_type or not case_id:
             return Response({'error': 'Необходимо указать case_type и case_id'}, status=400)
         
-        case = self._get_case_object(case_type, case_id)
+        case = _get_case_object(case_type, case_id)
         if not case:
             return Response({'error': 'Дело не найдено'}, status=404)
         
@@ -260,7 +260,7 @@ class CaseActivityViewSet(viewsets.ReadOnlyModelViewSet):
         if not case_type or not case_id:
             return Response({'error': 'Необходимо указать case_type и case_id'}, status=400)
         
-        case = self._get_case_object(case_type, case_id)
+        case = _get_case_object(case_type, case_id)
         if not case:
             return Response({'error': 'Дело не найдено'}, status=404)
         
