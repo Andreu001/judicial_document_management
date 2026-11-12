@@ -1,36 +1,187 @@
 # audio_transcription/services.py
+
 import os
 import logging
+
+# Пути к DLL FFmpeg 8.1.2 и PyTorch
+_FFMPEG_DLL_DIR = r"C:\ffmpeg-8.1.2-shared\bin"
+_TORCH_DLL_DIR = r"D:\Dev_2\venv\Lib\site-packages\torch\lib"
+
+# Дескрипторы необходимо сохранять в глобальной переменной,
+# иначе Windows может отключить регистрацию DLL.
+_DLL_HANDLES = []
+
+for _dll_dir in (_FFMPEG_DLL_DIR, _TORCH_DLL_DIR):
+    if os.path.isdir(_dll_dir):
+        _DLL_HANDLES.append(os.add_dll_directory(_dll_dir))
+        os.environ["PATH"] = (
+            _dll_dir + os.pathsep + os.environ.get("PATH", "")
+        )
+    else:
+        raise FileNotFoundError(
+            f"Не найдена директория DLL: {_dll_dir}"
+        )
+
+# Ограничиваем число потоков CPU
+from django.conf import settings
+
+_CPU_THREADS = max(1, int(getattr(settings, "GIGAAM_CPU_THREADS", 4)))
+
+os.environ.setdefault("OMP_NUM_THREADS", str(_CPU_THREADS))
+os.environ.setdefault("MKL_NUM_THREADS", str(_CPU_THREADS))
+os.environ.setdefault("OPENBLAS_NUM_THREADS", str(_CPU_THREADS))
+
+# Только теперь импортируем библиотеки, использующие DLL
 import tempfile
-import subprocess
 import json
 import re
-from datetime import datetime, timedelta
-from django.conf import settings
+import torchaudio
+import numpy as np
+import torch
+import subprocess
+
+from pathlib import Path
 from django.core.cache import cache
 from django.utils import timezone
+from django.core.files import File
+
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
+from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 
 logger = logging.getLogger(__name__)
 
-_whisper_model = None
+_gigaam_model = None
+
+def load_audio_via_ffmpeg(audio_path, target_sr=16000):
+    """Декодирование аудио через ffmpeg CLI, обход torchcodec/torchaudio."""
+    cmd = [
+        "ffmpeg", "-i", audio_path,
+        "-f", "s16le", "-acodec", "pcm_s16le",
+        "-ac", "1", "-ar", str(target_sr),
+        "-"
+    ]
+    proc = subprocess.run(cmd, capture_output=True, check=True)
+    audio = np.frombuffer(proc.stdout, dtype=np.int16).astype(np.float32) / 32768.0
+    waveform = torch.from_numpy(audio).unsqueeze(0)  # (1, time)
+    return waveform, target_sr
 
 
-def get_whisper_model():
-    global _whisper_model
-    if _whisper_model is None:
-        from faster_whisper import WhisperModel
-        logger.info(f"Загрузка Whisper модели '{settings.WHISPER_MODEL_SIZE}' на {settings.WHISPER_DEVICE}...")
-        _whisper_model = WhisperModel(
-            settings.WHISPER_MODEL_SIZE,
-            device=settings.WHISPER_DEVICE,
-            compute_type=settings.WHISPER_COMPUTE_TYPE
+def get_gigaam_model():
+    """Ленивая загрузка GigaAM-v3 напрямую из Hugging Face.
+
+    Этот способ не использует проблемный CDN opensmodel.sberdevices.ru.
+    Модель и её код загружаются из официальной карточки ai-sage/GigaAM-v3.
+    """
+    global _gigaam_model, _gigaam_model_name
+
+    if _gigaam_model is not None:
+        return _gigaam_model
+
+    model_name = getattr(settings, "GIGAAM_MODEL_NAME", "v3_e2e_ctc")
+    hf_repo = getattr(settings, "GIGAAM_HF_REPO", "ai-sage/GigaAM-v3")
+    # Для v3_e2e_ctc используем ветку e2e_ctc репозитория Hugging Face.
+    revision = getattr(settings, "GIGAAM_HF_REVISION", None)
+    if not revision:
+        revision = model_name.replace("v3_", "", 1)
+
+    hf_token = getattr(settings, "HF_TOKEN", "")
+    if hf_token:
+        # Longform VAD использует токен для доступа к pyannote/segmentation-3.0.
+        os.environ["HF_TOKEN"] = hf_token
+        os.environ.setdefault("HUGGINGFACEHUB_API_TOKEN", hf_token)
+
+    try:
+        import torch
+        torch.set_num_threads(_CPU_THREADS)
+        try:
+            torch.set_num_interop_threads(max(1, min(4, _CPU_THREADS)))
+        except RuntimeError:
+            pass
+    except ImportError as exc:
+        raise RuntimeError(
+            "PyTorch не установлен в окружении Django/Celery."
+        ) from exc
+
+    try:
+        from transformers import AutoModel
+    except ImportError as exc:
+        raise RuntimeError(
+            "Не установлен transformers. Выполните: "
+            "python -m pip install transformers==4.57.1"
+        ) from exc
+
+    logger.info(
+        "Загрузка GigaAM-v3 из Hugging Face: repo=%s, revision=%s, CPU threads=%s",
+        hf_repo, revision, _CPU_THREADS
+    )
+
+    try:
+        _gigaam_model = AutoModel.from_pretrained(
+            hf_repo,
+            revision=revision,
+            trust_remote_code=True,
+            token=hf_token or None,
         )
-        logger.info("Модель Whisper успешно загружена в память.")
-    return _whisper_model
+        # У пользователя CPU-only компьютер; явно оставляем модель на CPU.
+        _gigaam_model.to("cpu")
+        _gigaam_model.eval()
+    except Exception as exc:
+        _gigaam_model = None
+        raise RuntimeError(
+            f"Не удалось загрузить GigaAM из Hugging Face ({hf_repo}, "
+            f"revision={revision}). Проверьте доступность huggingface.co, "
+            f"установку transformers и зависимости модели. Исходная ошибка: {exc}"
+        ) from exc
+
+    _gigaam_model_name = f"{hf_repo}@{revision}"
+    logger.info("GigaAM успешно загружена из Hugging Face: %s", _gigaam_model_name)
+    return _gigaam_model
+
+
+def _read_segment_value(segment, *names, default=None):
+    """Читает поле из dict или объекта сегмента разных версий GigaAM."""
+    for name in names:
+        if isinstance(segment, dict) and name in segment:
+            return segment[name]
+        if hasattr(segment, name):
+            return getattr(segment, name)
+    return default
+
+
+def _normalise_gigaam_segments(utterances):
+    """Приводит результат longform GigaAM к единому формату start/end/text.
+
+    Поддерживает актуальный объектный API (segment.start/end/text) и
+    прежний словарный API (transcription/boundaries).
+    """
+    segments = []
+    for item in utterances or []:
+        text = _read_segment_value(item, "text", "transcription", default="")
+        text = str(text or "").strip()
+        if not text:
+            continue
+
+        boundaries = _read_segment_value(item, "boundaries", default=None)
+        start = _read_segment_value(item, "start", default=None)
+        end = _read_segment_value(item, "end", default=None)
+
+        if (start is None or end is None) and boundaries is not None:
+            try:
+                start, end = boundaries[0], boundaries[1]
+            except (TypeError, IndexError, KeyError):
+                start, end = 0.0, 0.0
+
+        try:
+            start = max(0.0, float(start or 0.0))
+            end = max(start, float(end or start))
+        except (TypeError, ValueError):
+            start, end = 0.0, 0.0
+
+        segments.append({"start": start, "end": end, "text": text})
+
+    return segments
 
 
 def format_time(seconds):
@@ -51,29 +202,6 @@ def format_time_ms(seconds):
     return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
 
-def enhance_audio_for_whisper(audio_path):
-    """Улучшает качество аудио перед распознаванием"""
-    try:
-        temp_audio = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-        temp_audio.close()
-        
-        cmd = [
-            'ffmpeg', '-i', audio_path,
-            '-af', 'volume=20dB,afftdn=snr=20:noise=0.2:floor=0.1,highpass=f=80,lowpass=f=8000,compand=0.01|0.01:0.01|0.01:-70|-60|-50|-30:-20|-20|-20|-20',
-            '-ac', '1',
-            '-ar', '16000',
-            temp_audio.name
-        ]
-        
-        subprocess.run(cmd, capture_output=True, check=True)
-        logger.info(f"Аудио улучшено: {temp_audio.name}")
-        return temp_audio.name
-        
-    except Exception as e:
-        logger.warning(f"Не удалось улучшить аудио: {e}. Используем оригинал.")
-        return audio_path
-
-
 def update_progress(transcription_id, progress, status_message=None):
     """Обновляет прогресс в модели и кэше"""
     from .models import AudioTranscription
@@ -92,224 +220,270 @@ def update_progress(transcription_id, progress, status_message=None):
 
 
 def detect_speakers_from_text(segments):
-    """
-    Анализирует сегменты для определения говорящих.
-    Использует различные эвристики для группировки реплик.
+    """Предварительно определяет процессуальную роль по текстовым маркерам.
+
+    Важно: это НЕ диаризация. GigaAM longform сегментирует речь по паузам,
+    но сама по себе не устанавливает, какой человек произнёс конкретную реплику.
+    Поэтому неизвестным репликам не присваиваются вымышленные speaker_1/2/3.
     """
     if not segments:
         return [], {}
-    
+
     speakers = {}
     speaker_segments = []
-    
-    # Временные метки и текст для анализа
-    for i, seg in enumerate(segments):
-        text = seg.get('text', '').strip()
+
+    role_keywords = {
+        "judge": [
+            "суд постановил", "суд определил", "председательствующий",
+            "разъясняет", "объявляет", "устанавливает личность",
+            "оглашает", "выясняет", "сообщает"
+        ],
+        "prosecutor": [
+            "поддерживаю", "прошу суд", "государственный обвинитель",
+            "считаю необходимым", "полагаю"
+        ],
+        "defense": [
+            "прошу оправдать", "не согласен", "защитник",
+            "прошу назначить", "прошу принять во внимание"
+        ],
+        "defendant": [
+            "вину признаю", "не признаю", "раскаиваюсь",
+            "подсудимый", "я не согласен", "я прошу"
+        ],
+        "victim": [
+            "потерпевший", "потерпевшая", "ущерб",
+            "претензий не имею", "прошу наказать"
+        ],
+    }
+
+    for seg in segments:
+        text = str(seg.get("text", "")).strip()
         if not text:
             continue
-            
-        start = seg.get('start', 0)
-        end = seg.get('end', 0)
-        
-        # Проверяем, является ли текст репликой судьи (по ключевым словам)
-        is_judge = any(keyword in text.lower() for keyword in [
-            'суд постановил', 'суд определил', 'председательствующий',
-            'разъясняет', 'объявляет', 'устанавливает личность',
-            'оглашает', 'выясняет', 'сообщает'
-        ])
-        
-        # Проверяем, является ли текст репликой прокурора
-        is_prosecutor = any(keyword in text.lower() for keyword in [
-            'поддерживаю', 'прошу суд', 'государственный обвинитель',
-            'считаю необходимым', 'полагаю'
-        ])
-        
-        # Проверяем, является ли текст репликой защитника
-        is_defense = any(keyword in text.lower() for keyword in [
-            'прошу оправдать', 'не согласен', 'защитник',
-            'прошу назначить', 'прошу принять во внимание'
-        ])
-        
-        # Проверяем, является ли текст репликой подсудимого
-        is_defendant = any(keyword in text.lower() for keyword in [
-            'вину признаю', 'не признаю', 'раскаиваюсь',
-            'подсудимый', 'я не согласен', 'я прошу'
-        ])
-        
-        # Проверяем, является ли текст репликой потерпевшего
-        is_victim = any(keyword in text.lower() for keyword in [
-            'потерпевший', 'потерпевшая', 'ущерб',
-            'претензий не имею', 'прошу наказать'
-        ])
-        
-        # Определяем роль на основе ключевых слов и контекста
-        if is_judge:
-            role = 'judge'
-        elif is_prosecutor:
-            role = 'prosecutor'
-        elif is_defense:
-            role = 'defense'
-        elif is_defendant:
-            role = 'defendant'
-        elif is_victim:
-            role = 'victim'
-        else:
-            # Если не удалось определить, используем speaker_id из whisper
-            role = f'speaker_{seg.get("speaker_id", i % 3 + 1)}'
-        
+
+        lower_text = text.lower()
+        role = "other"
+        for candidate_role, keywords in role_keywords.items():
+            if any(keyword in lower_text for keyword in keywords):
+                role = candidate_role
+                break
+
         speakers[role] = speakers.get(role, 0) + 1
-        
         speaker_segments.append({
-            'start': start,
-            'end': end,
-            'text': text,
-            'role': role,
-            'speaker_id': seg.get('speaker_id', None)
+            "start": float(seg.get("start", 0) or 0),
+            "end": float(seg.get("end", 0) or 0),
+            "text": text,
+            "role": role,
+            # GigaAM longform не возвращает идентификатор говорящего.
+            "speaker_id": None,
         })
-    
+
     return speaker_segments, speakers
 
 
 def process_audio_task(transcription_id):
-    """Основная функция обработки: Аудио -> Структурированные данные -> DOCX"""
+    """Обработка аудио: GigaAM longform -> JSON -> DOCX."""
     from .models import AudioTranscription
-    import json
-    
+
     instance = AudioTranscription.objects.get(id=transcription_id)
-    
-    if instance.status == 'cancelled':
-        logger.info(f"Задача {transcription_id} была отменена до начала обработки")
+    if instance.status == "cancelled":
+        logger.info("Задача %s отменена до начала обработки", transcription_id)
         return
-    
-    instance.status = 'processing'
+
+    if not instance.audio_file:
+        raise ValueError("Для расшифровки не прикреплён аудиофайл.")
+
+    instance.status = "processing"
     instance.processing_started_at = timezone.now()
     instance.progress_percent = 0
-    instance.save(update_fields=['status', 'processing_started_at', 'progress_percent', 'updated_at'])
-    logger.info(f"Начало обработки аудио {transcription_id}")
+    instance.error_message = ""
+    instance.save(update_fields=[
+        "status", "processing_started_at", "progress_percent",
+        "error_message", "updated_at"
+    ])
 
-    audio_path = instance.audio_file.path
-    
+    temp_path = None
     try:
-        # 1. Загрузка модели
-        update_progress(transcription_id, 10, "Загрузка модели распознавания...")
-        model = get_whisper_model()
-        update_progress(transcription_id, 20, "Модель загружена, подготовка к распознаванию...")
-        
-        instance.refresh_from_db()
-        if instance.status == 'cancelled':
-            return
-        
-        # 2. Распознавание
-        logger.info(f"Начало распознавания аудио: {audio_path}")
-        update_progress(transcription_id, 25, "Распознавание речи...")
-        
-        segments_iter, info = model.transcribe(
-            audio_path,
-            language="ru",
-            beam_size=5,
-            best_of=5,
-            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
-            vad_filter=True,
-            vad_parameters={
-                "threshold": 0.5,
-                "min_speech_duration_ms": 250,
-                "min_silence_duration_ms": 100,
-                "max_speech_duration_s": float('inf'),
-            },
-            condition_on_previous_text=True,
-            no_speech_threshold=0.6,
-        )
-        
-        instance.duration_seconds = int(info.duration)
-        logger.info(f"Длительность аудио: {format_time(instance.duration_seconds)}")
-        
-        # Собираем все сегменты
-        segments_list = []
-        for seg in segments_iter:
-            text = seg.text.strip()
-            if text:
-                segments_list.append({
-                    'start': seg.start,
-                    'end': seg.end,
-                    'text': text,
-                })
-        
-        total_segments = len(segments_list)
-        logger.info(f"Всего сегментов для обработки: {total_segments}")
-        
-        # Обновляем прогресс по ходу обработки
-        for i, seg in enumerate(segments_list):
-            if i % 20 == 0:
-                instance.refresh_from_db()
-                if instance.status == 'cancelled':
-                    return
-                progress = 25 + int((i / max(total_segments, 1)) * 65)
-                update_progress(transcription_id, min(progress, 90), 
-                               f"Распознавание: {i+1}/{total_segments} сегментов")
-        
-        # 3. Анализ и определение говорящих
-        update_progress(transcription_id, 90, "Анализ структуры диалога...")
-        
-        speaker_segments, speakers = detect_speakers_from_text(segments_list)
-        instance.speaker_count = len(speakers)
-        
-        # 4. Формирование структурированных данных
-        structured_data = {
-            'transcription_id': transcription_id,
-            'duration': instance.duration_seconds,
-            'total_segments': len(speaker_segments),
-            'speakers': speakers,
-            'segments': speaker_segments,
-            'raw_text': '\n'.join([s['text'] for s in speaker_segments])
-        }
-        
-        instance.raw_text = structured_data['raw_text']
-        # ВАЖНО: присваиваем напрямую
-        instance.result_json = structured_data
-        instance.progress_percent = 95
-        
-        # 5. Создание DOCX
-        update_progress(transcription_id, 95, "Создание черновика протокола...")
-        
-        doc = create_protocol_document(instance, speaker_segments, speakers)
-        
-        # Сохраняем DOCX
-        docx_filename = f"protocol_draft_{transcription_id}.docx"
-        temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, docx_filename)
-        doc.save(temp_path)
-        
-        update_progress(transcription_id, 98, "Сохранение документа...")
-        
-        instance.result_docx.save(docx_filename, open(temp_path, 'rb'), save=True)
-        os.remove(temp_path)
-        
-        # 6. Завершение - ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ ВСЕХ ПОЛЕЙ
-        instance.status = 'completed'
-        instance.error_message = ''
-        instance.progress_percent = 100
-        # Сохраняем все поля, включая result_json
-        instance.save()
-        
-        # Дополнительная проверка: если result_json не сохранился, пробуем через update
-        if not instance.result_json:
-            AudioTranscription.objects.filter(id=transcription_id).update(
-                result_json=structured_data,
-                speaker_count=len(speakers),
-                updated_at=timezone.now()
-            )
-            logger.info(f"Принудительное обновление result_json для {transcription_id}")
-        
-        logger.info(f"Успешная обработка аудио {transcription_id}")
-        update_progress(transcription_id, 100, "Готово!")
+        audio_path = instance.audio_file.path
+        if not os.path.isfile(audio_path):
+            raise FileNotFoundError(f"Аудиофайл не найден: {audio_path}")
 
-    except Exception as e:
-        logger.exception(f"Ошибка при обработке аудио {transcription_id}: {str(e)}")
-        instance.status = 'error'
-        instance.error_message = str(e)[:1000]
-        instance.save(update_fields=['status', 'error_message', 'updated_at'])
-        cache.delete(f'audio_progress_{transcription_id}')
-        cache.delete(f'audio_status_{transcription_id}')
+        update_progress(transcription_id, 10, "Загрузка GigaAM...")
+        model = get_gigaam_model()
+        model_name = _gigaam_model_name or getattr(
+            settings, "GIGAAM_MODEL_NAME", "v3_e2e_ctc"
+        )
+
+        instance.refresh_from_db()
+        if instance.status == "cancelled":
+            return
+
+        # Вызов longform блокирующий. У GigaAM нет callback прогресса по процентам,
+        # поэтому не показываем искусственный рост процента во время инференса.
+        update_progress(transcription_id, 25, "GigaAM распознаёт аудиозапись. Это может занять время...")
+        logger.info("Начало GigaAM longform: id=%s, file=%s", transcription_id, audio_path)
+
+        utterances = model.transcribe_longform(audio_path)
+
+                # Преобразуем результат GigaAM в единый формат,
+        # который используется остальной частью приложения.
+        segments_list = []
+
+        logger.info(
+            "Результат GigaAM: type=%s, количество элементов=%s",
+            type(utterances).__name__,
+            len(utterances) if utterances is not None else 0
+        )
+
+        if not utterances:
+            raise ValueError("GigaAM не вернула ни одного сегмента распознавания.")
+
+        for index, item in enumerate(utterances):
+            try:
+                # Формат Hugging Face GigaAM-v3:
+                # {"transcription": "...", "boundaries": (start, end)}
+                if isinstance(item, dict):
+                    text = item.get("transcription", item.get("text", ""))
+                    boundaries = item.get("boundaries")
+
+                    if boundaries is not None and len(boundaries) >= 2:
+                        start = float(boundaries[0])
+                        end = float(boundaries[1])
+                    else:
+                        start = float(item.get("start", 0.0))
+                        end = float(item.get("end", 0.0))
+
+                else:
+                    # Поддержка варианта, возвращающего объекты
+                    # с атрибутами start, end и text.
+                    text = getattr(item, "text", "")
+                    start = float(getattr(item, "start", 0.0))
+                    end = float(getattr(item, "end", 0.0))
+
+                text = str(text).strip()
+
+                if not text:
+                    continue
+
+                if end < start:
+                    raise ValueError(
+                        f"Некорректные границы сегмента: {start} - {end}"
+                    )
+
+                segments_list.append({
+                    "start": start,
+                    "end": end,
+                    "text": text,
+                })
+
+            except Exception:
+                logger.exception(
+                    "Ошибка преобразования сегмента GigaAM №%s: %r",
+                    index,
+                    item
+                )
+                raise
+
+        if not segments_list:
+            raise ValueError(
+                "После преобразования результата GigaAM список сегментов пуст."
+            )
+
+        logger.info(
+            "GigaAM: преобразовано сегментов=%s; первый сегмент=%r",
+            len(segments_list),
+            segments_list[0]
+        )
+
+        instance.refresh_from_db()
+        if instance.status == "cancelled":
+            logger.info("Задача %s отменена во время распознавания", transcription_id)
+            return
+
+        total_segments = len(segments_list)
+        duration = max((segment["end"] for segment in segments_list), default=0.0)
+        instance.duration_seconds = int(round(duration))
+        logger.info(
+            "GigaAM завершила распознавание: id=%s, сегментов=%s, длительность=%s",
+            transcription_id, total_segments, format_time(instance.duration_seconds)
+        )
+
+        update_progress(transcription_id, 80, "Распознавание завершено. Анализ текста...")
+        speaker_segments, speakers = detect_speakers_from_text(segments_list)
+
+        structured_data = {
+            "transcription_id": transcription_id,
+            "model": model_name,
+            "duration": instance.duration_seconds,
+            "total_segments": len(speaker_segments),
+            "speakers": speakers,
+            "segments": speaker_segments,
+            "raw_text": "\n".join(segment["text"] for segment in speaker_segments),
+            "diarization_available": False,
+            "speaker_identification_note": (
+                "GigaAM longform выполняет сегментацию речи, но не определяет личности "
+                "говорящих. Процессуальные роли предварительно предполагаются по тексту "
+                "и требуют проверки человеком."
+            ),
+        }
+
+        instance.raw_text = structured_data["raw_text"]
+        instance.result_json = structured_data
+        # Диаризация не выполнялась, поэтому не выдаём число ролей за число голосов.
+        instance.speaker_count = 0
+        instance.progress_percent = 90
+        instance.save(update_fields=[
+            "raw_text", "result_json", "speaker_count", "duration_seconds",
+            "progress_percent", "updated_at"
+        ])
+
+        instance.refresh_from_db()
+        if instance.status == "cancelled":
+            return
+
+        update_progress(transcription_id, 93, "Формирование проекта протокола DOCX...")
+        doc = create_protocol_document(instance, speaker_segments, speakers)
+
+        with tempfile.NamedTemporaryFile(
+            suffix=".docx", prefix=f"protocol_{transcription_id}_", delete=False
+        ) as temp_file:
+            temp_path = temp_file.name
+
+        doc.save(temp_path)
+        update_progress(transcription_id, 97, "Сохранение проекта протокола...")
+
+        docx_filename = f"protocol_draft_{transcription_id}.docx"
+        with open(temp_path, "rb") as docx_file:
+            instance.result_docx.save(docx_filename, File(docx_file), save=False)
+
+        instance.status = "completed"
+        instance.error_message = ""
+        instance.progress_percent = 100
+        instance.save()
+
+        cache.set(f"audio_progress_{transcription_id}", 100, 3600)
+        cache.set(f"audio_status_{transcription_id}", "Готово!", 3600)
+        logger.info("Успешная обработка аудио %s", transcription_id)
+
+    except Exception as exc:
+        logger.exception("Ошибка обработки аудио %s: %s", transcription_id, exc)
+        try:
+            instance.refresh_from_db()
+            if instance.status != "cancelled":
+                instance.status = "error"
+                instance.error_message = str(exc)[:1000]
+                instance.save(update_fields=["status", "error_message", "updated_at"])
+        except Exception:
+            logger.exception("Не удалось сохранить ошибку задачи %s", transcription_id)
+        cache.delete(f"audio_progress_{transcription_id}")
+        cache.set(f"audio_status_{transcription_id}", "Ошибка обработки", 3600)
+        # Не пробрасываем исключение наружу: статус и error_message хранятся в БД.
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                logger.warning("Не удалось удалить временный DOCX: %s", temp_path)
 
 
 def create_protocol_document(instance, speaker_segments, speakers):
@@ -511,7 +685,7 @@ def create_protocol_document(instance, speaker_segments, speakers):
         
         row_cells[0].text = display_name
         row_cells[1].text = str(count)
-        row_cells[2].text = f'{round(count / total * 100, 1)}%'
+        row_cells[2].text = f'{round(count / total * 100, 1) if total else 0}%'
     
     # Информация о длительности
     doc.add_paragraph()

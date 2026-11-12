@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+GigaAM/
+
 # REACT
 frontend/node_modules/
 node_modules/

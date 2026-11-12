@@ -117,22 +117,27 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/Moscow'
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 минут
-CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 минут
+CELERY_TASK_SOFT_TIME_LIMIT = 10800  # 3 часа
+CELERY_TASK_TIME_LIMIT = 14400       # 4 часа
 
-CELERY_WORKER_POOL = 'solo'  # Windows не поддерживает prefork
-CELERY_WORKER_CONCURRENCY = 1  # Для Windows лучше 1
+CELERY_WORKER_POOL = 'solo'
+CELERY_WORKER_CONCURRENCY = 1
 
 WSGI_APPLICATION = 'judicial_document_management.wsgi.application'
 
-# Настройки для нашего модуля
-WHISPER_MODEL_SIZE = 'small'  # 'small' - лучший баланс качества русского и скорости
-WHISPER_DEVICE = 'cpu'        # Если есть видеокарта NVIDIA, поставь 'cuda'
-WHISPER_COMPUTE_TYPE = 'int8' # Оптимизация для CPU
+HF_TOKEN = os.environ.get('HF_TOKEN', '')
 
-# Увеличиваем лимит загрузки файлов (аудио могут быть весомыми)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
+GIGAAM_MODEL_NAME = "v3_e2e_ctc"
+
+GIGAAM_HF_REPO = "ai-sage/GigaAM-v3"
+
+GIGAAM_HF_REVISION = "e2e_ctc"
+
+GIGAAM_CPU_THREADS = 4
+
+# Лимиты загрузки файлов
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
 
 
 SAIGA_MODEL_PATH = './models/saiga-7b'
